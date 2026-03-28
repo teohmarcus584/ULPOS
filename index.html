@@ -1629,6 +1629,33 @@ let preloadedStores = [];    // List of stores that have been preloaded
   }
 
   async function fetchProductsFromSheet(force = false) {
+  showLoading('Fetching products...');
+  try {
+    const currentCategory = categorySelect ? categorySelect.value : 'all';
+
+    // ... (cache check logic) ...
+
+    // After fetching products, rebuild categories
+    const categories = [...new Set(products.map(p => p.category))].sort();
+    categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
+    categories.forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat;
+      option.textContent = cat;
+      categorySelect.appendChild(option);
+    });
+
+    // Restore previous selection
+    if (categories.includes(currentCategory)) {
+      categorySelect.value = currentCategory;
+    } else {
+      categorySelect.value = 'all';
+    }
+
+    renderProductGrid();
+    // ... (cache storage, etc.)
+  } catch (err) { ... }
+}
   // ==================== STOCK UPDATE ====================
   async function updateStockOnServer(productId, newStock) {
     try {

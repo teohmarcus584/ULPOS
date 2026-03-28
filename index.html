@@ -27,90 +27,79 @@
       border-radius: 28px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
-    h1 { font-size: 1.6rem; font-weight: 600; color: #0f172a; }
-    .header-buttons {
+    .pos-header-left {
       display: flex;
-      gap: 12px;
       align-items: center;
-      flex-wrap: wrap;
+      gap: 16px;
     }
-    #receiptsButton {
-      background: #8b5cf6;
-      border: none;
-      border-radius: 40px;
-      padding: 10px 20px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: white;
-      cursor: pointer;
-    }
-    #receiptsButton:hover { background: #7c3aed; }
-    #connectPrinterButton {
-      background: #1e293b;
-      border: none;
-      border-radius: 40px;
-      padding: 10px 20px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: white;
-      cursor: pointer;
-    }
-    #connectPrinterButton:hover { background: #0f172a; }
-    #printerStatus { font-size: 0.8rem; background: #f1f5f9; padding: 6px 12px; border-radius: 30px; color: #334155; }
-    .employee-bar {
-      background: white; border-radius: 28px; padding: 10px 20px; margin-bottom: 20px;
-      display: flex; justify-content: space-between; align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    .employee-info { font-weight: 500; color: #0f172a; }
-    .employee-actions {
+    .pos-header-right {
       display: flex;
-      gap: 12px;
       align-items: center;
+      gap: 12px;
     }
-    .logout-btn, .drawer-btn {
+    .cashier-info {
+      font-weight: 500;
+      color: #0f172a;
+      background: #f1f5f9;
+      padding: 8px 16px;
+      border-radius: 40px;
+      font-size: 0.9rem;
+    }
+    .logout-header-btn {
       background: #ef4444;
       border: none;
       border-radius: 40px;
-      padding: 6px 16px;
+      padding: 8px 16px;
       color: white;
       font-size: 0.8rem;
       cursor: pointer;
+      transition: background 0.2s;
     }
-    .drawer-btn {
-      background: #f59e0b;
+    .logout-header-btn:hover {
+      background: #dc2626;
     }
-    .drawer-btn:hover { background: #d97706; }
-    .logout-btn:hover { background: #dc2626; }
-    .store-selector {
-      background: white; border-radius: 28px; padding: 12px 20px; margin-bottom: 20px;
+    .printer-icon-btn {
+      background: #1e293b;
+      border: none;
+      border-radius: 40px;
+      padding: 8px 16px;
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .printer-icon-btn:hover {
+      background: #0f172a;
+    }
+    h1 { font-size: 1.6rem; font-weight: 600; color: #0f172a; }
+    .store-selector-header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      gap: 8px;
     }
-    .store-selector label { font-weight: 500; margin-right: 8px; }
-    .store-selector select, #soldBySelect {
-      padding: 12px 20px;
-      border-radius: 60px;
+    .store-selector-header label {
+      font-weight: 500;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+    .store-header-select {
+      padding: 6px 12px;
+      border-radius: 40px;
       border: 1px solid #cbd5e1;
       background: white;
-      font-size: 1rem;
+      font-size: 0.9rem;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s;
-      min-width: 180px;
+      min-width: 130px;
     }
-    .store-selector select:focus, #soldBySelect:focus {
+    .store-header-select:focus {
       outline: none;
       border-color: #3b82f6;
       box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
     }
-    .store-selector select:disabled, #soldBySelect:disabled {
+    .store-header-select:disabled {
       background: #f1f5f9;
       cursor: not-allowed;
       opacity: 0.7;
@@ -236,6 +225,11 @@
       border-bottom: none;
       padding-bottom: 0;
     }
+    .cart-header-right {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
     .cart-header-buttons {
       display: flex;
       gap: 8px;
@@ -256,6 +250,16 @@
     }
     .cart-header-btn:active {
       transform: scale(0.97);
+    }
+    .sold-by-select-cart {
+      padding: 8px 12px;
+      border-radius: 40px;
+      border: 1px solid #cbd5e1;
+      background: white;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      min-width: 140px;
     }
     .cart-items { max-height: 50vh; overflow-y: auto; margin-bottom: 20px; }
     .cart-item {
@@ -516,7 +520,6 @@
       .product-list .product-card { flex-direction: column; align-items: stretch; text-align: center; }
       .product-list .product-name, .product-list .product-price, .product-list .product-stock { margin: 4px 0; text-align: center; }
       .product-list .add-btn { width: 100%; }
-      .store-selector { flex-direction: column; align-items: stretch; }
       .cart-item {
         flex-direction: column;
         align-items: stretch;
@@ -814,150 +817,6 @@
       vertical-align: middle;
       cursor: pointer;
     }
-    .employee-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      background: white;
-      border-radius: 28px;
-      padding: 10px 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    .employee-info-group {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .employee-info {
-      font-weight: 500;
-      color: #0f172a;
-    }
-    .logout-btn {
-      background: #ef4444;
-      border: none;
-      border-radius: 40px;
-      padding: 6px 16px;
-      color: white;
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .logout-btn:hover {
-      background: #dc2626;
-    }
-    .employee-actions {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-    .employee-selectors {
-      display: flex;
-      gap: 20px;
-      align-items: center;
-    }
-    .employee-right-group {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .selector-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .selector-group label {
-      font-weight: 500;
-      font-size: 0.9rem;
-      white-space: nowrap;
-    }
-    .selector-group select {
-      padding: 8px 12px;
-      border-radius: 40px;
-      border: 1px solid #cbd5e1;
-      background: white;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      min-width: 140px;
-    }
-    .selector-group select:focus {
-      outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
-    }
-    .selector-group select:disabled {
-      background: #f1f5f9;
-      cursor: not-allowed;
-      opacity: 0.7;
-    }
-    @media (max-width: 780px) {
-      .employee-bar {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .employee-info-group,
-      .employee-actions,
-      .employee-selectors {
-        justify-content: space-between;
-        flex-wrap: wrap;
-      }
-      .employee-selectors {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .selector-group {
-        justify-content: space-between;
-      }
-    }
-    .pos-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 20px;
-      background: white;
-      padding: 12px 20px;
-      border-radius: 28px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    .store-selector-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-left: 8px;
-    }
-    .store-selector-header label {
-      font-weight: 500;
-      font-size: 0.9rem;
-      white-space: nowrap;
-    }
-    .store-header-select {
-      padding: 6px 12px;
-      border-radius: 40px;
-      border: 1px solid #cbd5e1;
-      background: white;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      min-width: 130px;
-    }
-    .store-header-select:focus {
-      outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
-    }
-    .store-header-select:disabled {
-      background: #f1f5f9;
-      cursor: not-allowed;
-      opacity: 0.7;
-    }
     .inventory-controls {
       display: flex;
       align-items: center;
@@ -1159,7 +1018,7 @@
 
 <div id="mainContent" style="display: none;">
   <div class="pos-header">
-    <div style="display: flex; align-items: center; gap: 16px;">
+    <div class="pos-header-left">
       <img src="https://i.imgur.com/STBkLrm.jpeg" alt="POS System Logo" class="pos-logo" id="logoImage">
       <div class="store-selector-header">
         <label for="storeSelect">Store:</label>
@@ -1170,30 +1029,10 @@
         </select>
       </div>
     </div>
-    <div class="header-buttons">
-      <button id="receiptsButton">📜 Receipts</button>
-      <button id="connectPrinterButton">🖨️ Connect Printer</button>
-      <select id="paperSizeSelect" style="background: #f1f5f9; border-radius: 40px; padding: 10px 16px; font-size: 0.9rem; border: none; cursor: pointer;">
-        <option value="58">58mm</option>
-        <option value="80">80mm</option>
-      </select>
-      <div id="printerStatus">⚪ Not connected</div>
-    </div>
-  </div>
-
-  <div class="employee-bar">
-    <div class="employee-info-group">
-      <span class="employee-info">👤 Cashier: <span id="employeeName"></span></span>
-      <button id="logoutButton" class="logout-btn">Logout</button>
-    </div>
-    <div class="employee-right-group">
-      <button id="openDrawerBtn" class="drawer-btn" disabled>💰 Open Drawer</button>
-      <div class="selector-group">
-        <label>👤 Sold By:</label>
-        <select id="soldBySelect">
-          <option value="">Loading...</option>
-        </select>
-      </div>
+    <div class="pos-header-right">
+      <span class="cashier-info" id="employeeNameHeader"></span>
+      <button id="logoutHeaderBtn" class="logout-header-btn">Logout</button>
+      <button id="printerIconBtn" class="printer-icon-btn">🖨️</button>
     </div>
   </div>
 
@@ -1212,10 +1051,15 @@
 
     <div class="cart-panel">
       <div class="cart-header">
-        <div class="cart-title" id="cartPanelTitle">🧾 Current Sale</div>
-        <div class="cart-header-buttons">
-          <button id="clearCartBtn" class="cart-header-btn">🗑️ Clear</button>
-          <button id="refreshProductsBtn" class="cart-header-btn">🔄 Refresh</button>
+        <div class="cart-title">🧾 Current Sale</div>
+        <div class="cart-header-right">
+          <select id="soldBySelectCart" class="sold-by-select-cart">
+            <option value="">Loading...</option>
+          </select>
+          <div class="cart-header-buttons">
+            <button id="clearCartBtn" class="cart-header-btn">🗑️ Clear</button>
+            <button id="refreshProductsBtn" class="cart-header-btn">🔄 Refresh</button>
+          </div>
         </div>
       </div>
       <!-- Normal cart content (visible by default) -->
@@ -1276,7 +1120,29 @@
       <button id="sideSettlementBtn" class="menu-btn">💰 Settlement</button>
       <button id="sideCollectionBtn" class="menu-btn" style="display: none;">💵 Cash Collection</button>
       <button id="sideInventoryBtn" class="menu-btn" style="display: none;">📦 Inventory</button>
+      <button id="sideReceiptsBtn" class="menu-btn">📜 Receipts</button>
+      <button id="sideDrawerBtn" class="menu-btn">💰 Open Drawer</button>
     </div>
+  </div>
+</div>
+
+<!-- Printer Modal -->
+<div id="printerModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 400px;">
+    <span class="close-modal" id="closePrinterModal">×</span>
+    <div class="modal-title">🖨️ Printer Settings</div>
+    <div class="filter-group" style="margin-bottom: 20px;">
+      <label>Paper Size</label>
+      <select id="paperSizeSelectModal">
+        <option value="58">58mm</option>
+        <option value="80">80mm</option>
+      </select>
+    </div>
+    <div class="modal-buttons">
+      <button id="connectPrinterModalBtn" class="modal-btn modal-btn-primary">Connect Printer</button>
+      <button id="closePrinterModalBtn" class="modal-btn modal-btn-secondary">Close</button>
+    </div>
+    <div id="printerStatusModal" style="margin-top: 12px; font-size: 0.9rem; text-align: center;">⚪ Not connected</div>
   </div>
 </div>
 
@@ -1289,7 +1155,7 @@
 
 <div id="specialPromoModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeSpecialPromoModal">×</span><div class="modal-title">🎁 Special Promo</div><div id="promoOptions"><button id="promoBuy2Free1Perfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 2 Free 1 (100ml Perfume EDP)</button><button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 3 Free 1 (Excluding Perfume)</button><div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">💰 Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💰 Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead>汽<th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody> </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💰 Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead>汽<th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>  </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="settlementModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
@@ -1313,7 +1179,6 @@
       <p>💳 Card: <strong id="sysCard">RM 0.00</strong></p>
       <p>📱 QR Pay: <strong id="sysQR">RM 0.00</strong></p>
       <p>❌ Refunds: <strong id="sysRefund">RM 0.00</strong></p>
-      <!-- Net Total line with larger font -->
       <p style="font-size: 1.4rem; font-weight: 800; margin-top: 12px;">💰 Net Total: <strong id="sysNetTotal">RM 0.00</strong></p>
     </div>
     <div class="filter-group">
@@ -1396,7 +1261,7 @@ let preloadedStores = [];    // List of stores that have been preloaded
   const searchInput = document.getElementById('searchInput');
   const categorySelect = document.getElementById('categorySelect');
   const storeSelect = document.getElementById('storeSelect');
-  const soldBySelect = document.getElementById('soldBySelect');
+  const soldBySelectCart = document.getElementById('soldBySelectCart');
   const inventoryModeBtn = document.getElementById('inventoryModeBtn');
   const cartNormalContent = document.getElementById('cartNormalContent');
   const stockHistoryContainerDiv = document.getElementById('stockHistoryContainer');
@@ -1732,14 +1597,14 @@ let preloadedStores = [];    // List of stores that have been preloaded
 
         employeeNameMap = {};
         const employees = result.employees;
-        soldBySelect.innerHTML = '';
+        soldBySelectCart.innerHTML = '';
         employees.forEach(emp => {
           employeeNameMap[emp.id] = emp.name;
           const option = document.createElement('option');
           option.value = emp.id;
           option.textContent = `${emp.name} (ID: ${emp.id})`;
           if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
-          soldBySelect.appendChild(option);
+          soldBySelectCart.appendChild(option);
         });
         return true;
       } else {
@@ -2328,7 +2193,7 @@ html += `
   async function saveTransactionToSheet(transaction) {
     showLoading('Recording sale...');
     try {
-      const selectedEmployeeId = soldBySelect.value;
+      const selectedEmployeeId = soldBySelectCart.value;
       const employeeIdForRecord = selectedEmployeeId || currentEmployee.id;
       const formData = new URLSearchParams();
       formData.append("action", "saveSale");
@@ -2730,14 +2595,14 @@ async function preloadProductsForStore(store) {
   function renderProductDetails(productsData) {
     const tbody = document.getElementById('productDetailsBody');
     if (!productsData || productsData.length === 0) {
-      tbody.innerHTML = '|<td colspan="4" style="text-align: center;">No products sold in this period. </tr>';
+      tbody.innerHTML = '|<td colspan="4" style="text-align: center;">No products sold in this period.  </td> ';
       return;
     }
     let html = '';
     productsData.forEach(p => {
       html += `<tr>
-         <td>${escapeHtml(p.name)}</td>
-         <td>${escapeHtml(p.category)}</td>
+          <td>${escapeHtml(p.name)}</td>
+          <td>${escapeHtml(p.category)}</td>
         <td style="text-align: right;">${p.quantity}</td>
         <td style="text-align: right;">RM ${p.total.toFixed(2)}</td>
        </tr>`;
@@ -2959,111 +2824,25 @@ async function refreshSettlementTotals(store) {
   if (checkBtn) checkBtn.disabled = !enabled;
 }
 
-  // ==================== PRINTER SETUP ====================
+  // ==================== PRINTER SETUP (unified modal) ====================
   (function setupPrinter() {
     let gattServer = null, printerCharacteristic = null, isConnected = false;
-    const connectBtn = document.getElementById('connectPrinterButton');
-    const printerStatusDiv = document.getElementById('printerStatus');
-    const openDrawerBtn = document.getElementById('openDrawerBtn');
+    const printerModal = document.getElementById('printerModal');
+    const connectBtnModal = document.getElementById('connectPrinterModalBtn');
+    const printerStatusModal = document.getElementById('printerStatusModal');
+    const paperSizeSelectModal = document.getElementById('paperSizeSelectModal');
+    const printerIconBtn = document.getElementById('printerIconBtn');
+    const closePrinterModal = document.getElementById('closePrinterModal');
+    const closePrinterModalBtn = document.getElementById('closePrinterModalBtn');
 
-    function generateReceiptData(transaction, openDrawer = false) {
-  const encoder = new TextEncoder();
-  const employeeName = transaction.employee_name || getEmployeeName(transaction.employee_id) || 'N/A';
-  const storeLocation = transaction.store ? transaction.store.charAt(0).toUpperCase() + transaction.store.slice(1) : 'Queens';
-  
-  const paperSize = localStorage.getItem('printerPaperSize') || '80';
-  const maxChars = paperSize === '58' ? 32 : 48;
-  
-  function formatLine(left, right = null) {
-    if (right === null) {
-      return left.length > maxChars ? left.substring(0, maxChars - 3) + '...' : left;
-    }
-    const leftMax = Math.floor(maxChars * 0.6);
-    const rightMax = maxChars - leftMax - 2;
-    let leftText = left.length > leftMax ? left.substring(0, leftMax - 3) + '...' : left;
-    let rightText = right.length > rightMax ? right.substring(0, rightMax - 3) + '...' : right;
-    return leftText.padEnd(leftMax) + ' ' + rightText.padStart(rightMax);
-  }
-  
-  const grouped = {};
-  for (const item of transaction.items) {
-    const cat = item.category || 'Uncategorized';
-    if (!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push(item);
-  }
-  
-  const lines = [];
-  const separator = '-'.repeat(maxChars);
-  
-  lines.push('', '    UL PERFUMERY', separator);
-  lines.push(formatLine(`STORE LOCATION : ${storeLocation}`));
-  lines.push(formatLine(`EMPLOYEE : ${employeeName}`));
-  lines.push(separator);
-  
-  for (const [category, items] of Object.entries(grouped)) {
-    let categoryTotal = 0;
-    for (const item of items) {
-      const paidQty = item.quantity - (item.free_quantity || 0);
-      categoryTotal += paidQty * item.price;
-    }
-    lines.push(formatLine(category, `RM ${categoryTotal.toFixed(2)}`));
-    for (const item of items) {
-      const paidQty = item.quantity - (item.free_quantity || 0);
-      if (paidQty > 0) {
-        lines.push(`  ${item.name}`);
-        lines.push(`  ${paidQty} x RM ${item.price.toFixed(2)}`);
+    function updatePrinterStatusUI() {
+      if (isConnected) {
+        printerStatusModal.innerText = '✅ Printer connected';
+        printerStatusModal.style.color = '#2c7a4b';
+      } else {
+        printerStatusModal.innerText = '⚪ Not connected';
+        printerStatusModal.style.color = '#64748b';
       }
-      if (item.free_quantity > 0) {
-        lines.push(`  ** ${item.free_quantity} FREE **`);
-      }
-    }
-  }
-  
-  lines.push(separator);
-  const totalAmount = transaction.total;
-  lines.push(formatLine('TOTAL', `RM ${totalAmount.toFixed(2)}`));
-  lines.push(formatLine('PAYMENT METHOD', transaction.payment_method));
-  if (transaction.cash_received && transaction.payment_method === 'Cash') {
-    const change = transaction.cash_received - totalAmount;
-    lines.push(formatLine('CHANGE', `RM ${change.toFixed(2)}`));
-  }
-  lines.push(separator);
-  lines.push('THANK YOU FOR YOUR PURCHASE');
-  lines.push('ANY ENQUIRY PLEASE CONTACT');
-  lines.push('+60134665831 ( MARCUS )');
-  lines.push('GOODS SOLD ARE NOT REFUNDABLE');
-  lines.push(separator);
-  
-  const date = new Date(transaction.timestamp);
-  const formattedDate = `${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
-  lines.push(formatLine(`TXN   : ${transaction.transaction_id}`));
-  lines.push(formatLine(`DATE  : ${formattedDate}`));
-  lines.push('');
-  
-  const text = lines.join('\n');
-  
-  let commands = [];
-  commands.push(0x1B, 0x40); // Initialize
-  commands.push(0x1B, 0x61, 0x01); // Center
-  commands.push(...encoder.encode(text));
-  commands.push(0x1B, 0x64, 0x03); // Feed 3 lines
-  commands.push(0x1D, 0x56, 0x41, 0x00); // Cut
-  if (openDrawer) {
-    const drawerCommand = [0x1B, 0x70, 0x00, 0x19, 0xFA];
-    commands = commands.slice(0, -4).concat(drawerCommand, commands.slice(-4));
-  }
-  return new Uint8Array(commands);
-}
-
-    const paperSizeSelect = document.getElementById('paperSizeSelect');
-    if (paperSizeSelect) {
-      const savedSize = localStorage.getItem('printerPaperSize');
-      if (savedSize) paperSizeSelect.value = savedSize;
-      else paperSizeSelect.value = '80';
-      paperSizeSelect.addEventListener('change', () => {
-        localStorage.setItem('printerPaperSize', paperSizeSelect.value);
-        showAlertModal('Settings', `Paper size set to ${paperSizeSelect.value}mm.`);
-      });
     }
 
     async function sendChunkedData(data, chunkSize = 500) {
@@ -3085,44 +2864,125 @@ async function refreshSettlementTotals(store) {
 
     async function openCashDrawer() {
       if (!isConnected || !printerCharacteristic) {
-        printerStatusDiv.innerText = '❌ Printer not connected';
+        await showAlertModal('Printer not connected', 'Please connect a printer first.');
         return false;
       }
       try {
         const drawerCommand = new Uint8Array([0x1B, 0x70, 0x00, 0x19, 0xFA]);
         await printerCharacteristic.writeValue(drawerCommand);
-        printerStatusDiv.innerText = '💰 Drawer opened';
-        setTimeout(() => { if (isConnected) printerStatusDiv.innerText = '✅ Printer ready'; }, 2000);
+        await showAlertModal('Drawer Opened', 'Cash drawer opened successfully.');
         return true;
       } catch (err) {
         console.error(err);
-        printerStatusDiv.innerText = `❌ Drawer error`;
+        await showAlertModal('Drawer Error', 'Failed to open drawer.');
         return false;
       }
     }
 
     async function printReceipt(transaction) {
       if (!isConnected || !printerCharacteristic) {
-        printerStatusDiv.innerText = '❌ Printer not connected';
+        await showAlertModal('Printer required', 'Connect Bluetooth printer first.');
         return false;
       }
       try {
         const openDrawer = (transaction.payment_method === 'Cash');
-        const data = generateReceiptData(transaction, openDrawer);
-        await sendChunkedData(data, 500);
-        printerStatusDiv.innerText = '✅ Receipt printed';
+        const paperSize = paperSizeSelectModal.value;
+        localStorage.setItem('printerPaperSize', paperSize);
+        const encoder = new TextEncoder();
+        const employeeName = transaction.employee_name || getEmployeeName(transaction.employee_id) || 'N/A';
+        const storeLocation = transaction.store ? transaction.store.charAt(0).toUpperCase() + transaction.store.slice(1) : 'Queens';
+        const maxChars = paperSize === '58' ? 32 : 48;
+        
+        function formatLine(left, right = null) {
+          if (right === null) {
+            return left.length > maxChars ? left.substring(0, maxChars - 3) + '...' : left;
+          }
+          const leftMax = Math.floor(maxChars * 0.6);
+          const rightMax = maxChars - leftMax - 2;
+          let leftText = left.length > leftMax ? left.substring(0, leftMax - 3) + '...' : left;
+          let rightText = right.length > rightMax ? right.substring(0, rightMax - 3) + '...' : right;
+          return leftText.padEnd(leftMax) + ' ' + rightText.padStart(rightMax);
+        }
+        
+        const grouped = {};
+        for (const item of transaction.items) {
+          const cat = item.category || 'Uncategorized';
+          if (!grouped[cat]) grouped[cat] = [];
+          grouped[cat].push(item);
+        }
+        
+        const lines = [];
+        const separator = '-'.repeat(maxChars);
+        
+        lines.push('', '    UL PERFUMERY', separator);
+        lines.push(formatLine(`STORE LOCATION : ${storeLocation}`));
+        lines.push(formatLine(`EMPLOYEE : ${employeeName}`));
+        lines.push(separator);
+        
+        for (const [category, items] of Object.entries(grouped)) {
+          let categoryTotal = 0;
+          for (const item of items) {
+            const paidQty = item.quantity - (item.free_quantity || 0);
+            categoryTotal += paidQty * item.price;
+          }
+          lines.push(formatLine(category, `RM ${categoryTotal.toFixed(2)}`));
+          for (const item of items) {
+            const paidQty = item.quantity - (item.free_quantity || 0);
+            if (paidQty > 0) {
+              lines.push(`  ${item.name}`);
+              lines.push(`  ${paidQty} x RM ${item.price.toFixed(2)}`);
+            }
+            if (item.free_quantity > 0) {
+              lines.push(`  ** ${item.free_quantity} FREE **`);
+            }
+          }
+        }
+        
+        lines.push(separator);
+        const totalAmount = transaction.total;
+        lines.push(formatLine('TOTAL', `RM ${totalAmount.toFixed(2)}`));
+        lines.push(formatLine('PAYMENT METHOD', transaction.payment_method));
+        if (transaction.cash_received && transaction.payment_method === 'Cash') {
+          const change = transaction.cash_received - totalAmount;
+          lines.push(formatLine('CHANGE', `RM ${change.toFixed(2)}`));
+        }
+        lines.push(separator);
+        lines.push('THANK YOU FOR YOUR PURCHASE');
+        lines.push('ANY ENQUIRY PLEASE CONTACT');
+        lines.push('+60134665831 ( MARCUS )');
+        lines.push('GOODS SOLD ARE NOT REFUNDABLE');
+        lines.push(separator);
+        
+        const date = new Date(transaction.timestamp);
+        const formattedDate = `${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+        lines.push(formatLine(`TXN   : ${transaction.transaction_id}`));
+        lines.push(formatLine(`DATE  : ${formattedDate}`));
+        lines.push('');
+        
+        const text = lines.join('\n');
+        
+        let commands = [];
+        commands.push(0x1B, 0x40); // Initialize
+        commands.push(0x1B, 0x61, 0x01); // Center
+        commands.push(...encoder.encode(text));
+        commands.push(0x1B, 0x64, 0x03); // Feed 3 lines
+        commands.push(0x1D, 0x56, 0x41, 0x00); // Cut
+        if (openDrawer) {
+          const drawerCommand = [0x1B, 0x70, 0x00, 0x19, 0xFA];
+          commands = commands.slice(0, -4).concat(drawerCommand, commands.slice(-4));
+        }
+        await sendChunkedData(new Uint8Array(commands), 500);
         return true;
       } catch (err) {
         console.error(err);
-        printerStatusDiv.innerText = `❌ Print error: ${err.message}`;
         return false;
       }
     }
 
     async function connectPrinter() {
       try {
-        printerStatusDiv.innerText = '🔍 Scanning...';
-        connectBtn.disabled = true;
+        connectBtnModal.disabled = true;
+        printerStatusModal.innerText = '🔍 Scanning...';
         const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] });
         gattServer = await device.gatt.connect();
         const services = await gattServer.getPrimaryServices();
@@ -3140,34 +3000,41 @@ async function refreshSettlementTotals(store) {
         if (!foundChar) throw new Error('No writable characteristic');
         printerCharacteristic = foundChar;
         isConnected = true;
-        window.printerAPI.isConnected = true;
-        printerStatusDiv.innerText = '✅ Printer ready';
-        connectBtn.innerText = '🔌 Disconnect';
-        openDrawerBtn.disabled = false;
+        window.printerAPI = { isConnected: true, printReceipt: printReceipt, openDrawer: openCashDrawer };
+        updatePrinterStatusUI();
+        await showAlertModal('Printer Connected', 'Bluetooth printer is ready.');
       } catch (err) {
-        printerStatusDiv.innerText = `❌ ${err.message}`;
-        gattServer = null;
-        printerCharacteristic = null;
+        printerStatusModal.innerText = `❌ ${err.message}`;
+        console.error(err);
       } finally {
-        connectBtn.disabled = false;
+        connectBtnModal.disabled = false;
       }
     }
 
-    async function disconnectPrinter() {
+    function disconnectPrinter() {
       if (gattServer) { gattServer.disconnect(); gattServer = null; printerCharacteristic = null; }
       isConnected = false;
-      window.printerAPI.isConnected = false;
-      printerStatusDiv.innerText = '⚪ Not connected';
-      connectBtn.innerText = '🖨️ Connect Printer';
-      openDrawerBtn.disabled = true;
+      window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer };
+      updatePrinterStatusUI();
     }
 
-    connectBtn.addEventListener('click', () => { if (!isConnected) connectPrinter(); else disconnectPrinter(); });
-    openDrawerBtn.addEventListener('click', async () => {
-      if (!isConnected) { await showAlertModal('Printer not connected', 'Please connect a printer first.'); return; }
-      await openCashDrawer();
+    // Event listeners for printer modal
+    printerIconBtn.addEventListener('click', () => {
+      printerModal.style.display = 'flex';
+      updatePrinterStatusUI();
     });
-    window.printerAPI = { isConnected: false, printReceipt: printReceipt };
+    connectBtnModal.addEventListener('click', () => {
+      if (!isConnected) connectPrinter();
+      else disconnectPrinter();
+    });
+    function closeModal() { printerModal.style.display = 'none'; }
+    closePrinterModal.addEventListener('click', closeModal);
+    closePrinterModalBtn.addEventListener('click', closeModal);
+    // Load saved paper size
+    const savedSize = localStorage.getItem('printerPaperSize') || '80';
+    paperSizeSelectModal.value = savedSize;
+
+    window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer };
   })();
 
   // ==================== RENDER PRODUCT GRID ====================
@@ -3292,27 +3159,27 @@ async function refreshSettlementTotals(store) {
     // Load employees (if not already loaded)
     if (preloaded.employees && preloaded.employees.length > 0) {
       employeeNameMap = {};
-      soldBySelect.innerHTML = '';
+      soldBySelectCart.innerHTML = '';
       preloaded.employees.forEach(emp => {
         employeeNameMap[emp.id] = emp.name;
         const option = document.createElement('option');
         option.value = emp.id;
         option.textContent = `${emp.name} (ID: ${emp.id})`;
         if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
-        soldBySelect.appendChild(option);
+        soldBySelectCart.appendChild(option);
       });
     } else {
       // Fallback: fetch employees if not preloaded
       fetchEmployees().then(employees => {
         employeeNameMap = {};
-        soldBySelect.innerHTML = '';
+        soldBySelectCart.innerHTML = '';
         employees.forEach(emp => {
           employeeNameMap[emp.id] = emp.name;
           const option = document.createElement('option');
           option.value = emp.id;
           option.textContent = `${emp.name} (ID: ${emp.id})`;
           if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
-          soldBySelect.appendChild(option);
+          soldBySelectCart.appendChild(option);
         });
       });
     }
@@ -3337,14 +3204,14 @@ async function refreshSettlementTotals(store) {
     const result = await response.json();
     if (result.success) {
       currentEmployee = result.employee;
-      document.getElementById('employeeName').innerText = currentEmployee.name;
+      document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
       document.getElementById('loginModal').style.display = 'none';
       document.getElementById('mainContent').style.display = 'block';
 
       if (initialDataPromise) await initialDataPromise;
       else await loadInitialData();
 
-      soldBySelect.value = currentEmployee.id;
+      soldBySelectCart.value = currentEmployee.id;
 
       // Show/hide side menu buttons based on admin
       const sideInventory = document.getElementById('sideInventoryBtn');
@@ -3363,19 +3230,16 @@ async function refreshSettlementTotals(store) {
       const systemTotalsDiv = document.getElementById('systemTotalsDisplay');
       if (systemTotalsDiv) {
         if (!currentEmployee.isAdmin) {
-          // Show container but hide breakdown lines (Cash, Card, QR, Refunds)
           systemTotalsDiv.style.display = 'block';
           const breakdownIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund'];
           breakdownIds.forEach(id => {
             const el = document.getElementById(id);
             if (el && el.parentElement) el.parentElement.style.display = 'none';
           });
-          // Ensure the Net Total line is visible
           const netTotalParent = document.getElementById('sysNetTotal')?.parentElement;
           if (netTotalParent) netTotalParent.style.display = 'block';
         } else {
           systemTotalsDiv.style.display = 'block';
-          // Show all lines (make sure they are visible)
           const allIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund', 'sysNetTotal'];
           allIds.forEach(id => {
             const el = document.getElementById(id);
@@ -3492,6 +3356,8 @@ async function refreshSettlementTotals(store) {
   const sideSettlementBtn = document.getElementById('sideSettlementBtn');
   const sideCollectionBtn = document.getElementById('sideCollectionBtn');
   const sideInventoryBtn = document.getElementById('sideInventoryBtn');
+  const sideReceiptsBtn = document.getElementById('sideReceiptsBtn');
+  const sideDrawerBtn = document.getElementById('sideDrawerBtn');
 
   // Function to open report modal (replaces old reportsButton click)
   async function openReportsModal() {
@@ -3572,35 +3438,8 @@ async function refreshSettlementTotals(store) {
       closeSideMenu();
     });
   }
-
-  if (document.getElementById('closeAdminReportBtn')) {
-    document.getElementById('closeAdminReportBtn').addEventListener('click', () => document.getElementById('adminReportModal').style.display = 'none');
-  }
-  if (document.getElementById('closeAdminReportModal')) {
-    document.getElementById('closeAdminReportModal').addEventListener('click', () => document.getElementById('adminReportModal').style.display = 'none');
-  }
-  if (document.getElementById('adminReportStoreSelect')) {
-    document.getElementById('adminReportStoreSelect').addEventListener('change', updateAdminReport);
-  }
-  if (document.getElementById('adminReportEmployeeSelect')) {
-    document.getElementById('adminReportEmployeeSelect').addEventListener('change', updateAdminReport);
-  }
-  if (document.getElementById('adminReportDateRangeSelect')) {
-    document.getElementById('adminReportDateRangeSelect').addEventListener('change', (e) => {
-      const customRange = document.getElementById('adminReportCustomDateRange');
-      if (customRange) customRange.style.display = e.target.value === 'custom' ? 'flex' : 'none';
-      updateAdminReport();
-    });
-  }
-  if (document.getElementById('adminReportFromDate')) {
-    document.getElementById('adminReportFromDate').addEventListener('change', updateAdminReport);
-  }
-  if (document.getElementById('adminReportToDate')) {
-    document.getElementById('adminReportToDate').addEventListener('change', updateAdminReport);
-  }
-
-  if (document.getElementById('receiptsButton')) {
-    document.getElementById('receiptsButton').addEventListener('click', async () => {
+  if (sideReceiptsBtn) {
+    sideReceiptsBtn.addEventListener('click', async () => {
       const modal = document.getElementById('receiptsModal');
       if (modal) {
         modal.style.display = 'flex';
@@ -3655,7 +3494,44 @@ async function refreshSettlementTotals(store) {
       }
 
       updateReceipts();
+      closeSideMenu();
     });
+  }
+  if (sideDrawerBtn) {
+    sideDrawerBtn.addEventListener('click', async () => {
+      if (!window.printerAPI || !window.printerAPI.isConnected) {
+        await showAlertModal('Printer not connected', 'Please connect a printer first using the printer icon.');
+      } else {
+        await window.printerAPI.openDrawer();
+      }
+      closeSideMenu();
+    });
+  }
+
+  if (document.getElementById('closeAdminReportBtn')) {
+    document.getElementById('closeAdminReportBtn').addEventListener('click', () => document.getElementById('adminReportModal').style.display = 'none');
+  }
+  if (document.getElementById('closeAdminReportModal')) {
+    document.getElementById('closeAdminReportModal').addEventListener('click', () => document.getElementById('adminReportModal').style.display = 'none');
+  }
+  if (document.getElementById('adminReportStoreSelect')) {
+    document.getElementById('adminReportStoreSelect').addEventListener('change', updateAdminReport);
+  }
+  if (document.getElementById('adminReportEmployeeSelect')) {
+    document.getElementById('adminReportEmployeeSelect').addEventListener('change', updateAdminReport);
+  }
+  if (document.getElementById('adminReportDateRangeSelect')) {
+    document.getElementById('adminReportDateRangeSelect').addEventListener('change', (e) => {
+      const customRange = document.getElementById('adminReportCustomDateRange');
+      if (customRange) customRange.style.display = e.target.value === 'custom' ? 'flex' : 'none';
+      updateAdminReport();
+    });
+  }
+  if (document.getElementById('adminReportFromDate')) {
+    document.getElementById('adminReportFromDate').addEventListener('change', updateAdminReport);
+  }
+  if (document.getElementById('adminReportToDate')) {
+    document.getElementById('adminReportToDate').addEventListener('change', updateAdminReport);
   }
 
   if (document.getElementById('closeReceiptsBtn')) {
@@ -3890,21 +3766,20 @@ if (document.getElementById('checkSettlementBtn')) {
   if (categorySelect) {
     categorySelect.addEventListener('change', renderProductGrid);
   }
-  if (document.getElementById('logoutButton')) {
-  document.getElementById('logoutButton').addEventListener('click', () => {
-    if (typeof stopReceiptPolling === 'function') stopReceiptPolling();
-    cachedReceipts = null;
-    currentEmployee = null;
-    document.getElementById('mainContent').style.display = 'none';
-    document.getElementById('loginModal').style.display = 'flex';
-    document.getElementById('pinInput').value = '';
-    document.getElementById('loginError').innerText = '';
-    cart = [];
-    products = [];
-    // No longer clear stock history
-    renderProductGrid();
-  });
-}
+  if (document.getElementById('logoutHeaderBtn')) {
+    document.getElementById('logoutHeaderBtn').addEventListener('click', () => {
+      if (typeof stopReceiptPolling === 'function') stopReceiptPolling();
+      cachedReceipts = null;
+      currentEmployee = null;
+      document.getElementById('mainContent').style.display = 'none';
+      document.getElementById('loginModal').style.display = 'flex';
+      document.getElementById('pinInput').value = '';
+      document.getElementById('loginError').innerText = '';
+      cart = [];
+      products = [];
+      renderProductGrid();
+    });
+  }
   if (document.getElementById('closeLoginModal')) {
     document.getElementById('closeLoginModal').addEventListener('click', () => {});
   }
@@ -4111,11 +3986,11 @@ function renderCollectionTable() {
   currentUnsettledCash.forEach(rec => {
     const date = new Date(rec.timestamp).toLocaleDateString();
     html += `<tr data-id="${rec.id}">
-       <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"></td>
-       <td>${date}</td>
-       <td>${getEmployeeName(rec.employee_id)}</td>
-      <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
-     </tr>`;
+        <td><input type="checkbox" class="collection-checkbox" value="${rec.id}">   </td>
+        <td>${date}</td>
+        <td>${getEmployeeName(rec.employee_id)}</td>
+        <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
+      </tr>`;
   });
   tbody.innerHTML = html;
   document.querySelectorAll('.collection-checkbox').forEach(cb => {

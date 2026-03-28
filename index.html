@@ -988,6 +988,20 @@
 .side-menu .menu-btn:active {
   transform: scale(0.98);
 }
+/* Make PIN keypad more compact on small screens */
+@media (max-width: 480px) {
+  .pin-keypad {
+    gap: 8px;
+  }
+  .keypad-btn {
+    padding: 12px;
+    font-size: 1.2rem;
+  }
+  .pin-input {
+    font-size: 1.5rem;
+    letter-spacing: 4px;
+  }
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>

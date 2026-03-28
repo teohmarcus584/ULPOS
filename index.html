@@ -3312,20 +3312,45 @@
   document.getElementById('clearStockHistoryBtn')?.addEventListener('click', clearStockHistory);
   document.getElementById('saveStockHistoryBtn')?.addEventListener('click', saveStockHistoryToSheet);
 
-  const pinInputEl = document.getElementById('pinInput');
-  if (pinInputEl) {
-    document.querySelectorAll('.keypad-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (btn.dataset.digit && pinInputEl.value.length < 4) pinInputEl.value += btn.dataset.digit;
-        else if (btn.dataset.action === 'clear') pinInputEl.value = pinInputEl.value.slice(0, -1);
-        else if (btn.dataset.action === 'enter' && pinInputEl.value.length === 4) verifyEmployeeByPin(pinInputEl.value);
-        else if (btn.dataset.action === 'enter') document.getElementById('loginError').innerText = 'Please enter 4-digit PIN';
-      });
+  // In your JavaScript, after DOM is ready, replace the existing keypad logic with this:
+
+const pinInputEl = document.getElementById('pinInput');
+if (pinInputEl) {
+  // Handle all keypad buttons
+  document.querySelectorAll('.keypad-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const digit = btn.dataset.digit;
+      const action = btn.dataset.action;
+
+      if (digit && pinInputEl.value.length < 4) {
+        // Append digit
+        pinInputEl.value += digit;
+        // Auto-submit if 4 digits are entered
+        if (pinInputEl.value.length === 4) {
+          verifyEmployeeByPin(pinInputEl.value);
+        }
+      } else if (action === 'clear') {
+        // Remove last character
+        pinInputEl.value = pinInputEl.value.slice(0, -1);
+        document.getElementById('loginError').innerText = '';
+      } else if (action === 'enter') {
+        // Manual enter button
+        if (pinInputEl.value.length === 4) {
+          verifyEmployeeByPin(pinInputEl.value);
+        } else {
+          document.getElementById('loginError').innerText = 'Please enter 4-digit PIN';
+        }
+      }
     });
-    pinInputEl.addEventListener('input', () => {
-      if (pinInputEl.value.length === 4) verifyEmployeeByPin(pinInputEl.value);
-    });
-  }
+  });
+
+  // Optional: keep the input event for safety (won't fire on readonly)
+  pinInputEl.addEventListener('input', () => {
+    if (pinInputEl.value.length === 4) {
+      verifyEmployeeByPin(pinInputEl.value);
+    }
+  });
+}
 
   // Side menu
   const logo = document.getElementById('logoImage');

@@ -1051,7 +1051,7 @@
 
     <div class="cart-panel">
       <div class="cart-header">
-        <div class="cart-title">🧾 Current Sale</div>
+        <div class="cart-title" id="cartTitle">🧾 Current Sale</div>
         <div class="cart-header-right">
           <select id="soldBySelectCart" class="sold-by-select-cart">
             <option value="">Loading...</option>
@@ -1265,7 +1265,7 @@ let preloadedStores = [];    // List of stores that have been preloaded
   const inventoryModeBtn = document.getElementById('inventoryModeBtn');
   const cartNormalContent = document.getElementById('cartNormalContent');
   const stockHistoryContainerDiv = document.getElementById('stockHistoryContainer');
-  const cartPanelTitle = document.getElementById('cartPanelTitle');
+  const cartTitleElement = document.getElementById('cartTitle');
 
   // ==================== HELPER FUNCTIONS ====================
   function showLoading(msg = 'Loading...') {
@@ -1554,21 +1554,21 @@ let preloadedStores = [];    // List of stores that have been preloaded
 
   // ==================== INVENTORY MODE TOGGLE ====================
   function toggleInventoryMode() {
-    inventoryMode = !inventoryMode;
-    if (inventoryMode) {
-      cartNormalContent.style.display = 'none';
-      stockHistoryContainerDiv.style.display = 'flex';
-      cartPanelTitle.innerText = '📦 Inventory Mode';
-      if (updateStockTimeout) clearTimeout(updateStockTimeout);
-      loadStockHistoryFromSheet();
-      renderProductGrid();
-    } else {
-      cartNormalContent.style.display = 'block';
-      stockHistoryContainerDiv.style.display = 'none';
-      cartPanelTitle.innerText = '🧾 Current Sale';
-      renderProductGrid();
-    }
+  inventoryMode = !inventoryMode;
+  if (inventoryMode) {
+    cartNormalContent.style.display = 'none';
+    stockHistoryContainerDiv.style.display = 'flex';
+    cartTitleElement.innerText = '📦 Inventory Mode';   // ✅ uses correct element
+    if (updateStockTimeout) clearTimeout(updateStockTimeout);
+    loadStockHistoryFromSheet();
+    renderProductGrid();
+  } else {
+    cartNormalContent.style.display = 'block';
+    stockHistoryContainerDiv.style.display = 'none';
+    cartTitleElement.innerText = '🧾 Current Sale';     // ✅ uses correct element
+    renderProductGrid();
   }
+}
 
   // ==================== INITIAL DATA LOAD ====================
   async function loadInitialData() {

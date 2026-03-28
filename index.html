@@ -2846,38 +2846,40 @@ async function refreshSettlementTotals(store) {
     }
 
     async function sendChunkedData(data, chunkSize = 500) {
-      if (!printerCharacteristic) return false;
-      let offset = 0;
-      while (offset < data.length) {
-        const chunk = data.slice(offset, offset + chunkSize);
-        try {
-          await printerCharacteristic.writeValue(chunk);
-          await new Promise(resolve => setTimeout(resolve, 50));
-        } catch (err) {
-          console.error('Chunk write failed:', err);
-          throw err;
-        }
-        offset += chunkSize;
-      }
-      return true;
+  if (!printerCharacteristic) return false;
+  let offset = 0;
+  while (offset < data.length) {
+    const chunk = data.slice(offset, offset + chunkSize);
+    try {
+      // Use writeValueWithResponse for reliable delivery
+      await printerCharacteristic.writeValueWithResponse(chunk);
+      await new Promise(resolve => setTimeout(resolve, 50));
+    } catch (err) {
+      console.error('Chunk write failed:', err);
+      throw err;
     }
+    offset += chunkSize;
+  }
+  return true;
+}
 
-    async function openCashDrawer() {
-      if (!isConnected || !printerCharacteristic) {
-        await showAlertModal('Printer not connected', 'Please connect a printer first.');
-        return false;
-      }
-      try {
-        const drawerCommand = new Uint8Array([0x1B, 0x70, 0x00, 0x19, 0xFA]);
-        await printerCharacteristic.writeValue(drawerCommand);
-        await showAlertModal('Drawer Opened', 'Cash drawer opened successfully.');
-        return true;
-      } catch (err) {
-        console.error(err);
-        await showAlertModal('Drawer Error', 'Failed to open drawer.');
-        return false;
-      }
-    }
+// Inside openCashDrawer:
+async function openCashDrawer() {
+  if (!isConnected || !printerCharacteristic) {
+    await showAlertModal('Printer not connected', 'Please connect a printer first.');
+    return false;
+  }
+  try {
+    const drawerCommand = new Uint8Array([0x1B, 0x70, 0x00, 0x19, 0xFA]);
+    await printerCharacteristic.writeValueWithResponse(drawerCommand);
+    await showAlertModal('Drawer Opened', 'Cash drawer opened successfully.');
+    return true;
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Drawer Error', 'Failed to open drawer.');
+    return false;
+  }
+}
 
     async function printReceipt(transaction) {
       if (!isConnected || !printerCharacteristic) {

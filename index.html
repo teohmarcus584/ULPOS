@@ -1583,7 +1583,7 @@
 
   // ==================== INITIAL DATA LOAD ====================
   async function loadInitialData() {
-    showLoading('Loading initial data...');
+   
     try {
       const url = `${APPS_SCRIPT_URL}?action=getInitialData&store=${currentStore}`;
       const response = await fetch(url);

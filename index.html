@@ -1058,7 +1058,7 @@
           </select>
           <div class="cart-header-buttons">
             <button id="clearCartBtn" class="cart-header-btn">🗑️ Clear</button>
-            <button id="refreshProductsBtn" class="cart-header-btn">🔄 Refresh</button>
+            
           </div>
         </div>
       </div>
@@ -1199,6 +1199,15 @@
       <button id="recordSettlementBtn" class="modal-btn modal-btn-primary" style="display: none;">Record Settlement</button>
       <button id="closeSettlementModalBtn" class="modal-btn modal-btn-secondary">Cancel</button>
     </div>
+  </div>
+</div>
+<div class="filter-bar">
+  <select id="categorySelect"><option value="all">📂 All Categories</option></select>
+  <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search product...">
+  <button id="refreshProductsPanelBtn" class="refresh-btn" title="Refresh products">🔄</button>
+  <div class="view-toggle">
+    <button id="gridViewBtn" class="active" title="Grid view">⊞</button>
+    <button id="listViewBtn" title="List view">≡</button>
   </div>
 </div>
 <div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead>汽<th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody> </table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
@@ -1620,71 +1629,6 @@ let preloadedStores = [];    // List of stores that have been preloaded
   }
 
   async function fetchProductsFromSheet(force = false) {
-    showLoading('Fetching products...');
-    try {
-      const cacheKey = `products_${currentStore}`;
-      const now = Date.now();
-
-      if (!force) {
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-          const { timestamp, products: cachedProducts } = JSON.parse(cached);
-          if (now - timestamp < 5 * 60 * 1000) {
-            products = cachedProducts;
-            const categories = [...new Set(products.map(p => p.category))].sort();
-            categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
-            categories.forEach(cat => {
-              const option = document.createElement('option');
-              option.value = cat;
-              option.textContent = cat;
-              categorySelect.appendChild(option);
-            });
-            renderProductGrid();
-            hideLoading();
-            return true;
-          }
-        }
-      }
-
-      let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${currentStore}`;
-      if (force) url += `&_=${now}`;
-
-      const response = await fetch(url);
-      const result = await response.json();
-
-      if (result.success && Array.isArray(result.products)) {
-        products = result.products.map(p => ({
-          id: p.id,
-          name: p.name,
-          price: parseFloat(p.price),
-          stock: parseInt(p.stock) || 0,
-          category: p.category || "Uncategorized"
-        })).sort((a, b) => a.name.localeCompare(b.name));
-
-        const categories = [...new Set(products.map(p => p.category))].sort();
-        categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
-        categories.forEach(cat => {
-          const option = document.createElement('option');
-          option.value = cat;
-          option.textContent = cat;
-          categorySelect.appendChild(option);
-        });
-
-        renderProductGrid();
-        localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
-        return true;
-      } else {
-        throw new Error('Invalid data format');
-      }
-    } catch (err) {
-      console.error(err);
-      await showAlertModal('Error', 'Failed to load products. Check URL & sheet.');
-      return false;
-    } finally {
-      hideLoading();
-    }
-  }
-
   // ==================== STOCK UPDATE ====================
   async function updateStockOnServer(productId, newStock) {
     try {
@@ -3753,12 +3697,12 @@ if (document.getElementById('checkSettlementBtn')) {
   if (document.getElementById('clearCartBtn')) {
     document.getElementById('clearCartBtn').addEventListener('click', clearCart);
   }
-  if (document.getElementById('refreshProductsBtn')) {
-    document.getElementById('refreshProductsBtn').addEventListener('click', () => {
-      localStorage.removeItem(`products_${currentStore}`);
-      fetchProductsFromSheet(true);
-    });
-  }
+  if (document.getElementById('refreshProductsPanelBtn')) {
+  document.getElementById('refreshProductsPanelBtn').addEventListener('click', () => {
+    localStorage.removeItem(`products_${currentStore}`);
+    fetchProductsFromSheet(true);
+  });
+}
   if (searchInput) {
     searchInput.addEventListener('input', () => {
       clearTimeout(searchTimeout);

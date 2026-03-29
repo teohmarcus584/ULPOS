@@ -1322,7 +1322,7 @@
     const overlay = document.getElementById('loadingOverlay');
     if (msgEl) msgEl.innerText = msg;
     if (overlay) overlay.style.display = 'flex';
-    loadingTimeout = setTimeout(() => hideLoading(), 5000);
+    loadingTimeout = setTimeout(() => hideLoading(), 3000);
   }
 
   function hideLoading() {

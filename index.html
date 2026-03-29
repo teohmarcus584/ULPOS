@@ -1201,26 +1201,6 @@
 
 <div id="luckyDrawModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeLuckyDrawModal">×</span><div class="modal-title">🎲 Lucky Draw</div><p>Transaction ID: <strong id="luckyTxId"></strong></p><p>Click below to enter the Lucky Draw with this receipt number.</p><div class="modal-buttons"><button id="openLuckyDrawBtn" class="modal-btn modal-btn-primary">🎁 Go to Lucky Draw</button><button id="closeLuckyDrawBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<!-- NEW MODAL: Lucky Draw Prize Display & Print -->
-<div id="luckyDrawPrizeModal" class="modal-overlay">
-  <div class="modal-container" style="max-width: 450px;">
-    <span class="close-modal" id="closeLuckyDrawPrizeModal">×</span>
-    <div class="modal-title">🎉 Congratulations!</div>
-    <div id="prizeMessage" style="text-align: center; margin: 20px 0; font-size: 1.2rem;">
-      You have won a prize!
-    </div>
-    <div id="prizeDetails" style="background: #f8fafc; padding: 16px; border-radius: 20px; margin: 16px 0; text-align: center;">
-      <div id="prizeName" style="font-size: 1.5rem; font-weight: bold; color: #2c7a4b;">-</div>
-      <div id="prizeValue" style="font-size: 1.2rem; margin-top: 8px;">RM 0.00</div>
-    </div>
-    <div class="modal-buttons">
-      <button id="printPrizeBtn" class="modal-btn modal-btn-primary">🖨️ Print Lucky Draw Prize</button>
-      <button id="closePrizeModalBtn" class="modal-btn modal-btn-secondary">Close</button>
-    </div>
-    <div id="prizeError" style="color:#ef4444; margin-top: 12px; display: none; text-align: center;"></div>
-  </div>
-</div>
-
 <div id="claimPrizeModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeClaimPrizeModal">×</span><div class="modal-title">🎁 Claim Prize</div><div id="claimStep1"><p>Enter the receipt number from your Lucky Draw:</p><input type="text" id="claimReceiptInput" class="modal-input" placeholder="e.g., TXN-1234567890-123" style="width: 100%; margin: 12px 0; padding: 12px;"><div class="modal-buttons"><button id="checkReceiptBtn" class="modal-btn modal-btn-primary">Check</button><button id="cancelClaimBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimStep2" style="display: none;"><p>Receipt: <strong id="validReceiptId"></strong></p><p>Select your prize:</p><select id="prizeSelect" class="modal-input" style="width: 100%; margin: 12px 0; padding: 12px;"><option value="38">CAR AROMATIC - RM 38</option><option value="75">15ML TRAVEL PERFUME - RM 75</option><option value="109">300ML LOTION - RM 109</option><option value="75">100ML PILLOW MIST - RM 75</option></select><div class="modal-buttons"><button id="applyPrizeBtn" class="modal-btn modal-btn-primary">Apply Discount</button><button id="cancelClaimStep2Btn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimError" style="color:#ef4444; margin-top: 12px; display: none;"></div></div></div>
 
 <div id="specialPromoModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeSpecialPromoModal">×</span><div class="modal-title">🎁 Special Promo</div><div id="promoOptions"><button id="promoBuy2Free1Perfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 2 Free 1 (100ml Perfume EDP)</button><button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 3 Free 1 (Excluding Perfume)</button><div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">💰 Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
@@ -1312,7 +1292,6 @@
   let stockHistory = [];
   let preloadedDataMap = {};
   let preloadedStores = [];
-  let currentLuckyDrawReceiptId = null; // store receipt ID for prize printing
 
   // DOM elements
   const productGridEl = document.getElementById('productGrid');
@@ -2718,118 +2697,7 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
     else await showAlertModal('Error', 'Print failed.');
   }
 
-  // LUCKY DRAW: now shows our custom modal instead of external link
-  function openLuckyDraw(transactionId) {
-    currentLuckyDrawReceiptId = transactionId;
-    const prizeModal = document.getElementById('luckyDrawPrizeModal');
-    document.getElementById('prizeName').innerText = '-';
-    document.getElementById('prizeValue').innerText = 'RM 0.00';
-    document.getElementById('prizeError').style.display = 'none';
-    prizeModal.style.display = 'flex';
-    // Optionally fetch prize details automatically? We'll let user click Print button.
-  }
-
-  async function fetchLuckyDrawPrize(receiptId) {
-    showLoading('Fetching prize details...');
-    try {
-      // Assume backend action=getLuckyDrawPrize returns prize info
-      const url = `${APPS_SCRIPT_URL}?action=getLuckyDrawPrize&receipt=${encodeURIComponent(receiptId)}&_=${Date.now()}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success && result.prize) {
-        return result.prize; // e.g. { name: "Car Aromatic", value: 38 }
-      } else {
-        throw new Error(result.error || 'Prize not found or already claimed.');
-      }
-    } catch (err) {
-      console.error(err);
-      throw new Error('Could not retrieve prize details. Make sure the receipt has a winning entry.');
-    } finally {
-      hideLoading();
-    }
-  }
-
-  async function printPrizeReceipt(prizeData, receiptId) {
-    if (!window.printerAPI || !window.printerAPI.isConnected) {
-      await showAlertModal('Printer required', 'Connect Bluetooth printer first.');
-      return false;
-    }
-    const paperSize = localStorage.getItem('printerPaperSize') || '80';
-    const maxChars = paperSize === '58' ? 32 : 48;
-    const separator = '-'.repeat(maxChars);
-    const lines = [];
-    lines.push('', '    LUCKY DRAW PRIZE', separator);
-    lines.push(`Receipt: ${receiptId}`);
-    lines.push(`Prize: ${prizeData.name}`);
-    lines.push(`Value: RM ${prizeData.value.toFixed(2)}`);
-    lines.push(separator);
-    lines.push('Congratulations!');
-    lines.push('Thank you for shopping with us.');
-    lines.push(separator);
-    lines.push('');
-
-    const encoder = new TextEncoder();
-    let commands = [];
-    commands.push(0x1B, 0x40); // init
-    commands.push(0x1B, 0x61, 0x01); // center
-    commands.push(...encoder.encode(lines.join('\n')));
-    commands.push(0x1B, 0x64, 0x03); // feed 3 lines
-    commands.push(0x1D, 0x56, 0x41, 0x00); // cut
-
-    try {
-      const printerChar = window.printerAPI.characteristic; // we need to expose characteristic from printer module
-      if (!printerChar) throw new Error('Printer characteristic missing');
-      await sendChunkedData(new Uint8Array(commands), 500);
-      return true;
-    } catch (err) {
-      console.error(err);
-      return false;
-    }
-  }
-
-  // Helper for chunked data (copied from printer setup)
-  async function sendChunkedData(data, chunkSize = 500) {
-    if (!window.printerAPI.characteristic) throw new Error('No printer characteristic');
-    let offset = 0;
-    while (offset < data.length) {
-      const chunk = data.slice(offset, offset + chunkSize);
-      await window.printerAPI.characteristic.writeValueWithResponse(chunk);
-      await new Promise(resolve => setTimeout(resolve, 50));
-      offset += chunkSize;
-    }
-    return true;
-  }
-
-  // Event listeners for the prize modal
-  document.getElementById('printPrizeBtn')?.addEventListener('click', async () => {
-    if (!currentLuckyDrawReceiptId) {
-      document.getElementById('prizeError').innerText = 'No receipt found. Please try again.';
-      document.getElementById('prizeError').style.display = 'block';
-      return;
-    }
-    try {
-      const prize = await fetchLuckyDrawPrize(currentLuckyDrawReceiptId);
-      document.getElementById('prizeName').innerText = prize.name;
-      document.getElementById('prizeValue').innerText = `RM ${prize.value.toFixed(2)}`;
-      const printed = await printPrizeReceipt(prize, currentLuckyDrawReceiptId);
-      if (printed) {
-        await showAlertModal('Prize Printed', 'Lucky draw prize receipt printed successfully.');
-        document.getElementById('luckyDrawPrizeModal').style.display = 'none';
-      } else {
-        throw new Error('Printing failed');
-      }
-    } catch (err) {
-      document.getElementById('prizeError').innerText = err.message;
-      document.getElementById('prizeError').style.display = 'block';
-    }
-  });
-
-  document.getElementById('closeLuckyDrawPrizeModal')?.addEventListener('click', () => {
-    document.getElementById('luckyDrawPrizeModal').style.display = 'none';
-  });
-  document.getElementById('closePrizeModalBtn')?.addEventListener('click', () => {
-    document.getElementById('luckyDrawPrizeModal').style.display = 'none';
-  });
+  function openLuckyDraw(transactionId) { window.open(`https://teohmarcus584.github.io/salesanalysis/?receipt=${encodeURIComponent(transactionId)}`, '_blank'); }
 
   async function processRefund(transactionId, store) {
     showLoading('Processing refund...');
@@ -3039,7 +2907,7 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
   function renderProductDetails(productsData) {
     const tbody = document.getElementById('productDetailsBody');
     if (!productsData || productsData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No products sold in this period. </td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No products sold in this period.</td></tr>';
       return;
     }
     let html = '';
@@ -3441,7 +3309,7 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
         if (!foundChar) throw new Error('No writable characteristic');
         printerCharacteristic = foundChar;
         isConnected = true;
-        window.printerAPI = { isConnected: true, printReceipt: printReceipt, openDrawer: openCashDrawer, characteristic: printerCharacteristic };
+        window.printerAPI = { isConnected: true, printReceipt: printReceipt, openDrawer: openCashDrawer };
         updatePrinterStatusUI();
         await showAlertModal('Printer Connected', 'Bluetooth printer is ready.');
       } catch (err) {
@@ -3455,7 +3323,7 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
     function disconnectPrinter() {
       if (gattServer) { gattServer.disconnect(); gattServer = null; printerCharacteristic = null; }
       isConnected = false;
-      window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer, characteristic: null };
+      window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer };
       updatePrinterStatusUI();
     }
 
@@ -3473,7 +3341,7 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
     const savedSize = localStorage.getItem('printerPaperSize') || '80';
     paperSizeSelectModal.value = savedSize;
 
-    window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer, characteristic: null };
+    window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer };
   })();
 
   // ==================== RENDER PRODUCT GRID ====================
@@ -4293,18 +4161,18 @@ if (pinInputEl) {
   function renderCollectionTable() {
     const tbody = document.getElementById('collectionTableBody');
     if (!currentUnsettledCash.length) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found. </td></tr>';
+      tbody.innerHTML = '|<td colspan="4" style="text-align: center;">No unsettled cash records found.  ';
       return;
     }
     let html = '';
     currentUnsettledCash.forEach(rec => {
       const date = new Date(rec.timestamp).toLocaleDateString();
       html += `<tr data-id="${rec.id}">
-        <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"> </td>
+        <td><input type="checkbox" class="collection-checkbox" value="${rec.id}">    </td>
         <td>${date}</td>
         <td>${getEmployeeName(rec.employee_id)}</td>
         <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
-      </tr>`;
+       </tr>`;
     });
     tbody.innerHTML = html;
     document.querySelectorAll('.collection-checkbox').forEach(cb => {
@@ -4340,4 +4208,4 @@ if (pinInputEl) {
   allStores.forEach(store => preloadProductsForStore(store));
 </script>
 </body>
-</html>
+</html> 

@@ -1054,7 +1054,16 @@
   right: 20px;
   font-size: 32px;
 }
-
+.mini-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+.mini-keypad .keypad-btn {
+  padding: 12px;
+  font-size: 1.2rem;
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -1212,68 +1221,38 @@
   <div class="modal-container" style="max-width: 400px;">
     <span class="close-modal" id="closeChangePinModal">×</span>
     <div class="modal-title">🔐 Change PIN</div>
+
+    <!-- Step 1: Current PIN -->
     <div id="changePinStep1">
       <div class="filter-group">
         <label>Current PIN</label>
         <input type="password" id="currentPinInput" class="modal-input" maxlength="4" inputmode="numeric" readonly>
-        <div class="pin-keypad mini-keypad">
-          <button class="keypad-btn" data-digit="1">1</button>
-          <button class="keypad-btn" data-digit="2">2</button>
-          <button class="keypad-btn" data-digit="3">3</button>
-          <button class="keypad-btn" data-digit="4">4</button>
-          <button class="keypad-btn" data-digit="5">5</button>
-          <button class="keypad-btn" data-digit="6">6</button>
-          <button class="keypad-btn" data-digit="7">7</button>
-          <button class="keypad-btn" data-digit="8">8</button>
-          <button class="keypad-btn" data-digit="9">9</button>
-          <button class="keypad-btn clear" data-action="clear">⌫</button>
-          <button class="keypad-btn" data-digit="0">0</button>
-          <button class="keypad-btn enter" data-action="enterPin">↵</button>
+        <div class="pin-keypad mini-keypad" id="step1Keypad">
+          <!-- keypad buttons will be cloned from existing style -->
         </div>
       </div>
     </div>
+
+    <!-- Step 2: New PIN -->
     <div id="changePinStep2" style="display: none;">
       <div class="filter-group">
         <label>New PIN</label>
         <input type="password" id="newPinInput" class="modal-input" maxlength="4" inputmode="numeric" readonly>
-        <div class="pin-keypad mini-keypad">
-          <button class="keypad-btn" data-digit="1">1</button>
-          <button class="keypad-btn" data-digit="2">2</button>
-          <button class="keypad-btn" data-digit="3">3</button>
-          <button class="keypad-btn" data-digit="4">4</button>
-          <button class="keypad-btn" data-digit="5">5</button>
-          <button class="keypad-btn" data-digit="6">6</button>
-          <button class="keypad-btn" data-digit="7">7</button>
-          <button class="keypad-btn" data-digit="8">8</button>
-          <button class="keypad-btn" data-digit="9">9</button>
-          <button class="keypad-btn clear" data-action="clear">⌫</button>
-          <button class="keypad-btn" data-digit="0">0</button>
-          <button class="keypad-btn enter" data-action="enterPin2">↵</button>
-        </div>
       </div>
+    </div>
+
+    <!-- Step 3: Confirm New PIN -->
+    <div id="changePinStep3" style="display: none;">
       <div class="filter-group">
         <label>Confirm New PIN</label>
         <input type="password" id="confirmPinInput" class="modal-input" maxlength="4" inputmode="numeric" readonly>
-        <div class="pin-keypad mini-keypad">
-          <button class="keypad-btn" data-digit="1">1</button>
-          <button class="keypad-btn" data-digit="2">2</button>
-          <button class="keypad-btn" data-digit="3">3</button>
-          <button class="keypad-btn" data-digit="4">4</button>
-          <button class="keypad-btn" data-digit="5">5</button>
-          <button class="keypad-btn" data-digit="6">6</button>
-          <button class="keypad-btn" data-digit="7">7</button>
-          <button class="keypad-btn" data-digit="8">8</button>
-          <button class="keypad-btn" data-digit="9">9</button>
-          <button class="keypad-btn clear" data-action="clear">⌫</button>
-          <button class="keypad-btn" data-digit="0">0</button>
-          <button class="keypad-btn enter" data-action="enterConfirm">↵</button>
-        </div>
       </div>
     </div>
+
     <div id="changePinError" style="color:#ef4444; margin: 12px 0; display: none;"></div>
+
     <div class="modal-buttons">
       <button id="changePinCancelBtn" class="modal-btn modal-btn-secondary">Cancel</button>
-      <button id="changePinSubmitBtn" class="modal-btn modal-btn-primary" style="display: none;">Change PIN</button>
     </div>
   </div>
 </div>
@@ -1434,7 +1413,403 @@
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) overlay.style.display = 'none';
   }
+// Open change PIN modal
+document.getElementById('sideChangePinBtn').addEventListener('click', () => {
+  openChangePinModal();
+  closeSideMenu();
+});
 
+function openChangePinModal() {
+  document.getElementById('changePinStep1').style.display = 'block';
+  document.getElementById('changePinStep2').style.display = 'none';
+  document.getElementById('changePinSubmitBtn').style.display = 'none';
+  document.getElementById('changePinError').style.display = 'none';
+  document.getElementById('currentPinInput').value = '';
+  document.getElementById('newPinInput').value = '';
+  document.getElementById('confirmPinInput').value = '';
+  document.getElementById('changePinModal').style.display = 'flex';
+}
+// Global reference to the current keypad container
+let currentKeypad = null;
+let currentStep = 1; // 1=current, 2=new, 3=confirm
+
+function openChangePinModal() {
+  // Reset UI
+  document.getElementById('changePinStep1').style.display = 'block';
+  document.getElementById('changePinStep2').style.display = 'none';
+  document.getElementById('changePinStep3').style.display = 'none';
+  document.getElementById('changePinError').style.display = 'none';
+  document.getElementById('currentPinInput').value = '';
+  document.getElementById('newPinInput').value = '';
+  document.getElementById('confirmPinInput').value = '';
+  currentStep = 1;
+
+  // Create and show keypad for step 1
+  showKeypadForStep(1);
+
+  document.getElementById('changePinModal').style.display = 'flex';
+}
+
+function showKeypadForStep(step) {
+  // Remove existing keypad if any
+  if (currentKeypad) {
+    currentKeypad.remove();
+    currentKeypad = null;
+  }
+
+  // Determine which container to put the keypad in
+  let containerId = '';
+  if (step === 1) containerId = 'step1Keypad';
+  else if (step === 2) containerId = 'step2Keypad';
+  else if (step === 3) containerId = 'step3Keypad';
+
+  // If the container doesn't exist, create it dynamically
+  let container = document.getElementById(containerId);
+  if (!container && step === 2) {
+    // Create container for step2 keypad
+    const step2Div = document.getElementById('changePinStep2');
+    const keypadDiv = document.createElement('div');
+    keypadDiv.id = 'step2Keypad';
+    keypadDiv.className = 'pin-keypad mini-keypad';
+    step2Div.appendChild(keypadDiv);
+    container = keypadDiv;
+  } else if (!container && step === 3) {
+    const step3Div = document.getElementById('changePinStep3');
+    const keypadDiv = document.createElement('div');
+    keypadDiv.id = 'step3Keypad';
+    keypadDiv.className = 'pin-keypad mini-keypad';
+    step3Div.appendChild(keypadDiv);
+    container = keypadDiv;
+  }
+
+  if (container) {
+    // Build the keypad buttons (same as the login keypad)
+    const digits = ['1','2','3','4','5','6','7','8','9','0'];
+    container.innerHTML = '';
+    digits.forEach(d => {
+      const btn = document.createElement('button');
+      btn.className = 'keypad-btn';
+      btn.textContent = d;
+      btn.dataset.digit = d;
+      btn.addEventListener('click', () => handlePinDigit(step, d));
+      container.appendChild(btn);
+    });
+    // Clear button
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'keypad-btn clear';
+    clearBtn.textContent = '⌫';
+    clearBtn.addEventListener('click', () => handlePinClear(step));
+    container.appendChild(clearBtn);
+    // Enter button (optional, but we auto-submit on 4 digits)
+    const enterBtn = document.createElement('button');
+    enterBtn.className = 'keypad-btn enter';
+    enterBtn.textContent = '↵';
+    enterBtn.addEventListener('click', () => handlePinEnter(step));
+    container.appendChild(enterBtn);
+
+    currentKeypad = container;
+  }
+}
+
+function handlePinDigit(step, digit) {
+  let inputField;
+  if (step === 1) inputField = document.getElementById('currentPinInput');
+  else if (step === 2) inputField = document.getElementById('newPinInput');
+  else inputField = document.getElementById('confirmPinInput');
+
+  if (inputField.value.length < 4) {
+    inputField.value += digit;
+    if (inputField.value.length === 4) {
+      // Auto-proceed to next step after 4 digits
+      if (step === 1) {
+        // Verify current PIN
+        verifyCurrentPinAndProceed();
+      } else if (step === 2) {
+        // Move to confirm step
+        goToStep(3);
+      } else if (step === 3) {
+        // Both new and confirm are filled – check match
+        checkConfirmAndSubmit();
+      }
+    }
+  }
+}
+
+function handlePinClear(step) {
+  let inputField;
+  if (step === 1) inputField = document.getElementById('currentPinInput');
+  else if (step === 2) inputField = document.getElementById('newPinInput');
+  else inputField = document.getElementById('confirmPinInput');
+  inputField.value = inputField.value.slice(0, -1);
+  document.getElementById('changePinError').style.display = 'none';
+}
+
+function handlePinEnter(step) {
+  if (step === 1) {
+    if (document.getElementById('currentPinInput').value.length === 4) {
+      verifyCurrentPinAndProceed();
+    } else {
+      showChangePinError('Please enter 4-digit current PIN');
+    }
+  } else if (step === 2) {
+    if (document.getElementById('newPinInput').value.length === 4) {
+      goToStep(3);
+    } else {
+      showChangePinError('Please enter 4-digit new PIN');
+    }
+  } else if (step === 3) {
+    if (document.getElementById('confirmPinInput').value.length === 4) {
+      checkConfirmAndSubmit();
+    } else {
+      showChangePinError('Please enter 4-digit confirmation');
+    }
+  }
+}
+
+async function verifyCurrentPinAndProceed() {
+  const currentPin = document.getElementById('currentPinInput').value;
+  if (currentPin.length !== 4) return;
+
+  showLoading('Verifying PIN...');
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', 'verifyByPin');
+    formData.append('pin', currentPin);
+    const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+    const result = await response.json();
+    if (result.success && result.employee.id === currentEmployee.id) {
+      // PIN matches the logged-in employee
+      goToStep(2);
+    } else {
+      showChangePinError('Current PIN is incorrect');
+    }
+  } catch (err) {
+    showChangePinError('Connection error. Please try again.');
+  } finally {
+    hideLoading();
+  }
+}
+
+function goToStep(step) {
+  // Hide all steps
+  document.getElementById('changePinStep1').style.display = 'none';
+  document.getElementById('changePinStep2').style.display = 'none';
+  document.getElementById('changePinStep3').style.display = 'none';
+
+  if (step === 1) {
+    document.getElementById('changePinStep1').style.display = 'block';
+    showKeypadForStep(1);
+    currentStep = 1;
+  } else if (step === 2) {
+    document.getElementById('changePinStep2').style.display = 'block';
+    showKeypadForStep(2);
+    currentStep = 2;
+  } else if (step === 3) {
+    document.getElementById('changePinStep3').style.display = 'block';
+    showKeypadForStep(3);
+    currentStep = 3;
+  }
+  document.getElementById('changePinError').style.display = 'none';
+}
+
+function checkConfirmAndSubmit() {
+  const newPin = document.getElementById('newPinInput').value;
+  const confirmPin = document.getElementById('confirmPinInput').value;
+  if (newPin !== confirmPin) {
+    showChangePinError('New PIN and confirmation do not match.');
+    // Clear confirm field and allow re-entry
+    document.getElementById('confirmPinInput').value = '';
+    // Stay on step 3
+    return;
+  }
+  submitPinChange(newPin);
+}
+
+async function submitPinChange(newPin) {
+  showLoading('Changing PIN...');
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', 'changePin');
+    formData.append('employee_id', currentEmployee.id);
+    formData.append('current_pin', document.getElementById('currentPinInput').value);
+    formData.append('new_pin', newPin);
+
+    const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+    const result = await response.json();
+
+    if (result.success) {
+      await showAlertModal('Success', 'Your PIN has been changed successfully.');
+      document.getElementById('changePinModal').style.display = 'none';
+    } else {
+      showChangePinError(result.error || 'Failed to change PIN.');
+    }
+  } catch (err) {
+    console.error(err);
+    showChangePinError('Connection error. Please try again.');
+  } finally {
+    hideLoading();
+  }
+}
+
+function showChangePinError(msg) {
+  const errorDiv = document.getElementById('changePinError');
+  errorDiv.innerText = msg;
+  errorDiv.style.display = 'block';
+}
+
+// Add event listeners for modal close/cancel
+document.getElementById('closeChangePinModal').addEventListener('click', () => {
+  document.getElementById('changePinModal').style.display = 'none';
+});
+document.getElementById('changePinCancelBtn').addEventListener('click', () => {
+  document.getElementById('changePinModal').style.display = 'none';
+});
+
+// Open modal from side menu
+document.getElementById('sideChangePinBtn').addEventListener('click', () => {
+  openChangePinModal();
+  closeSideMenu();
+});
+// Handle keypad for current PIN
+const currentPinInput = document.getElementById('currentPinInput');
+if (currentPinInput) {
+  const keypadBtns = document.querySelectorAll('#changePinStep1 .keypad-btn');
+  keypadBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      if (btn.dataset.digit && currentPinInput.value.length < 4) {
+        currentPinInput.value += btn.dataset.digit;
+        if (currentPinInput.value.length === 4) {
+          // Move to step 2 after current PIN is entered
+          document.getElementById('changePinStep1').style.display = 'none';
+          document.getElementById('changePinStep2').style.display = 'block';
+          document.getElementById('changePinSubmitBtn').style.display = 'block';
+        }
+      } else if (btn.dataset.action === 'clear') {
+        currentPinInput.value = currentPinInput.value.slice(0, -1);
+      } else if (btn.dataset.action === 'enterPin') {
+        // Manual enter for current PIN
+        if (currentPinInput.value.length === 4) {
+          document.getElementById('changePinStep1').style.display = 'none';
+          document.getElementById('changePinStep2').style.display = 'block';
+          document.getElementById('changePinSubmitBtn').style.display = 'block';
+        } else {
+          showChangePinError('Please enter 4-digit current PIN');
+        }
+      }
+    });
+  });
+}
+
+// Handle keypad for new PIN
+const newPinInput = document.getElementById('newPinInput');
+if (newPinInput) {
+  const keypadBtns = document.querySelectorAll('#changePinStep2 .pin-keypad:first-of-type .keypad-btn');
+  keypadBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      if (btn.dataset.digit && newPinInput.value.length < 4) {
+        newPinInput.value += btn.dataset.digit;
+        if (newPinInput.value.length === 4) {
+          // Auto-focus confirm input? Not needed, just proceed.
+        }
+      } else if (btn.dataset.action === 'clear') {
+        newPinInput.value = newPinInput.value.slice(0, -1);
+      } else if (btn.dataset.action === 'enterPin2') {
+        // manual enter for new PIN – optional
+      }
+    });
+  });
+}
+
+// Handle keypad for confirm PIN
+const confirmPinInput = document.getElementById('confirmPinInput');
+if (confirmPinInput) {
+  const keypadBtns = document.querySelectorAll('#changePinStep2 .pin-keypad:last-of-type .keypad-btn');
+  keypadBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      if (btn.dataset.digit && confirmPinInput.value.length < 4) {
+        confirmPinInput.value += btn.dataset.digit;
+        if (confirmPinInput.value.length === 4) {
+          // Optionally auto-submit when both new and confirm are full
+          const newPin = newPinInput.value;
+          const confirmPin = confirmPinInput.value;
+          if (newPin.length === 4 && confirmPin.length === 4) {
+            if (newPin === confirmPin) {
+              submitPinChange();
+            } else {
+              showChangePinError('New PIN and confirmation do not match.');
+            }
+          }
+        }
+      } else if (btn.dataset.action === 'clear') {
+        confirmPinInput.value = confirmPinInput.value.slice(0, -1);
+      } else if (btn.dataset.action === 'enterConfirm') {
+        // manual enter for confirm
+        if (newPinInput.value.length === 4 && confirmPinInput.value.length === 4) {
+          if (newPinInput.value === confirmPinInput.value) {
+            submitPinChange();
+          } else {
+            showChangePinError('New PIN and confirmation do not match.');
+          }
+        } else {
+          showChangePinError('Please enter 4-digit new PIN and confirmation.');
+        }
+      }
+    });
+  });
+}
+
+function showChangePinError(msg) {
+  const errorDiv = document.getElementById('changePinError');
+  errorDiv.innerText = msg;
+  errorDiv.style.display = 'block';
+}
+
+async function submitPinChange() {
+  const currentPin = document.getElementById('currentPinInput').value;
+  const newPin = document.getElementById('newPinInput').value;
+  const confirmPin = document.getElementById('confirmPinInput').value;
+
+  if (currentPin.length !== 4 || newPin.length !== 4 || confirmPin.length !== 4) {
+    showChangePinError('All PIN fields must be 4 digits.');
+    return;
+  }
+  if (newPin !== confirmPin) {
+    showChangePinError('New PIN and confirmation do not match.');
+    return;
+  }
+
+  showLoading('Changing PIN...');
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', 'changePin');
+    formData.append('employee_id', currentEmployee.id);
+    formData.append('current_pin', currentPin);
+    formData.append('new_pin', newPin);
+
+    const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+    const result = await response.json();
+
+    if (result.success) {
+      await showAlertModal('Success', 'Your PIN has been changed successfully.');
+      document.getElementById('changePinModal').style.display = 'none';
+    } else {
+      showChangePinError(result.error || 'Failed to change PIN.');
+    }
+  } catch (err) {
+    console.error(err);
+    showChangePinError('Connection error. Please try again.');
+  } finally {
+    hideLoading();
+  }
+}
+
+// Close modal
+document.getElementById('closeChangePinModal').addEventListener('click', () => {
+  document.getElementById('changePinModal').style.display = 'none';
+});
+document.getElementById('changePinCancelBtn').addEventListener('click', () => {
+  document.getElementById('changePinModal').style.display = 'none';
+});
   function showAlertModal(title, message) {
     return new Promise((resolve) => {
       const overlay = document.getElementById('alertModal');
@@ -4060,4 +4435,4 @@ if (pinInputEl) {
   allStores.forEach(store => preloadProductsForStore(store));
 </script>
 </body>
-</html>
+</html> 

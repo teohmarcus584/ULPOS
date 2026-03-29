@@ -1413,23 +1413,61 @@
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) overlay.style.display = 'none';
   }
-// Open change PIN modal
-document.getElementById('sideChangePinBtn').addEventListener('click', () => {
-  openChangePinModal();
-  closeSideMenu();
-});
 
-function openChangePinModal() {
-  document.getElementById('changePinStep1').style.display = 'block';
-  document.getElementById('changePinStep2').style.display = 'none';
-  document.getElementById('changePinSubmitBtn').style.display = 'none';
-  document.getElementById('changePinError').style.display = 'none';
-  document.getElementById('currentPinInput').value = '';
-  document.getElementById('newPinInput').value = '';
-  document.getElementById('confirmPinInput').value = '';
-  document.getElementById('changePinModal').style.display = 'flex';
-}
-// Global reference to the current keypad container
+
+  function showInputModal(title, placeholder = '') {
+    return new Promise((resolve) => {
+      const overlay = document.getElementById('inputModal');
+      document.getElementById('inputModalTitle').innerText = title;
+      const field = document.getElementById('inputModalField');
+      field.placeholder = placeholder;
+      field.value = '';
+      overlay.style.display = 'flex';
+      const ok = () => { overlay.style.display = 'none'; cleanup(); resolve(field.value.trim()); };
+      const cancel = () => { overlay.style.display = 'none'; cleanup(); resolve(null); };
+      const cleanup = () => {
+        okBtn.removeEventListener('click', ok);
+        cancelBtn.removeEventListener('click', cancel);
+        closeBtn.removeEventListener('click', cancel);
+        field.removeEventListener('keydown', keydown);
+      };
+      const keydown = (e) => { if (e.key === 'Enter') ok(); if (e.key === 'Escape') cancel(); };
+      const okBtn = document.getElementById('inputModalOk');
+      const cancelBtn = document.getElementById('inputModalCancel');
+      const closeBtn = document.getElementById('closeInputModal');
+      okBtn.addEventListener('click', ok);
+      cancelBtn.addEventListener('click', cancel);
+      closeBtn.addEventListener('click', cancel);
+      field.addEventListener('keydown', keydown);
+      field.focus();
+    });
+  }
+
+  function showSelectModal(title, options) {
+    return new Promise((resolve) => {
+      const overlay = document.getElementById('selectModal');
+      document.getElementById('selectModalTitle').innerText = title;
+      const select = document.getElementById('selectModalField');
+      select.innerHTML = '';
+      options.forEach(opt => { const option = document.createElement('option'); option.value = opt; option.textContent = opt; select.appendChild(option); });
+      overlay.style.display = 'flex';
+      const ok = () => { overlay.style.display = 'none'; cleanup(); resolve(select.value); };
+      const cancel = () => { overlay.style.display = 'none'; cleanup(); resolve(null); };
+      const cleanup = () => {
+        okBtn.removeEventListener('click', ok);
+        cancelBtn.removeEventListener('click', cancel);
+        closeBtn.removeEventListener('click', cancel);
+      };
+      const okBtn = document.getElementById('selectModalOk');
+      const cancelBtn = document.getElementById('selectModalCancel');
+      const closeBtn = document.getElementById('closeSelectModal');
+      okBtn.addEventListener('click', ok);
+      cancelBtn.addEventListener('click', cancel);
+      closeBtn.addEventListener('click', cancel);
+    });
+  }
+
+ // Global reference to the current keypad container
 let currentKeypad = null;
 let currentStep = 1; // 1=current, 2=new, 3=confirm
 
@@ -1670,245 +1708,6 @@ document.getElementById('sideChangePinBtn').addEventListener('click', () => {
   openChangePinModal();
   closeSideMenu();
 });
-// Handle keypad for current PIN
-const currentPinInput = document.getElementById('currentPinInput');
-if (currentPinInput) {
-  const keypadBtns = document.querySelectorAll('#changePinStep1 .keypad-btn');
-  keypadBtns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      if (btn.dataset.digit && currentPinInput.value.length < 4) {
-        currentPinInput.value += btn.dataset.digit;
-        if (currentPinInput.value.length === 4) {
-          // Move to step 2 after current PIN is entered
-          document.getElementById('changePinStep1').style.display = 'none';
-          document.getElementById('changePinStep2').style.display = 'block';
-          document.getElementById('changePinSubmitBtn').style.display = 'block';
-        }
-      } else if (btn.dataset.action === 'clear') {
-        currentPinInput.value = currentPinInput.value.slice(0, -1);
-      } else if (btn.dataset.action === 'enterPin') {
-        // Manual enter for current PIN
-        if (currentPinInput.value.length === 4) {
-          document.getElementById('changePinStep1').style.display = 'none';
-          document.getElementById('changePinStep2').style.display = 'block';
-          document.getElementById('changePinSubmitBtn').style.display = 'block';
-        } else {
-          showChangePinError('Please enter 4-digit current PIN');
-        }
-      }
-    });
-  });
-}
-
-// Handle keypad for new PIN
-const newPinInput = document.getElementById('newPinInput');
-if (newPinInput) {
-  const keypadBtns = document.querySelectorAll('#changePinStep2 .pin-keypad:first-of-type .keypad-btn');
-  keypadBtns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      if (btn.dataset.digit && newPinInput.value.length < 4) {
-        newPinInput.value += btn.dataset.digit;
-        if (newPinInput.value.length === 4) {
-          // Auto-focus confirm input? Not needed, just proceed.
-        }
-      } else if (btn.dataset.action === 'clear') {
-        newPinInput.value = newPinInput.value.slice(0, -1);
-      } else if (btn.dataset.action === 'enterPin2') {
-        // manual enter for new PIN – optional
-      }
-    });
-  });
-}
-
-// Handle keypad for confirm PIN
-const confirmPinInput = document.getElementById('confirmPinInput');
-if (confirmPinInput) {
-  const keypadBtns = document.querySelectorAll('#changePinStep2 .pin-keypad:last-of-type .keypad-btn');
-  keypadBtns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      if (btn.dataset.digit && confirmPinInput.value.length < 4) {
-        confirmPinInput.value += btn.dataset.digit;
-        if (confirmPinInput.value.length === 4) {
-          // Optionally auto-submit when both new and confirm are full
-          const newPin = newPinInput.value;
-          const confirmPin = confirmPinInput.value;
-          if (newPin.length === 4 && confirmPin.length === 4) {
-            if (newPin === confirmPin) {
-              submitPinChange();
-            } else {
-              showChangePinError('New PIN and confirmation do not match.');
-            }
-          }
-        }
-      } else if (btn.dataset.action === 'clear') {
-        confirmPinInput.value = confirmPinInput.value.slice(0, -1);
-      } else if (btn.dataset.action === 'enterConfirm') {
-        // manual enter for confirm
-        if (newPinInput.value.length === 4 && confirmPinInput.value.length === 4) {
-          if (newPinInput.value === confirmPinInput.value) {
-            submitPinChange();
-          } else {
-            showChangePinError('New PIN and confirmation do not match.');
-          }
-        } else {
-          showChangePinError('Please enter 4-digit new PIN and confirmation.');
-        }
-      }
-    });
-  });
-}
-
-function showChangePinError(msg) {
-  const errorDiv = document.getElementById('changePinError');
-  errorDiv.innerText = msg;
-  errorDiv.style.display = 'block';
-}
-
-async function submitPinChange() {
-  const currentPin = document.getElementById('currentPinInput').value;
-  const newPin = document.getElementById('newPinInput').value;
-  const confirmPin = document.getElementById('confirmPinInput').value;
-
-  if (currentPin.length !== 4 || newPin.length !== 4 || confirmPin.length !== 4) {
-    showChangePinError('All PIN fields must be 4 digits.');
-    return;
-  }
-  if (newPin !== confirmPin) {
-    showChangePinError('New PIN and confirmation do not match.');
-    return;
-  }
-
-  showLoading('Changing PIN...');
-  try {
-    const formData = new URLSearchParams();
-    formData.append('action', 'changePin');
-    formData.append('employee_id', currentEmployee.id);
-    formData.append('current_pin', currentPin);
-    formData.append('new_pin', newPin);
-
-    const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
-    const result = await response.json();
-
-    if (result.success) {
-      await showAlertModal('Success', 'Your PIN has been changed successfully.');
-      document.getElementById('changePinModal').style.display = 'none';
-    } else {
-      showChangePinError(result.error || 'Failed to change PIN.');
-    }
-  } catch (err) {
-    console.error(err);
-    showChangePinError('Connection error. Please try again.');
-  } finally {
-    hideLoading();
-  }
-}
-
-// Close modal
-document.getElementById('closeChangePinModal').addEventListener('click', () => {
-  document.getElementById('changePinModal').style.display = 'none';
-});
-document.getElementById('changePinCancelBtn').addEventListener('click', () => {
-  document.getElementById('changePinModal').style.display = 'none';
-});
-  function showAlertModal(title, message) {
-    return new Promise((resolve) => {
-      const overlay = document.getElementById('alertModal');
-      document.getElementById('alertModalTitle').innerText = title;
-      document.getElementById('alertModalMessage').innerText = message;
-      overlay.style.display = 'flex';
-      const okBtn = document.getElementById('alertModalOk');
-      const closeBtn = document.getElementById('closeAlertModal');
-      const onClose = () => { overlay.style.display = 'none'; cleanup(); resolve(); };
-      const cleanup = () => {
-        okBtn.removeEventListener('click', onClose);
-        closeBtn.removeEventListener('click', onClose);
-      };
-      okBtn.addEventListener('click', onClose);
-      closeBtn.addEventListener('click', onClose);
-    });
-  }
-
-  function showInputModal(title, placeholder = '') {
-    return new Promise((resolve) => {
-      const overlay = document.getElementById('inputModal');
-      document.getElementById('inputModalTitle').innerText = title;
-      const field = document.getElementById('inputModalField');
-      field.placeholder = placeholder;
-      field.value = '';
-      overlay.style.display = 'flex';
-      const ok = () => { overlay.style.display = 'none'; cleanup(); resolve(field.value.trim()); };
-      const cancel = () => { overlay.style.display = 'none'; cleanup(); resolve(null); };
-      const cleanup = () => {
-        okBtn.removeEventListener('click', ok);
-        cancelBtn.removeEventListener('click', cancel);
-        closeBtn.removeEventListener('click', cancel);
-        field.removeEventListener('keydown', keydown);
-      };
-      const keydown = (e) => { if (e.key === 'Enter') ok(); if (e.key === 'Escape') cancel(); };
-      const okBtn = document.getElementById('inputModalOk');
-      const cancelBtn = document.getElementById('inputModalCancel');
-      const closeBtn = document.getElementById('closeInputModal');
-      okBtn.addEventListener('click', ok);
-      cancelBtn.addEventListener('click', cancel);
-      closeBtn.addEventListener('click', cancel);
-      field.addEventListener('keydown', keydown);
-      field.focus();
-    });
-  }
-
-  function showSelectModal(title, options) {
-    return new Promise((resolve) => {
-      const overlay = document.getElementById('selectModal');
-      document.getElementById('selectModalTitle').innerText = title;
-      const select = document.getElementById('selectModalField');
-      select.innerHTML = '';
-      options.forEach(opt => { const option = document.createElement('option'); option.value = opt; option.textContent = opt; select.appendChild(option); });
-      overlay.style.display = 'flex';
-      const ok = () => { overlay.style.display = 'none'; cleanup(); resolve(select.value); };
-      const cancel = () => { overlay.style.display = 'none'; cleanup(); resolve(null); };
-      const cleanup = () => {
-        okBtn.removeEventListener('click', ok);
-        cancelBtn.removeEventListener('click', cancel);
-        closeBtn.removeEventListener('click', cancel);
-      };
-      const okBtn = document.getElementById('selectModalOk');
-      const cancelBtn = document.getElementById('selectModalCancel');
-      const closeBtn = document.getElementById('closeSelectModal');
-      okBtn.addEventListener('click', ok);
-      cancelBtn.addEventListener('click', cancel);
-      closeBtn.addEventListener('click', cancel);
-    });
-  }
-
-  function showConfirmModal(title, message) {
-    return new Promise((resolve) => {
-      const modal = document.createElement('div');
-      modal.className = 'modal-overlay';
-      modal.innerHTML = `
-        <div class="modal-container" style="max-width: 400px;">
-          <div class="modal-title">${title}</div>
-          <div class="modal-message">${message}</div>
-          <div class="modal-buttons">
-            <button id="confirmOk" class="modal-btn modal-btn-primary">OK</button>
-            <button id="confirmCancel" class="modal-btn modal-btn-secondary">Cancel</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-      modal.style.display = 'flex';
-      const okBtn = modal.querySelector('#confirmOk');
-      const cancelBtn = modal.querySelector('#confirmCancel');
-      const cleanup = () => {
-        modal.remove();
-        okBtn.removeEventListener('click', onOk);
-        cancelBtn.removeEventListener('click', onCancel);
-      };
-      const onOk = () => { cleanup(); resolve(true); };
-      const onCancel = () => { cleanup(); resolve(false); };
-      okBtn.addEventListener('click', onOk);
-      cancelBtn.addEventListener('click', onCancel);
-    });
-  }
 
   function getLocalDateString(date) {
     const year = date.getFullYear();

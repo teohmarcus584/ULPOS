@@ -1264,7 +1264,7 @@
 <div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"></div><div class="loading-text" id="loadingMessage">Processing...</div></div>
 <script>
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKh9k0V8qESFi0rZHZwFgJlgMpsH9dUwvUzX77g2Ofa9bfoFkalXOZmMJS6KvgLj9pwg/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKqwXJA4iqUXDkgZDDBexP9dhvJ3n9IT2BnCezSzluRRuVh0Ztb80EyM987qciJ8kI3A/exec"; // REPLACE WITH YOUR URL
 
   // ==================== GLOBAL VARIABLES ====================
   let products = [];
@@ -2448,57 +2448,67 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
   }
 
   async function completeCheckout(paymentMethod, cashReceived) {
-    document.getElementById('paymentModal').style.display = 'none';
-    const totalAmount = pendingTransaction.totalAmount;
-    const transactionId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const saleItems = cart.map(item => ({
-      id: item.product.id,
-      category: item.product.category,
-      name: item.product.name,
-      price: item.product.price,
-      quantity: item.quantity,
-      free_quantity: item.freeQuantity,
-      total: (item.quantity - item.freeQuantity) * item.product.price
-    }));
-    const transaction = {
-      transaction_id: transactionId,
-      items: saleItems,
-      total: totalAmount,
-      payment_method: paymentMethod,
-      cash_received: cashReceived,
-      timestamp: new Date().toISOString(),
-      discount: discountAmount,
-      buy2_free1_discount: buy2Free1Discount,
-      buy3_free1_discount: buy3Free1Discount,
-      custom_discount: customDiscount,
-      prize_claimed: claimedReceiptInfo
-    };
-    const success = await saveTransactionToSheet(transaction);
-    if (success) {
-      if (pendingPrize) {
-        await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
-        pendingPrize = null;
-      }
-      localStorage.removeItem(`products_${currentStore}`);
-      if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
-        const transactionWithName = { ...transaction, employee_name: currentEmployee.name };
-        await window.printerAPI.printReceipt(transactionWithName);
-      } else {
-        await showAlertModal('Receipt', 'Sale recorded. Printer not connected, no receipt printed.');
-      }
-      await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
-      document.getElementById('luckyTxId').innerText = transactionId;
-      const luckyModal = document.getElementById('luckyDrawModal');
-      luckyModal.style.display = 'flex';
-      document.getElementById('openLuckyDrawBtn').onclick = () => { openLuckyDraw(transactionId); luckyModal.style.display = 'none'; };
-      document.getElementById('closeLuckyDrawBtn').onclick = () => luckyModal.style.display = 'none';
-      document.getElementById('closeLuckyDrawModal').onclick = () => luckyModal.style.display = 'none';
-      await fetchProductsFromSheet();
-      clearCart();
-    } else {
-      await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
+  document.getElementById('paymentModal').style.display = 'none';
+  const totalAmount = pendingTransaction.totalAmount;
+  const transactionId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+  const saleItems = cart.map(item => ({
+    id: item.product.id,
+    category: item.product.category,
+    name: item.product.name,
+    price: item.product.price,
+    quantity: item.quantity,
+    free_quantity: item.freeQuantity,
+    total: (item.quantity - item.freeQuantity) * item.product.price
+  }));
+
+  const transaction = {
+    transaction_id: transactionId,
+    items: saleItems,
+    total: totalAmount,
+    payment_method: paymentMethod,
+    cash_received: cashReceived,
+    timestamp: new Date().toISOString(),
+    discount: discountAmount,
+    buy2_free1_discount: buy2Free1Discount,
+    buy3_free1_discount: buy3Free1Discount,
+    custom_discount: customDiscount,
+    prize_claimed: claimedReceiptInfo
+  };
+
+  const success = await saveTransactionToSheet(transaction);
+
+  if (success) {
+    // Claim prize if applicable
+    if (pendingPrize) {
+      await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
+      pendingPrize = null;
     }
+
+    // Invalidate local product cache
+    localStorage.removeItem(`products_${currentStore}`);
+
+    // Print sale receipt (if printer connected)
+    if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
+      const transactionWithName = { ...transaction, employee_name: currentEmployee.name };
+      await window.printerAPI.printReceipt(transactionWithName);
+    } else {
+      await showAlertModal('Receipt', 'Sale recorded. Printer not connected, no receipt printed.');
+    }
+
+    // Print Lucky Draw receipt
+    await printLuckyDrawReceipt(transactionId);
+
+    // Show success message
+    await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
+
+    // Refresh products and clear cart
+    await fetchProductsFromSheet();
+    clearCart();
+  } else {
+    await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
   }
+}
 
   async function saveTransactionToSheet(transaction) {
     showLoading('Recording sale...');
@@ -3189,104 +3199,122 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
     }
 
     async function printReceipt(transaction) {
-      if (!isConnected || !printerCharacteristic) {
-        await showAlertModal('Printer required', 'Connect Bluetooth printer first.');
-        return false;
+  if (!isConnected || !printerCharacteristic) {
+    await showAlertModal('Printer required', 'Connect Bluetooth printer first.');
+    return false;
+  }
+  try {
+    const openDrawer = (transaction.payment_method === 'Cash');
+    const paperSize = paperSizeSelectModal.value;
+    localStorage.setItem('printerPaperSize', paperSize);
+    const encoder = new TextEncoder();
+    const employeeName = transaction.employee_name || getEmployeeName(transaction.employee_id) || 'N/A';
+    const storeLocation = transaction.store ? transaction.store.charAt(0).toUpperCase() + transaction.store.slice(1) : 'Queens';
+    const maxChars = paperSize === '58' ? 32 : 48;
+    
+    function formatLine(left, right = null) {
+      if (right === null) {
+        return left.length > maxChars ? left.substring(0, maxChars - 3) + '...' : left;
       }
-      try {
-        const openDrawer = (transaction.payment_method === 'Cash');
-        const paperSize = paperSizeSelectModal.value;
-        localStorage.setItem('printerPaperSize', paperSize);
-        const encoder = new TextEncoder();
-        const employeeName = transaction.employee_name || getEmployeeName(transaction.employee_id) || 'N/A';
-        const storeLocation = transaction.store ? transaction.store.charAt(0).toUpperCase() + transaction.store.slice(1) : 'Queens';
-        const maxChars = paperSize === '58' ? 32 : 48;
-        
-        function formatLine(left, right = null) {
-          if (right === null) {
-            return left.length > maxChars ? left.substring(0, maxChars - 3) + '...' : left;
-          }
-          const leftMax = Math.floor(maxChars * 0.6);
-          const rightMax = maxChars - leftMax - 2;
-          let leftText = left.length > leftMax ? left.substring(0, leftMax - 3) + '...' : left;
-          let rightText = right.length > rightMax ? right.substring(0, rightMax - 3) + '...' : right;
-          return leftText.padEnd(leftMax) + ' ' + rightText.padStart(rightMax);
-        }
-        
-        const grouped = {};
-        for (const item of transaction.items) {
-          const cat = item.category || 'Uncategorized';
-          if (!grouped[cat]) grouped[cat] = [];
-          grouped[cat].push(item);
-        }
-        
-        const lines = [];
-        const separator = '-'.repeat(maxChars);
-        
-        lines.push('', '    UL PERFUMERY', separator);
-        lines.push(formatLine(`STORE LOCATION : ${storeLocation}`));
-        lines.push(formatLine(`EMPLOYEE : ${employeeName}`));
-        lines.push(separator);
-        
-        for (const [category, items] of Object.entries(grouped)) {
-          let categoryTotal = 0;
-          for (const item of items) {
-            const paidQty = item.quantity - (item.free_quantity || 0);
-            categoryTotal += paidQty * item.price;
-          }
-          lines.push(formatLine(category, `RM ${categoryTotal.toFixed(2)}`));
-          for (const item of items) {
-            const paidQty = item.quantity - (item.free_quantity || 0);
-            if (paidQty > 0) {
-              lines.push(`  ${item.name}`);
-              lines.push(`  ${paidQty} x RM ${item.price.toFixed(2)}`);
-            }
-            if (item.free_quantity > 0) {
-              lines.push(`  ** ${item.free_quantity} FREE **`);
-            }
-          }
-        }
-        
-        lines.push(separator);
-        const totalAmount = transaction.total;
-        lines.push(formatLine('TOTAL', `RM ${totalAmount.toFixed(2)}`));
-        lines.push(formatLine('PAYMENT METHOD', transaction.payment_method));
-        if (transaction.cash_received && transaction.payment_method === 'Cash') {
-          const change = transaction.cash_received - totalAmount;
-          lines.push(formatLine('CHANGE', `RM ${change.toFixed(2)}`));
-        }
-        lines.push(separator);
-        lines.push('THANK YOU FOR YOUR PURCHASE');
-        lines.push('ANY ENQUIRY PLEASE CONTACT');
-        lines.push('+60134665831 ( MARCUS )');
-        lines.push('GOODS SOLD ARE NOT REFUNDABLE');
-        lines.push(separator);
-        
-        const date = new Date(transaction.timestamp);
-        const formattedDate = `${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
-        lines.push(formatLine(`TXN   : ${transaction.transaction_id}`));
-        lines.push(formatLine(`DATE  : ${formattedDate}`));
-        lines.push('');
-        
-        const text = lines.join('\n');
-        
-        let commands = [];
-        commands.push(0x1B, 0x40); // Initialize
-        commands.push(0x1B, 0x61, 0x01); // Center
-        commands.push(...encoder.encode(text));
-        commands.push(0x1B, 0x64, 0x03); // Feed 3 lines
-        commands.push(0x1D, 0x56, 0x41, 0x00); // Cut
-        if (openDrawer) {
-          const drawerCommand = [0x1B, 0x70, 0x00, 0x19, 0xFA];
-          commands = commands.slice(0, -4).concat(drawerCommand, commands.slice(-4));
-        }
-        await sendChunkedData(new Uint8Array(commands), 500);
-        return true;
-      } catch (err) {
-        console.error(err);
-        return false;
-      }
+      const leftMax = Math.floor(maxChars * 0.6);
+      const rightMax = maxChars - leftMax - 2;
+      let leftText = left.length > leftMax ? left.substring(0, leftMax - 3) + '...' : left;
+      let rightText = right.length > rightMax ? right.substring(0, rightMax - 3) + '...' : right;
+      return leftText.padEnd(leftMax) + ' ' + rightText.padStart(rightMax);
     }
+
+    const isLuckyDraw = !!transaction.lucky_draw;
+    const lines = [];
+    const separator = '-'.repeat(maxChars);
+    
+    // Header
+    lines.push('', '    UL PERFUMERY', separator);
+    lines.push(formatLine(`STORE LOCATION : ${storeLocation}`));
+    lines.push(formatLine(`EMPLOYEE : ${employeeName}`));
+    lines.push(separator);
+    
+    if (isLuckyDraw) {
+      // Lucky Draw receipt format
+      lines.push(formatLine('LUCKY DRAW RECEIPT'));
+      lines.push(separator);
+      lines.push(formatLine(`Receipt ID : ${transaction.transaction_id}`));
+      lines.push(formatLine(`Prize      : ${transaction.lucky_draw.prize}`));
+      lines.push(formatLine(`Value      : RM ${transaction.lucky_draw.value.toFixed(2)}`));
+      lines.push(formatLine(`Claimed    : ${transaction.lucky_draw.claimed ? 'YES' : 'NO'}`));
+      lines.push(separator);
+      lines.push('Thank you for participating!');
+      lines.push('Visit us again for more promotions');
+      lines.push(separator);
+    } else {
+      // Original sale receipt logic
+      const grouped = {};
+      for (const item of transaction.items) {
+        const cat = item.category || 'Uncategorized';
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(item);
+      }
+      
+      for (const [category, items] of Object.entries(grouped)) {
+        let categoryTotal = 0;
+        for (const item of items) {
+          const paidQty = item.quantity - (item.free_quantity || 0);
+          categoryTotal += paidQty * item.price;
+        }
+        lines.push(formatLine(category, `RM ${categoryTotal.toFixed(2)}`));
+        for (const item of items) {
+          const paidQty = item.quantity - (item.free_quantity || 0);
+          if (paidQty > 0) {
+            lines.push(`  ${item.name}`);
+            lines.push(`  ${paidQty} x RM ${item.price.toFixed(2)}`);
+          }
+          if (item.free_quantity > 0) {
+            lines.push(`  ** ${item.free_quantity} FREE **`);
+          }
+        }
+      }
+      
+      lines.push(separator);
+      const totalAmount = transaction.total;
+      lines.push(formatLine('TOTAL', `RM ${totalAmount.toFixed(2)}`));
+      lines.push(formatLine('PAYMENT METHOD', transaction.payment_method));
+      if (transaction.cash_received && transaction.payment_method === 'Cash') {
+        const change = transaction.cash_received - totalAmount;
+        lines.push(formatLine('CHANGE', `RM ${change.toFixed(2)}`));
+      }
+      lines.push(separator);
+      lines.push('THANK YOU FOR YOUR PURCHASE');
+      lines.push('ANY ENQUIRY PLEASE CONTACT');
+      lines.push('+60134665831 ( MARCUS )');
+      lines.push('GOODS SOLD ARE NOT REFUNDABLE');
+      lines.push(separator);
+    }
+    
+    // Footer (date, transaction ID)
+    const date = new Date(transaction.timestamp);
+    const formattedDate = `${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+    lines.push(formatLine(`TXN   : ${transaction.transaction_id}`));
+    lines.push(formatLine(`DATE  : ${formattedDate}`));
+    lines.push('');
+    
+    const text = lines.join('\n');
+    
+    let commands = [];
+    commands.push(0x1B, 0x40); // Initialize
+    commands.push(0x1B, 0x61, 0x01); // Center
+    commands.push(...encoder.encode(text));
+    commands.push(0x1B, 0x64, 0x03); // Feed 3 lines
+    commands.push(0x1D, 0x56, 0x41, 0x00); // Cut
+    if (openDrawer) {
+      const drawerCommand = [0x1B, 0x70, 0x00, 0x19, 0xFA];
+      commands = commands.slice(0, -4).concat(drawerCommand, commands.slice(-4));
+    }
+    await sendChunkedData(new Uint8Array(commands), 500);
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
 
     async function connectPrinter() {
       try {
@@ -4184,7 +4212,56 @@ if (pinInputEl) {
     const total = currentUnsettledCash.reduce((sum, rec) => sum + rec.cash_actual, 0);
     document.getElementById('totalOutstandingCash').innerText = `RM ${total.toFixed(2)}`;
   }
+async function printLuckyDrawReceipt(transactionId) {
+  try {
+    // Fetch Lucky Draw details from the backend
+    const url = `${APPS_SCRIPT_URL}?action=get&receipt=${encodeURIComponent(transactionId)}`;
+    const response = await fetch(url);
+    const result = await response.json();
 
+    if (!result.success || !result.data) {
+      console.error('Failed to fetch Lucky Draw data:', result.error);
+      return;
+    }
+
+    const luckyData = result.data;
+    if (!luckyData.prize) {
+      console.error('No prize found for this transaction');
+      return;
+    }
+
+    // Build the Lucky Draw receipt object
+    const receipt = {
+      transaction_id: transactionId,
+      items: [],  // not used for lucky draw, but keep structure
+      total: 0,
+      payment_method: 'Lucky Draw',
+      timestamp: new Date().toISOString(),
+      employee_name: currentEmployee?.name,
+      store: currentStore,
+      lucky_draw: {
+        prize: luckyData.prize,
+        value: luckyData.value,
+        claimed: luckyData.claimed || false
+      }
+    };
+
+    // Check if printer is connected
+    if (!window.printerAPI || !window.printerAPI.isConnected) {
+      console.warn('Printer not connected – Lucky Draw receipt will not print');
+      // Optionally show a warning to the user
+      await showAlertModal('Printer required', 'Lucky Draw receipt cannot be printed because the printer is not connected.');
+      return;
+    }
+
+    // Call the existing print function with our custom receipt
+    await window.printerAPI.printReceipt(receipt);
+    await showAlertModal('Lucky Draw Receipt', `Lucky Draw prize receipt printed.\n\nPrize: ${luckyData.prize}\nValue: RM ${luckyData.value}`);
+  } catch (err) {
+    console.error('Error printing Lucky Draw receipt:', err);
+    await showAlertModal('Error', 'Failed to print Lucky Draw receipt. Please check the printer connection.');
+  }
+}
   function updateCollectionButtonState() {
     const anyChecked = document.querySelectorAll('.collection-checkbox:checked').length > 0;
     document.getElementById('collectSelectedBtn').disabled = !anyChecked;

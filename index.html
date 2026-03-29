@@ -1566,11 +1566,11 @@ async function verifyCurrentPinAndProceed() {
 
   showLoading('Verifying PIN...');
   try {
-    const formData = new URLSearchParams();
-    formData.append('action', 'verifyByPin');
-    formData.append('pin', currentPin);
-    const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+    // Use GET request with query parameters
+    const url = `${APPS_SCRIPT_URL}?action=verifyByPin&pin=${encodeURIComponent(currentPin)}`;
+    const response = await fetch(url);
     const result = await response.json();
+
     if (result.success && result.employee.id === currentEmployee.id) {
       // PIN matches the logged-in employee
       goToStep(2);

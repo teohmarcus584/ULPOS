@@ -1217,64 +1217,31 @@
     </div>
   </div>
 </div>
-<div id="changePinModal" class="modal-overlay">
+<div id="loginModal" class="modal-overlay" style="display: none;">
   <div class="modal-container" style="max-width: 400px;">
-    <span class="close-modal" id="closeChangePinModal">×</span>
-    <div class="modal-title">🔐 Change PIN</div>
-
-    <!-- Step 1: Current PIN -->
-    <div id="changePinStep1">
-      <div class="filter-group">
-        <label>Current PIN</label>
-        <input type="password" id="currentPinInput" class="modal-input" maxlength="4" inputmode="numeric" readonly>
-        <div class="pin-keypad mini-keypad" id="step1Keypad">
-          <!-- keypad buttons will be cloned from existing style -->
-        </div>
+    <span class="close-modal" id="closeLoginModal">×</span>
+    <div class="modal-title">?? Enter PIN</div>
+    <div class="login-form">
+      <input type="password" id="pinInput" class="pin-input" placeholder="****" maxlength="4" inputmode="numeric" autofocus>
+      <div class="pin-keypad">
+        <button class="keypad-btn" data-digit="1">1</button>
+        <button class="keypad-btn" data-digit="2">2</button>
+        <button class="keypad-btn" data-digit="3">3</button>
+        <button class="keypad-btn" data-digit="4">4</button>
+        <button class="keypad-btn" data-digit="5">5</button>
+        <button class="keypad-btn" data-digit="6">6</button>
+        <button class="keypad-btn" data-digit="7">7</button>
+        <button class="keypad-btn" data-digit="8">8</button>
+        <button class="keypad-btn" data-digit="9">9</button>
+        <button class="keypad-btn clear" data-action="clear">?</button>
+        <button class="keypad-btn" data-digit="0">0</button>
+        <button class="keypad-btn enter" data-action="enter">?</button>
       </div>
-    </div>
-
-    <!-- Step 2: New PIN -->
-    <div id="changePinStep2" style="display: none;">
-      <div class="filter-group">
-        <label>New PIN</label>
-        <input type="password" id="newPinInput" class="modal-input" maxlength="4" inputmode="numeric" readonly>
-      </div>
-    </div>
-
-    <!-- Step 3: Confirm New PIN -->
-    <div id="changePinStep3" style="display: none;">
-      <div class="filter-group">
-        <label>Confirm New PIN</label>
-        <input type="password" id="confirmPinInput" class="modal-input" maxlength="4" inputmode="numeric" readonly>
-      </div>
-    </div>
-
-    <div id="changePinError" style="color:#ef4444; margin: 12px 0; display: none;"></div>
-
-    <div class="modal-buttons">
-      <button id="changePinCancelBtn" class="modal-btn modal-btn-secondary">Cancel</button>
+      <div id="loginError" class="error-msg" style="color:#ef4444; font-size:0.9rem; text-align:center; margin-top:12px;"></div>
     </div>
   </div>
 </div>
-<!-- Printer Modal -->
-<div id="printerModal" class="modal-overlay">
-  <div class="modal-container" style="max-width: 400px;">
-    <span class="close-modal" id="closePrinterModal">×</span>
-    <div class="modal-title">🖨️ Printer Settings</div>
-    <div class="filter-group" style="margin-bottom: 20px;">
-      <label>Paper Size</label>
-      <select id="paperSizeSelectModal">
-        <option value="58">58mm</option>
-        <option value="80">80mm</option>
-      </select>
-    </div>
-    <div class="modal-buttons">
-      <button id="connectPrinterModalBtn" class="modal-btn modal-btn-primary">Connect Printer</button>
-      <button id="closePrinterModalBtn" class="modal-btn modal-btn-secondary">Close</button>
-    </div>
-    <div id="printerStatusModal" style="margin-top: 12px; font-size: 0.9rem; text-align: center;">⚪ Not connected</div>
-  </div>
-</div>
+
 
 <!-- All modals (corrected) -->
 <div id="paymentModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closePaymentModal">×</span><div class="modal-title">💳 Select Payment Method</div><div class="payment-buttons"><button class="payment-btn" data-method="Cash">💵 Cash</button><button class="payment-btn" data-method="Card">💳 Card</button><button class="payment-btn" data-method="QR Pay">📱 QR Pay</button></div><div id="cashOptions" style="display: none;"><div class="suggestions" id="suggestionsContainer"></div><input type="number" id="customCashInput" class="custom-cash-input" placeholder="Enter amount received (RM)" step="0.01"><div class="modal-buttons"><button id="confirmCashBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelPaymentBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="otherPaymentOptions" style="display: none;"><div class="modal-buttons"><button id="confirmOtherBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelOtherBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div></div></div>

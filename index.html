@@ -27,79 +27,117 @@
       border-radius: 28px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
-    .pos-header-left {
+    h1 { font-size: 1.6rem; font-weight: 600; color: #0f172a; }
+    .header-buttons {
       display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .pos-header-right {
-      display: flex;
-      align-items: center;
       gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
     }
-    .cashier-info {
-      font-weight: 500;
-      color: #0f172a;
-      background: #f1f5f9;
-      padding: 8px 16px;
-      border-radius: 40px;
-      font-size: 0.9rem;
-    }
-    .logout-header-btn {
-      background: #ef4444;
+    #reportsButton, #receiptsButton {
+      background: #3b82f6;
       border: none;
       border-radius: 40px;
-      padding: 8px 16px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: 500;
       color: white;
-      font-size: 0.8rem;
       cursor: pointer;
-      transition: background 0.2s;
     }
-    .logout-header-btn:hover {
-      background: #dc2626;
-    }
-    .printer-icon-btn {
+    #receiptsButton { background: #8b5cf6; }
+    #reportsButton:hover { background: #2563eb; }
+    #receiptsButton:hover { background: #7c3aed; }
+    #connectPrinterButton {
       background: #1e293b;
       border: none;
       border-radius: 40px;
-      padding: 8px 16px;
-      font-size: 1.2rem;
+      padding: 10px 20px;
+      font-size: 0.9rem;
       font-weight: 500;
       color: white;
       cursor: pointer;
-      transition: background 0.2s;
     }
-    .printer-icon-btn:hover {
-      background: #0f172a;
-    }
-    h1 { font-size: 1.6rem; font-weight: 600; color: #0f172a; }
-    .store-selector-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .store-selector-header label {
-      font-weight: 500;
-      font-size: 0.9rem;
-      white-space: nowrap;
-    }
-    .store-header-select {
-      padding: 6px 12px;
+    #connectPrinterButton:hover { background: #0f172a; }
+    #printerStatus { font-size: 0.8rem; background: #f1f5f9; padding: 6px 12px; border-radius: 30px; color: #334155; }
+    #inventoryModeBtn {
+      background: #8b5cf6;
+      border: none;
       border-radius: 40px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: white;
+      cursor: pointer;
+      display: none;
+    }
+    #inventoryModeBtn:hover { background: #7c3aed; }
+    .employee-bar {
+      background: white; border-radius: 28px; padding: 10px 20px; margin-bottom: 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .employee-info { font-weight: 500; color: #0f172a; }
+    .employee-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .logout-btn, .drawer-btn, .settlement-btn, .collection-btn {
+      background: #ef4444;
+      border: none;
+      border-radius: 40px;
+      padding: 6px 16px;
+      color: white;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .drawer-btn {
+      background: #f59e0b;
+    }
+    .settlement-btn {
+      background: #8b5cf6;
+    }
+    .collection-btn {
+      background: #10b981;
+    }
+    .drawer-btn:hover { background: #d97706; }
+    .settlement-btn:hover { background: #7c3aed; }
+    .collection-btn:hover { background: #059669; }
+    .drawer-btn:disabled, .settlement-btn:disabled, .collection-btn:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    .logout-btn:hover { background: #dc2626; }
+    .store-selector {
+      background: white; border-radius: 28px; padding: 12px 20px; margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .store-selector label { font-weight: 500; margin-right: 8px; }
+    .store-selector select, #soldBySelect {
+      padding: 12px 20px;
+      border-radius: 60px;
       border: 1px solid #cbd5e1;
       background: white;
-      font-size: 0.9rem;
+      font-size: 1rem;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s;
-      min-width: 130px;
+      min-width: 180px;
     }
-    .store-header-select:focus {
+    .store-selector select:focus, #soldBySelect:focus {
       outline: none;
       border-color: #3b82f6;
       box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
     }
-    .store-header-select:disabled {
+    .store-selector select:disabled, #soldBySelect:disabled {
       background: #f1f5f9;
       cursor: not-allowed;
       opacity: 0.7;
@@ -128,7 +166,7 @@
       border: none;
       padding: 8px 16px;
       border-radius: 32px;
-      font-size: 1rem;
+      font-size: 0.8rem;
       font-weight: 500;
       cursor: pointer;
       transition: 0.1s;
@@ -137,21 +175,6 @@
       background: white;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
       color: #0f172a;
-    }
-    .refresh-btn {
-      background: #f1f5f9;
-      border: none;
-      border-radius: 40px;
-      padding: 8px 16px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: 0.1s;
-    }
-    .refresh-btn:hover {
-      background: #e2e8f0;
-    }
-    .refresh-btn:active {
-      transform: scale(0.97);
     }
     #categorySelect, .search-bar {
       padding: 12px 20px;
@@ -240,11 +263,6 @@
       border-bottom: none;
       padding-bottom: 0;
     }
-    .cart-header-right {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
     .cart-header-buttons {
       display: flex;
       gap: 8px;
@@ -265,16 +283,6 @@
     }
     .cart-header-btn:active {
       transform: scale(0.97);
-    }
-    .sold-by-select-cart {
-      padding: 8px 12px;
-      border-radius: 40px;
-      border: 1px solid #cbd5e1;
-      background: white;
-      font-size: 0.85rem;
-      font-weight: 500;
-      cursor: pointer;
-      min-width: 140px;
     }
     .cart-items { max-height: 50vh; overflow-y: auto; margin-bottom: 20px; }
     .cart-item {
@@ -535,6 +543,7 @@
       .product-list .product-card { flex-direction: column; align-items: stretch; text-align: center; }
       .product-list .product-name, .product-list .product-price, .product-list .product-stock { margin: 4px 0; text-align: center; }
       .product-list .add-btn { width: 100%; }
+      .store-selector { flex-direction: column; align-items: stretch; }
       .cart-item {
         flex-direction: column;
         align-items: stretch;
@@ -830,7 +839,150 @@
       width: auto;
       object-fit: contain;
       vertical-align: middle;
+    }
+    .employee-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: white;
+      border-radius: 28px;
+      padding: 10px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .employee-info-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .employee-info {
+      font-weight: 500;
+      color: #0f172a;
+    }
+    .logout-btn {
+      background: #ef4444;
+      border: none;
+      border-radius: 40px;
+      padding: 6px 16px;
+      color: white;
+      font-size: 0.8rem;
       cursor: pointer;
+      transition: background 0.2s;
+    }
+    .logout-btn:hover {
+      background: #dc2626;
+    }
+    .employee-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .employee-selectors {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    .employee-right-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .selector-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .selector-group label {
+      font-weight: 500;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+    .selector-group select {
+      padding: 8px 12px;
+      border-radius: 40px;
+      border: 1px solid #cbd5e1;
+      background: white;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 140px;
+    }
+    .selector-group select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+    .selector-group select:disabled {
+      background: #f1f5f9;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    @media (max-width: 780px) {
+      .employee-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .employee-info-group,
+      .employee-actions,
+      .employee-selectors {
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+      .employee-selectors {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .selector-group {
+        justify-content: space-between;
+      }
+    }
+    .pos-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+      background: white;
+      padding: 12px 20px;
+      border-radius: 28px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .store-selector-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 8px;
+    }
+    .store-selector-header label {
+      font-weight: 500;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+    .store-header-select {
+      padding: 6px 12px;
+      border-radius: 40px;
+      border: 1px solid #cbd5e1;
+      background: white;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 130px;
+    }
+    .store-header-select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+    .store-header-select:disabled {
+      background: #f1f5f9;
+      cursor: not-allowed;
+      opacity: 0.7;
     }
     .inventory-controls {
       display: flex;
@@ -915,155 +1067,6 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-/* Side menu styles */
-.side-menu-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  z-index: 2500;
-  display: none;
-  align-items: flex-start;
-  justify-content: flex-start;
-}
-.side-menu {
-  position: fixed;
-  top: 0;
-  left: -300px;
-  width: 280px;
-  height: 100%;
-  background: white;
-  box-shadow: 2px 0 12px rgba(0,0,0,0.2);
-  transition: left 0.3s ease;
-  z-index: 2501;
-  display: flex;
-  flex-direction: column;
-  padding: 20px 0;
-}
-.side-menu.open {
-  left: 0;
-}
-.side-menu .menu-header {
-  padding: 0 20px 20px 20px;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.side-menu .menu-header h3 {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #0f172a;
-}
-.side-menu .close-menu {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #64748b;
-}
-.side-menu .menu-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 20px;
-}
-.side-menu .menu-btn {
-  background: #f1f5f9;
-  border: none;
-  border-radius: 40px;
-  padding: 12px 20px;
-  font-size: 1rem;
-  font-weight: 500;
-  text-align: left;
-  cursor: pointer;
-  transition: 0.2s;
-  color: #1e293b;
-}
-.side-menu .menu-btn:hover {
-  background: #e2e8f0;
-}
-.side-menu .menu-btn:active {
-  transform: scale(0.98);
-}
-/* Full‑screen login modal */
-#loginModal.modal-overlay {
-  align-items: stretch;
-  background: rgba(0, 0, 0, 0.95);
-}
-
-#loginModal .modal-container {
-  width: 100%;
-  max-width: none;
-  height: 100%;
-  max-height: none;
-  border-radius: 0;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  background: white;
-}
-
-/* Larger PIN input */
-.pin-input {
-  font-size: 3rem;
-  padding: 20px;
-  letter-spacing: 12px;
-  text-align: center;
-  margin: 20px 0;
-}
-
-/* Keypad grid fills width */
-.pin-keypad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-top: 24px;
-}
-
-/* Large, touch‑friendly buttons */
-.keypad-btn {
-  padding: 24px 0;
-  font-size: 2rem;
-  border-radius: 60px;
-  background: #f1f5f9;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.1s;
-}
-.keypad-btn:active {
-  transform: scale(0.97);
-  background: #e2e8f0;
-}
-.keypad-btn.clear {
-  background: #ef4444;
-  color: white;
-}
-.keypad-btn.enter {
-  background: #2c7a4b;
-  color: white;
-}
-
-/* Keep the close button accessible */
-#loginModal .close-modal {
-  top: 20px;
-  right: 20px;
-  font-size: 32px;
-}
-.mini-keypad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 12px;
-}
-.mini-keypad .keypad-btn {
-  padding: 12px;
-  font-size: 1.2rem;
-}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -1087,7 +1090,7 @@
     <span class="close-modal" id="closeLoginModal">×</span>
     <div class="modal-title">🔐 Enter PIN</div>
     <div class="login-form">
-      <input type="password" id="pinInput" class="pin-input" placeholder="****" maxlength="4" inputmode="numeric" autofocus readonly>
+      <input type="password" id="pinInput" class="pin-input" placeholder="****" maxlength="4" inputmode="numeric" autofocus>
       <div class="pin-keypad">
         <button class="keypad-btn" data-digit="1">1</button>
         <button class="keypad-btn" data-digit="2">2</button>
@@ -1109,8 +1112,8 @@
 
 <div id="mainContent" style="display: none;">
   <div class="pos-header">
-    <div class="pos-header-left">
-      <img src="https://i.imgur.com/STBkLrm.jpeg" alt="POS System Logo" class="pos-logo" id="logoImage">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <img src="https://i.imgur.com/STBkLrm.jpeg" alt="POS System Logo" class="pos-logo">
       <div class="store-selector-header">
         <label for="storeSelect">Store:</label>
         <select id="storeSelect" class="store-header-select">
@@ -1120,10 +1123,34 @@
         </select>
       </div>
     </div>
-    <div class="pos-header-right">
-      <span class="cashier-info" id="employeeNameHeader"></span>
-      <button id="logoutHeaderBtn" class="logout-header-btn">Logout</button>
-      <button id="printerIconBtn" class="printer-icon-btn">🖨️</button>
+    <div class="header-buttons">
+      <button id="reportsButton">📊 Reports</button>
+      <button id="receiptsButton">📜 Receipts</button>
+      <button id="connectPrinterButton">🖨️ Connect Printer</button>
+      <select id="paperSizeSelect" style="background: #f1f5f9; border-radius: 40px; padding: 10px 16px; font-size: 0.9rem; border: none; cursor: pointer;">
+        <option value="58">58mm</option>
+        <option value="80">80mm</option>
+      </select>
+      <button id="inventoryModeBtn">📦 Inventory Mode</button>
+      <div id="printerStatus">⚪ Not connected</div>
+    </div>
+  </div>
+
+  <div class="employee-bar">
+    <div class="employee-info-group">
+      <span class="employee-info">👤 Cashier: <span id="employeeName"></span></span>
+      <button id="logoutButton" class="logout-btn">Logout</button>
+    </div>
+    <div class="employee-right-group">
+      <button id="openDrawerBtn" class="drawer-btn" disabled>💰 Open Drawer</button>
+      <button id="settlementBtn" class="settlement-btn">💰 Settlement</button>
+      <button id="collectionBtn" class="collection-btn" style="display: none;">💵 Cash Collection</button>
+      <div class="selector-group">
+        <label>👤 Sold By:</label>
+        <select id="soldBySelect">
+          <option value="">Loading...</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -1132,10 +1159,9 @@
       <div class="filter-bar">
         <select id="categorySelect"><option value="all">📂 All Categories</option></select>
         <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search product...">
-        <button id="refreshProductsPanelBtn" class="refresh-btn" title="Refresh products">🔄</button>
         <div class="view-toggle">
-          <button id="gridViewBtn" class="active" title="Grid view">⊞</button>
-          <button id="listViewBtn" title="List view">≡</button>
+          <button id="gridViewBtn" class="active">Grid View</button>
+          <button id="listViewBtn">List View</button>
         </div>
       </div>
       <div id="productGrid" class="product-grid">Loading products...</div>
@@ -1143,14 +1169,10 @@
 
     <div class="cart-panel">
       <div class="cart-header">
-        <div class="cart-title" id="cartTitle">🧾 Current Sale</div>
-        <div class="cart-header-right">
-          <select id="soldBySelectCart" class="sold-by-select-cart">
-            <option value="">Loading...</option>
-          </select>
-          <div class="cart-header-buttons">
-            <button id="clearCartBtn" class="cart-header-btn">🗑️ Clear</button>
-          </div>
+        <div class="cart-title" id="cartPanelTitle">🧾 Current Sale</div>
+        <div class="cart-header-buttons">
+          <button id="clearCartBtn" class="cart-header-btn">🗑️ Clear</button>
+          <button id="refreshProductsBtn" class="cart-header-btn">🔄 Refresh</button>
         </div>
       </div>
       <!-- Normal cart content (visible by default) -->
@@ -1199,84 +1221,6 @@
   </div>
 </div>
 
-<!-- Side Menu -->
-<div id="sideMenuOverlay" class="side-menu-overlay">
-  <div id="sideMenu" class="side-menu">
-    <div class="menu-header">
-      <h3>Menu</h3>
-      <button class="close-menu" id="closeSideMenuBtn">✕</button>
-    </div>
-    <div class="menu-buttons">
-      <button id="sideReportBtn" class="menu-btn">📊 Report</button>
-      <button id="sideSettlementBtn" class="menu-btn">💰 Settlement</button>
-      <button id="sideCollectionBtn" class="menu-btn" style="display: none;">💵 Cash Collection</button>
-      <button id="sideInventoryBtn" class="menu-btn" style="display: none;">📦 Inventory</button>
-      <button id="sideReceiptsBtn" class="menu-btn">📜 Receipts</button>
-      <button id="sideDrawerBtn" class="menu-btn">💰 Open Drawer</button>
-      <button id="sideChangePinBtn" class="menu-btn">🔑 Change PIN</button>
-    </div>
-  </div>
-</div>
-
-<!-- Change PIN Modal -->
-<div id="changePinModal" class="modal-overlay">
-  <div class="modal-container" style="max-width: 400px;">
-    <span class="close-modal" id="closeChangePinModal">×</span>
-    <div class="modal-title">🔐 Change PIN</div>
-
-    <!-- Step 1: Current PIN -->
-    <div id="changePinStep1">
-      <div class="filter-group">
-        <label>Current PIN</label>
-        <input type="password" id="currentPinInput" class="modal-input" maxlength="4" inputmode="numeric" readonly>
-        <!-- keypad will be added dynamically -->
-      </div>
-    </div>
-
-    <!-- Step 2: New PIN -->
-    <div id="changePinStep2" style="display: none;">
-      <div class="filter-group">
-        <label>New PIN</label>
-        <input type="password" id="newPinInput" class="modal-input" maxlength="4" inputmode="numeric" readonly>
-      </div>
-    </div>
-
-    <!-- Step 3: Confirm New PIN -->
-    <div id="changePinStep3" style="display: none;">
-      <div class="filter-group">
-        <label>Confirm New PIN</label>
-        <input type="password" id="confirmPinInput" class="modal-input" maxlength="4" inputmode="numeric" readonly>
-      </div>
-    </div>
-
-    <div id="changePinError" style="color:#ef4444; margin: 12px 0; display: none;"></div>
-
-    <div class="modal-buttons">
-      <button id="changePinCancelBtn" class="modal-btn modal-btn-secondary">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- Printer Modal -->
-<div id="printerModal" class="modal-overlay">
-  <div class="modal-container" style="max-width: 400px;">
-    <span class="close-modal" id="closePrinterModal">×</span>
-    <div class="modal-title">🖨️ Printer Settings</div>
-    <div class="filter-group" style="margin-bottom: 20px;">
-      <label>Paper Size</label>
-      <select id="paperSizeSelectModal">
-        <option value="58">58mm</option>
-        <option value="80">80mm</option>
-      </select>
-    </div>
-    <div class="modal-buttons">
-      <button id="connectPrinterModalBtn" class="modal-btn modal-btn-primary">Connect Printer</button>
-      <button id="closePrinterModalBtn" class="modal-btn modal-btn-secondary">Close</button>
-    </div>
-    <div id="printerStatusModal" style="margin-top: 12px; font-size: 0.9rem; text-align: center;">⚪ Not connected</div>
-  </div>
-</div>
-
 <!-- All modals (corrected) -->
 <div id="paymentModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closePaymentModal">×</span><div class="modal-title">💳 Select Payment Method</div><div class="payment-buttons"><button class="payment-btn" data-method="Cash">💵 Cash</button><button class="payment-btn" data-method="Card">💳 Card</button><button class="payment-btn" data-method="QR Pay">📱 QR Pay</button></div><div id="cashOptions" style="display: none;"><div class="suggestions" id="suggestionsContainer"></div><input type="number" id="customCashInput" class="custom-cash-input" placeholder="Enter amount received (RM)" step="0.01"><div class="modal-buttons"><button id="confirmCashBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelPaymentBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="otherPaymentOptions" style="display: none;"><div class="modal-buttons"><button id="confirmOtherBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelOtherBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div></div></div>
 
@@ -1286,7 +1230,7 @@
 
 <div id="specialPromoModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeSpecialPromoModal">×</span><div class="modal-title">🎁 Special Promo</div><div id="promoOptions"><button id="promoBuy2Free1Perfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 2 Free 1 (100ml Perfume EDP)</button><button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 3 Free 1 (Excluding Perfume)</button><div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">💰 Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💰 Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead>汽<th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>  </tr></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💰 Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead><tr><th>Product</th><th>Category</th><th>Quantity</th><th>Total</th></tr></thead><tbody id="productDetailsBody"></tbody></table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="settlementModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
@@ -1310,6 +1254,7 @@
       <p>💳 Card: <strong id="sysCard">RM 0.00</strong></p>
       <p>📱 QR Pay: <strong id="sysQR">RM 0.00</strong></p>
       <p>❌ Refunds: <strong id="sysRefund">RM 0.00</strong></p>
+      <!-- Net Total line with larger font -->
       <p style="font-size: 1.4rem; font-weight: 800; margin-top: 12px;">💰 Net Total: <strong id="sysNetTotal">RM 0.00</strong></p>
     </div>
     <div class="filter-group">
@@ -1332,7 +1277,7 @@
     </div>
   </div>
 </div>
-<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead>汽<th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody>   much</div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead><tr><th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th></tr></thead><tbody id="collectionTableBody"></tbody></table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="receiptsModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeReceiptsModal">×</span><div class="modal-title">📜 Receipt History</div><div class="receipts-filters"><div class="filter-group" id="receiptsStoreFilterGroup"><label>Store</label><select id="receiptsStoreSelect"><option value="all">All Stores</option></select></div><div id="receiptsEmployeeFilter" class="filter-group" style="display: none;"><label>Employee</label><select id="receiptsEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="receiptsDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="receiptsCustomDateRange" style="display: none;" class="date-range"><input type="date" id="receiptsFromDate"><input type="date" id="receiptsToDate"></div><div class="filter-group" style="flex: 2;"><label>Search (Receipt # or Product)</label><input type="text" id="receiptsSearch" placeholder="Type to filter..."></div></div><div id="receiptsList" class="receipts-list">Loading receipts...</div><div class="modal-buttons"><button id="closeReceiptsBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
@@ -1343,7 +1288,6 @@
 <div id="selectModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeSelectModal">×</span><div class="modal-title" id="selectModalTitle"></div><select id="selectModalField" class="modal-select"></select><div class="modal-buttons"><button class="modal-btn modal-btn-secondary" id="selectModalCancel">Cancel</button><button class="modal-btn modal-btn-primary" id="selectModalOk">OK</button></div></div></div>
 
 <div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"></div><div class="loading-text" id="loadingMessage">Processing...</div></div>
-
 <script>
   // ==================== CONFIGURATION ====================
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPKpe-r1UpQ8lrzPOU7HhLCIdBD_ljuXAErrNyT-kig1oCTIx_hQ3sIox4GfO-1ph67A/exec"; // REPLACE WITH YOUR URL
@@ -1371,10 +1315,12 @@
   let loadingTimeout = null;
   let inventoryMode = false;
   let updateStockTimeout = null;
-  let stockHistory = [];
-  let preloadedDataMap = {};
-  let preloadedStores = [];
-
+  let stockHistory = []; // Stock adjustment log (array of entries)
+let preloadedProducts = null;      // Preloaded products for the default store
+let preloadedStore = null;         // Store for which products were preloaded
+let preloadedEmployees = null;     // Preloaded employees list
+let preloadedDataMap = {};   // Stores preloaded data for each store
+let preloadedStores = [];    // List of stores that have been preloaded
   // DOM elements
   const productGridEl = document.getElementById('productGrid');
   const cartContainer = document.getElementById('cartItemsContainer');
@@ -1391,11 +1337,11 @@
   const searchInput = document.getElementById('searchInput');
   const categorySelect = document.getElementById('categorySelect');
   const storeSelect = document.getElementById('storeSelect');
-  const soldBySelectCart = document.getElementById('soldBySelectCart');
+  const soldBySelect = document.getElementById('soldBySelect');
   const inventoryModeBtn = document.getElementById('inventoryModeBtn');
   const cartNormalContent = document.getElementById('cartNormalContent');
   const stockHistoryContainerDiv = document.getElementById('stockHistoryContainer');
-  const cartTitleElement = document.getElementById('cartTitle');
+  const cartPanelTitle = document.getElementById('cartPanelTitle');
 
   // ==================== HELPER FUNCTIONS ====================
   function showLoading(msg = 'Loading...') {
@@ -1610,6 +1556,7 @@
     const confirmed = await showConfirmModal('Clear History', `Are you sure you want to permanently delete all stock history for store "${currentStore}"? This action cannot be undone.`);
     if (!confirmed) return;
 
+    
     try {
       const formData = new URLSearchParams();
       formData.append('action', 'clearStockHistory');
@@ -1620,6 +1567,7 @@
       if (result.success) {
         stockHistory = [];
         renderStockHistory();
+        
       } else {
         throw new Error(result.error || 'Unknown error');
       }
@@ -1636,7 +1584,7 @@
       await showAlertModal('No History', 'There is no stock adjustment history to save.');
       return;
     }
-    showLoading('Saving stock history...');
+    
     try {
       const formData = new URLSearchParams();
       formData.append('action', 'saveStockHistory');
@@ -1686,21 +1634,22 @@
     if (inventoryMode) {
       cartNormalContent.style.display = 'none';
       stockHistoryContainerDiv.style.display = 'flex';
-      cartTitleElement.innerText = '📦 Inventory Mode';
+      cartPanelTitle.innerText = '📦 Inventory Mode';
+      inventoryModeBtn.innerText = '🛍️ Exit Inventory';
       if (updateStockTimeout) clearTimeout(updateStockTimeout);
       loadStockHistoryFromSheet();
       renderProductGrid();
     } else {
       cartNormalContent.style.display = 'block';
       stockHistoryContainerDiv.style.display = 'none';
-      cartTitleElement.innerText = '🧾 Current Sale';
+      cartPanelTitle.innerText = '🧾 Current Sale';
+      inventoryModeBtn.innerText = '📦 Inventory Mode';
       renderProductGrid();
     }
   }
 
   // ==================== INITIAL DATA LOAD ====================
   async function loadInitialData() {
-    showLoading('Loading initial data...');
     try {
       const url = `${APPS_SCRIPT_URL}?action=getInitialData&store=${currentStore}`;
       const response = await fetch(url);
@@ -1726,14 +1675,14 @@
 
         employeeNameMap = {};
         const employees = result.employees;
-        soldBySelectCart.innerHTML = '';
+        soldBySelect.innerHTML = '';
         employees.forEach(emp => {
           employeeNameMap[emp.id] = emp.name;
           const option = document.createElement('option');
           option.value = emp.id;
           option.textContent = `${emp.name} (ID: ${emp.id})`;
           if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
-          soldBySelectCart.appendChild(option);
+          soldBySelect.appendChild(option);
         });
         return true;
       } else {
@@ -1748,11 +1697,9 @@
     }
   }
 
-  // ==================== FETCH PRODUCTS WITH CATEGORY PRESERVATION ====================
   async function fetchProductsFromSheet(force = false) {
     showLoading('Fetching products...');
     try {
-      const currentCategory = categorySelect ? categorySelect.value : 'all';
       const cacheKey = `products_${currentStore}`;
       const now = Date.now();
 
@@ -1770,8 +1717,6 @@
               option.textContent = cat;
               categorySelect.appendChild(option);
             });
-            if (categories.includes(currentCategory)) categorySelect.value = currentCategory;
-            else categorySelect.value = 'all';
             renderProductGrid();
             hideLoading();
             return true;
@@ -1802,8 +1747,6 @@
           option.textContent = cat;
           categorySelect.appendChild(option);
         });
-        if (categories.includes(currentCategory)) categorySelect.value = currentCategory;
-        else categorySelect.value = 'all';
 
         renderProductGrid();
         localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
@@ -1851,137 +1794,138 @@
 
   // ==================== CART FUNCTIONS ====================
   function updateCartUI() {
-    if (!cartContainer) return;
-    if (cart.length === 0) {
-      cartContainer.innerHTML = '<div style="color:#94a3b8; text-align:center;">Cart is empty</div>';
-      subtotalSpan.innerText = `RM 0.00`;
-      discountAmount = 0;
-      buy2Free1Discount = 0;
-      buy3Free1Discount = 0;
-      customDiscount = 0;
-      claimedReceiptInfo = null;
-      pendingPrize = null;
-      discountRow.style.display = 'none';
-      promoBuy2Free1Row.style.display = 'none';
-      promoBuy3Free1Row.style.display = 'none';
-      customDiscountRow.style.display = 'none';
-      totalSpan.innerText = `RM 0.00`;
-      return;
-    }
-
-    let html = '';
-    let subtotal = 0;
-    cart.forEach((item, idx) => {
-      const paidUnits = item.quantity - item.freeQuantity;
-      const itemTotal = paidUnits * item.product.price;
-      subtotal += itemTotal;
-      const categoryDisplay = item.product.category
-        ? `<div class="cart-item-category">${escapeHtml(item.product.category)}</div>`
-        : '';
-      const freeClass = item.freeQuantity > 0 ? 'active' : '';
-      const buttonText = item.freeQuantity > 0 
-        ? `🎁 ${item.freeQuantity} Free` 
-        : '🎁Activate Free Gift';
-      html += `
-        <div class="cart-item" data-index="${idx}">
-          <div class="cart-item-info">
-            <div class="cart-item-name">${escapeHtml(item.product.name)}</div>
-            ${categoryDisplay}
-            <div class="cart-item-price">RM ${item.product.price.toFixed(2)}</div>
-          </div>
-          <div class="cart-item-free">
-            <button class="free-toggle-btn ${freeClass}" data-index="${idx}">${buttonText}</button>
-          </div>
-          <div class="cart-item-qty">
-            <button class="qty-btn" data-index="${idx}" data-delta="-1">−</button>
-            <span>${item.quantity}</span>
-            <button class="qty-btn" data-index="${idx}" data-delta="1">+</button>
-          </div>
-          <div class="cart-item-total">RM ${itemTotal.toFixed(2)}</div>
-          <button class="remove-item" data-index="${idx}">✕</button>
-        </div>
-      `;
-    });
-    cartContainer.innerHTML = html;
-
-    subtotalSpan.innerText = `RM ${subtotal.toFixed(2)}`;
-
-    const totalPromoDiscount = buy2Free1Discount + buy3Free1Discount + customDiscount;
-    const total = subtotal - discountAmount - totalPromoDiscount;
-
-    if (discountAmount > 0) {
-      discountRow.style.display = 'flex';
-      discountAmountSpan.innerText = `RM ${discountAmount.toFixed(2)}`;
-    } else {
-      discountRow.style.display = 'none';
-    }
-
-    if (buy2Free1Discount > 0) {
-      promoBuy2Free1Row.style.display = 'flex';
-      promoBuy2Free1Amount.innerText = `RM ${buy2Free1Discount.toFixed(2)}`;
-    } else {
-      promoBuy2Free1Row.style.display = 'none';
-    }
-
-    if (buy3Free1Discount > 0) {
-      promoBuy3Free1Row.style.display = 'flex';
-      promoBuy3Free1Amount.innerText = `RM ${buy3Free1Discount.toFixed(2)}`;
-    } else {
-      promoBuy3Free1Row.style.display = 'none';
-    }
-
-    if (customDiscount > 0) {
-      customDiscountRow.style.display = 'flex';
-      customDiscountAmount.innerText = `RM ${customDiscount.toFixed(2)}`;
-    } else {
-      customDiscountRow.style.display = 'none';
-    }
-
-    totalSpan.innerText = `RM ${total.toFixed(2)}`;
-
-    // Attach event listeners
-    document.querySelectorAll('.qty-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const idx = parseInt(btn.dataset.index);
-        const delta = parseInt(btn.dataset.delta);
-        if (!isNaN(idx) && !isNaN(delta)) updateQuantity(idx, delta);
-        e.stopPropagation();
-      });
-    });
-    document.querySelectorAll('.remove-item').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const idx = parseInt(btn.dataset.index);
-        if (!isNaN(idx)) removeCartItem(idx);
-        e.stopPropagation();
-      });
-    });
-    document.querySelectorAll('.free-toggle-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const idx = parseInt(btn.dataset.index);
-        if (!isNaN(idx)) toggleFreeCount(idx);
-        e.stopPropagation();
-      });
-    });
+  if (!cartContainer) return;
+  if (cart.length === 0) {
+    cartContainer.innerHTML = '<div style="color:#94a3b8; text-align:center;">Cart is empty</div>';
+    subtotalSpan.innerText = `RM 0.00`;
+    discountAmount = 0;
+    buy2Free1Discount = 0;
+    buy3Free1Discount = 0;
+    customDiscount = 0;
+    claimedReceiptInfo = null;
+    pendingPrize = null;
+    discountRow.style.display = 'none';
+    promoBuy2Free1Row.style.display = 'none';
+    promoBuy3Free1Row.style.display = 'none';
+    customDiscountRow.style.display = 'none';
+    totalSpan.innerText = `RM 0.00`;
+    return;
   }
+
+  let html = '';
+  let subtotal = 0;
+  cart.forEach((item, idx) => {
+    const paidUnits = item.quantity - item.freeQuantity;
+    const itemTotal = paidUnits * item.product.price;
+    subtotal += itemTotal;
+    const categoryDisplay = item.product.category
+      ? `<div class="cart-item-category">${escapeHtml(item.product.category)}</div>`
+      : '';
+   const freeClass = item.freeQuantity > 0 ? 'active' : '';
+const buttonText = item.freeQuantity > 0 
+  ? `🎁 ${item.freeQuantity} Free` 
+  : '🎁Activate Free Gift';
+html += `
+  <div class="cart-item" data-index="${idx}">
+    <div class="cart-item-info">
+      <div class="cart-item-name">${escapeHtml(item.product.name)}</div>
+      ${categoryDisplay}
+      <div class="cart-item-price">RM ${item.product.price.toFixed(2)}</div>
+    </div>
+    <div class="cart-item-free">
+      <button class="free-toggle-btn ${freeClass}" data-index="${idx}">${buttonText}</button>
+    </div>
+    <div class="cart-item-qty">
+      <button class="qty-btn" data-index="${idx}" data-delta="-1">−</button>
+      <span>${item.quantity}</span>
+      <button class="qty-btn" data-index="${idx}" data-delta="1">+</button>
+    </div>
+    <div class="cart-item-total">RM ${itemTotal.toFixed(2)}</div>
+    <button class="remove-item" data-index="${idx}">✕</button>
+  </div>
+`;
+  });
+  cartContainer.innerHTML = html;
+
+  subtotalSpan.innerText = `RM ${subtotal.toFixed(2)}`;
+
+  const totalPromoDiscount = buy2Free1Discount + buy3Free1Discount + customDiscount;
+  const total = subtotal - discountAmount - totalPromoDiscount;
+
+  if (discountAmount > 0) {
+    discountRow.style.display = 'flex';
+    discountAmountSpan.innerText = `RM ${discountAmount.toFixed(2)}`;
+  } else {
+    discountRow.style.display = 'none';
+  }
+
+  if (buy2Free1Discount > 0) {
+    promoBuy2Free1Row.style.display = 'flex';
+    promoBuy2Free1Amount.innerText = `RM ${buy2Free1Discount.toFixed(2)}`;
+  } else {
+    promoBuy2Free1Row.style.display = 'none';
+  }
+
+  if (buy3Free1Discount > 0) {
+    promoBuy3Free1Row.style.display = 'flex';
+    promoBuy3Free1Amount.innerText = `RM ${buy3Free1Discount.toFixed(2)}`;
+  } else {
+    promoBuy3Free1Row.style.display = 'none';
+  }
+
+  if (customDiscount > 0) {
+    customDiscountRow.style.display = 'flex';
+    customDiscountAmount.innerText = `RM ${customDiscount.toFixed(2)}`;
+  } else {
+    customDiscountRow.style.display = 'none';
+  }
+
+  totalSpan.innerText = `RM ${total.toFixed(2)}`;
+
+  // Attach event listeners
+  document.querySelectorAll('.qty-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt(btn.dataset.index);
+      const delta = parseInt(btn.dataset.delta);
+      if (!isNaN(idx) && !isNaN(delta)) updateQuantity(idx, delta);
+      e.stopPropagation();
+    });
+  });
+  document.querySelectorAll('.remove-item').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt(btn.dataset.index);
+      if (!isNaN(idx)) removeCartItem(idx);
+      e.stopPropagation();
+    });
+  });
+  document.querySelectorAll('.free-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt(btn.dataset.index);
+      if (!isNaN(idx)) toggleFreeCount(idx);
+      e.stopPropagation();
+    });
+  });
+}
 
   function updateQuantity(index, delta) {
-    const item = cart[index];
-    if (!item) return;
-    const newQty = item.quantity + delta;
-    if (newQty <= 0) {
-      cart.splice(index, 1);
-    } else {
-      const productStock = item.product.stock;
-      if (newQty > productStock && productStock !== undefined) {
-        showAlertModal('Stock limit', `Only ${productStock} left in stock.`);
-        return;
-      }
-      item.quantity = newQty;
-      if (item.freeQuantity > newQty) item.freeQuantity = newQty;
+  const item = cart[index];
+  if (!item) return;
+  const newQty = item.quantity + delta;
+  if (newQty <= 0) {
+    cart.splice(index, 1);
+  } else {
+    const productStock = item.product.stock;
+    if (newQty > productStock && productStock !== undefined) {
+      showAlertModal('Stock limit', `Only ${productStock} left in stock.`);
+      return;
     }
-    updateCartUI();
-    clearPromo();
+    item.quantity = newQty;
+    // Cap freeQuantity to new quantity
+    if (item.freeQuantity > newQty) item.freeQuantity = newQty;
   }
+  updateCartUI();
+  clearPromo();
+}
 
   function removeCartItem(index) {
     cart.splice(index, 1);
@@ -1990,24 +1934,25 @@
   }
 
   function addToCart(product) {
-    if (product.stock <= 0) {
-      showAlertModal('Out of Stock', `${product.name} is out of stock.`);
+  if (product.stock <= 0) {
+    showAlertModal('Out of Stock', `${product.name} is out of stock.`);
+    return;
+  }
+  const existing = cart.find(item => item.product.id === product.id);
+  if (existing) {
+    if (existing.quantity + 1 > product.stock) {
+      showAlertModal('Stock limit', `Cannot add more than ${product.stock} units.`);
       return;
     }
-    const existing = cart.find(item => item.product.id === product.id);
-    if (existing) {
-      if (existing.quantity + 1 > product.stock) {
-        showAlertModal('Stock limit', `Cannot add more than ${product.stock} units.`);
-        return;
-      }
-      existing.quantity += 1;
-      if (existing.freeQuantity > existing.quantity) existing.freeQuantity = existing.quantity;
-    } else {
-      cart.push({ product: { ...product }, quantity: 1, freeQuantity: 0 });
-    }
-    updateCartUI();
-    clearPromo();
+    existing.quantity += 1;
+    // Ensure freeQuantity does not exceed new quantity
+    if (existing.freeQuantity > existing.quantity) existing.freeQuantity = existing.quantity;
+  } else {
+    cart.push({ product: { ...product }, quantity: 1, freeQuantity: 0 });
   }
+  updateCartUI();
+  clearPromo();
+}
 
   function clearCart() {
     if (cart.length === 0) return;
@@ -2026,16 +1971,6 @@
     buy3Free1Discount = 0;
     customDiscount = 0;
     updateCartUI();
-  }
-
-  function toggleFreeCount(index) {
-    const item = cart[index];
-    if (!item) return;
-    const maxFree = item.quantity;
-    const newFree = (item.freeQuantity + 1) % (maxFree + 1);
-    item.freeQuantity = newFree;
-    updateCartUI();
-    clearPromo();
   }
 
   // ==================== CLAIM PRIZE FUNCTIONS ====================
@@ -2285,14 +2220,14 @@
     const totalAmount = pendingTransaction.totalAmount;
     const transactionId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const saleItems = cart.map(item => ({
-      id: item.product.id,
-      category: item.product.category,
-      name: item.product.name,
-      price: item.product.price,
-      quantity: item.quantity,
-      free_quantity: item.freeQuantity,
-      total: (item.quantity - item.freeQuantity) * item.product.price
-    }));
+  id: item.product.id,
+  category: item.product.category,
+  name: item.product.name,
+  price: item.product.price,
+  quantity: item.quantity,
+  free_quantity: item.freeQuantity,
+  total: (item.quantity - item.freeQuantity) * item.product.price
+}));
     const transaction = {
       transaction_id: transactionId,
       items: saleItems,
@@ -2336,7 +2271,7 @@
   async function saveTransactionToSheet(transaction) {
     showLoading('Recording sale...');
     try {
-      const selectedEmployeeId = soldBySelectCart.value;
+      const selectedEmployeeId = soldBySelect.value;
       const employeeIdForRecord = selectedEmployeeId || currentEmployee.id;
       const formData = new URLSearchParams();
       formData.append("action", "saveSale");
@@ -2440,7 +2375,6 @@
 
   // ==================== RECEIPTS ====================
   async function fetchReceipts(store, employeeId, from, to, search) {
-    showLoading('Loading receipts...');
     try {
       let url = `${APPS_SCRIPT_URL}?action=getReceipts&store=${store}&employeeId=${employeeId}`;
       if (from) url += `&from=${encodeURIComponent(from)}`;
@@ -2557,43 +2491,42 @@
       hideLoading();
     }
   }
-
-  async function preloadProductsForStore(store) {
-    try {
-      const cacheKey = `products_${store}`;
-      const now = Date.now();
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        const { timestamp, products: cachedProducts } = JSON.parse(cached);
-        if (now - timestamp < 5 * 60 * 1000) {
-          const empResponse = await fetch(`${APPS_SCRIPT_URL}?action=getEmployees`);
-          const empResult = await empResponse.json();
-          if (empResult.success) {
-            preloadedDataMap[store] = {
-              products: cachedProducts,
-              employees: empResult.employees
-            };
-          } else {
-            preloadedDataMap[store] = { products: cachedProducts, employees: [] };
-          }
-          return;
+async function preloadProductsForStore(store) {
+  try {
+    const cacheKey = `products_${store}`;
+    const now = Date.now();
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const { timestamp, products: cachedProducts } = JSON.parse(cached);
+      if (now - timestamp < 5 * 60 * 1000) {
+        // Use cached products, but still need employees from API
+        const empResponse = await fetch(`${APPS_SCRIPT_URL}?action=getEmployees`);
+        const empResult = await empResponse.json();
+        if (empResult.success) {
+          preloadedDataMap[store] = {
+            products: cachedProducts,
+            employees: empResult.employees
+          };
+        } else {
+          preloadedDataMap[store] = { products: cachedProducts, employees: [] };
         }
+        return;
       }
-      const url = `${APPS_SCRIPT_URL}?action=getInitialData&store=${store}&_=${now}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) {
-        preloadedDataMap[store] = {
-          products: result.products,
-          employees: result.employees
-        };
-        localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: result.products }));
-      }
-    } catch (err) {
-      console.error(`Preload failed for ${store}:`, err);
     }
+    const url = `${APPS_SCRIPT_URL}?action=getInitialData&store=${store}&_=${now}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      preloadedDataMap[store] = {
+        products: result.products,
+        employees: result.employees
+      };
+      localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: result.products }));
+    }
+  } catch (err) {
+    console.error(`Preload failed for ${store}:`, err);
   }
-
+}
   // ==================== REPORTS ====================
   async function fetchSalesReport(store, employeeId, from, to, unsettledOnly) {
     showLoading('Loading report...');
@@ -2815,84 +2748,87 @@
   }
 
   // ==================== SETTLEMENT & COLLECTION ====================
-  async function openSettlementModal() {
-    const modal = document.getElementById('settlementModal');
-    modal.style.display = 'flex';
+async function openSettlementModal() {
+  const modal = document.getElementById('settlementModal');
+  modal.style.display = 'flex';
 
-    document.getElementById('recordSettlementBtn').style.display = 'none';
-    document.getElementById('checkSettlementBtn').style.display = 'block';
-    document.getElementById('settlementError').style.display = 'none';
-    document.getElementById('settlementError').innerHTML = '';
-    document.getElementById('actualCash').value = '';
-    document.getElementById('actualCard').value = '';
-    document.getElementById('actualQR').value = '';
-    document.getElementById('pettyCashFloat').value = '0.00';
-    document.getElementById('actualCash').classList.remove('error-field');
-    document.getElementById('actualCard').classList.remove('error-field');
-    document.getElementById('actualQR').classList.remove('error-field');
+  // 🔄 Immediate UI reset
+  document.getElementById('recordSettlementBtn').style.display = 'none';
+  document.getElementById('checkSettlementBtn').style.display = 'block';
+  document.getElementById('settlementError').style.display = 'none';
+  document.getElementById('settlementError').innerHTML = '';
+  document.getElementById('actualCash').value = '';
+  document.getElementById('actualCard').value = '';
+  document.getElementById('actualQR').value = '';
+  document.getElementById('pettyCashFloat').value = '0.00';
+  document.getElementById('actualCash').classList.remove('error-field');
+  document.getElementById('actualCard').classList.remove('error-field');
+  document.getElementById('actualQR').classList.remove('error-field');
 
-    const fieldsToDisable = ['actualCash', 'actualCard', 'actualQR'];
-    fieldsToDisable.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.disabled = true;
-    });
-    const checkBtn = document.getElementById('checkSettlementBtn');
-    if (checkBtn) checkBtn.disabled = true;
+  // 🚫 Disable inputs and Check button while loading
+  const fieldsToDisable = ['actualCash', 'actualCard', 'actualQR'];
+  fieldsToDisable.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = true;
+  });
+  const checkBtn = document.getElementById('checkSettlementBtn');
+  if (checkBtn) checkBtn.disabled = true;
 
-    const totalsContainer = document.getElementById('systemTotalsDisplay');
-    if (totalsContainer) totalsContainer.style.display = 'none';
+  // Hide the system totals container while loading
+  const totalsContainer = document.getElementById('systemTotalsDisplay');
+  if (totalsContainer) totalsContainer.style.display = 'none';
 
-    let loadingMsg = document.getElementById('settlementLoadingMsg');
-    if (!loadingMsg) {
-      loadingMsg = document.createElement('div');
-      loadingMsg.id = 'settlementLoadingMsg';
-      loadingMsg.style.textAlign = 'center';
-      loadingMsg.style.padding = '20px';
-      loadingMsg.style.background = '#f8fafc';
-      loadingMsg.style.borderRadius = '12px';
-      loadingMsg.style.margin = '10px 0';
-      loadingMsg.innerHTML = `
-        <div class="settlement-loading-spinner"></div>
-        <span style="vertical-align: middle;">Loading settlement data...</span>
-      `;
-      if (totalsContainer) totalsContainer.insertAdjacentElement('afterend', loadingMsg);
-    }
-    loadingMsg.style.display = 'block';
-
-    try {
-      let store;
-      if (!currentEmployee.isAdmin) {
-        store = initialStore;
-        document.getElementById('settlementStoreSelect').value = store;
-        document.getElementById('settlementStoreSelect').disabled = true;
-      } else {
-        store = document.getElementById('settlementStoreSelect').value;
-        document.getElementById('settlementStoreSelect').disabled = false;
-      }
-
-      const todayStr = getLocalDateString(new Date());
-      const alreadySettled = await checkSettlementStatus(store, todayStr);
-
-      if (alreadySettled) {
-        loadingMsg.style.display = 'none';
-        if (totalsContainer) totalsContainer.style.display = 'block';
-        await showAlertModal('Settlement Already Done', 'Settlement has already been recorded for today. No further settlement allowed.');
-        modal.style.display = 'none';
-        return;
-      }
-
-      await refreshSettlementTotals(store);
-      loadingMsg.style.display = 'none';
-      if (totalsContainer) totalsContainer.style.display = 'block';
-    } catch (err) {
-      console.error(err);
-      loadingMsg.style.display = 'none';
-      if (totalsContainer) totalsContainer.style.display = 'block';
-      await showAlertModal('Error', 'Failed to load settlement data.');
-      modal.style.display = 'none';
-    }
+  // Show loading message with spinner
+  let loadingMsg = document.getElementById('settlementLoadingMsg');
+  if (!loadingMsg) {
+    loadingMsg = document.createElement('div');
+    loadingMsg.id = 'settlementLoadingMsg';
+    loadingMsg.style.textAlign = 'center';
+    loadingMsg.style.padding = '20px';
+    loadingMsg.style.background = '#f8fafc';
+    loadingMsg.style.borderRadius = '12px';
+    loadingMsg.style.margin = '10px 0';
+    loadingMsg.innerHTML = `
+      <div class="settlement-loading-spinner"></div>
+      <span style="vertical-align: middle;">Loading settlement data...</span>
+    `;
+    if (totalsContainer) totalsContainer.insertAdjacentElement('afterend', loadingMsg);
   }
+  loadingMsg.style.display = 'block';
 
+  try {
+    let store;
+    if (!currentEmployee.isAdmin) {
+      store = initialStore;
+      document.getElementById('settlementStoreSelect').value = store;
+      document.getElementById('settlementStoreSelect').disabled = true;
+    } else {
+      store = document.getElementById('settlementStoreSelect').value;
+      document.getElementById('settlementStoreSelect').disabled = false;
+    }
+
+    const todayStr = getLocalDateString(new Date());
+    const alreadySettled = await checkSettlementStatus(store, todayStr);
+
+    if (alreadySettled) {
+      loadingMsg.style.display = 'none';
+      if (totalsContainer) totalsContainer.style.display = 'block'; // restore but it won't be used since modal closes
+      await showAlertModal('Settlement Already Done', 'Settlement has already been recorded for today. No further settlement allowed.');
+      modal.style.display = 'none';
+      return;
+    }
+
+    await refreshSettlementTotals(store);
+    loadingMsg.style.display = 'none';
+    if (totalsContainer) totalsContainer.style.display = 'block'; // show totals after data loaded
+  } catch (err) {
+    console.error(err);
+    loadingMsg.style.display = 'none';
+    if (totalsContainer) totalsContainer.style.display = 'block'; // restore visibility on error as well
+    await showAlertModal('Error', 'Failed to load settlement data.');
+    modal.style.display = 'none';
+  }
+}
   async function checkSettlementStatus(store, date) {
     try {
       const url = `${APPS_SCRIPT_URL}?action=getSettlementStatus&store=${store}&date=${date}`;
@@ -2904,87 +2840,173 @@
       return false;
     }
   }
+async function refreshSettlementTotals(store) {
+  const todayStr = getLocalDateString(new Date());
+  const report = await fetchSalesReport(store, 'all', todayStr, todayStr, true);
+  if (report) {
+    currentSettlementTotals = {
+      cash: report.cashTotal,
+      card: report.cardTotal,
+      qr: report.otherTotal,
+      refund: report.refundTotal
+    };
+    document.getElementById('sysCash').innerText = `RM ${currentSettlementTotals.cash.toFixed(2)}`;
+    document.getElementById('sysCard').innerText = `RM ${currentSettlementTotals.card.toFixed(2)}`;
+    document.getElementById('sysQR').innerText = `RM ${currentSettlementTotals.qr.toFixed(2)}`;
+    document.getElementById('sysRefund').innerText = `RM ${Math.abs(currentSettlementTotals.refund).toFixed(2)}`;
 
-  async function refreshSettlementTotals(store) {
-    const todayStr = getLocalDateString(new Date());
-    const report = await fetchSalesReport(store, 'all', todayStr, todayStr, true);
-    if (report) {
-      currentSettlementTotals = {
-        cash: report.cashTotal,
-        card: report.cardTotal,
-        qr: report.otherTotal,
-        refund: report.refundTotal
-      };
-      document.getElementById('sysCash').innerText = `RM ${currentSettlementTotals.cash.toFixed(2)}`;
-      document.getElementById('sysCard').innerText = `RM ${currentSettlementTotals.card.toFixed(2)}`;
-      document.getElementById('sysQR').innerText = `RM ${currentSettlementTotals.qr.toFixed(2)}`;
-      document.getElementById('sysRefund').innerText = `RM ${Math.abs(currentSettlementTotals.refund).toFixed(2)}`;
+    // Net Total = Cash + Card + QR (refunds already accounted)
+    const netTotal = currentSettlementTotals.cash + currentSettlementTotals.card + currentSettlementTotals.qr;
+    document.getElementById('sysNetTotal').innerText = `RM ${netTotal.toFixed(2)}`;
 
-      const netTotal = currentSettlementTotals.cash + currentSettlementTotals.card + currentSettlementTotals.qr;
-      document.getElementById('sysNetTotal').innerText = `RM ${netTotal.toFixed(2)}`;
+    const alreadySettled = await checkSettlementStatus(store, todayStr);
+    if (alreadySettled) {
+      document.getElementById('settlementError').innerHTML = '⚠️ Settlement has already been recorded for today. No further settlement allowed.';
+      document.getElementById('settlementError').style.display = 'block';
+      document.getElementById('checkSettlementBtn').disabled = true;
+      document.getElementById('recordSettlementBtn').style.display = 'none';
+      setSettlementFieldsEnabled(false);
+    } else {
+      setSettlementFieldsEnabled(true);
+      document.getElementById('actualCash').value = '';
+      document.getElementById('actualCard').value = '';
+      document.getElementById('actualQR').value = '';
+      document.getElementById('pettyCashFloat').value = '0.00';
+      document.getElementById('settlementError').style.display = 'none';
+      document.getElementById('recordSettlementBtn').style.display = 'none';
+      document.getElementById('checkSettlementBtn').style.display = 'block';
+      document.getElementById('checkSettlementBtn').disabled = false;
+      document.getElementById('actualCash').classList.remove('error-field');
+      document.getElementById('actualCard').classList.remove('error-field');
+      document.getElementById('actualQR').classList.remove('error-field');
+    }
+  }
+}
+  let currentSettlementTotals = null;
 
-      const alreadySettled = await checkSettlementStatus(store, todayStr);
-      if (alreadySettled) {
-        document.getElementById('settlementError').innerHTML = '⚠️ Settlement has already been recorded for today. No further settlement allowed.';
-        document.getElementById('settlementError').style.display = 'block';
-        document.getElementById('checkSettlementBtn').disabled = true;
-        document.getElementById('recordSettlementBtn').style.display = 'none';
-        setSettlementFieldsEnabled(false);
+ function setSettlementFieldsEnabled(enabled) {
+  const fields = ['settlementStoreSelect', 'pettyCashFloat', 'actualCash', 'actualCard', 'actualQR'];
+  const isNonAdmin = !currentEmployee?.isAdmin;
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      if (id === 'settlementStoreSelect' && isNonAdmin) {
+        el.disabled = true;
       } else {
-        setSettlementFieldsEnabled(true);
-        document.getElementById('actualCash').value = '';
-        document.getElementById('actualCard').value = '';
-        document.getElementById('actualQR').value = '';
-        document.getElementById('pettyCashFloat').value = '0.00';
-        document.getElementById('settlementError').style.display = 'none';
-        document.getElementById('recordSettlementBtn').style.display = 'none';
-        document.getElementById('checkSettlementBtn').style.display = 'block';
-        document.getElementById('checkSettlementBtn').disabled = false;
-        document.getElementById('actualCash').classList.remove('error-field');
-        document.getElementById('actualCard').classList.remove('error-field');
-        document.getElementById('actualQR').classList.remove('error-field');
+        el.disabled = !enabled;
+      }
+    }
+  });
+  // Also set the Check button state
+  const checkBtn = document.getElementById('checkSettlementBtn');
+  if (checkBtn) checkBtn.disabled = !enabled;
+}
+
+  // ==================== PRINTER SETUP ====================
+  (function setupPrinter() {
+    let gattServer = null, printerCharacteristic = null, isConnected = false;
+    const connectBtn = document.getElementById('connectPrinterButton');
+    const printerStatusDiv = document.getElementById('printerStatus');
+    const openDrawerBtn = document.getElementById('openDrawerBtn');
+
+    function generateReceiptData(transaction, openDrawer = false) {
+  const encoder = new TextEncoder();
+  const employeeName = transaction.employee_name || getEmployeeName(transaction.employee_id) || 'N/A';
+  const storeLocation = transaction.store ? transaction.store.charAt(0).toUpperCase() + transaction.store.slice(1) : 'Queens';
+  
+  const paperSize = localStorage.getItem('printerPaperSize') || '80';
+  const maxChars = paperSize === '58' ? 32 : 48;
+  
+  function formatLine(left, right = null) {
+    if (right === null) {
+      return left.length > maxChars ? left.substring(0, maxChars - 3) + '...' : left;
+    }
+    const leftMax = Math.floor(maxChars * 0.6);
+    const rightMax = maxChars - leftMax - 2;
+    let leftText = left.length > leftMax ? left.substring(0, leftMax - 3) + '...' : left;
+    let rightText = right.length > rightMax ? right.substring(0, rightMax - 3) + '...' : right;
+    return leftText.padEnd(leftMax) + ' ' + rightText.padStart(rightMax);
+  }
+  
+  const grouped = {};
+  for (const item of transaction.items) {
+    const cat = item.category || 'Uncategorized';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(item);
+  }
+  
+  const lines = [];
+  const separator = '-'.repeat(maxChars);
+  
+  lines.push('', '    UL PERFUMERY', separator);
+  lines.push(formatLine(`STORE LOCATION : ${storeLocation}`));
+  lines.push(formatLine(`EMPLOYEE : ${employeeName}`));
+  lines.push(separator);
+  
+  for (const [category, items] of Object.entries(grouped)) {
+    let categoryTotal = 0;
+    for (const item of items) {
+      const paidQty = item.quantity - (item.free_quantity || 0);
+      categoryTotal += paidQty * item.price;
+    }
+    lines.push(formatLine(category, `RM ${categoryTotal.toFixed(2)}`));
+    for (const item of items) {
+      const paidQty = item.quantity - (item.free_quantity || 0);
+      if (paidQty > 0) {
+        lines.push(`  ${item.name}`);
+        lines.push(`  ${paidQty} x RM ${item.price.toFixed(2)}`);
+      }
+      if (item.free_quantity > 0) {
+        lines.push(`  ** ${item.free_quantity} FREE **`);
       }
     }
   }
-
-  let currentSettlementTotals = null;
-
-  function setSettlementFieldsEnabled(enabled) {
-    const fields = ['settlementStoreSelect', 'pettyCashFloat', 'actualCash', 'actualCard', 'actualQR'];
-    const isNonAdmin = !currentEmployee?.isAdmin;
-    fields.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-        if (id === 'settlementStoreSelect' && isNonAdmin) {
-          el.disabled = true;
-        } else {
-          el.disabled = !enabled;
-        }
-      }
-    });
-    const checkBtn = document.getElementById('checkSettlementBtn');
-    if (checkBtn) checkBtn.disabled = !enabled;
+  
+  lines.push(separator);
+  const totalAmount = transaction.total;
+  lines.push(formatLine('TOTAL', `RM ${totalAmount.toFixed(2)}`));
+  lines.push(formatLine('PAYMENT METHOD', transaction.payment_method));
+  if (transaction.cash_received && transaction.payment_method === 'Cash') {
+    const change = transaction.cash_received - totalAmount;
+    lines.push(formatLine('CHANGE', `RM ${change.toFixed(2)}`));
   }
+  lines.push(separator);
+  lines.push('THANK YOU FOR YOUR PURCHASE');
+  lines.push('ANY ENQUIRY PLEASE CONTACT');
+  lines.push('+60134665831 ( MARCUS )');
+  lines.push('GOODS SOLD ARE NOT REFUNDABLE');
+  lines.push(separator);
+  
+  const date = new Date(transaction.timestamp);
+  const formattedDate = `${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+  lines.push(formatLine(`TXN   : ${transaction.transaction_id}`));
+  lines.push(formatLine(`DATE  : ${formattedDate}`));
+  lines.push('');
+  
+  const text = lines.join('\n');
+  
+  let commands = [];
+  commands.push(0x1B, 0x40); // Initialize
+  commands.push(0x1B, 0x61, 0x01); // Center
+  commands.push(...encoder.encode(text));
+  commands.push(0x1B, 0x64, 0x03); // Feed 3 lines
+  commands.push(0x1D, 0x56, 0x41, 0x00); // Cut
+  if (openDrawer) {
+    const drawerCommand = [0x1B, 0x70, 0x00, 0x19, 0xFA];
+    commands = commands.slice(0, -4).concat(drawerCommand, commands.slice(-4));
+  }
+  return new Uint8Array(commands);
+}
 
-  // ==================== PRINTER SETUP (unified modal) ====================
-  (function setupPrinter() {
-    let gattServer = null, printerCharacteristic = null, isConnected = false;
-    const printerModal = document.getElementById('printerModal');
-    const connectBtnModal = document.getElementById('connectPrinterModalBtn');
-    const printerStatusModal = document.getElementById('printerStatusModal');
-    const paperSizeSelectModal = document.getElementById('paperSizeSelectModal');
-    const printerIconBtn = document.getElementById('printerIconBtn');
-    const closePrinterModal = document.getElementById('closePrinterModal');
-    const closePrinterModalBtn = document.getElementById('closePrinterModalBtn');
-
-    function updatePrinterStatusUI() {
-      if (isConnected) {
-        printerStatusModal.innerText = '✅ Printer connected';
-        printerStatusModal.style.color = '#2c7a4b';
-      } else {
-        printerStatusModal.innerText = '⚪ Not connected';
-        printerStatusModal.style.color = '#64748b';
-      }
+    const paperSizeSelect = document.getElementById('paperSizeSelect');
+    if (paperSizeSelect) {
+      const savedSize = localStorage.getItem('printerPaperSize');
+      if (savedSize) paperSizeSelect.value = savedSize;
+      else paperSizeSelect.value = '80';
+      paperSizeSelect.addEventListener('change', () => {
+        localStorage.setItem('printerPaperSize', paperSizeSelect.value);
+        showAlertModal('Settings', `Paper size set to ${paperSizeSelect.value}mm.`);
+      });
     }
 
     async function sendChunkedData(data, chunkSize = 500) {
@@ -2993,7 +3015,7 @@
       while (offset < data.length) {
         const chunk = data.slice(offset, offset + chunkSize);
         try {
-          await printerCharacteristic.writeValueWithResponse(chunk);
+          await printerCharacteristic.writeValue(chunk);
           await new Promise(resolve => setTimeout(resolve, 50));
         } catch (err) {
           console.error('Chunk write failed:', err);
@@ -3006,125 +3028,44 @@
 
     async function openCashDrawer() {
       if (!isConnected || !printerCharacteristic) {
-        await showAlertModal('Printer not connected', 'Please connect a printer first.');
+        printerStatusDiv.innerText = '❌ Printer not connected';
         return false;
       }
       try {
         const drawerCommand = new Uint8Array([0x1B, 0x70, 0x00, 0x19, 0xFA]);
-        await printerCharacteristic.writeValueWithResponse(drawerCommand);
-        await showAlertModal('Drawer Opened', 'Cash drawer opened successfully.');
+        await printerCharacteristic.writeValue(drawerCommand);
+        printerStatusDiv.innerText = '💰 Drawer opened';
+        setTimeout(() => { if (isConnected) printerStatusDiv.innerText = '✅ Printer ready'; }, 2000);
         return true;
       } catch (err) {
         console.error(err);
-        await showAlertModal('Drawer Error', 'Failed to open drawer.');
+        printerStatusDiv.innerText = `❌ Drawer error`;
         return false;
       }
     }
 
     async function printReceipt(transaction) {
       if (!isConnected || !printerCharacteristic) {
-        await showAlertModal('Printer required', 'Connect Bluetooth printer first.');
+        printerStatusDiv.innerText = '❌ Printer not connected';
         return false;
       }
       try {
         const openDrawer = (transaction.payment_method === 'Cash');
-        const paperSize = paperSizeSelectModal.value;
-        localStorage.setItem('printerPaperSize', paperSize);
-        const encoder = new TextEncoder();
-        const employeeName = transaction.employee_name || getEmployeeName(transaction.employee_id) || 'N/A';
-        const storeLocation = transaction.store ? transaction.store.charAt(0).toUpperCase() + transaction.store.slice(1) : 'Queens';
-        const maxChars = paperSize === '58' ? 32 : 48;
-        
-        function formatLine(left, right = null) {
-          if (right === null) {
-            return left.length > maxChars ? left.substring(0, maxChars - 3) + '...' : left;
-          }
-          const leftMax = Math.floor(maxChars * 0.6);
-          const rightMax = maxChars - leftMax - 2;
-          let leftText = left.length > leftMax ? left.substring(0, leftMax - 3) + '...' : left;
-          let rightText = right.length > rightMax ? right.substring(0, rightMax - 3) + '...' : right;
-          return leftText.padEnd(leftMax) + ' ' + rightText.padStart(rightMax);
-        }
-        
-        const grouped = {};
-        for (const item of transaction.items) {
-          const cat = item.category || 'Uncategorized';
-          if (!grouped[cat]) grouped[cat] = [];
-          grouped[cat].push(item);
-        }
-        
-        const lines = [];
-        const separator = '-'.repeat(maxChars);
-        
-        lines.push('', '    UL PERFUMERY', separator);
-        lines.push(formatLine(`STORE LOCATION : ${storeLocation}`));
-        lines.push(formatLine(`EMPLOYEE : ${employeeName}`));
-        lines.push(separator);
-        
-        for (const [category, items] of Object.entries(grouped)) {
-          let categoryTotal = 0;
-          for (const item of items) {
-            const paidQty = item.quantity - (item.free_quantity || 0);
-            categoryTotal += paidQty * item.price;
-          }
-          lines.push(formatLine(category, `RM ${categoryTotal.toFixed(2)}`));
-          for (const item of items) {
-            const paidQty = item.quantity - (item.free_quantity || 0);
-            if (paidQty > 0) {
-              lines.push(`  ${item.name}`);
-              lines.push(`  ${paidQty} x RM ${item.price.toFixed(2)}`);
-            }
-            if (item.free_quantity > 0) {
-              lines.push(`  ** ${item.free_quantity} FREE **`);
-            }
-          }
-        }
-        
-        lines.push(separator);
-        const totalAmount = transaction.total;
-        lines.push(formatLine('TOTAL', `RM ${totalAmount.toFixed(2)}`));
-        lines.push(formatLine('PAYMENT METHOD', transaction.payment_method));
-        if (transaction.cash_received && transaction.payment_method === 'Cash') {
-          const change = transaction.cash_received - totalAmount;
-          lines.push(formatLine('CHANGE', `RM ${change.toFixed(2)}`));
-        }
-        lines.push(separator);
-        lines.push('THANK YOU FOR YOUR PURCHASE');
-        lines.push('ANY ENQUIRY PLEASE CONTACT');
-        lines.push('+60134665831 ( MARCUS )');
-        lines.push('GOODS SOLD ARE NOT REFUNDABLE');
-        lines.push(separator);
-        
-        const date = new Date(transaction.timestamp);
-        const formattedDate = `${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
-        lines.push(formatLine(`TXN   : ${transaction.transaction_id}`));
-        lines.push(formatLine(`DATE  : ${formattedDate}`));
-        lines.push('');
-        
-        const text = lines.join('\n');
-        
-        let commands = [];
-        commands.push(0x1B, 0x40); // Initialize
-        commands.push(0x1B, 0x61, 0x01); // Center
-        commands.push(...encoder.encode(text));
-        commands.push(0x1B, 0x64, 0x03); // Feed 3 lines
-        commands.push(0x1D, 0x56, 0x41, 0x00); // Cut
-        if (openDrawer) {
-          const drawerCommand = [0x1B, 0x70, 0x00, 0x19, 0xFA];
-          commands = commands.slice(0, -4).concat(drawerCommand, commands.slice(-4));
-        }
-        await sendChunkedData(new Uint8Array(commands), 500);
+        const data = generateReceiptData(transaction, openDrawer);
+        await sendChunkedData(data, 500);
+        printerStatusDiv.innerText = '✅ Receipt printed';
         return true;
       } catch (err) {
         console.error(err);
+        printerStatusDiv.innerText = `❌ Print error: ${err.message}`;
         return false;
       }
     }
 
     async function connectPrinter() {
       try {
-        connectBtnModal.disabled = true;
-        printerStatusModal.innerText = '🔍 Scanning...';
+        printerStatusDiv.innerText = '🔍 Scanning...';
+        connectBtn.disabled = true;
         const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] });
         gattServer = await device.gatt.connect();
         const services = await gattServer.getPrimaryServices();
@@ -3142,39 +3083,34 @@
         if (!foundChar) throw new Error('No writable characteristic');
         printerCharacteristic = foundChar;
         isConnected = true;
-        window.printerAPI = { isConnected: true, printReceipt: printReceipt, openDrawer: openCashDrawer };
-        updatePrinterStatusUI();
-        await showAlertModal('Printer Connected', 'Bluetooth printer is ready.');
+        window.printerAPI.isConnected = true;
+        printerStatusDiv.innerText = '✅ Printer ready';
+        connectBtn.innerText = '🔌 Disconnect';
+        openDrawerBtn.disabled = false;
       } catch (err) {
-        printerStatusModal.innerText = `❌ ${err.message}`;
-        console.error(err);
+        printerStatusDiv.innerText = `❌ ${err.message}`;
+        gattServer = null;
+        printerCharacteristic = null;
       } finally {
-        connectBtnModal.disabled = false;
+        connectBtn.disabled = false;
       }
     }
 
-    function disconnectPrinter() {
+    async function disconnectPrinter() {
       if (gattServer) { gattServer.disconnect(); gattServer = null; printerCharacteristic = null; }
       isConnected = false;
-      window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer };
-      updatePrinterStatusUI();
+      window.printerAPI.isConnected = false;
+      printerStatusDiv.innerText = '⚪ Not connected';
+      connectBtn.innerText = '🖨️ Connect Printer';
+      openDrawerBtn.disabled = true;
     }
 
-    printerIconBtn.addEventListener('click', () => {
-      printerModal.style.display = 'flex';
-      updatePrinterStatusUI();
+    connectBtn.addEventListener('click', () => { if (!isConnected) connectPrinter(); else disconnectPrinter(); });
+    openDrawerBtn.addEventListener('click', async () => {
+      if (!isConnected) { await showAlertModal('Printer not connected', 'Please connect a printer first.'); return; }
+      await openCashDrawer();
     });
-    connectBtnModal.addEventListener('click', () => {
-      if (!isConnected) connectPrinter();
-      else disconnectPrinter();
-    });
-    function closeModal() { printerModal.style.display = 'none'; }
-    closePrinterModal.addEventListener('click', closeModal);
-    closePrinterModalBtn.addEventListener('click', closeModal);
-    const savedSize = localStorage.getItem('printerPaperSize') || '80';
-    paperSizeSelectModal.value = savedSize;
-
-    window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer };
+    window.printerAPI = { isConnected: false, printReceipt: printReceipt };
   })();
 
   // ==================== RENDER PRODUCT GRID ====================
@@ -3276,149 +3212,157 @@
 
   // ==================== EVENT LISTENERS ====================
   document.getElementById('confirmStoreBtn').addEventListener('click', () => {
-    initialStore = document.getElementById('initialStoreSelect').value;
-    currentStore = initialStore;
-    storeSelect.value = initialStore;
-    document.getElementById('storeSelectModal').style.display = 'none';
+  initialStore = document.getElementById('initialStoreSelect').value;
+  currentStore = initialStore;
+  storeSelect.value = initialStore;
+  document.getElementById('storeSelectModal').style.display = 'none';
 
-    const preloaded = preloadedDataMap[initialStore];
-    if (preloaded && preloaded.products && preloaded.products.length > 0) {
-      products = preloaded.products;
-      const categories = [...new Set(products.map(p => p.category))].sort();
-      categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
-      categories.forEach(cat => {
+  // Check if data is already preloaded for this store
+  const preloaded = preloadedDataMap[initialStore];
+  if (preloaded && preloaded.products && preloaded.products.length > 0) {
+    // Use preloaded data directly
+    products = preloaded.products;
+    const categories = [...new Set(products.map(p => p.category))].sort();
+    categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
+    categories.forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat;
+      option.textContent = cat;
+      categorySelect.appendChild(option);
+    });
+    renderProductGrid();
+
+    // Load employees (if not already loaded)
+    if (preloaded.employees && preloaded.employees.length > 0) {
+      employeeNameMap = {};
+      soldBySelect.innerHTML = '';
+      preloaded.employees.forEach(emp => {
+        employeeNameMap[emp.id] = emp.name;
         const option = document.createElement('option');
-        option.value = cat;
-        option.textContent = cat;
-        categorySelect.appendChild(option);
+        option.value = emp.id;
+        option.textContent = `${emp.name} (ID: ${emp.id})`;
+        if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
+        soldBySelect.appendChild(option);
       });
-      renderProductGrid();
-
-      if (preloaded.employees && preloaded.employees.length > 0) {
+    } else {
+      // Fallback: fetch employees if not preloaded
+      fetchEmployees().then(employees => {
         employeeNameMap = {};
-        soldBySelectCart.innerHTML = '';
-        preloaded.employees.forEach(emp => {
+        soldBySelect.innerHTML = '';
+        employees.forEach(emp => {
           employeeNameMap[emp.id] = emp.name;
           const option = document.createElement('option');
           option.value = emp.id;
           option.textContent = `${emp.name} (ID: ${emp.id})`;
           if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
-          soldBySelectCart.appendChild(option);
+          soldBySelect.appendChild(option);
         });
-      } else {
-        fetchEmployees().then(employees => {
-          employeeNameMap = {};
-          soldBySelectCart.innerHTML = '';
-          employees.forEach(emp => {
-            employeeNameMap[emp.id] = emp.name;
-            const option = document.createElement('option');
-            option.value = emp.id;
-            option.textContent = `${emp.name} (ID: ${emp.id})`;
-            if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
-            soldBySelectCart.appendChild(option);
-          });
-        });
-      }
-
-      initialDataPromise = Promise.resolve(true);
-      document.getElementById('loginModal').style.display = 'flex';
-      document.getElementById('pinInput').focus();
-    } else {
-      initialDataPromise = loadInitialData();
-      document.getElementById('loginModal').style.display = 'flex';
-      document.getElementById('pinInput').focus();
+      });
     }
-  });
 
-  async function verifyEmployeeByPin(pin) {
-    showLoading('Verifying...');
-    try {
-      const url = `${APPS_SCRIPT_URL}?action=verifyByPin&pin=${encodeURIComponent(pin)}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) {
-        currentEmployee = result.employee;
-        document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
-        document.getElementById('loginModal').style.display = 'none';
-        document.getElementById('mainContent').style.display = 'block';
-
-        if (initialDataPromise) await initialDataPromise;
-        else await loadInitialData();
-
-        soldBySelectCart.value = currentEmployee.id;
-
-        const sideInventory = document.getElementById('sideInventoryBtn');
-        const sideCollection = document.getElementById('sideCollectionBtn');
-        if (currentEmployee.isAdmin) {
-          if (sideInventory) sideInventory.style.display = 'flex';
-          if (sideCollection) sideCollection.style.display = 'flex';
-          storeSelect.disabled = false;
-        } else {
-          if (sideInventory) sideInventory.style.display = 'none';
-          if (sideCollection) sideCollection.style.display = 'none';
-          storeSelect.disabled = true;
-        }
-
-        const systemTotalsDiv = document.getElementById('systemTotalsDisplay');
-        if (systemTotalsDiv) {
-          if (!currentEmployee.isAdmin) {
-            systemTotalsDiv.style.display = 'block';
-            const breakdownIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund'];
-            breakdownIds.forEach(id => {
-              const el = document.getElementById(id);
-              if (el && el.parentElement) el.parentElement.style.display = 'none';
-            });
-            const netTotalParent = document.getElementById('sysNetTotal')?.parentElement;
-            if (netTotalParent) netTotalParent.style.display = 'block';
-          } else {
-            systemTotalsDiv.style.display = 'block';
-            const allIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund', 'sysNetTotal'];
-            allIds.forEach(id => {
-              const el = document.getElementById(id);
-              if (el && el.parentElement) el.parentElement.style.display = 'block';
-            });
-          }
-        }
-
-        const reportStoreFilter = document.getElementById('reportStoreFilterGroup');
-        const employeeFilterGroup = document.getElementById('employeeFilterGroup');
-        const storeChartContainer = document.getElementById('storeChartContainer');
-        const employeeChartContainer = document.getElementById('employeeChartContainer');
-        if (currentEmployee.isAdmin) {
-          reportStoreFilter.style.display = 'flex';
-          employeeFilterGroup.style.display = 'flex';
-          storeChartContainer.style.display = 'block';
-          employeeChartContainer.style.display = 'block';
-        } else {
-          reportStoreFilter.style.display = 'none';
-          employeeFilterGroup.style.display = 'none';
-          storeChartContainer.style.display = 'none';
-          employeeChartContainer.style.display = 'none';
-        }
-
-        const settlementStoreSelect = document.getElementById('settlementStoreSelect');
-        if (!currentEmployee.isAdmin) {
-          settlementStoreSelect.value = initialStore;
-          settlementStoreSelect.disabled = true;
-        } else {
-          settlementStoreSelect.disabled = false;
-        }
-        startReceiptPolling();
-        updateCartUI();
-        return true;
-      } else {
-        document.getElementById('loginError').innerText = result.error || 'Invalid PIN';
-        return false;
-      }
-    } catch (err) {
-      console.error(err);
-      document.getElementById('loginError').innerText = 'Connection error';
-      return false;
-    } finally {
-      hideLoading();
-    }
+    initialDataPromise = Promise.resolve(true);
+    // Show login modal immediately
+    document.getElementById('loginModal').style.display = 'flex';
+    document.getElementById('pinInput').focus();
+  } else {
+    // No preloaded data – fetch on demand
+    initialDataPromise = loadInitialData();
+    document.getElementById('loginModal').style.display = 'flex';
+    document.getElementById('pinInput').focus();
   }
+});
 
+ async function verifyEmployeeByPin(pin) {
+  showLoading('Verifying...');
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=verifyByPin&pin=${encodeURIComponent(pin)}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      currentEmployee = result.employee;
+      document.getElementById('employeeName').innerText = currentEmployee.name;
+      document.getElementById('loginModal').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'block';
+
+      if (initialDataPromise) await initialDataPromise;
+      else await loadInitialData();
+
+      soldBySelect.value = currentEmployee.id;
+
+      if (!currentEmployee.isAdmin) {
+        storeSelect.disabled = true;
+        inventoryModeBtn.style.display = 'none';
+      } else {
+        storeSelect.disabled = false;
+        inventoryModeBtn.style.display = 'flex';
+      }
+
+      // Control visibility of settlement totals
+      const systemTotalsDiv = document.getElementById('systemTotalsDisplay');
+      if (systemTotalsDiv) {
+        if (!currentEmployee.isAdmin) {
+          // Show container but hide breakdown lines (Cash, Card, QR, Refunds)
+          systemTotalsDiv.style.display = 'block';
+          const breakdownIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund'];
+          breakdownIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && el.parentElement) el.parentElement.style.display = 'none';
+          });
+          // Ensure the Net Total line is visible
+          const netTotalParent = document.getElementById('sysNetTotal')?.parentElement;
+          if (netTotalParent) netTotalParent.style.display = 'block';
+        } else {
+          systemTotalsDiv.style.display = 'block';
+          // Show all lines (make sure they are visible)
+          const allIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund', 'sysNetTotal'];
+          allIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && el.parentElement) el.parentElement.style.display = 'block';
+          });
+        }
+      }
+
+      const reportStoreFilter = document.getElementById('reportStoreFilterGroup');
+      const employeeFilterGroup = document.getElementById('employeeFilterGroup');
+      const storeChartContainer = document.getElementById('storeChartContainer');
+      const employeeChartContainer = document.getElementById('employeeChartContainer');
+      const collectionBtn = document.getElementById('collectionBtn');
+      if (currentEmployee.isAdmin) {
+        reportStoreFilter.style.display = 'flex';
+        employeeFilterGroup.style.display = 'flex';
+        storeChartContainer.style.display = 'block';
+        employeeChartContainer.style.display = 'block';
+        collectionBtn.style.display = 'flex';
+      } else {
+        reportStoreFilter.style.display = 'none';
+        employeeFilterGroup.style.display = 'none';
+        storeChartContainer.style.display = 'none';
+        employeeChartContainer.style.display = 'none';
+        collectionBtn.style.display = 'none';
+      }
+
+      const settlementStoreSelect = document.getElementById('settlementStoreSelect');
+      if (!currentEmployee.isAdmin) {
+        settlementStoreSelect.value = initialStore;
+        settlementStoreSelect.disabled = true;
+      } else {
+        settlementStoreSelect.disabled = false;
+      }
+      startReceiptPolling();
+      updateCartUI();
+      return true;
+    } else {
+      document.getElementById('loginError').innerText = result.error || 'Invalid PIN';
+      return false;
+    }
+  } catch (err) {
+    console.error(err);
+    document.getElementById('loginError').innerText = 'Connection error';
+    return false;
+  } finally {
+    hideLoading();
+  }
+}
   const gridBtn = document.getElementById('gridViewBtn');
   const listBtn = document.getElementById('listViewBtn');
   if (gridBtn && listBtn) {
@@ -3426,451 +3370,226 @@
     listBtn.addEventListener('click', () => setViewMode('list'));
   }
 
-  document.getElementById('clearStockHistoryBtn')?.addEventListener('click', clearStockHistory);
-  document.getElementById('saveStockHistoryBtn')?.addEventListener('click', saveStockHistoryToSheet);
+  if (inventoryModeBtn) {
+    inventoryModeBtn.addEventListener('click', toggleInventoryMode);
+  }
 
-  // ==================== LOGIN KEYPAD ====================
-  const pinInputEl = document.getElementById('pinInput');
-  if (pinInputEl) {
+  const clearStockHistoryBtn = document.getElementById('clearStockHistoryBtn');
+  if (clearStockHistoryBtn) {
+    clearStockHistoryBtn.addEventListener('click', clearStockHistory);
+  }
+
+  const saveStockHistoryBtn = document.getElementById('saveStockHistoryBtn');
+  if (saveStockHistoryBtn) {
+    saveStockHistoryBtn.addEventListener('click', saveStockHistoryToSheet);
+  }
+
+  const pinInput = document.getElementById('pinInput');
+  if (pinInput) {
     document.querySelectorAll('.keypad-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const digit = btn.dataset.digit;
-        const action = btn.dataset.action;
+        if (btn.dataset.digit && pinInput.value.length < 4) pinInput.value += btn.dataset.digit;
+        else if (btn.dataset.action === 'clear') pinInput.value = pinInput.value.slice(0, -1);
+        else if (btn.dataset.action === 'enter' && pinInput.value.length === 4) verifyEmployeeByPin(pinInput.value);
+        else if (btn.dataset.action === 'enter') document.getElementById('loginError').innerText = 'Please enter 4-digit PIN';
+      });
+    });
+    pinInput.addEventListener('input', () => {
+      if (pinInput.value.length === 4) verifyEmployeeByPin(pinInput.value);
+    });
+  }
 
-        if (digit && pinInputEl.value.length < 4) {
-          pinInputEl.value += digit;
-          if (pinInputEl.value.length === 4) {
-            verifyEmployeeByPin(pinInputEl.value);
-          }
-        } else if (action === 'clear') {
-          pinInputEl.value = pinInputEl.value.slice(0, -1);
-          document.getElementById('loginError').innerText = '';
-        } else if (action === 'enter') {
-          if (pinInputEl.value.length === 4) {
-            verifyEmployeeByPin(pinInputEl.value);
-          } else {
-            document.getElementById('loginError').innerText = 'Please enter 4-digit PIN';
-          }
+  if (document.getElementById('reportsButton')) {
+    document.getElementById('reportsButton').addEventListener('click', async () => {
+      if (currentEmployee?.isAdmin) {
+        const employees = await fetchEmployees();
+        const adminReportEmpSelect = document.getElementById('adminReportEmployeeSelect');
+        const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
+        if (adminReportEmpSelect && receiptsEmpSelect) {
+          adminReportEmpSelect.innerHTML = '<option value="all">All Employees</option>';
+          receiptsEmpSelect.innerHTML = '<option value="all">All Employees</option>';
+          employees.forEach(emp => {
+            const opt1 = document.createElement('option');
+            opt1.value = emp.id;
+            opt1.textContent = `${emp.name} (ID: ${emp.id})`;
+            const opt2 = document.createElement('option');
+            opt2.value = emp.id;
+            opt2.textContent = `${emp.name} (ID: ${emp.id})`;
+            adminReportEmpSelect.appendChild(opt1);
+            receiptsEmpSelect.appendChild(opt2);
+          });
         }
-      });
-    });
-
-    pinInputEl.addEventListener('input', () => {
-      if (pinInputEl.value.length === 4) {
-        verifyEmployeeByPin(pinInputEl.value);
-      }
-    });
-  }
-
-  // ==================== SIDE MENU ====================
-  const logo = document.getElementById('logoImage');
-  const sideMenuOverlay = document.getElementById('sideMenuOverlay');
-  const sideMenuDiv = document.getElementById('sideMenu');
-  const closeSideMenuBtn = document.getElementById('closeSideMenuBtn');
-
-  function openSideMenu() {
-    sideMenuOverlay.style.display = 'flex';
-    setTimeout(() => {
-      sideMenuDiv.classList.add('open');
-    }, 10);
-  }
-
-  function closeSideMenu() {
-    sideMenuDiv.classList.remove('open');
-    setTimeout(() => {
-      sideMenuOverlay.style.display = 'none';
-    }, 300);
-  }
-
-  if (logo) logo.addEventListener('click', openSideMenu);
-  if (closeSideMenuBtn) closeSideMenuBtn.addEventListener('click', closeSideMenu);
-  if (sideMenuOverlay) sideMenuOverlay.addEventListener('click', (e) => { if (e.target === sideMenuOverlay) closeSideMenu(); });
-
-  // ==================== CHANGE PIN (DYNAMIC KEYPAD) ====================
-  let currentKeypad = null;
-  let currentStep = 1; // 1=current, 2=new, 3=confirm
-
-  function openChangePinModal() {
-    document.getElementById('changePinStep1').style.display = 'block';
-    document.getElementById('changePinStep2').style.display = 'none';
-    document.getElementById('changePinStep3').style.display = 'none';
-    document.getElementById('changePinError').style.display = 'none';
-    document.getElementById('currentPinInput').value = '';
-    document.getElementById('newPinInput').value = '';
-    document.getElementById('confirmPinInput').value = '';
-    currentStep = 1;
-    showKeypadForStep(1);
-    document.getElementById('changePinModal').style.display = 'flex';
-  }
-
-  function showKeypadForStep(step) {
-    if (currentKeypad) {
-      currentKeypad.remove();
-      currentKeypad = null;
-    }
-
-    let container = null;
-    if (step === 1) {
-      container = document.getElementById('step1Keypad');
-      if (!container) {
-        const step1Div = document.getElementById('changePinStep1');
-        const keypadDiv = document.createElement('div');
-        keypadDiv.id = 'step1Keypad';
-        keypadDiv.className = 'pin-keypad mini-keypad';
-        step1Div.appendChild(keypadDiv);
-        container = keypadDiv;
-      }
-    } else if (step === 2) {
-      let step2Keypad = document.getElementById('step2Keypad');
-      if (!step2Keypad) {
-        const step2Div = document.getElementById('changePinStep2');
-        const keypadDiv = document.createElement('div');
-        keypadDiv.id = 'step2Keypad';
-        keypadDiv.className = 'pin-keypad mini-keypad';
-        step2Div.appendChild(keypadDiv);
-        step2Keypad = keypadDiv;
-      }
-      container = step2Keypad;
-    } else if (step === 3) {
-      let step3Keypad = document.getElementById('step3Keypad');
-      if (!step3Keypad) {
-        const step3Div = document.getElementById('changePinStep3');
-        const keypadDiv = document.createElement('div');
-        keypadDiv.id = 'step3Keypad';
-        keypadDiv.className = 'pin-keypad mini-keypad';
-        step3Div.appendChild(keypadDiv);
-        step3Keypad = keypadDiv;
-      }
-      container = step3Keypad;
-    }
-
-    if (container) {
-      const digits = ['1','2','3','4','5','6','7','8','9','0'];
-      container.innerHTML = '';
-      digits.forEach(d => {
-        const btn = document.createElement('button');
-        btn.className = 'keypad-btn';
-        btn.textContent = d;
-        btn.dataset.digit = d;
-        btn.addEventListener('click', () => handlePinDigit(step, d));
-        container.appendChild(btn);
-      });
-      const clearBtn = document.createElement('button');
-      clearBtn.className = 'keypad-btn clear';
-      clearBtn.textContent = '⌫';
-      clearBtn.addEventListener('click', () => handlePinClear(step));
-      container.appendChild(clearBtn);
-      const enterBtn = document.createElement('button');
-      enterBtn.className = 'keypad-btn enter';
-      enterBtn.textContent = '↵';
-      enterBtn.addEventListener('click', () => handlePinEnter(step));
-      container.appendChild(enterBtn);
-      currentKeypad = container;
-    }
-  }
-
-  function handlePinDigit(step, digit) {
-    let inputField;
-    if (step === 1) inputField = document.getElementById('currentPinInput');
-    else if (step === 2) inputField = document.getElementById('newPinInput');
-    else inputField = document.getElementById('confirmPinInput');
-
-    if (inputField.value.length < 4) {
-      inputField.value += digit;
-      if (inputField.value.length === 4) {
-        if (step === 1) verifyCurrentPinAndProceed();
-        else if (step === 2) goToStep(3);
-        else if (step === 3) checkConfirmAndSubmit();
-      }
-    }
-  }
-
-  function handlePinClear(step) {
-    let inputField;
-    if (step === 1) inputField = document.getElementById('currentPinInput');
-    else if (step === 2) inputField = document.getElementById('newPinInput');
-    else inputField = document.getElementById('confirmPinInput');
-    inputField.value = inputField.value.slice(0, -1);
-    document.getElementById('changePinError').style.display = 'none';
-  }
-
-  function handlePinEnter(step) {
-    if (step === 1) {
-      if (document.getElementById('currentPinInput').value.length === 4) verifyCurrentPinAndProceed();
-      else showChangePinError('Please enter 4-digit current PIN');
-    } else if (step === 2) {
-      if (document.getElementById('newPinInput').value.length === 4) goToStep(3);
-      else showChangePinError('Please enter 4-digit new PIN');
-    } else if (step === 3) {
-      if (document.getElementById('confirmPinInput').value.length === 4) checkConfirmAndSubmit();
-      else showChangePinError('Please enter 4-digit confirmation');
-    }
-  }
-
-  async function verifyCurrentPinAndProceed() {
-    const currentPin = document.getElementById('currentPinInput').value;
-    if (currentPin.length !== 4) return;
-    showLoading('Verifying PIN...');
-    try {
-      const formData = new URLSearchParams();
-      formData.append('action', 'verifyByPin');
-      formData.append('pin', currentPin);
-      const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
-      const result = await response.json();
-      if (result.success && result.employee.id === currentEmployee.id) {
-        goToStep(2);
+        const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
+        const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
+        if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'flex';
+        if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'flex';
       } else {
-        showChangePinError('Current PIN is incorrect');
+        const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
+        const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
+        if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'none';
+        if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'none';
+        const receiptsStore = document.getElementById('receiptsStoreSelect');
+        if (receiptsStore) receiptsStore.value = currentStore;
       }
-    } catch (err) {
-      showChangePinError('Connection error. Please try again.');
-    } finally {
-      hideLoading();
-    }
+      populateStoreSelects();
+
+      const modal = document.getElementById('adminReportModal');
+      if (modal) {
+        modal.style.display = 'flex';
+
+        let loadingMsg = document.getElementById('adminReportLoadingMsg');
+        if (!loadingMsg) {
+          loadingMsg = document.createElement('div');
+          loadingMsg.id = 'adminReportLoadingMsg';
+          loadingMsg.style.textAlign = 'center';
+          loadingMsg.style.padding = '20px';
+          loadingMsg.style.background = '#f8fafc';
+          loadingMsg.style.borderRadius = '12px';
+          loadingMsg.style.margin = '10px 0';
+          loadingMsg.innerText = 'Loading report data...';
+          const reportStats = document.querySelector('#adminReportModal .report-stats');
+          if (reportStats) reportStats.insertAdjacentElement('beforebegin', loadingMsg);
+        }
+        loadingMsg.style.display = 'block';
+
+        setTimeout(() => updateAdminReport(), 200);
+      }
+    });
   }
 
-  function goToStep(step) {
-    document.getElementById('changePinStep1').style.display = 'none';
-    document.getElementById('changePinStep2').style.display = 'none';
-    document.getElementById('changePinStep3').style.display = 'none';
-    if (step === 1) {
-      document.getElementById('changePinStep1').style.display = 'block';
-      showKeypadForStep(1);
-      currentStep = 1;
-    } else if (step === 2) {
-      document.getElementById('changePinStep2').style.display = 'block';
-      showKeypadForStep(2);
-      currentStep = 2;
-    } else if (step === 3) {
-      document.getElementById('changePinStep3').style.display = 'block';
-      showKeypadForStep(3);
-      currentStep = 3;
-    }
-    document.getElementById('changePinError').style.display = 'none';
+  if (document.getElementById('closeAdminReportBtn')) {
+    document.getElementById('closeAdminReportBtn').addEventListener('click', () => document.getElementById('adminReportModal').style.display = 'none');
+  }
+  if (document.getElementById('closeAdminReportModal')) {
+    document.getElementById('closeAdminReportModal').addEventListener('click', () => document.getElementById('adminReportModal').style.display = 'none');
+  }
+  if (document.getElementById('adminReportStoreSelect')) {
+    document.getElementById('adminReportStoreSelect').addEventListener('change', updateAdminReport);
+  }
+  if (document.getElementById('adminReportEmployeeSelect')) {
+    document.getElementById('adminReportEmployeeSelect').addEventListener('change', updateAdminReport);
+  }
+  if (document.getElementById('adminReportDateRangeSelect')) {
+    document.getElementById('adminReportDateRangeSelect').addEventListener('change', (e) => {
+      const customRange = document.getElementById('adminReportCustomDateRange');
+      if (customRange) customRange.style.display = e.target.value === 'custom' ? 'flex' : 'none';
+      updateAdminReport();
+    });
+  }
+  if (document.getElementById('adminReportFromDate')) {
+    document.getElementById('adminReportFromDate').addEventListener('change', updateAdminReport);
+  }
+  if (document.getElementById('adminReportToDate')) {
+    document.getElementById('adminReportToDate').addEventListener('change', updateAdminReport);
   }
 
-  function checkConfirmAndSubmit() {
-    const newPin = document.getElementById('newPinInput').value;
-    const confirmPin = document.getElementById('confirmPinInput').value;
-    if (newPin !== confirmPin) {
-      showChangePinError('New PIN and confirmation do not match.');
-      document.getElementById('confirmPinInput').value = '';
-      return;
-    }
-    submitPinChange(newPin);
-  }
+  if (document.getElementById('receiptsButton')) {
+    document.getElementById('receiptsButton').addEventListener('click', async () => {
+      const modal = document.getElementById('receiptsModal');
+      if (modal) {
+        modal.style.display = 'flex';
 
-  async function submitPinChange(newPin) {
-    showLoading('Changing PIN...');
-    try {
-      const formData = new URLSearchParams();
-      formData.append('action', 'changePin');
-      formData.append('employee_id', currentEmployee.id);
-      formData.append('current_pin', document.getElementById('currentPinInput').value);
-      formData.append('new_pin', newPin);
-      const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
-      const result = await response.json();
-      if (result.success) {
-        await showAlertModal('Success', 'Your PIN has been changed successfully.');
-        document.getElementById('changePinModal').style.display = 'none';
+        let loadingMsg = document.getElementById('receiptsLoadingMsg');
+        if (!loadingMsg) {
+          loadingMsg = document.createElement('div');
+          loadingMsg.id = 'receiptsLoadingMsg';
+          loadingMsg.style.textAlign = 'center';
+          loadingMsg.style.padding = '20px';
+          loadingMsg.style.background = '#f8fafc';
+          loadingMsg.style.borderRadius = '12px';
+          loadingMsg.style.margin = '10px 0';
+          loadingMsg.innerText = 'Loading receipts...';
+          const receiptsList = document.getElementById('receiptsList');
+          if (receiptsList) receiptsList.insertAdjacentElement('beforebegin', loadingMsg);
+        }
+        loadingMsg.style.display = 'block';
+      }
+
+      if (currentEmployee?.isAdmin) {
+        const employees = await fetchEmployees();
+        const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
+        if (receiptsEmpSelect) {
+          receiptsEmpSelect.innerHTML = '<option value="all">All Employees</option>';
+          employees.forEach(emp => {
+            const opt = document.createElement('option');
+            opt.value = emp.id;
+            opt.textContent = `${emp.name} (ID: ${emp.id})`;
+            receiptsEmpSelect.appendChild(opt);
+          });
+        }
+        const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
+        const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
+        if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'flex';
+        if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'flex';
       } else {
-        showChangePinError(result.error || 'Failed to change PIN.');
+        const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
+        const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
+        if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'none';
+        if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'none';
+        const receiptsStore = document.getElementById('receiptsStoreSelect');
+        if (receiptsStore) receiptsStore.value = currentStore;
       }
-    } catch (err) {
-      console.error(err);
-      showChangePinError('Connection error. Please try again.');
-    } finally {
-      hideLoading();
-    }
+
+      populateStoreSelects();
+
+      if (cachedReceipts) {
+        renderReceiptsList(cachedReceipts);
+        const msg = document.getElementById('receiptsLoadingMsg');
+        if (msg) msg.style.display = 'none';
+      }
+
+      updateReceipts();
+    });
   }
 
-  function showChangePinError(msg) {
-    const errorDiv = document.getElementById('changePinError');
-    errorDiv.innerText = msg;
-    errorDiv.style.display = 'block';
+  if (document.getElementById('closeReceiptsBtn')) {
+    document.getElementById('closeReceiptsBtn').addEventListener('click', () => document.getElementById('receiptsModal').style.display = 'none');
+  }
+  if (document.getElementById('closeReceiptsModal')) {
+    document.getElementById('closeReceiptsModal').addEventListener('click', () => document.getElementById('receiptsModal').style.display = 'none');
+  }
+  if (document.getElementById('receiptsStoreSelect')) {
+    document.getElementById('receiptsStoreSelect').addEventListener('change', updateReceipts);
+  }
+  if (document.getElementById('receiptsEmployeeSelect')) {
+    document.getElementById('receiptsEmployeeSelect').addEventListener('change', updateReceipts);
+  }
+  if (document.getElementById('receiptsDateRangeSelect')) {
+    document.getElementById('receiptsDateRangeSelect').addEventListener('change', (e) => {
+      const customRange = document.getElementById('receiptsCustomDateRange');
+      if (customRange) customRange.style.display = e.target.value === 'custom' ? 'flex' : 'none';
+      updateReceipts();
+    });
+  }
+  if (document.getElementById('receiptsFromDate')) {
+    document.getElementById('receiptsFromDate').addEventListener('change', updateReceipts);
+  }
+  if (document.getElementById('receiptsToDate')) {
+    document.getElementById('receiptsToDate').addEventListener('change', updateReceipts);
+  }
+  if (document.getElementById('receiptsSearch')) {
+    document.getElementById('receiptsSearch').addEventListener('input', updateReceipts);
   }
 
-  document.getElementById('closeChangePinModal').addEventListener('click', () => {
-    document.getElementById('changePinModal').style.display = 'none';
-  });
-  document.getElementById('changePinCancelBtn').addEventListener('click', () => {
-    document.getElementById('changePinModal').style.display = 'none';
-  });
-  document.getElementById('sideChangePinBtn').addEventListener('click', () => {
-    openChangePinModal();
-    closeSideMenu();
-  });
-
-    // ==================== SIDE MENU ACTIONS ====================
-  const sideReportBtn = document.getElementById('sideReportBtn');
-  const sideSettlementBtn = document.getElementById('sideSettlementBtn');
-  const sideCollectionBtn = document.getElementById('sideCollectionBtn');
-  const sideInventoryBtn = document.getElementById('sideInventoryBtn');
-  const sideReceiptsBtn = document.getElementById('sideReceiptsBtn');
-  const sideDrawerBtn = document.getElementById('sideDrawerBtn');
-
-  async function openReportsModal() {
-    if (currentEmployee?.isAdmin) {
-      const employees = await fetchEmployees();
-      const adminReportEmpSelect = document.getElementById('adminReportEmployeeSelect');
-      const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
-      if (adminReportEmpSelect && receiptsEmpSelect) {
-        adminReportEmpSelect.innerHTML = '<option value="all">All Employees</option>';
-        receiptsEmpSelect.innerHTML = '<option value="all">All Employees</option>';
-        employees.forEach(emp => {
-          const opt1 = document.createElement('option');
-          opt1.value = emp.id;
-          opt1.textContent = `${emp.name} (ID: ${emp.id})`;
-          const opt2 = document.createElement('option');
-          opt2.value = emp.id;
-          opt2.textContent = `${emp.name} (ID: ${emp.id})`;
-          adminReportEmpSelect.appendChild(opt1);
-          receiptsEmpSelect.appendChild(opt2);
-        });
-      }
-      const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
-      const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
-      if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'flex';
-      if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'flex';
-    } else {
-      const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
-      const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
-      if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'none';
-      if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'none';
-      const receiptsStore = document.getElementById('receiptsStoreSelect');
-      if (receiptsStore) receiptsStore.value = currentStore;
-    }
-    populateStoreSelects();
-
-    const modal = document.getElementById('adminReportModal');
-    if (modal) {
-      modal.style.display = 'flex';
-      let loadingMsg = document.getElementById('adminReportLoadingMsg');
-      if (!loadingMsg) {
-        loadingMsg = document.createElement('div');
-        loadingMsg.id = 'adminReportLoadingMsg';
-        loadingMsg.style.textAlign = 'center';
-        loadingMsg.style.padding = '20px';
-        loadingMsg.style.background = '#f8fafc';
-        loadingMsg.style.borderRadius = '12px';
-        loadingMsg.style.margin = '10px 0';
-        loadingMsg.innerText = 'Loading report data...';
-        const reportStats = document.querySelector('#adminReportModal .report-stats');
-        if (reportStats) reportStats.insertAdjacentElement('beforebegin', loadingMsg);
-      }
-      loadingMsg.style.display = 'block';
-      setTimeout(() => updateAdminReport(), 200);
-    }
-    closeSideMenu();
+  if (document.getElementById('settlementBtn')) {
+    document.getElementById('settlementBtn').addEventListener('click', openSettlementModal);
   }
-
-  if (sideReportBtn) sideReportBtn.addEventListener('click', openReportsModal);
-  if (sideSettlementBtn) sideSettlementBtn.addEventListener('click', () => { openSettlementModal(); closeSideMenu(); });
-  if (sideCollectionBtn) sideCollectionBtn.addEventListener('click', () => { openCollectionModal(); closeSideMenu(); });
-  if (sideInventoryBtn) sideInventoryBtn.addEventListener('click', () => { toggleInventoryMode(); closeSideMenu(); });
-  if (sideReceiptsBtn) sideReceiptsBtn.addEventListener('click', async () => {
-    const modal = document.getElementById('receiptsModal');
-    if (modal) {
-      modal.style.display = 'flex';
-      let loadingMsg = document.getElementById('receiptsLoadingMsg');
-      if (!loadingMsg) {
-        loadingMsg = document.createElement('div');
-        loadingMsg.id = 'receiptsLoadingMsg';
-        loadingMsg.style.textAlign = 'center';
-        loadingMsg.style.padding = '20px';
-        loadingMsg.style.background = '#f8fafc';
-        loadingMsg.style.borderRadius = '12px';
-        loadingMsg.style.margin = '10px 0';
-        loadingMsg.innerText = 'Loading receipts...';
-        const receiptsList = document.getElementById('receiptsList');
-        if (receiptsList) receiptsList.insertAdjacentElement('beforebegin', loadingMsg);
+  if (document.getElementById('closeSettlementModal')) {
+    document.getElementById('closeSettlementModal').addEventListener('click', () => document.getElementById('settlementModal').style.display = 'none');
+  }
+  if (document.getElementById('closeSettlementModalBtn')) {
+    document.getElementById('closeSettlementModalBtn').addEventListener('click', () => document.getElementById('settlementModal').style.display = 'none');
+  }
+  if (document.getElementById('settlementStoreSelect')) {
+    document.getElementById('settlementStoreSelect').addEventListener('change', async () => {
+      if (currentEmployee?.isAdmin) {
+        const newStore = document.getElementById('settlementStoreSelect').value;
+        await refreshSettlementTotals(newStore);
       }
-      loadingMsg.style.display = 'block';
-    }
-
-    if (currentEmployee?.isAdmin) {
-      const employees = await fetchEmployees();
-      const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
-      if (receiptsEmpSelect) {
-        receiptsEmpSelect.innerHTML = '<option value="all">All Employees</option>';
-        employees.forEach(emp => {
-          const opt = document.createElement('option');
-          opt.value = emp.id;
-          opt.textContent = `${emp.name} (ID: ${emp.id})`;
-          receiptsEmpSelect.appendChild(opt);
-        });
-      }
-      const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
-      const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
-      if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'flex';
-      if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'flex';
-    } else {
-      const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
-      const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
-      if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'none';
-      if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'none';
-      const receiptsStore = document.getElementById('receiptsStoreSelect');
-      if (receiptsStore) receiptsStore.value = currentStore;
-    }
-
-    populateStoreSelects();
-
-    if (cachedReceipts) {
-      renderReceiptsList(cachedReceipts);
-      const msg = document.getElementById('receiptsLoadingMsg');
-      if (msg) msg.style.display = 'none';
-    }
-
-    updateReceipts();
-    closeSideMenu();
-  });
-  if (sideDrawerBtn) sideDrawerBtn.addEventListener('click', async () => {
-    if (!window.printerAPI || !window.printerAPI.isConnected) {
-      await showAlertModal('Printer not connected', 'Please connect a printer first using the printer icon.');
-    } else {
-      await window.printerAPI.openDrawer();
-    }
-    closeSideMenu();
-  });
-
-  // ==================== REPORT MODAL EVENT LISTENERS ====================
-  document.getElementById('closeAdminReportBtn')?.addEventListener('click', () => document.getElementById('adminReportModal').style.display = 'none');
-  document.getElementById('closeAdminReportModal')?.addEventListener('click', () => document.getElementById('adminReportModal').style.display = 'none');
-  document.getElementById('adminReportStoreSelect')?.addEventListener('change', updateAdminReport);
-  document.getElementById('adminReportEmployeeSelect')?.addEventListener('change', updateAdminReport);
-  document.getElementById('adminReportDateRangeSelect')?.addEventListener('change', (e) => {
-    const customRange = document.getElementById('adminReportCustomDateRange');
-    if (customRange) customRange.style.display = e.target.value === 'custom' ? 'flex' : 'none';
-    updateAdminReport();
-  });
-  document.getElementById('adminReportFromDate')?.addEventListener('change', updateAdminReport);
-  document.getElementById('adminReportToDate')?.addEventListener('change', updateAdminReport);
-
-  // ==================== RECEIPTS MODAL EVENT LISTENERS ====================
-  document.getElementById('closeReceiptsBtn')?.addEventListener('click', () => document.getElementById('receiptsModal').style.display = 'none');
-  document.getElementById('closeReceiptsModal')?.addEventListener('click', () => document.getElementById('receiptsModal').style.display = 'none');
-  document.getElementById('receiptsStoreSelect')?.addEventListener('change', updateReceipts);
-  document.getElementById('receiptsEmployeeSelect')?.addEventListener('change', updateReceipts);
-  document.getElementById('receiptsDateRangeSelect')?.addEventListener('change', (e) => {
-    const customRange = document.getElementById('receiptsCustomDateRange');
-    if (customRange) customRange.style.display = e.target.value === 'custom' ? 'flex' : 'none';
-    updateReceipts();
-  });
-  document.getElementById('receiptsFromDate')?.addEventListener('change', updateReceipts);
-  document.getElementById('receiptsToDate')?.addEventListener('change', updateReceipts);
-  document.getElementById('receiptsSearch')?.addEventListener('input', updateReceipts);
-
-  // ==================== SETTLEMENT MODAL EVENT LISTENERS ====================
-  document.getElementById('settlementBtn')?.addEventListener('click', openSettlementModal);
-  document.getElementById('closeSettlementModal')?.addEventListener('click', () => document.getElementById('settlementModal').style.display = 'none');
-  document.getElementById('closeSettlementModalBtn')?.addEventListener('click', () => document.getElementById('settlementModal').style.display = 'none');
-  document.getElementById('settlementStoreSelect')?.addEventListener('change', async () => {
-    if (currentEmployee?.isAdmin) {
-      const newStore = document.getElementById('settlementStoreSelect').value;
-      await refreshSettlementTotals(newStore);
-    }
-  });
-  document.getElementById('checkSettlementBtn')?.addEventListener('click', async () => {
+    });
+  }
+if (document.getElementById('checkSettlementBtn')) {
+  document.getElementById('checkSettlementBtn').addEventListener('click', async () => {
     const actualCash = parseFloat(document.getElementById('actualCash').value);
     const actualCard = parseFloat(document.getElementById('actualCard').value);
     const actualQR = parseFloat(document.getElementById('actualQR').value);
@@ -3910,99 +3629,115 @@
         recordBtn.disabled = false;
       }
     } else {
+      // Build error message based on user role
       const settlementError = document.getElementById('settlementError');
       if (settlementError) {
         if (currentEmployee && currentEmployee.isAdmin) {
+          // Admin: detailed mismatch
           const errorMessages = [];
           if (!cashOk) errorMessages.push(`Cash (System: RM ${currentSettlementTotals.cash.toFixed(2)}, Entered: RM ${actualCash.toFixed(2)})`);
           if (!cardOk) errorMessages.push(`Card (System: RM ${currentSettlementTotals.card.toFixed(2)}, Entered: RM ${actualCard.toFixed(2)})`);
           if (!qrOk) errorMessages.push(`QR (System: RM ${currentSettlementTotals.qr.toFixed(2)}, Entered: RM ${actualQR.toFixed(2)})`);
           settlementError.innerHTML = `❌ Mismatch in:<br>${errorMessages.join('<br>')}<br>Please correct and try again.`;
         } else {
+          // Non-admin: generic message
           settlementError.innerHTML = `❌ Mismatch detected! Count properly and try again.`;
         }
         settlementError.style.display = 'block';
       }
     }
   });
-  document.getElementById('recordSettlementBtn')?.addEventListener('click', async () => {
-    const store = document.getElementById('settlementStoreSelect').value;
-    const pettyCash = parseFloat(document.getElementById('pettyCashFloat').value) || 0;
-    const actualCash = parseFloat(document.getElementById('actualCash').value);
-    const actualCard = parseFloat(document.getElementById('actualCard').value);
-    const actualQR = parseFloat(document.getElementById('actualQR').value);
-    const recordBtn = document.getElementById('recordSettlementBtn');
-    if (recordBtn) recordBtn.disabled = true;
-    showLoading('Recording settlement...');
-    try {
-      const formData = new URLSearchParams();
-      formData.append("action", "recordSettlement");
-      formData.append("employee_id", currentEmployee.id);
-      formData.append("employee_name", currentEmployee.name);
-      formData.append("store", store);
-      formData.append("petty_cash_float", pettyCash);
-      formData.append("date", getLocalDateString(new Date()));
-      formData.append("cash_system", currentSettlementTotals.cash);
-      formData.append("card_system", currentSettlementTotals.card);
-      formData.append("qr_system", currentSettlementTotals.qr);
-      formData.append("cash_actual", actualCash);
-      formData.append("card_actual", actualCard);
-      formData.append("qr_actual", actualQR);
-      const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
-      const result = await response.json();
-      if (result.success) {
-        await showAlertModal('Settlement Recorded', 'Settlement has been successfully recorded.');
-        await refreshSettlementTotals(store);
-        document.getElementById('settlementModal').style.display = 'none';
-      } else {
-        await showAlertModal('Error', 'Failed to record settlement: ' + (result.error || 'Unknown error'));
+}
+  if (document.getElementById('recordSettlementBtn')) {
+    document.getElementById('recordSettlementBtn').addEventListener('click', async () => {
+      const store = document.getElementById('settlementStoreSelect').value;
+      const pettyCash = parseFloat(document.getElementById('pettyCashFloat').value) || 0;
+      const actualCash = parseFloat(document.getElementById('actualCash').value);
+      const actualCard = parseFloat(document.getElementById('actualCard').value);
+      const actualQR = parseFloat(document.getElementById('actualQR').value);
+      const recordBtn = document.getElementById('recordSettlementBtn');
+      if (recordBtn) recordBtn.disabled = true;
+      showLoading('Recording settlement...');
+      try {
+        const formData = new URLSearchParams();
+        formData.append("action", "recordSettlement");
+        formData.append("employee_id", currentEmployee.id);
+        formData.append("employee_name", currentEmployee.name);
+        formData.append("store", store);
+        formData.append("petty_cash_float", pettyCash);
+        formData.append("date", getLocalDateString(new Date()));
+        formData.append("cash_system", currentSettlementTotals.cash);
+        formData.append("card_system", currentSettlementTotals.card);
+        formData.append("qr_system", currentSettlementTotals.qr);
+        formData.append("cash_actual", actualCash);
+        formData.append("card_actual", actualCard);
+        formData.append("qr_actual", actualQR);
+        const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
+        const result = await response.json();
+        if (result.success) {
+          await showAlertModal('Settlement Recorded', 'Settlement has been successfully recorded.');
+          await refreshSettlementTotals(store);
+          document.getElementById('settlementModal').style.display = 'none';
+        } else {
+          await showAlertModal('Error', 'Failed to record settlement: ' + (result.error || 'Unknown error'));
+        }
+      } catch (err) {
+        console.error(err);
+        await showAlertModal('Error', 'Connection error while recording settlement.');
+      } finally {
+        hideLoading();
+        if (recordBtn) recordBtn.disabled = false;
       }
-    } catch (err) {
-      console.error(err);
-      await showAlertModal('Error', 'Connection error while recording settlement.');
-    } finally {
-      hideLoading();
-      if (recordBtn) recordBtn.disabled = false;
-    }
-  });
+    });
+  }
 
-  // ==================== COLLECTION MODAL ====================
-  document.getElementById('collectionBtn')?.addEventListener('click', openCollectionModal);
-  document.getElementById('closeCollectionModal')?.addEventListener('click', () => document.getElementById('collectionModal').style.display = 'none');
-  document.getElementById('closeCollectionModalBtn')?.addEventListener('click', () => document.getElementById('collectionModal').style.display = 'none');
-  document.getElementById('collectionStoreSelect')?.addEventListener('change', loadUnsettledCash);
-  document.getElementById('selectAllCheckbox')?.addEventListener('change', (e) => {
-    const checkboxes = document.querySelectorAll('.collection-checkbox');
-    checkboxes.forEach(cb => cb.checked = e.target.checked);
-    updateCollectionButtonState();
-  });
-  document.getElementById('collectSelectedBtn')?.addEventListener('click', async () => {
-    const selectedIds = Array.from(document.querySelectorAll('.collection-checkbox:checked')).map(cb => cb.value);
-    if (selectedIds.length === 0) return;
-    showLoading('Marking as collected...');
-    try {
-      const formData = new URLSearchParams();
-      formData.append("action", "markCashCollected");
-      formData.append("ids", JSON.stringify(selectedIds));
-      formData.append("employee_id", currentEmployee.id);
-      formData.append("employee_name", currentEmployee.name);
-      const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
-      const result = await response.json();
-      if (result.success) {
-        await showAlertModal('Success', `${selectedIds.length} cash record(s) marked as collected.`);
-        await loadUnsettledCash();
-      } else {
-        await showAlertModal('Error', 'Failed to mark as collected: ' + (result.error || 'Unknown error'));
+  if (document.getElementById('collectionBtn')) {
+    document.getElementById('collectionBtn').addEventListener('click', openCollectionModal);
+  }
+  if (document.getElementById('closeCollectionModal')) {
+    document.getElementById('closeCollectionModal').addEventListener('click', () => document.getElementById('collectionModal').style.display = 'none');
+  }
+  if (document.getElementById('closeCollectionModalBtn')) {
+    document.getElementById('closeCollectionModalBtn').addEventListener('click', () => document.getElementById('collectionModal').style.display = 'none');
+  }
+  if (document.getElementById('collectionStoreSelect')) {
+    document.getElementById('collectionStoreSelect').addEventListener('change', loadUnsettledCash);
+  }
+  if (document.getElementById('selectAllCheckbox')) {
+    document.getElementById('selectAllCheckbox').addEventListener('change', (e) => {
+      const checkboxes = document.querySelectorAll('.collection-checkbox');
+      checkboxes.forEach(cb => cb.checked = e.target.checked);
+      updateCollectionButtonState();
+    });
+  }
+  if (document.getElementById('collectSelectedBtn')) {
+    document.getElementById('collectSelectedBtn').addEventListener('click', async () => {
+      const selectedIds = Array.from(document.querySelectorAll('.collection-checkbox:checked')).map(cb => cb.value);
+      if (selectedIds.length === 0) return;
+      showLoading('Marking as collected...');
+      try {
+        const formData = new URLSearchParams();
+        formData.append("action", "markCashCollected");
+        formData.append("ids", JSON.stringify(selectedIds));
+        formData.append("employee_id", currentEmployee.id);
+        formData.append("employee_name", currentEmployee.name);
+        const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
+        const result = await response.json();
+        if (result.success) {
+          await showAlertModal('Success', `${selectedIds.length} cash record(s) marked as collected.`);
+          await loadUnsettledCash();
+        } else {
+          await showAlertModal('Error', 'Failed to mark as collected: ' + (result.error || 'Unknown error'));
+        }
+      } catch (err) {
+        console.error(err);
+        await showAlertModal('Error', 'Connection error while marking collected.');
+      } finally {
+        hideLoading();
       }
-    } catch (err) {
-      console.error(err);
-      await showAlertModal('Error', 'Connection error while marking collected.');
-    } finally {
-      hideLoading();
-    }
-  });
+    });
+  }
 
-  // ==================== STORE SELECT CHANGE ====================
   if (storeSelect) {
     storeSelect.addEventListener('change', async () => {
       if (!storeSelect.disabled) {
@@ -4012,28 +3747,35 @@
       }
     });
   }
-
-  // ==================== CART ACTION BUTTONS ====================
-  document.getElementById('checkoutBtn')?.addEventListener('click', startCheckout);
-  document.getElementById('claimPrizeBtn')?.addEventListener('click', showClaimPrizeModal);
-  document.getElementById('specialPromoBtn')?.addEventListener('click', showSpecialPromoModal);
-  document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
-  document.getElementById('refreshProductsPanelBtn')?.addEventListener('click', () => {
-    localStorage.removeItem(`products_${currentStore}`);
-    fetchProductsFromSheet(true);
-  });
-
-  // ==================== SEARCH & CATEGORY FILTER ====================
+  if (document.getElementById('checkoutBtn')) {
+    document.getElementById('checkoutBtn').addEventListener('click', startCheckout);
+  }
+  if (document.getElementById('claimPrizeBtn')) {
+    document.getElementById('claimPrizeBtn').addEventListener('click', showClaimPrizeModal);
+  }
+  if (document.getElementById('specialPromoBtn')) {
+    document.getElementById('specialPromoBtn').addEventListener('click', showSpecialPromoModal);
+  }
+  if (document.getElementById('clearCartBtn')) {
+    document.getElementById('clearCartBtn').addEventListener('click', clearCart);
+  }
+  if (document.getElementById('refreshProductsBtn')) {
+    document.getElementById('refreshProductsBtn').addEventListener('click', () => {
+      localStorage.removeItem(`products_${currentStore}`);
+      fetchProductsFromSheet(true);
+    });
+  }
   if (searchInput) {
     searchInput.addEventListener('input', () => {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => renderProductGrid(), 300);
     });
   }
-  if (categorySelect) categorySelect.addEventListener('change', renderProductGrid);
-
-  // ==================== LOGOUT ====================
-  document.getElementById('logoutHeaderBtn')?.addEventListener('click', () => {
+  if (categorySelect) {
+    categorySelect.addEventListener('change', renderProductGrid);
+  }
+  if (document.getElementById('logoutButton')) {
+  document.getElementById('logoutButton').addEventListener('click', () => {
     if (typeof stopReceiptPolling === 'function') stopReceiptPolling();
     cachedReceipts = null;
     currentEmployee = null;
@@ -4043,11 +3785,14 @@
     document.getElementById('loginError').innerText = '';
     cart = [];
     products = [];
+    // No longer clear stock history
     renderProductGrid();
   });
-  document.getElementById('closeLoginModal')?.addEventListener('click', () => {});
+}
+  if (document.getElementById('closeLoginModal')) {
+    document.getElementById('closeLoginModal').addEventListener('click', () => {});
+  }
 
-  // ==================== HELPER FUNCTIONS ====================
   async function fetchEmployees() {
     try {
       const response = await fetch(`${APPS_SCRIPT_URL}?action=getEmployees`);
@@ -4058,210 +3803,237 @@
       return [];
     }
   }
+function toggleFreeCount(index) {
+  const item = cart[index];
+  if (!item) return;
+  const maxFree = item.quantity;
+  const newFree = (item.freeQuantity + 1) % (maxFree + 1);
+  item.freeQuantity = newFree;
+  updateCartUI();
+  clearPromo();
+}
 
-  function populateStoreSelects() {
-    const stores = Array.from(storeSelect.options).map(opt => ({ value: opt.value, text: opt.text }));
+// ==================== HELPERS (previously misplaced) ====================
+function populateStoreSelects() {
+  const stores = Array.from(storeSelect.options).map(opt => ({ value: opt.value, text: opt.text }));
+  const receiptsStore = document.getElementById('receiptsStoreSelect');
+  if (receiptsStore) {
+    receiptsStore.innerHTML = '<option value="all">All Stores</option>';
+    stores.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.value;
+      opt.textContent = s.text;
+      receiptsStore.appendChild(opt);
+    });
+  }
+}
+
+function updateReceipts() {
+  let store;
+  if (currentEmployee?.isAdmin) {
     const receiptsStore = document.getElementById('receiptsStoreSelect');
-    if (receiptsStore) {
-      receiptsStore.innerHTML = '<option value="all">All Stores</option>';
-      stores.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.value;
-        opt.textContent = s.text;
-        receiptsStore.appendChild(opt);
-      });
-    }
+    store = receiptsStore ? receiptsStore.value : 'all';
+  } else {
+    store = currentStore;
   }
-
-  function updateReceipts() {
-    let store;
-    if (currentEmployee?.isAdmin) {
-      const receiptsStore = document.getElementById('receiptsStoreSelect');
-      store = receiptsStore ? receiptsStore.value : 'all';
-    } else {
-      store = currentStore;
-    }
-    let employeeId = 'all';
-    if (currentEmployee?.isAdmin) {
-      const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
-      employeeId = receiptsEmpSelect ? receiptsEmpSelect.value : 'all';
-    }
-    const rangeSelect = document.getElementById('receiptsDateRangeSelect');
-    const range = rangeSelect ? rangeSelect.value : 'today';
-    const search = document.getElementById('receiptsSearch').value;
-    let from = null, to = null;
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    if (range === 'today') {
-      from = getLocalDateString(today);
-      to = from;
-    } else if (range === 'week') {
-      const start = new Date(today);
-      const dayOfWeek = today.getDay();
-      const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
-      start.setDate(today.getDate() - diffToMonday);
-      from = getLocalDateString(start);
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
-      to = getLocalDateString(end);
-    } else if (range === 'month') {
-      const start = new Date(today.getFullYear(), today.getMonth(), 1);
-      from = getLocalDateString(start);
-      const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      to = getLocalDateString(end);
-    } else if (range === 'custom') {
-      from = document.getElementById('receiptsFromDate').value;
-      to = document.getElementById('receiptsToDate').value;
-      if (!from || !to) return;
-    }
-    fetchReceipts(store, employeeId, from, to, search);
-  }
-
-  // ==================== PRODUCT DETAILS TOGGLE ====================
-  const toggleBtn = document.getElementById('toggleProductDetailsBtn');
-  const productDetailsContainer = document.getElementById('productDetailsContainer');
-  if (toggleBtn && productDetailsContainer) {
-    toggleBtn.addEventListener('click', () => {
-      productDetailsVisible = !productDetailsVisible;
-      if (productDetailsVisible) {
-        productDetailsContainer.style.display = 'block';
-        toggleBtn.innerText = '📦 Hide Product Details';
-        if (lastProductData) renderProductDetails(lastProductData);
-      } else {
-        productDetailsContainer.style.display = 'none';
-        toggleBtn.innerText = '📦 Show Product Details';
-      }
-    });
-  }
-
-  // ==================== CLAIM PRIZE MODAL LISTENERS ====================
-  const closeClaimPrizeModal = document.getElementById('closeClaimPrizeModal');
-  if (closeClaimPrizeModal) closeClaimPrizeModal.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');
-  const cancelClaimBtn = document.getElementById('cancelClaimBtn');
-  if (cancelClaimBtn) cancelClaimBtn.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');
-  const cancelClaimStep2Btn = document.getElementById('cancelClaimStep2Btn');
-  if (cancelClaimStep2Btn) cancelClaimStep2Btn.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');
-  const checkReceiptBtn = document.getElementById('checkReceiptBtn');
-  if (checkReceiptBtn) checkReceiptBtn.addEventListener('click', checkReceiptForClaim);
-  const applyPrizeBtn = document.getElementById('applyPrizeBtn');
-  if (applyPrizeBtn) applyPrizeBtn.addEventListener('click', applyPrizeToCart);
-
-  // ==================== SPECIAL PROMO MODAL LISTENERS ====================
-  const closeSpecialPromoModal = document.getElementById('closeSpecialPromoModal');
-  if (closeSpecialPromoModal) closeSpecialPromoModal.addEventListener('click', () => document.getElementById('specialPromoModal').style.display = 'none');
-  const closeSpecialPromoModalBtn = document.getElementById('closeSpecialPromoModalBtn');
-  if (closeSpecialPromoModalBtn) closeSpecialPromoModalBtn.addEventListener('click', () => document.getElementById('specialPromoModal').style.display = 'none');
-  const promoBuy2Free1Perfume = document.getElementById('promoBuy2Free1Perfume');
-  if (promoBuy2Free1Perfume) promoBuy2Free1Perfume.addEventListener('click', applyBuy2Free1Perfume);
-  const promoBuy3Free1ExcludePerfume = document.getElementById('promoBuy3Free1ExcludePerfume');
-  if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener('click', applyBuy3Free1ExcludePerfume);
-  const applyCustomPromoBtn = document.getElementById('applyCustomPromoBtn');
-  if (applyCustomPromoBtn) applyCustomPromoBtn.addEventListener('click', applyCustomDiscount);
-
-  // ==================== CASH COLLECTION FUNCTIONS ====================
-  let currentUnsettledCash = [];
-
-  async function openCollectionModal() {
-    const modal = document.getElementById('collectionModal');
-    modal.style.display = 'flex';
-
-    let loadingMsg = document.getElementById('collectionLoadingMsg');
-    if (!loadingMsg) {
-      loadingMsg = document.createElement('div');
-      loadingMsg.id = 'collectionLoadingMsg';
-      loadingMsg.style.textAlign = 'center';
-      loadingMsg.style.padding = '20px';
-      loadingMsg.style.background = '#f8fafc';
-      loadingMsg.style.borderRadius = '12px';
-      loadingMsg.style.margin = '10px 0';
-      loadingMsg.innerText = 'Loading unsettled cash...';
-      const container = document.querySelector('#collectionModal .modal-container');
-      const collectionTotalDiv = document.getElementById('collectionTotal');
-      if (container && collectionTotalDiv) {
-        container.insertBefore(loadingMsg, collectionTotalDiv);
-      }
-    }
-    loadingMsg.style.display = 'block';
-
-    await loadUnsettledCash();
-    loadingMsg.style.display = 'none';
-  }
-
-  async function loadUnsettledCash() {
-    const store = document.getElementById('collectionStoreSelect').value;
-    showLoading('Loading unsettled cash...');
-    try {
-      let url = `${APPS_SCRIPT_URL}?action=getUnsettledCash&store=${store}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) {
-        currentUnsettledCash = result.records;
-        renderCollectionTable();
-        updateTotalOutstanding();
-        document.getElementById('collectSelectedBtn').disabled = true;
-        const selectAll = document.getElementById('selectAllCheckbox');
-        if (selectAll) selectAll.checked = false;
-      } else {
-        await showAlertModal('Error', 'Failed to load unsettled cash: ' + (result.error || 'Unknown error'));
-      }
-    } catch (err) {
-      console.error(err);
-      await showAlertModal('Error', 'Connection error while loading unsettled cash.');
-    } finally {
-      hideLoading();
-    }
-  }
-
-  function renderCollectionTable() {
-    const tbody = document.getElementById('collectionTableBody');
-    if (!currentUnsettledCash.length) {
-      tbody.innerHTML = '|<td colspan="4" style="text-align: center;">No unsettled cash records found.   ';
-      return;
-    }
-    let html = '';
-    currentUnsettledCash.forEach(rec => {
-      const date = new Date(rec.timestamp).toLocaleDateString();
-      html += `<tr data-id="${rec.id}">
-        <tr><input type="checkbox" class="collection-checkbox" value="${rec.id}">     </td>
-        <td>${date} </td>
-        <td>${getEmployeeName(rec.employee_id)} </td>
-        <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
-       </tr>`;
-    });
-    tbody.innerHTML = html;
-    document.querySelectorAll('.collection-checkbox').forEach(cb => {
-      cb.addEventListener('change', updateCollectionButtonState);
-    });
-  }
-
-  function updateTotalOutstanding() {
-    const total = currentUnsettledCash.reduce((sum, rec) => sum + rec.cash_actual, 0);
-    document.getElementById('totalOutstandingCash').innerText = `RM ${total.toFixed(2)}`;
-  }
-
-  function updateCollectionButtonState() {
-    const anyChecked = document.querySelectorAll('.collection-checkbox:checked').length > 0;
-    document.getElementById('collectSelectedBtn').disabled = !anyChecked;
-  }
-
-  // ==================== INITIAL EMPLOYEE SELECTS ====================
-  (async function initEmployeeSelects() {
-    const employees = await fetchEmployees();
+  let employeeId = 'all';
+  if (currentEmployee?.isAdmin) {
     const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
-    if (receiptsEmpSelect && employees.length) {
-      receiptsEmpSelect.innerHTML = '<option value="all">All Employees</option>';
-      employees.forEach(emp => {
-        const opt = document.createElement('option');
-        opt.value = emp.id;
-        opt.textContent = `${emp.name} (ID: ${emp.id})`;
-        receiptsEmpSelect.appendChild(opt);
-      });
-    }
-  })();
+    employeeId = receiptsEmpSelect ? receiptsEmpSelect.value : 'all';
+  }
+  const rangeSelect = document.getElementById('receiptsDateRangeSelect');
+  const range = rangeSelect ? rangeSelect.value : 'today';
+  const search = document.getElementById('receiptsSearch').value;
+  let from = null, to = null;
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  if (range === 'today') {
+    from = getLocalDateString(today);
+    to = from;
+  } else if (range === 'week') {
+    const start = new Date(today);
+    const dayOfWeek = today.getDay();
+    const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+    start.setDate(today.getDate() - diffToMonday);
+    from = getLocalDateString(start);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    to = getLocalDateString(end);
+  } else if (range === 'month') {
+    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+    from = getLocalDateString(start);
+    const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    to = getLocalDateString(end);
+  } else if (range === 'custom') {
+    from = document.getElementById('receiptsFromDate').value;
+    to = document.getElementById('receiptsToDate').value;
+    if (!from || !to) return;
+  }
+  fetchReceipts(store, employeeId, from, to, search);
+}
 
-  // ==================== PRELOAD ALL STORES ====================
-  const allStores = ["queens", "sunshine", "gurney_paragon"];
-  allStores.forEach(store => preloadProductsForStore(store));
+// ==================== EVENT LISTENERS (continued) ====================
+const toggleBtn = document.getElementById('toggleProductDetailsBtn');
+const productDetailsContainer = document.getElementById('productDetailsContainer');
+if (toggleBtn && productDetailsContainer) {
+  toggleBtn.addEventListener('click', () => {
+    productDetailsVisible = !productDetailsVisible;
+    if (productDetailsVisible) {
+      productDetailsContainer.style.display = 'block';
+      toggleBtn.innerText = '📦 Hide Product Details';
+      if (lastProductData) renderProductDetails(lastProductData);
+    } else {
+      productDetailsContainer.style.display = 'none';
+      toggleBtn.innerText = '📦 Show Product Details';
+    }
+  });
+}
+
+const closeClaimPrizeModal = document.getElementById('closeClaimPrizeModal');
+if (closeClaimPrizeModal) {
+  closeClaimPrizeModal.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');
+}
+const cancelClaimBtn = document.getElementById('cancelClaimBtn');
+if (cancelClaimBtn) {
+  cancelClaimBtn.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');
+}
+const cancelClaimStep2Btn = document.getElementById('cancelClaimStep2Btn');
+if (cancelClaimStep2Btn) {
+  cancelClaimStep2Btn.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');
+}
+const checkReceiptBtn = document.getElementById('checkReceiptBtn');
+if (checkReceiptBtn) {
+  checkReceiptBtn.addEventListener('click', checkReceiptForClaim);
+}
+const applyPrizeBtn = document.getElementById('applyPrizeBtn');
+if (applyPrizeBtn) {
+  applyPrizeBtn.addEventListener('click', applyPrizeToCart);
+}
+
+const closeSpecialPromoModal = document.getElementById('closeSpecialPromoModal');
+if (closeSpecialPromoModal) {
+  closeSpecialPromoModal.addEventListener('click', () => document.getElementById('specialPromoModal').style.display = 'none');
+}
+const closeSpecialPromoModalBtn = document.getElementById('closeSpecialPromoModalBtn');
+if (closeSpecialPromoModalBtn) {
+  closeSpecialPromoModalBtn.addEventListener('click', () => document.getElementById('specialPromoModal').style.display = 'none');
+}
+const promoBuy2Free1Perfume = document.getElementById('promoBuy2Free1Perfume');
+if (promoBuy2Free1Perfume) {
+  promoBuy2Free1Perfume.addEventListener('click', applyBuy2Free1Perfume);
+}
+const promoBuy3Free1ExcludePerfume = document.getElementById('promoBuy3Free1ExcludePerfume');
+if (promoBuy3Free1ExcludePerfume) {
+  promoBuy3Free1ExcludePerfume.addEventListener('click', applyBuy3Free1ExcludePerfume);
+}
+const applyCustomPromoBtn = document.getElementById('applyCustomPromoBtn');
+if (applyCustomPromoBtn) {
+  applyCustomPromoBtn.addEventListener('click', applyCustomDiscount);
+}
+
+// ==================== CASH COLLECTION ====================
+let currentUnsettledCash = [];
+
+async function openCollectionModal() {
+  const modal = document.getElementById('collectionModal');
+  modal.style.display = 'flex';
+
+  let loadingMsg = document.getElementById('collectionLoadingMsg');
+  if (!loadingMsg) {
+    loadingMsg = document.createElement('div');
+    loadingMsg.id = 'collectionLoadingMsg';
+    loadingMsg.style.textAlign = 'center';
+    loadingMsg.style.padding = '20px';
+    loadingMsg.style.background = '#f8fafc';
+    loadingMsg.style.borderRadius = '12px';
+    loadingMsg.style.margin = '10px 0';
+    loadingMsg.innerText = 'Loading unsettled cash...';
+    const container = document.querySelector('#collectionModal .modal-container');
+    const collectionTotalDiv = document.getElementById('collectionTotal');
+    if (container && collectionTotalDiv) {
+      container.insertBefore(loadingMsg, collectionTotalDiv);
+    }
+  }
+  loadingMsg.style.display = 'block';
+
+  await loadUnsettledCash();
+  loadingMsg.style.display = 'none';
+}
+
+async function loadUnsettledCash() {
+  const store = document.getElementById('collectionStoreSelect').value;
+  showLoading('Loading unsettled cash...');
+  try {
+    let url = `${APPS_SCRIPT_URL}?action=getUnsettledCash&store=${store}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      currentUnsettledCash = result.records;
+      renderCollectionTable();
+      updateTotalOutstanding();
+      document.getElementById('collectSelectedBtn').disabled = true;
+      const selectAll = document.getElementById('selectAllCheckbox');
+      if (selectAll) selectAll.checked = false;
+    } else {
+      await showAlertModal('Error', 'Failed to load unsettled cash: ' + (result.error || 'Unknown error'));
+    }
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Error', 'Connection error while loading unsettled cash.');
+  } finally {
+    hideLoading();
+  }
+}
+
+function renderCollectionTable() {
+  const tbody = document.getElementById('collectionTableBody');
+  if (!currentUnsettledCash.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.</td></tr>';
+    return;
+  }
+  let html = '';
+  currentUnsettledCash.forEach(rec => {
+    const date = new Date(rec.timestamp).toLocaleDateString();
+    html += `<tr data-id="${rec.id}">
+      <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"></td>
+      <td>${date}</td>
+      <td>${getEmployeeName(rec.employee_id)}</td>
+      <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+  document.querySelectorAll('.collection-checkbox').forEach(cb => {
+    cb.addEventListener('change', updateCollectionButtonState);
+  });
+}
+
+function updateTotalOutstanding() {
+  const total = currentUnsettledCash.reduce((sum, rec) => sum + rec.cash_actual, 0);
+  document.getElementById('totalOutstandingCash').innerText = `RM ${total.toFixed(2)}`;
+}
+
+function updateCollectionButtonState() {
+  const anyChecked = document.querySelectorAll('.collection-checkbox:checked').length > 0;
+  document.getElementById('collectSelectedBtn').disabled = !anyChecked;
+}
+
+(async function initEmployeeSelects() {
+  const employees = await fetchEmployees();
+  const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
+  if (receiptsEmpSelect && employees.length) {
+    receiptsEmpSelect.innerHTML = '<option value="all">All Employees</option>';
+    employees.forEach(emp => {
+      const opt = document.createElement('option');
+      opt.value = emp.id;
+      opt.textContent = `${emp.name} (ID: ${emp.id})`;
+      receiptsEmpSelect.appendChild(opt);
+    });
+  }
+})();
+
+// Preload all stores in the background
+const allStores = ["queens", "sunshine", "gurney_paragon"];
+allStores.forEach(store => preloadProductsForStore(store));
 </script>
 </body>
 </html>

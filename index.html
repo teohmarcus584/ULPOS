@@ -1315,6 +1315,10 @@
       <input type="tel" id="customerPhone" class="modal-input" placeholder="e.g., 0123456789">
     </div>
     <div class="filter-group">
+      <label>Customer Name</label>
+      <input type="text" id="customerName" class="modal-input" placeholder="Full name">
+    </div>
+    <div class="filter-group">
       <label>Email (optional)</label>
       <input type="email" id="customerEmail" class="modal-input" placeholder="email@example.com">
     </div>
@@ -1339,7 +1343,7 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyps7EdXaNoub2jepIgXwin49-zrFgi2jA5KoGd7qQt47hXFayxMU-bOZitHIwBU3VsLA/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKh9k0V8qESFi0rZHZwFgJlgMpsH9dUwvUzX77g2Ofa9bfoFkalXOZmMJS6KvgLj9pwg/exec"; // REPLACE WITH YOUR URL
 
    // ==================== GLOBAL VARIABLES ====================
   let products = [];
@@ -1464,80 +1468,82 @@ document.getElementById('sideChangePinBtn').addEventListener('click', () => {
     }
   }
 
-  function updateCustomerDisplay() {
-    if (selectedCustomer) {
-      customerInfoDisplay.innerHTML = `
-        <div class="customer-info">
-          <div class="customer-name">👤 ${selectedCustomer.name || 'Customer'} (${selectedCustomer.phone})</div>
-          <div class="customer-points">⭐ Points: ${selectedCustomer.points || 0}</div>
-          <button id="removeCustomerBtn">Remove</button>
-        </div>
-      `;
-      customerInfoDisplay.style.display = 'block';
-      document.getElementById('removeCustomerBtn').addEventListener('click', () => {
-        selectedCustomer = null;
-        customerInfoDisplay.style.display = 'none';
-      });
-    } else {
-      customerInfoDisplay.style.display = 'none';
-    }
-  }
-
-  async function showCustomerModal() {
-    document.getElementById('customerPhone').value = '';
-    document.getElementById('customerEmail').value = '';
-    document.getElementById('customerBirthday').value = '';
-    document.getElementById('customerPoints').value = '';
-    document.getElementById('customerError').style.display = 'none';
-    document.getElementById('customerModal').style.display = 'flex';
-  }
-
-  async function findCustomer() {
-    const phone = document.getElementById('customerPhone').value.trim();
-    if (!phone) {
-      showCustomerError('Please enter a phone number');
-      return;
-    }
-    showLoading('Searching customer...');
-    const customer = await fetchCustomerByPhone(phone);
-    hideLoading();
-    if (customer) {
-      document.getElementById('customerEmail').value = customer.email || '';
-      document.getElementById('customerBirthday').value = customer.birthday || '';
-      document.getElementById('customerPoints').value = customer.points || 0;
-      selectedCustomer = customer;
-      updateCustomerDisplay();
-      document.getElementById('customerModal').style.display = 'none';
-      await showAlertModal('Customer Found', `Customer ${customer.name || 'found'} with ${customer.points || 0} points.`);
-    } else {
-      // New customer: keep fields as they are, let user fill email/birthday then save.
-      document.getElementById('customerPoints').value = '0';
+ function updateCustomerDisplay() {
+  if (selectedCustomer) {
+    customerInfoDisplay.innerHTML = `
+      <div class="customer-info">
+        <div class="customer-name">👤 ${selectedCustomer.name || 'Customer'} (${selectedCustomer.phone})</div>
+        <div class="customer-points">⭐ Points: ${selectedCustomer.points || 0}</div>
+        <button id="removeCustomerBtn">Remove</button>
+      </div>
+    `;
+    customerInfoDisplay.style.display = 'block';
+    document.getElementById('removeCustomerBtn').addEventListener('click', () => {
       selectedCustomer = null;
-      showCustomerError('Not found. Fill details and click Save to create new customer.');
-    }
+      customerInfoDisplay.style.display = 'none';
+    });
+  } else {
+    customerInfoDisplay.style.display = 'none';
   }
+}
+function showCustomerModal() {
+  document.getElementById('customerPhone').value = '';
+  document.getElementById('customerName').value = ''; // new
+  document.getElementById('customerEmail').value = '';
+  document.getElementById('customerBirthday').value = '';
+  document.getElementById('customerPoints').value = '';
+  document.getElementById('customerError').style.display = 'none';
+  document.getElementById('customerModal').style.display = 'flex';
+}
+
+ async function findCustomer() {
+  const phone = document.getElementById('customerPhone').value.trim();
+  if (!phone) {
+    showCustomerError('Please enter a phone number');
+    return;
+  }
+  showLoading('Searching customer...');
+  const customer = await fetchCustomerByPhone(phone);
+  hideLoading();
+  if (customer) {
+    document.getElementById('customerName').value = customer.name || '';
+    document.getElementById('customerEmail').value = customer.email || '';
+    document.getElementById('customerBirthday').value = customer.birthday || '';
+    document.getElementById('customerPoints').value = customer.points || 0;
+    selectedCustomer = customer;
+    updateCustomerDisplay();
+    document.getElementById('customerModal').style.display = 'none';
+    await showAlertModal('Customer Found', `Customer ${customer.name || 'found'} with ${customer.points || 0} points.`);
+  } else {
+    // New customer: keep fields as is, user can fill name, email, birthday
+    document.getElementById('customerPoints').value = '0';
+    selectedCustomer = null;
+    showCustomerError('Not found. Fill details and click Save to create new customer.');
+  }
+}
 
   async function saveCustomerFromModal() {
-    const phone = document.getElementById('customerPhone').value.trim();
-    if (!phone) {
-      showCustomerError('Phone number is required');
-      return;
-    }
-    const email = document.getElementById('customerEmail').value.trim();
-    const birthday = document.getElementById('customerBirthday').value;
-    const points = parseInt(document.getElementById('customerPoints').value) || 0;
-    showLoading('Saving customer...');
-    const customer = await saveCustomer({ phone, email, birthday, points });
-    hideLoading();
-    if (customer) {
-      selectedCustomer = customer;
-      updateCustomerDisplay();
-      document.getElementById('customerModal').style.display = 'none';
-      await showAlertModal('Success', `Customer ${customer.name || 'saved'} successfully.`);
-    } else {
-      showCustomerError('Failed to save customer. Check connection.');
-    }
+  const phone = document.getElementById('customerPhone').value.trim();
+  if (!phone) {
+    showCustomerError('Phone number is required');
+    return;
   }
+  const name = document.getElementById('customerName').value.trim();
+  const email = document.getElementById('customerEmail').value.trim();
+  const birthday = document.getElementById('customerBirthday').value;
+  const points = parseInt(document.getElementById('customerPoints').value) || 0;
+  showLoading('Saving customer...');
+  const customer = await saveCustomer({ phone, name, email, birthday, points });
+  hideLoading();
+  if (customer) {
+    selectedCustomer = customer;
+    updateCustomerDisplay();
+    document.getElementById('customerModal').style.display = 'none';
+    await showAlertModal('Success', `Customer ${customer.name || 'saved'} successfully.`);
+  } else {
+    showCustomerError('Failed to save customer. Check connection.');
+  }
+}
 
   function showCustomerError(msg) {
     const errorDiv = document.getElementById('customerError');

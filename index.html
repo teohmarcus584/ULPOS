@@ -1153,7 +1153,7 @@
   </div>
 </div>
 
-<!-- Side Menu -->
+<!-- Side Menu (unchanged) -->
 <div id="sideMenuOverlay" class="side-menu-overlay">
   <div id="sideMenu" class="side-menu">
     <div class="menu-header">
@@ -1225,7 +1225,7 @@
   </div>
 </div>
 
-<!-- All modals -->
+<!-- All modals (existing) -->
 <div id="paymentModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closePaymentModal">×</span><div class="modal-title">💳 Select Payment Method</div><div class="payment-buttons"><button class="payment-btn" data-method="Cash">💵 Cash</button><button class="payment-btn" data-method="Card">💳 Card</button><button class="payment-btn" data-method="QR Pay">📱 QR Pay</button></div><div id="cashOptions" style="display: none;"><div class="suggestions" id="suggestionsContainer"></div><input type="number" id="customCashInput" class="custom-cash-input" placeholder="Enter amount received (RM)" step="0.01"><div class="modal-buttons"><button id="confirmCashBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelPaymentBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="otherPaymentOptions" style="display: none;"><div class="modal-buttons"><button id="confirmOtherBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelOtherBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div></div></div>
 
 <div id="luckyDrawModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeLuckyDrawModal">×</span><div class="modal-title">🎲 Lucky Draw</div><p>Transaction ID: <strong id="luckyTxId"></strong></p><p>Click below to enter the Lucky Draw with this receipt number.</p><div class="modal-buttons"><button id="openLuckyDrawBtn" class="modal-btn modal-btn-primary">🎁 Go to Lucky Draw</button><button id="closeLuckyDrawBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
@@ -1345,7 +1345,7 @@
   // ==================== CONFIGURATION ====================
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyps7EdXaNoub2jepIgXwin49-zrFgi2jA5KoGd7qQt47hXFayxMU-bOZitHIwBU3VsLA/exec"; // REPLACE WITH YOUR URL
 
-  // ==================== GLOBAL VARIABLES ====================
+   // ==================== GLOBAL VARIABLES ====================
   let products = [];
   let cart = [];
   let currentStore = "queens";
@@ -1371,9 +1371,9 @@
   let stockHistory = [];
   let preloadedDataMap = {};
   let preloadedStores = [];
-  let selectedCustomer = null; // { id, phone, name, email, birthday, points }
+  let selectedCustomer = null; // { id, phone, name?, email, birthday, points }
 
-  // DOM elements
+  // DOM elements (existing)
   const productGridEl = document.getElementById('productGrid');
   const cartContainer = document.getElementById('cartItemsContainer');
   const subtotalSpan = document.getElementById('subtotal');
@@ -1413,7 +1413,387 @@
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) overlay.style.display = 'none';
   }
+// Open change PIN modal
+document.getElementById('sideChangePinBtn').addEventListener('click', () => {
+  openChangePinModal();
+  closeSideMenu();
+});
+ // ==================== CUSTOMER LOYALTY FUNCTIONS ====================
+  async function fetchCustomerByPhone(phone) {
+    try {
+      const url = `${APPS_SCRIPT_URL}?action=getCustomerByPhone&phone=${encodeURIComponent(phone)}`;
+      const response = await fetch(url);
+      const result = await response.json();
+      if (result.success && result.customer) {
+        return result.customer;
+      } else {
+        return null;
+      }
+    } catch (err) {
+      console.error('Error fetching customer:', err);
+      return null;
+    }
+  }
 
+  async function saveCustomer(customerData) {
+    try {
+      const formData = new URLSearchParams();
+      formData.append('action', 'saveCustomer');
+      formData.append('phone', customerData.phone);
+      if (customerData.email) formData.append('email', customerData.email);
+      if (customerData.birthday) formData.append('birthday', customerData.birthday);
+      if (customerData.points !== undefined) formData.append('points', customerData.points);
+      if (customerData.name) formData.append('name', customerData.name);
+      const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+      const result = await response.json();
+      return result.success ? result.customer : null;
+    } catch (err) {
+      console.error('Error saving customer:', err);
+      return null;
+    }
+  }
+
+  async function addPointsToCustomer(customerId, pointsToAdd) {
+    try {
+      const formData = new URLSearchParams();
+      formData.append('action', 'addPoints');
+      formData.append('customer_id', customerId);
+      formData.append('points', pointsToAdd);
+      const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+      const result = await response.json();
+      return result.success;
+    } catch (err) {
+      console.error('Error adding points:', err);
+      return false;
+    }
+  }
+
+ function updateCustomerDisplay() {
+  if (selectedCustomer) {
+    customerInfoDisplay.innerHTML = `
+      <div class="customer-info">
+        <div class="customer-name">👤 ${selectedCustomer.name || 'Customer'} (${selectedCustomer.phone})</div>
+        <div class="customer-points">⭐ Points: ${selectedCustomer.points || 0}</div>
+        <button id="removeCustomerBtn">Remove</button>
+      </div>
+    `;
+    customerInfoDisplay.style.display = 'block';
+    document.getElementById('removeCustomerBtn').addEventListener('click', () => {
+      selectedCustomer = null;
+      customerInfoDisplay.style.display = 'none';
+    });
+  } else {
+    customerInfoDisplay.style.display = 'none';
+  }
+}
+function showCustomerModal() {
+  document.getElementById('customerPhone').value = '';
+  document.getElementById('customerName').value = ''; // new
+  document.getElementById('customerEmail').value = '';
+  document.getElementById('customerBirthday').value = '';
+  document.getElementById('customerPoints').value = '';
+  document.getElementById('customerError').style.display = 'none';
+  document.getElementById('customerModal').style.display = 'flex';
+}
+
+ async function findCustomer() {
+  const phone = document.getElementById('customerPhone').value.trim();
+  if (!phone) {
+    showCustomerError('Please enter a phone number');
+    return;
+  }
+  showLoading('Searching customer...');
+  const customer = await fetchCustomerByPhone(phone);
+  hideLoading();
+  if (customer) {
+    document.getElementById('customerName').value = customer.name || '';
+    document.getElementById('customerEmail').value = customer.email || '';
+    document.getElementById('customerBirthday').value = customer.birthday || '';
+    document.getElementById('customerPoints').value = customer.points || 0;
+    selectedCustomer = customer;
+    updateCustomerDisplay();
+    document.getElementById('customerModal').style.display = 'none';
+    await showAlertModal('Customer Found', `Customer ${customer.name || 'found'} with ${customer.points || 0} points.`);
+  } else {
+    // New customer: keep fields as is, user can fill name, email, birthday
+    document.getElementById('customerPoints').value = '0';
+    selectedCustomer = null;
+    showCustomerError('Not found. Fill details and click Save to create new customer.');
+  }
+}
+
+  async function saveCustomerFromModal() {
+  const phone = document.getElementById('customerPhone').value.trim();
+  if (!phone) {
+    showCustomerError('Phone number is required');
+    return;
+  }
+  const name = document.getElementById('customerName').value.trim();
+  const email = document.getElementById('customerEmail').value.trim();
+  const birthday = document.getElementById('customerBirthday').value;
+  const points = parseInt(document.getElementById('customerPoints').value) || 0;
+  showLoading('Saving customer...');
+  const customer = await saveCustomer({ phone, name, email, birthday, points });
+  hideLoading();
+  if (customer) {
+    selectedCustomer = customer;
+    updateCustomerDisplay();
+    document.getElementById('customerModal').style.display = 'none';
+    await showAlertModal('Success', `Customer ${customer.name || 'saved'} successfully.`);
+  } else {
+    showCustomerError('Failed to save customer. Check connection.');
+  }
+}
+
+  function showCustomerError(msg) {
+    const errorDiv = document.getElementById('customerError');
+    errorDiv.innerText = msg;
+    errorDiv.style.display = 'block';
+  }
+// ==================== CHANGE PIN ====================
+let currentKeypad = null;
+let currentStep = 1; // 1=current, 2=new, 3=confirm
+
+function openChangePinModal() {
+  // Reset UI
+  document.getElementById('changePinStep1').style.display = 'block';
+  document.getElementById('changePinStep2').style.display = 'none';
+  document.getElementById('changePinStep3').style.display = 'none';
+  document.getElementById('changePinError').style.display = 'none';
+  document.getElementById('currentPinInput').value = '';
+  document.getElementById('newPinInput').value = '';
+  document.getElementById('confirmPinInput').value = '';
+  currentStep = 1;
+
+  // Create and show keypad for step 1
+  showKeypadForStep(1);
+
+  document.getElementById('changePinModal').style.display = 'flex';
+}
+
+function showKeypadForStep(step) {
+  // Remove existing keypad if any
+  if (currentKeypad) {
+    currentKeypad.remove();
+    currentKeypad = null;
+  }
+
+  // Determine which container to put the keypad in
+  let container = null;
+  if (step === 1) {
+    container = document.getElementById('step1Keypad');
+    if (!container) {
+      // Create container if missing
+      const step1Div = document.getElementById('changePinStep1');
+      const keypadDiv = document.createElement('div');
+      keypadDiv.id = 'step1Keypad';
+      keypadDiv.className = 'pin-keypad mini-keypad';
+      step1Div.appendChild(keypadDiv);
+      container = keypadDiv;
+    }
+  } else if (step === 2) {
+    let step2Keypad = document.getElementById('step2Keypad');
+    if (!step2Keypad) {
+      const step2Div = document.getElementById('changePinStep2');
+      const keypadDiv = document.createElement('div');
+      keypadDiv.id = 'step2Keypad';
+      keypadDiv.className = 'pin-keypad mini-keypad';
+      step2Div.appendChild(keypadDiv);
+      step2Keypad = keypadDiv;
+    }
+    container = step2Keypad;
+  } else if (step === 3) {
+    let step3Keypad = document.getElementById('step3Keypad');
+    if (!step3Keypad) {
+      const step3Div = document.getElementById('changePinStep3');
+      const keypadDiv = document.createElement('div');
+      keypadDiv.id = 'step3Keypad';
+      keypadDiv.className = 'pin-keypad mini-keypad';
+      step3Div.appendChild(keypadDiv);
+      step3Keypad = keypadDiv;
+    }
+    container = step3Keypad;
+  }
+
+  if (container) {
+    // Build the keypad buttons (same as the login keypad)
+    const digits = ['1','2','3','4','5','6','7','8','9','0'];
+    container.innerHTML = '';
+    digits.forEach(d => {
+      const btn = document.createElement('button');
+      btn.className = 'keypad-btn';
+      btn.textContent = d;
+      btn.dataset.digit = d;
+      btn.addEventListener('click', () => handlePinDigit(step, d));
+      container.appendChild(btn);
+    });
+    // Clear button
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'keypad-btn clear';
+    clearBtn.textContent = '⌫';
+    clearBtn.addEventListener('click', () => handlePinClear(step));
+    container.appendChild(clearBtn);
+    // Enter button
+    const enterBtn = document.createElement('button');
+    enterBtn.className = 'keypad-btn enter';
+    enterBtn.textContent = '↵';
+    enterBtn.addEventListener('click', () => handlePinEnter(step));
+    container.appendChild(enterBtn);
+
+    currentKeypad = container;
+  }
+}
+
+function handlePinDigit(step, digit) {
+  let inputField;
+  if (step === 1) inputField = document.getElementById('currentPinInput');
+  else if (step === 2) inputField = document.getElementById('newPinInput');
+  else inputField = document.getElementById('confirmPinInput');
+
+  if (inputField.value.length < 4) {
+    inputField.value += digit;
+    if (inputField.value.length === 4) {
+      // Auto-proceed to next step after 4 digits
+      if (step === 1) {
+        verifyCurrentPinAndProceed();
+      } else if (step === 2) {
+        goToStep(3);
+      } else if (step === 3) {
+        checkConfirmAndSubmit();
+      }
+    }
+  }
+}
+
+function handlePinClear(step) {
+  let inputField;
+  if (step === 1) inputField = document.getElementById('currentPinInput');
+  else if (step === 2) inputField = document.getElementById('newPinInput');
+  else inputField = document.getElementById('confirmPinInput');
+  inputField.value = inputField.value.slice(0, -1);
+  document.getElementById('changePinError').style.display = 'none';
+}
+
+function handlePinEnter(step) {
+  if (step === 1) {
+    if (document.getElementById('currentPinInput').value.length === 4) {
+      verifyCurrentPinAndProceed();
+    } else {
+      showChangePinError('Please enter 4-digit current PIN');
+    }
+  } else if (step === 2) {
+    if (document.getElementById('newPinInput').value.length === 4) {
+      goToStep(3);
+    } else {
+      showChangePinError('Please enter 4-digit new PIN');
+    }
+  } else if (step === 3) {
+    if (document.getElementById('confirmPinInput').value.length === 4) {
+      checkConfirmAndSubmit();
+    } else {
+      showChangePinError('Please enter 4-digit confirmation');
+    }
+  }
+}
+
+async function verifyCurrentPinAndProceed() {
+  const currentPin = document.getElementById('currentPinInput').value;
+  if (currentPin.length !== 4) return;
+
+  showLoading('Verifying PIN...');
+  try {
+    // Use GET request with query parameters
+    const url = `${APPS_SCRIPT_URL}?action=verifyByPin&pin=${encodeURIComponent(currentPin)}`;
+    const response = await fetch(url);
+    const result = await response.json();
+
+    if (result.success && result.employee.id === currentEmployee.id) {
+      // PIN matches the logged-in employee
+      goToStep(2);
+    } else {
+      showChangePinError('Current PIN is incorrect');
+    }
+  } catch (err) {
+    showChangePinError('Connection error. Please try again.');
+  } finally {
+    hideLoading();
+  }
+}
+
+function goToStep(step) {
+  // Hide all steps
+  document.getElementById('changePinStep1').style.display = 'none';
+  document.getElementById('changePinStep2').style.display = 'none';
+  document.getElementById('changePinStep3').style.display = 'none';
+
+  if (step === 1) {
+    document.getElementById('changePinStep1').style.display = 'block';
+    showKeypadForStep(1);
+    currentStep = 1;
+  } else if (step === 2) {
+    document.getElementById('changePinStep2').style.display = 'block';
+    showKeypadForStep(2);
+    currentStep = 2;
+  } else if (step === 3) {
+    document.getElementById('changePinStep3').style.display = 'block';
+    showKeypadForStep(3);
+    currentStep = 3;
+  }
+  document.getElementById('changePinError').style.display = 'none';
+}
+
+function checkConfirmAndSubmit() {
+  const newPin = document.getElementById('newPinInput').value;
+  const confirmPin = document.getElementById('confirmPinInput').value;
+  if (newPin !== confirmPin) {
+    showChangePinError('New PIN and confirmation do not match.');
+    // Clear confirm field and allow re-entry
+    document.getElementById('confirmPinInput').value = '';
+    // Stay on step 3
+    return;
+  }
+  submitPinChange(newPin);
+}
+
+async function submitPinChange(newPin) {
+  showLoading('Changing PIN...');
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', 'changePin');
+    formData.append('employee_id', currentEmployee.id);
+    formData.append('current_pin', document.getElementById('currentPinInput').value);
+    formData.append('new_pin', newPin);
+
+    const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+    const result = await response.json();
+
+    if (result.success) {
+      await showAlertModal('Success', 'Your PIN has been changed successfully.');
+      document.getElementById('changePinModal').style.display = 'none';
+    } else {
+      showChangePinError(result.error || 'Failed to change PIN.');
+    }
+  } catch (err) {
+    console.error(err);
+    showChangePinError('Connection error. Please try again.');
+  } finally {
+    hideLoading();
+  }
+}
+
+function showChangePinError(msg) {
+  const errorDiv = document.getElementById('changePinError');
+  errorDiv.innerText = msg;
+  errorDiv.style.display = 'block';
+}
+
+// Event listeners for modal close/cancel
+document.getElementById('closeChangePinModal').addEventListener('click', () => {
+  document.getElementById('changePinModal').style.display = 'none';
+});
+document.getElementById('changePinCancelBtn').addEventListener('click', () => {
+  document.getElementById('changePinModal').style.display = 'none';
+});
   function showAlertModal(title, message) {
     return new Promise((resolve) => {
       const overlay = document.getElementById('alertModal');
@@ -1529,138 +1909,6 @@
     return employeeNameMap[employeeId] || employeeId;
   }
 
-  // ==================== CUSTOMER LOYALTY FUNCTIONS ====================
-  async function fetchCustomerByPhone(phone) {
-    try {
-      const url = `${APPS_SCRIPT_URL}?action=getCustomerByPhone&phone=${encodeURIComponent(phone)}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success && result.customer) {
-        return result.customer;
-      }
-      return null;
-    } catch (err) {
-      console.error('Error fetching customer:', err);
-      return null;
-    }
-  }
-
-  async function saveCustomer(customerData) {
-    try {
-      const formData = new URLSearchParams();
-      formData.append('action', 'saveCustomer');
-      formData.append('phone', customerData.phone);
-      if (customerData.name) formData.append('name', customerData.name);
-      if (customerData.email) formData.append('email', customerData.email);
-      if (customerData.birthday) formData.append('birthday', customerData.birthday);
-      if (customerData.points !== undefined) formData.append('points', customerData.points);
-      const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
-      const result = await response.json();
-      return result.success ? result.customer : null;
-    } catch (err) {
-      console.error('Error saving customer:', err);
-      return null;
-    }
-  }
-
-  async function addPointsToCustomer(customerId, pointsToAdd) {
-    try {
-      const formData = new URLSearchParams();
-      formData.append('action', 'addPoints');
-      formData.append('customer_id', customerId);
-      formData.append('points', pointsToAdd);
-      const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
-      const result = await response.json();
-      return result.success;
-    } catch (err) {
-      console.error('Error adding points:', err);
-      return false;
-    }
-  }
-
-  function updateCustomerDisplay() {
-    if (selectedCustomer) {
-      customerInfoDisplay.innerHTML = `
-        <div class="customer-info">
-          <div class="customer-name">👤 ${escapeHtml(selectedCustomer.name || 'Customer')} (${escapeHtml(selectedCustomer.phone)})</div>
-          <div class="customer-points">⭐ Points: ${selectedCustomer.points || 0}</div>
-          <button id="removeCustomerBtn">Remove</button>
-        </div>
-      `;
-      customerInfoDisplay.style.display = 'block';
-      document.getElementById('removeCustomerBtn').addEventListener('click', () => {
-        selectedCustomer = null;
-        customerInfoDisplay.style.display = 'none';
-      });
-    } else {
-      customerInfoDisplay.style.display = 'none';
-    }
-  }
-
-  function showCustomerModal() {
-    document.getElementById('customerPhone').value = '';
-    document.getElementById('customerName').value = '';
-    document.getElementById('customerEmail').value = '';
-    document.getElementById('customerBirthday').value = '';
-    document.getElementById('customerPoints').value = '';
-    document.getElementById('customerError').style.display = 'none';
-    document.getElementById('customerModal').style.display = 'flex';
-  }
-
-  async function findCustomer() {
-    const phone = document.getElementById('customerPhone').value.trim();
-    if (!phone) {
-      showCustomerError('Please enter a phone number');
-      return;
-    }
-    showLoading('Searching customer...');
-    const customer = await fetchCustomerByPhone(phone);
-    hideLoading();
-    if (customer) {
-      document.getElementById('customerName').value = customer.name || '';
-      document.getElementById('customerEmail').value = customer.email || '';
-      document.getElementById('customerBirthday').value = customer.birthday || '';
-      document.getElementById('customerPoints').value = customer.points || 0;
-      selectedCustomer = customer;
-      updateCustomerDisplay();
-      document.getElementById('customerModal').style.display = 'none';
-      await showAlertModal('Customer Found', `Customer ${customer.name || 'found'} with ${customer.points || 0} points.`);
-    } else {
-      document.getElementById('customerPoints').value = '0';
-      selectedCustomer = null;
-      showCustomerError('Not found. Fill details and click Save to create new customer.');
-    }
-  }
-
-  async function saveCustomerFromModal() {
-    const phone = document.getElementById('customerPhone').value.trim();
-    if (!phone) {
-      showCustomerError('Phone number is required');
-      return;
-    }
-    const name = document.getElementById('customerName').value.trim();
-    const email = document.getElementById('customerEmail').value.trim();
-    const birthday = document.getElementById('customerBirthday').value;
-    const points = parseInt(document.getElementById('customerPoints').value) || 0;
-    showLoading('Saving customer...');
-    const customer = await saveCustomer({ phone, name, email, birthday, points });
-    hideLoading();
-    if (customer) {
-      selectedCustomer = customer;
-      updateCustomerDisplay();
-      document.getElementById('customerModal').style.display = 'none';
-      await showAlertModal('Success', `Customer ${customer.name || 'saved'} successfully.`);
-    } else {
-      showCustomerError('Failed to save customer. Check connection.');
-    }
-  }
-
-  function showCustomerError(msg) {
-    const errorDiv = document.getElementById('customerError');
-    errorDiv.innerText = msg;
-    errorDiv.style.display = 'block';
-  }
-
   // ==================== STOCK HISTORY FUNCTIONS ====================
   function logStockChange(productId, productName, category, oldStock, newStock, delta) {
     const now = Date.now();
@@ -1681,10 +1929,12 @@
   function renderStockHistory() {
     const historyList = document.getElementById('stockHistoryList');
     if (!historyList) return;
+
     if (stockHistory.length === 0) {
       historyList.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 20px;">No adjustments yet.</div>';
       return;
     }
+
     const aggregated = new Map();
     for (const entry of stockHistory) {
       const id = entry.productId;
@@ -1707,11 +1957,13 @@
         agg.timestampMs = entry.timestampMs;
       }
     }
+
     let html = '';
     for (const entry of aggregated.values()) {
       const deltaClass = entry.delta > 0 ? 'delta' : 'delta negative';
       const deltaSymbol = entry.delta > 0 ? `+${entry.delta}` : `${entry.delta}`;
       const stockChange = `Net change: ${deltaSymbol} → Final stock: ${entry.newStock}`;
+
       html += `
         <div class="history-entry">
           <div class="delta-badge ${deltaClass}">${deltaSymbol}</div>
@@ -1732,14 +1984,17 @@
       await showAlertModal('No History', 'There is no stock adjustment history to clear.');
       return;
     }
+
     const confirmed = await showConfirmModal('Clear History', `Are you sure you want to permanently delete all stock history for store "${currentStore}"? This action cannot be undone.`);
     if (!confirmed) return;
+
     try {
       const formData = new URLSearchParams();
       formData.append('action', 'clearStockHistory');
       formData.append('store', currentStore);
       const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
       const result = await response.json();
+
       if (result.success) {
         stockHistory = [];
         renderStockHistory();
@@ -1823,6 +2078,7 @@
 
   // ==================== INITIAL DATA LOAD ====================
   async function loadInitialData() {
+   
     try {
       const url = `${APPS_SCRIPT_URL}?action=getInitialData&store=${currentStore}`;
       const response = await fetch(url);
@@ -2061,6 +2317,7 @@
 
     totalSpan.innerText = `RM ${total.toFixed(2)}`;
 
+    // Attach event listeners
     document.querySelectorAll('.qty-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const idx = parseInt(btn.dataset.index);
@@ -2131,16 +2388,18 @@
   }
 
   function clearCart() {
-    if (cart.length === 0) return;
-    cart = [];
-    discountAmount = 0;
-    buy2Free1Discount = 0;
-    buy3Free1Discount = 0;
-    customDiscount = 0;
-    claimedReceiptInfo = null;
-    pendingPrize = null;
-    updateCartUI();
-  }
+  if (cart.length === 0) return;
+  cart = [];
+  discountAmount = 0;
+  buy2Free1Discount = 0;
+  buy3Free1Discount = 0;
+  customDiscount = 0;
+  claimedReceiptInfo = null;
+  pendingPrize = null;
+  selectedCustomer = null;  // new
+  updateCustomerDisplay();   // new
+  updateCartUI();
+}
 
   function clearPromo() {
     buy2Free1Discount = 0;
@@ -2401,7 +2660,7 @@
     document.getElementById('closePaymentModal').onclick = () => modal.style.display = 'none';
   }
 
-  async function completeCheckout(paymentMethod, cashReceived) {
+    async function completeCheckout(paymentMethod, cashReceived) {
     document.getElementById('paymentModal').style.display = 'none';
     const totalAmount = pendingTransaction.totalAmount;
     const transactionId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -2430,9 +2689,9 @@
     };
     const success = await saveTransactionToSheet(transaction);
     if (success) {
-      // Add points if customer exists (backend also adds points, but we can do it here too for immediate UI update)
+      // Add points if customer exists
       if (selectedCustomer && selectedCustomer.id) {
-        const pointsEarned = Math.floor(totalAmount);
+        const pointsEarned = Math.floor(totalAmount); // RM 1 = 1 point
         if (pointsEarned > 0) {
           await addPointsToCustomer(selectedCustomer.id, pointsEarned);
           selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
@@ -2463,7 +2722,6 @@
       await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
     }
   }
-
   async function saveTransactionToSheet(transaction) {
     showLoading('Recording sale...');
     try {
@@ -2484,7 +2742,6 @@
       formData.append("buy3_free1_discount", transaction.buy3_free1_discount || 0);
       formData.append("custom_discount", transaction.custom_discount || 0);
       formData.append("prize_claimed", transaction.prize_claimed ? JSON.stringify(transaction.prize_claimed) : '');
-      if (transaction.customer_id) formData.append("customer_id", transaction.customer_id);
       const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
       const result = await response.json();
       return result.success === true;
@@ -2496,7 +2753,7 @@
     }
   }
 
-  // ==================== RECEIPTS (polling, etc.) ====================
+  // Global variables for receipts polling
   let cachedReceipts = null;
   let receiptPollingInterval = null;
 
@@ -2570,6 +2827,7 @@
     cachedReceipts = null;
   }
 
+  // ==================== RECEIPTS ====================
   async function fetchReceipts(store, employeeId, from, to, search) {
     showLoading('Loading receipts...');
     try {
@@ -2662,6 +2920,7 @@
   }
 
   function openLuckyDraw(transactionId) {
+    // Close the initial lucky draw modal and open the new print modal
     window.open(`https://teohmarcus584.github.io/salesanalysis/?receipt=${encodeURIComponent(transactionId)}`, '_blank');
     document.getElementById('luckyDrawModal').style.display = 'none';
     document.getElementById('luckyDrawReceiptNumber').innerText = transactionId;
@@ -2876,17 +3135,17 @@
   function renderProductDetails(productsData) {
     const tbody = document.getElementById('productDetailsBody');
     if (!productsData || productsData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No products sold in this period.</td></tr>';
+      tbody.innerHTML = '|<td colspan="4" style="text-align: center;">No products sold in this period.   ';
       return;
     }
     let html = '';
     productsData.forEach(p => {
       html += `<tr>
-        <td>${escapeHtml(p.name)}</td>
-        <td>${escapeHtml(p.category)}</td>
+         <td>${escapeHtml(p.name)}</td>
+         <td>${escapeHtml(p.category)}</td>
         <td style="text-align: right;">${p.quantity}</td>
         <td style="text-align: right;">RM ${p.total.toFixed(2)}</td>
-      </tr>`;
+       </tr>`;
     });
     tbody.innerHTML = html;
   }
@@ -3102,7 +3361,7 @@
     if (checkBtn) checkBtn.disabled = !enabled;
   }
 
-  // ==================== PRINTER SETUP ====================
+  // ==================== PRINTER SETUP (unified modal) ====================
   (function setupPrinter() {
     let gattServer = null, printerCharacteristic = null, isConnected = false;
     const printerModal = document.getElementById('printerModal');
@@ -3257,6 +3516,7 @@
       }
     }
 
+    // New function to print a prize voucher with barcode
     async function printPrizeVoucher(prizeLabel, receiptNumber, spinDate = new Date()) {
       if (!isConnected || !printerCharacteristic) {
         await showAlertModal('Printer not connected', 'Please connect a printer first.');
@@ -3529,7 +3789,11 @@
       document.getElementById('pinInput').focus();
     }
   });
-
+ document.getElementById('customerBtn').addEventListener('click', showCustomerModal);
+  document.getElementById('findCustomerBtn').addEventListener('click', findCustomer);
+  document.getElementById('saveCustomerBtn').addEventListener('click', saveCustomerFromModal);
+  document.getElementById('cancelCustomerBtn').addEventListener('click', () => document.getElementById('customerModal').style.display = 'none');
+  document.getElementById('closeCustomerModal').addEventListener('click', () => document.getElementById('customerModal').style.display = 'none');
   async function verifyEmployeeByPin(pin) {
     showLoading('Verifying...');
     try {
@@ -3629,6 +3893,7 @@
   document.getElementById('clearStockHistoryBtn')?.addEventListener('click', clearStockHistory);
   document.getElementById('saveStockHistoryBtn')?.addEventListener('click', saveStockHistoryToSheet);
 
+  // PIN keypad logic for login
   const pinInputEl = document.getElementById('pinInput');
   if (pinInputEl) {
     document.querySelectorAll('.keypad-btn').forEach(btn => {
@@ -4008,17 +4273,19 @@
   if (categorySelect) categorySelect.addEventListener('change', renderProductGrid);
 
   document.getElementById('logoutHeaderBtn')?.addEventListener('click', () => {
-    if (typeof stopReceiptPolling === 'function') stopReceiptPolling();
-    cachedReceipts = null;
-    currentEmployee = null;
-    document.getElementById('mainContent').style.display = 'none';
-    document.getElementById('loginModal').style.display = 'flex';
-    document.getElementById('pinInput').value = '';
-    document.getElementById('loginError').innerText = '';
-    cart = [];
-    products = [];
-    renderProductGrid();
-  });
+  if (typeof stopReceiptPolling === 'function') stopReceiptPolling();
+  cachedReceipts = null;
+  currentEmployee = null;
+  document.getElementById('mainContent').style.display = 'none';
+  document.getElementById('loginModal').style.display = 'flex';
+  document.getElementById('pinInput').value = '';
+  document.getElementById('loginError').innerText = '';
+  cart = [];
+  products = [];
+  selectedCustomer = null;  // new
+  updateCustomerDisplay();   // new
+  renderProductGrid();
+});
   document.getElementById('closeLoginModal')?.addEventListener('click', () => {});
 
   async function fetchEmployees() {
@@ -4148,12 +4415,16 @@
       }
       showLoading('Printing voucher...');
       try {
+        // Fetch transaction details to get the prize label (or use a default)
         const url = `${APPS_SCRIPT_URL}?action=get&receipt=${encodeURIComponent(receiptNumber)}`;
         const response = await fetch(url);
         const result = await response.json();
         if (!result.success) throw new Error('Transaction not found');
         const transaction = result.data;
-        let prizeLabel = 'RM 38 FREE GIFT';
+        // Choose a prize label based on transaction total or just a default
+        let prizeLabel = 'RM 38 FREE GIFT'; // default
+        // Optionally, you can customise based on total
+        // For example: if (transaction.total > 100) prizeLabel = 'RM 75 FREE GIFT';
         if (!window.printerAPI || !window.printerAPI.printPrizeVoucher) {
           await showAlertModal('Printer Error', 'Printer API not available. Please connect printer first.');
           return;
@@ -4173,13 +4444,6 @@
       }
     });
   }
-
-  // Customer modal listeners
-  document.getElementById('customerBtn').addEventListener('click', showCustomerModal);
-  document.getElementById('findCustomerBtn').addEventListener('click', findCustomer);
-  document.getElementById('saveCustomerBtn').addEventListener('click', saveCustomerFromModal);
-  document.getElementById('cancelCustomerBtn').addEventListener('click', () => document.getElementById('customerModal').style.display = 'none');
-  document.getElementById('closeCustomerModal').addEventListener('click', () => document.getElementById('customerModal').style.display = 'none');
 
   // ==================== CASH COLLECTION ====================
   let currentUnsettledCash = [];
@@ -4238,18 +4502,18 @@
   function renderCollectionTable() {
     const tbody = document.getElementById('collectionTableBody');
     if (!currentUnsettledCash.length) {
-      tbody.innerHTML = '|<td colspan="4" style="text-align: center;">No unsettled cash records found.  ';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.</td></tr>';
       return;
     }
     let html = '';
     currentUnsettledCash.forEach(rec => {
       const date = new Date(rec.timestamp).toLocaleDateString();
       html += `<tr data-id="${rec.id}">
-        <td><input type="checkbox" class="collection-checkbox" value="${rec.id}">     \\
-        <td>${date}\\
-        <td>${getEmployeeName(rec.employee_id)}\\
-        <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}\\
-       `;
+        <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"></td>
+        <td>${date}</td>
+        <td>${getEmployeeName(rec.employee_id)}</td>
+        <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
+      </tr>`;
     });
     tbody.innerHTML = html;
     document.querySelectorAll('.collection-checkbox').forEach(cb => {
@@ -4280,7 +4544,7 @@
       });
     }
   })();
-
+ console.log("POS system with customer loyalty ready.");
   const allStores = ["queens", "sunshine", "gurney_paragon"];
   allStores.forEach(store => preloadProductsForStore(store));
 </script>

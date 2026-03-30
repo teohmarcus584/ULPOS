@@ -1168,8 +1168,8 @@
       <button id="sideReceiptsBtn" class="menu-btn">📜 Receipts</button>
       <button id="sideDrawerBtn" class="menu-btn">💰 Open Drawer</button>
       <button id="sideChangePinBtn" class="menu-btn">🔑 Change PIN</button>
-      <!-- NEW: Stock Alert Toggle -->
       <button id="sideStockAlertBtn" class="menu-btn">🔔 Stock Alerts: OFF</button>
+      <button id="sideTelegramBtn" class="menu-btn">📱 Telegram Alerts</button>
     </div>
   </div>
 </div>
@@ -1340,6 +1340,27 @@
   </div>
 </div>
 
+<!-- Telegram Settings Modal -->
+<div id="telegramModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 500px;">
+    <span class="close-modal" id="closeTelegramModal">×</span>
+    <div class="modal-title">📱 Telegram Out‑of‑Stock Alerts</div>
+    <div class="filter-group">
+      <label>Bot Token</label>
+      <input type="text" id="telegramBotToken" class="modal-input" placeholder="e.g., 123456789:ABCdefGHIjklmNOPqrstUVwxyz" value="8585264579:AAGW6fb4uMp2qGJa0yC6q2itWd2xgwI3NDY">
+    </div>
+    <div class="filter-group">
+      <label>Chat ID</label>
+      <input type="text" id="telegramChatId" class="modal-input" placeholder="e.g., 123456789" value="7888819771">
+    </div>
+    <div class="modal-buttons">
+      <button id="saveTelegramSettingsBtn" class="modal-btn modal-btn-primary">Save & Test</button>
+      <button id="closeTelegramModalBtn" class="modal-btn modal-btn-secondary">Cancel</button>
+    </div>
+    <div id="telegramStatus" style="margin-top: 12px; font-size: 0.9rem; color: #2c7a4b;"></div>
+  </div>
+</div>
+
 <div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"></div><div class="loading-text" id="loadingMessage">Processing...</div></div>
 
 <script>
@@ -1374,9 +1395,12 @@
   let preloadedStores = [];
   let selectedCustomer = null; // { id, phone, name, email, birthday, points }
 
-  // ==================== NOTIFICATION VARIABLES ====================
+  // ==================== NOTIFICATION & TELEGRAM VARIABLES ====================
+  let notificationsSupported = false;
   let notificationsEnabled = false;
   let alertedOutOfStockProducts = new Set(); // Track which products already triggered a notification
+  let telegramBotToken = localStorage.getItem('telegramBotToken') || '8585264579:AAGW6fb4uMp2qGJa0yC6q2itWd2xgwI3NDY';
+  let telegramChatId = localStorage.getItem('telegramChatId') || '7888819771';
 
   // ==================== DOM ELEMENTS (existing) ====================
   const productGridEl = document.getElementById('productGrid');
@@ -1534,31 +1558,102 @@
     return employeeNameMap[employeeId] || employeeId;
   }
 
-  // ==================== NOTIFICATION FUNCTIONS ====================
-  async function enableStockNotifications() {
+  // ==================== TELEGRAM FUNCTIONS ====================
+  async function sendTelegramMessage(message) {
+    if (!telegramBotToken || !telegramChatId) return false;
+    try {
+      const url = `https://api.telegram.org/bot${telegramBotToken}/sendMessage`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: telegramChatId,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+      const result = await response.json();
+      return result.ok === true;
+    } catch (err) {
+      console.error('Telegram send failed:', err);
+      return false;
+    }
+  }
+
+  function showTelegramModal() {
+    document.getElementById('telegramBotToken').value = telegramBotToken;
+    document.getElementById('telegramChatId').value = telegramChatId;
+    document.getElementById('telegramStatus').innerHTML = '';
+    document.getElementById('telegramModal').style.display = 'flex';
+  }
+
+  async function saveTelegramSettings() {
+    const token = document.getElementById('telegramBotToken').value.trim();
+    const chatId = document.getElementById('telegramChatId').value.trim();
+    if (!token || !chatId) {
+      document.getElementById('telegramStatus').innerHTML = '❌ Both Bot Token and Chat ID are required.';
+      return;
+    }
+    // Test the connection
+    const testUrl = `https://api.telegram.org/bot${token}/sendMessage`;
+    try {
+      const response = await fetch(testUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: '✅ Out‑of‑stock alert test from POS system.' })
+      });
+      const result = await response.json();
+      if (result.ok) {
+        telegramBotToken = token;
+        telegramChatId = chatId;
+        localStorage.setItem('telegramBotToken', token);
+        localStorage.setItem('telegramChatId', chatId);
+        document.getElementById('telegramStatus').innerHTML = '✅ Settings saved and test message sent!';
+        setTimeout(() => document.getElementById('telegramModal').style.display = 'none', 1500);
+      } else {
+        document.getElementById('telegramStatus').innerHTML = `❌ Error: ${result.description}`;
+      }
+    } catch (err) {
+      document.getElementById('telegramStatus').innerHTML = `❌ Connection failed: ${err.message}`;
+    }
+  }
+
+  // ==================== NOTIFICATION FUNCTIONS (with Telegram fallback) ====================
+  function checkNotificationSupport() {
     if (!("Notification" in window)) {
-      await showAlertModal("Not supported", "Your browser does not support desktop notifications.");
+      notificationsSupported = false;
+      return false;
+    }
+    notificationsSupported = true;
+    return true;
+  }
+
+  async function enableStockNotifications() {
+    if (!checkNotificationSupport()) {
+      await showAlertModal("Not supported", "Your browser does not support desktop notifications.\nWe will use in-app alerts instead.");
+      notificationsEnabled = true;
+      updateStockAlertButtonUI();
       return;
     }
     if (Notification.permission === "granted") {
       notificationsEnabled = true;
       updateStockAlertButtonUI();
-      await showAlertModal("Enabled", "Stock alerts are now enabled.");
+      await showAlertModal("Enabled", "Stock alerts are now enabled (desktop notifications).");
     } else if (Notification.permission !== "denied") {
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
         notificationsEnabled = true;
         updateStockAlertButtonUI();
-        await showAlertModal("Enabled", "Stock alerts are now enabled.");
+        await showAlertModal("Enabled", "Stock alerts are now enabled (desktop notifications).");
       } else {
-        notificationsEnabled = false;
+        notificationsEnabled = true; // fallback to in‑app alerts
         updateStockAlertButtonUI();
-        await showAlertModal("Permission denied", "You denied notification permission. Stock alerts will not work.");
+        await showAlertModal("Permission denied", "Desktop notifications blocked. We will use in-app alerts instead.");
       }
     } else {
-      notificationsEnabled = false;
+      notificationsEnabled = true; // fallback
       updateStockAlertButtonUI();
-      await showAlertModal("Permission blocked", "Notification permission is blocked. Please allow it in your browser settings.");
+      await showAlertModal("Permission blocked", "Desktop notifications blocked. We will use in-app alerts instead.");
     }
   }
 
@@ -1570,30 +1665,51 @@
 
   function updateStockAlertButtonUI() {
     const btn = document.getElementById('sideStockAlertBtn');
-    if (btn) {
-      if (notificationsEnabled) {
-        btn.innerText = "🔔 Stock Alerts: ON";
-        btn.style.background = "#10b981";
-        btn.style.color = "white";
-      } else {
-        btn.innerText = "🔔 Stock Alerts: OFF";
-        btn.style.background = "#f1f5f9";
-        btn.style.color = "#1e293b";
-      }
+    if (!btn) return;
+    if (!notificationsSupported) {
+      btn.innerText = "🔔 Stock Alerts: Unsupported";
+      btn.disabled = true;
+      btn.style.opacity = "0.5";
+      btn.style.background = "#ccc";
+      return;
+    }
+    if (notificationsEnabled) {
+      btn.innerText = "🔔 Stock Alerts: ON";
+      btn.style.background = "#10b981";
+      btn.style.color = "white";
+    } else {
+      btn.innerText = "🔔 Stock Alerts: OFF";
+      btn.style.background = "#f1f5f9";
+      btn.style.color = "#1e293b";
     }
   }
 
+  function showOutOfStockAlert(productName) {
+    showAlertModal("⚠️ Out of Stock", `${productName} is now out of stock. Please restock.`);
+  }
+
+  // Main out‑of‑stock handler: sends Telegram + optional desktop notification
   function checkAndNotifyOutOfStock(productId, productName, newStock) {
-    if (!notificationsEnabled) return;
     if (newStock === 0 && !alertedOutOfStockProducts.has(productId)) {
       alertedOutOfStockProducts.add(productId);
-      new Notification(`⚠️ Out of Stock`, {
-        body: `${productName} is now out of stock. Please restock.`,
-        icon: "https://i.imgur.com/STBkLrm.jpeg",
-        silent: false
-      });
+      const storeName = currentStore.charAt(0).toUpperCase() + currentStore.slice(1);
+      const message = `⚠️ OUT OF STOCK ⚠️\nStore: ${storeName}\nProduct: ${productName}\nTime: ${new Date().toLocaleString()}`;
+
+      // 1. Send Telegram message (always if configured)
+      if (telegramBotToken && telegramChatId) {
+        sendTelegramMessage(message);
+      }
+
+      // 2. Desktop notification (if enabled)
+      if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
+        new Notification(`⚠️ Out of Stock`, {
+          body: `${productName} is out of stock.`,
+          icon: "https://i.imgur.com/STBkLrm.jpeg"
+        });
+      } else if (notificationsEnabled) {
+        showOutOfStockAlert(productName);
+      }
     } else if (newStock > 0 && alertedOutOfStockProducts.has(productId)) {
-      // Reset so that if it goes out again later, a new notification will fire
       alertedOutOfStockProducts.delete(productId);
     }
   }
@@ -2028,7 +2144,7 @@
         const product = products.find(p => p.id == productId);
         if (product) {
           product.stock = newStock;
-          // 🔔 Check for out-of-stock notification
+          // 🔔 Check for out-of-stock notification (Telegram + desktop)
           checkAndNotifyOutOfStock(product.id, product.name, newStock);
         }
         localStorage.removeItem(`products_${currentStore}`);
@@ -3504,7 +3620,7 @@
             if (displaySpan) displaySpan.innerText = newStock;
             scheduleStockUpdate(id, newStock);
             logStockChange(product.id, product.name, product.category, oldStock, newStock, -1);
-            // 🔔 Check for out-of-stock notification
+            // 🔔 Check for out-of-stock notification (Telegram + desktop)
             checkAndNotifyOutOfStock(product.id, product.name, newStock);
             btn.dataset.current = newStock;
             const incBtn = document.querySelector(`.inc-stock[data-id="${id}"]`);
@@ -3525,7 +3641,7 @@
             if (displaySpan) displaySpan.innerText = newStock;
             scheduleStockUpdate(id, newStock);
             logStockChange(product.id, product.name, product.category, oldStock, newStock, 1);
-            // 🔔 Reset notification if restocked
+            // Reset notification if restocked
             checkAndNotifyOutOfStock(product.id, product.name, newStock);
             btn.dataset.current = newStock;
             const decBtn = document.querySelector(`.dec-stock[data-id="${id}"]`);
@@ -3684,6 +3800,9 @@
         }
         startReceiptPolling();
         updateCartUI();
+        // Initialize notification support and UI
+        checkNotificationSupport();
+        updateStockAlertButtonUI();
         return true;
       } else {
         document.getElementById('loginError').innerText = result.error || 'Invalid PIN';
@@ -3770,7 +3889,7 @@
   const sideReceiptsBtn = document.getElementById('sideReceiptsBtn');
   const sideDrawerBtn = document.getElementById('sideDrawerBtn');
   const sideStockAlertBtn = document.getElementById('sideStockAlertBtn');
-  let stockAlertEnabled = false; // local flag, but we use notificationsEnabled globally
+  const sideTelegramBtn = document.getElementById('sideTelegramBtn');
 
   if (sideStockAlertBtn) {
     sideStockAlertBtn.addEventListener('click', async () => {
@@ -3782,6 +3901,15 @@
       updateStockAlertButtonUI();
     });
   }
+
+  if (sideTelegramBtn) {
+    sideTelegramBtn.addEventListener('click', showTelegramModal);
+  }
+
+  // Telegram modal buttons
+  document.getElementById('saveTelegramSettingsBtn')?.addEventListener('click', saveTelegramSettings);
+  document.getElementById('closeTelegramModal')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
+  document.getElementById('closeTelegramModalBtn')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
 
   async function openReportsModal() {
     if (currentEmployee?.isAdmin) {

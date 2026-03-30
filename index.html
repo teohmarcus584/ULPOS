@@ -2715,7 +2715,7 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
 
   function openLuckyDraw(transactionId) {
     // Close the initial lucky draw modal and open the new print modal
-    window.open(`https://teohmarcus584.github.io/LUCKYDRAW/?receipt=${encodeURIComponent(transactionId)}`, '_blank');
+    window.open(`https://teohmarcus584.github.io/salesanalysis/?receipt=${encodeURIComponent(transactionId)}`, '_blank');
     document.getElementById('luckyDrawModal').style.display = 'none';
     document.getElementById('luckyDrawReceiptNumber').innerText = transactionId;
     document.getElementById('luckyDrawPrintModal').style.display = 'flex';

@@ -2656,6 +2656,7 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
       customer_id: selectedCustomer ? selectedCustomer.id : null
     };
     const success = await saveTransactionToSheet(transaction);
+    const customerIdForLuckyDraw = selectedCustomer ? selectedCustomer.id : null;
     if (success) {
       // Update local stock and trigger notifications for each sold item
       for (let item of saleItems) {
@@ -2689,15 +2690,15 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
       } else {
         await showAlertModal('Receipt', 'Sale recorded. Printer not connected, no receipt printed.');
       }
-      await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
-      document.getElementById('luckyTxId').innerText = transactionId;
-      const luckyModal = document.getElementById('luckyDrawModal');
-      luckyModal.style.display = 'flex';
-      document.getElementById('openLuckyDrawBtn').onclick = () => { openLuckyDraw(transactionId); luckyModal.style.display = 'none'; };
-      document.getElementById('closeLuckyDrawBtn').onclick = () => luckyModal.style.display = 'none';
-      document.getElementById('closeLuckyDrawModal').onclick = () => luckyModal.style.display = 'none';
-      await fetchProductsFromSheet();
-      clearCart();
+     await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
+document.getElementById('luckyTxId').innerText = transactionId;
+const luckyModal = document.getElementById('luckyDrawModal');
+luckyModal.style.display = 'flex';
+document.getElementById('openLuckyDrawBtn').onclick = () => { openLuckyDraw(transactionId); luckyModal.style.display = 'none'; };
+document.getElementById('closeLuckyDrawBtn').onclick = () => luckyModal.style.display = 'none';
+document.getElementById('closeLuckyDrawModal').onclick = () => luckyModal.style.display = 'none';
+await fetchProductsFromSheet();
+clearCart();
     } else {
       await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
     }

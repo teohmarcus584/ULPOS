@@ -1028,7 +1028,7 @@
       <option value="gurney_paragon">Gurney Paragon</option>
     </select>
     <div class="modal-buttons" style="margin-top: 24px;">
-      <button id="confirmStoreBtn" class="modal-btn modal-btn-primary">Next ?</button>
+      <button id="confirmStoreBtn" class="modal-btn modal-btn-primary">Next →</button>
     </div>
   </div>
 </div>
@@ -1036,7 +1036,7 @@
 <div id="loginModal" class="modal-overlay" style="display: none;">
   <div class="modal-container" style="max-width: 400px;">
     <span class="close-modal" id="closeLoginModal">×</span>
-    <div class="modal-title">?? Enter PIN</div>
+    <div class="modal-title">🔐 Enter PIN</div>
     <div class="login-form">
       <input type="password" id="pinInput" class="pin-input" placeholder="****" maxlength="4" inputmode="numeric" autofocus readonly>
       <div class="pin-keypad">
@@ -1049,9 +1049,9 @@
         <button class="keypad-btn" data-digit="7">7</button>
         <button class="keypad-btn" data-digit="8">8</button>
         <button class="keypad-btn" data-digit="9">9</button>
-        <button class="keypad-btn clear" data-action="clear">?</button>
+        <button class="keypad-btn clear" data-action="clear">⌫</button>
         <button class="keypad-btn" data-digit="0">0</button>
-        <button class="keypad-btn enter" data-action="enter">?</button>
+        <button class="keypad-btn enter" data-action="enter">↵</button>
       </div>
       <div id="loginError" class="error-msg" style="color:#ef4444; font-size:0.9rem; text-align:center; margin-top:12px;"></div>
     </div>
@@ -1074,19 +1074,19 @@
     <div class="pos-header-right">
       <span class="cashier-info" id="employeeNameHeader"></span>
       <button id="logoutHeaderBtn" class="logout-header-btn">Logout</button>
-      <button id="printerIconBtn" class="printer-icon-btn">???</button>
+      <button id="printerIconBtn" class="printer-icon-btn">🖨️</button>
     </div>
   </div>
 
   <div class="pos-dashboard">
     <div class="products-panel">
       <div class="filter-bar">
-        <select id="categorySelect"><option value="all">?? All Categories</option></select>
-        <input type="text" id="searchInput" class="search-bar" placeholder="?? Search product...">
-        <button id="refreshProductsPanelBtn" class="refresh-btn" title="Refresh products">??</button>
+        <select id="categorySelect"><option value="all">📂 All Categories</option></select>
+        <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search product...">
+        <button id="refreshProductsPanelBtn" class="refresh-btn" title="Refresh products">🔄</button>
         <div class="view-toggle">
-          <button id="gridViewBtn" class="active" title="Grid view">?</button>
-          <button id="listViewBtn" title="List view">?</button>
+          <button id="gridViewBtn" class="active" title="Grid view">⊞</button>
+          <button id="listViewBtn" title="List view">≡</button>
         </div>
       </div>
       <div id="productGrid" class="product-grid">Loading products...</div>
@@ -1094,14 +1094,14 @@
 
     <div class="cart-panel">
       <div class="cart-header">
-        <div class="cart-title" id="cartTitle">?? Current Sale</div>
+        <div class="cart-title" id="cartTitle">🧾 Current Sale</div>
         <div class="cart-header-right">
           <select id="soldBySelectCart" class="sold-by-select-cart">
             <option value="">Loading...</option>
           </select>
           <div class="cart-header-buttons">
-            <button id="customerBtn" class="cart-header-btn">?? Customer</button>
-            <button id="clearCartBtn" class="cart-header-btn">??? Clear</button>
+            <button id="customerBtn" class="cart-header-btn">👤 Customer</button>
+            <button id="clearCartBtn" class="cart-header-btn">🗑️ Clear</button>
           </div>
         </div>
       </div>
@@ -1113,36 +1113,36 @@
         <div class="cart-summary" id="cartSummary">
           <div class="summary-row"><span>Subtotal</span><span id="subtotal">RM 0.00</span></div>
           <div id="discountRow" class="summary-row discount-row" style="display: none;">
-            <span><i>??</i> Lucky Draw</span>
+            <span><i>🎲</i> Lucky Draw</span>
             <span id="discountAmount">RM 0.00</span>
           </div>
           <div id="promoBuy2Free1Row" class="summary-row discount-row" style="display: none;">
-            <span><i>??</i> Buy 2 Free 1 (Perfume)</span>
+            <span><i>🎯</i> Buy 2 Free 1 (Perfume)</span>
             <span id="promoBuy2Free1Amount">RM 0.00</span>
           </div>
           <div id="promoBuy3Free1Row" class="summary-row discount-row" style="display: none;">
-            <span><i>??</i> Buy 3 Free 1 (Excluding Perfume)</span>
+            <span><i>🎯</i> Buy 3 Free 1 (Excluding Perfume)</span>
             <span id="promoBuy3Free1Amount">RM 0.00</span>
           </div>
           <div id="customDiscountRow" class="summary-row discount-row" style="display: none;">
-            <span><i>??</i> Custom Discount</span>
+            <span><i>💰</i> Custom Discount</span>
             <span id="customDiscountAmount">RM 0.00</span>
           </div>
           <div class="summary-row total-row"><span>TOTAL</span><span id="totalAmount">RM 0.00</span></div>
         </div>
         <div class="cart-actions" id="cartActions">
-          <button id="checkoutBtn">?? CHECKOUT</button>
-          <button id="claimPrizeBtn">?? Claim Prize</button>
-          <button id="specialPromoBtn">?? Special Promo</button>
+          <button id="checkoutBtn">💳 CHECKOUT</button>
+          <button id="claimPrizeBtn">🎁 Claim Prize</button>
+          <button id="specialPromoBtn">🎁 Special Promo</button>
         </div>
       </div>
       <!-- Stock History Panel (hidden by default) -->
       <div id="stockHistoryContainer" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div class="cart-title">?? Stock Adjustment History</div>
+          <div class="cart-title">📋 Stock Adjustment History</div>
           <div>
-            <button id="saveStockHistoryBtn" class="cart-header-btn">?? Save History</button>
-            <button id="clearStockHistoryBtn" class="cart-header-btn">??? Clear History</button>
+            <button id="saveStockHistoryBtn" class="cart-header-btn">💾 Save History</button>
+            <button id="clearStockHistoryBtn" class="cart-header-btn">🗑️ Clear History</button>
           </div>
         </div>
         <div id="stockHistoryList" style="max-height: 55vh; overflow-y: auto; margin-top: 16px;">
@@ -1158,58 +1158,57 @@
   <div id="sideMenu" class="side-menu">
     <div class="menu-header">
       <h3>Menu</h3>
-      <button class="close-menu" id="closeSideMenuBtn">?</button>
+      <button class="close-menu" id="closeSideMenuBtn">✕</button>
     </div>
     <div class="menu-buttons">
-      <button id="sideReportBtn" class="menu-btn">?? Report</button>
-      <button id="sideSettlementBtn" class="menu-btn">?? Settlement</button>
-      <button id="sideCollectionBtn" class="menu-btn" style="display: none;">?? Cash Collection</button>
-      <button id="sideInventoryBtn" class="menu-btn" style="display: none;">?? Inventory</button>
-      <button id="sideReceiptsBtn" class="menu-btn">?? Receipts</button>
-      <button id="sideDrawerBtn" class="menu-btn">?? Open Drawer</button>
-      <button id="sideChangePinBtn" class="menu-btn">?? Change PIN</button>
+      <button id="sideReportBtn" class="menu-btn">📊 Report</button>
+      <button id="sideSettlementBtn" class="menu-btn">💰 Settlement</button>
+      <button id="sideCollectionBtn" class="menu-btn" style="display: none;">💵 Cash Collection</button>
+      <button id="sideInventoryBtn" class="menu-btn" style="display: none;">📦 Inventory</button>
+      <button id="sideReceiptsBtn" class="menu-btn">📜 Receipts</button>
+      <button id="sideDrawerBtn" class="menu-btn">💰 Open Drawer</button>
+      <button id="sideChangePinBtn" class="menu-btn">🔑 Change PIN</button>
+      <!-- NEW: Stock Alert Toggle -->
+      <button id="sideStockAlertBtn" class="menu-btn">🔔 Stock Alerts: OFF</button>
     </div>
   </div>
 </div>
+
+<!-- other modals (unchanged) ... -->
 <div id="changePinModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 400px;">
     <span class="close-modal" id="closeChangePinModal">×</span>
-    <div class="modal-title">?? Change PIN</div>
-
+    <div class="modal-title">🔐 Change PIN</div>
     <div id="changePinStep1">
       <div class="filter-group">
         <label>Current PIN</label>
         <input type="password" id="currentPinInput" class="modal-input" maxlength="4" inputmode="numeric" readonly>
-        <!-- keypad will be added dynamically -->
       </div>
     </div>
-
     <div id="changePinStep2" style="display: none;">
       <div class="filter-group">
         <label>New PIN</label>
         <input type="password" id="newPinInput" class="modal-input" maxlength="4" inputmode="numeric" readonly>
       </div>
     </div>
-
     <div id="changePinStep3" style="display: none;">
       <div class="filter-group">
         <label>Confirm New PIN</label>
         <input type="password" id="confirmPinInput" class="modal-input" maxlength="4" inputmode="numeric" readonly>
       </div>
     </div>
-
     <div id="changePinError" style="color:#ef4444; margin: 12px 0; display: none;"></div>
-
     <div class="modal-buttons">
       <button id="changePinCancelBtn" class="modal-btn modal-btn-secondary">Cancel</button>
     </div>
   </div>
 </div>
+
 <!-- Printer Modal -->
 <div id="printerModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 400px;">
     <span class="close-modal" id="closePrinterModal">×</span>
-    <div class="modal-title">??? Printer Settings</div>
+    <div class="modal-title">🖨️ Printer Settings</div>
     <div class="filter-group" style="margin-bottom: 20px;">
       <label>Paper Size</label>
       <select id="paperSizeSelectModal">
@@ -1221,40 +1220,41 @@
       <button id="connectPrinterModalBtn" class="modal-btn modal-btn-primary">Connect Printer</button>
       <button id="closePrinterModalBtn" class="modal-btn modal-btn-secondary">Close</button>
     </div>
-    <div id="printerStatusModal" style="margin-top: 12px; font-size: 0.9rem; text-align: center;">? Not connected</div>
+    <div id="printerStatusModal" style="margin-top: 12px; font-size: 0.9rem; text-align: center;">⚪ Not connected</div>
   </div>
 </div>
 
-<!-- All modals -->
-<div id="paymentModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closePaymentModal">×</span><div class="modal-title">?? Select Payment Method</div><div class="payment-buttons"><button class="payment-btn" data-method="Cash">?? Cash</button><button class="payment-btn" data-method="Card">?? Card</button><button class="payment-btn" data-method="QR Pay">?? QR Pay</button></div><div id="cashOptions" style="display: none;"><div class="suggestions" id="suggestionsContainer"></div><input type="number" id="customCashInput" class="custom-cash-input" placeholder="Enter amount received (RM)" step="0.01"><div class="modal-buttons"><button id="confirmCashBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelPaymentBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="otherPaymentOptions" style="display: none;"><div class="modal-buttons"><button id="confirmOtherBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelOtherBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div></div></div>
+<!-- Payment Modal -->
+<div id="paymentModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closePaymentModal">×</span><div class="modal-title">💳 Select Payment Method</div><div class="payment-buttons"><button class="payment-btn" data-method="Cash">💵 Cash</button><button class="payment-btn" data-method="Card">💳 Card</button><button class="payment-btn" data-method="QR Pay">📱 QR Pay</button></div><div id="cashOptions" style="display: none;"><div class="suggestions" id="suggestionsContainer"></div><input type="number" id="customCashInput" class="custom-cash-input" placeholder="Enter amount received (RM)" step="0.01"><div class="modal-buttons"><button id="confirmCashBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelPaymentBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="otherPaymentOptions" style="display: none;"><div class="modal-buttons"><button id="confirmOtherBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelOtherBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div></div></div>
 
-<div id="luckyDrawModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeLuckyDrawModal">×</span><div class="modal-title">?? Lucky Draw</div><p>Transaction ID: <strong id="luckyTxId"></strong></p><p>Click below to enter the Lucky Draw with this receipt number.</p><div class="modal-buttons"><button id="openLuckyDrawBtn" class="modal-btn modal-btn-primary">?? Go to Lucky Draw</button><button id="closeLuckyDrawBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<!-- Lucky Draw Modal -->
+<div id="luckyDrawModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeLuckyDrawModal">×</span><div class="modal-title">🎲 Lucky Draw</div><p>Transaction ID: <strong id="luckyTxId"></strong></p><p>Click below to enter the Lucky Draw with this receipt number.</p><div class="modal-buttons"><button id="openLuckyDrawBtn" class="modal-btn modal-btn-primary">🎁 Go to Lucky Draw</button><button id="closeLuckyDrawBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="luckyDrawPrintModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 400px;">
     <span class="close-modal" id="closeLuckyDrawPrintModal">×</span>
-    <div class="modal-title">?? Congratulations!</div>
+    <div class="modal-title">🎉 Congratulations!</div>
     <div id="luckyDrawPrintContent">
       <p>You have won a Lucky Draw prize!</p>
       <p>Receipt ID: <strong id="luckyDrawReceiptNumber"></strong></p>
       <div class="modal-buttons">
-        <button id="printPrizeVoucherBtn" class="modal-btn modal-btn-primary">??? Print Voucher</button>
+        <button id="printPrizeVoucherBtn" class="modal-btn modal-btn-primary">🖨️ Print Voucher</button>
         <button id="closeLuckyDrawPrintModalBtn" class="modal-btn modal-btn-secondary">Close</button>
       </div>
     </div>
   </div>
 </div>
 
-<div id="claimPrizeModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeClaimPrizeModal">×</span><div class="modal-title">?? Claim Prize</div><div id="claimStep1"><p>Enter the receipt number from your Lucky Draw:</p><input type="text" id="claimReceiptInput" class="modal-input" placeholder="e.g., TXN-1234567890-123" style="width: 100%; margin: 12px 0; padding: 12px;"><div class="modal-buttons"><button id="checkReceiptBtn" class="modal-btn modal-btn-primary">Check</button><button id="cancelClaimBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimStep2" style="display: none;"><p>Receipt: <strong id="validReceiptId"></strong></p><p>Select your prize:</p><select id="prizeSelect" class="modal-input" style="width: 100%; margin: 12px 0; padding: 12px;"><option value="38">CAR AROMATIC - RM 38</option><option value="75">15ML TRAVEL PERFUME - RM 75</option><option value="109">300ML LOTION - RM 109</option><option value="75">100ML PILLOW MIST - RM 75</option></select><div class="modal-buttons"><button id="applyPrizeBtn" class="modal-btn modal-btn-primary">Apply Discount</button><button id="cancelClaimStep2Btn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimError" style="color:#ef4444; margin-top: 12px; display: none;"></div></div></div>
+<div id="claimPrizeModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeClaimPrizeModal">×</span><div class="modal-title">🎁 Claim Prize</div><div id="claimStep1"><p>Enter the receipt number from your Lucky Draw:</p><input type="text" id="claimReceiptInput" class="modal-input" placeholder="e.g., TXN-1234567890-123" style="width: 100%; margin: 12px 0; padding: 12px;"><div class="modal-buttons"><button id="checkReceiptBtn" class="modal-btn modal-btn-primary">Check</button><button id="cancelClaimBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimStep2" style="display: none;"><p>Receipt: <strong id="validReceiptId"></strong></p><p>Select your prize:</p><select id="prizeSelect" class="modal-input" style="width: 100%; margin: 12px 0; padding: 12px;"><option value="38">CAR AROMATIC - RM 38</option><option value="75">15ML TRAVEL PERFUME - RM 75</option><option value="109">300ML LOTION - RM 109</option><option value="75">100ML PILLOW MIST - RM 75</option></select><div class="modal-buttons"><button id="applyPrizeBtn" class="modal-btn modal-btn-primary">Apply Discount</button><button id="cancelClaimStep2Btn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimError" style="color:#ef4444; margin-top: 12px; display: none;"></div></div></div>
 
-<div id="specialPromoModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeSpecialPromoModal">×</span><div class="modal-title">?? Special Promo</div><div id="promoOptions"><button id="promoBuy2Free1Perfume" class="modal-btn modal-btn-primary promo-option-btn">?? Buy 2 Free 1 (100ml Perfume EDP)</button><button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">?? Buy 3 Free 1 (Excluding Perfume)</button><div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">?? Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="specialPromoModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeSpecialPromoModal">×</span><div class="modal-title">🎁 Special Promo</div><div id="promoOptions"><button id="promoBuy2Free1Perfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 2 Free 1 (100ml Perfume EDP)</button><button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 3 Free 1 (Excluding Perfume)</button><div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">💰 Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">?? Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">?? Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">?? Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">?? Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">?? Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">?? Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">?? Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead>?<th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>    </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💰 Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead>汽<th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>    </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="settlementModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
     <span class="close-modal" id="closeSettlementModal">×</span>
-    <div class="modal-title">?? Daily Settlement</div>
+    <div class="modal-title">💰 Daily Settlement</div>
     <div class="filter-group">
       <label>Store Location</label>
       <select id="settlementStoreSelect">
@@ -1268,12 +1268,12 @@
       <input type="number" id="pettyCashFloat" class="modal-input" placeholder="Enter starting cash float" step="0.01" value="0.00">
     </div>
     <div class="settlement-stats" id="systemTotalsDisplay">
-      <p>?? System totals for today (all employees):</p>
-      <p>?? Cash: <strong id="sysCash">RM 0.00</strong></p>
-      <p>?? Card: <strong id="sysCard">RM 0.00</strong></p>
-      <p>?? QR Pay: <strong id="sysQR">RM 0.00</strong></p>
-      <p>? Refunds: <strong id="sysRefund">RM 0.00</strong></p>
-      <p style="font-size: 1.4rem; font-weight: 800; margin-top: 12px;">?? Net Total: <strong id="sysNetTotal">RM 0.00</strong></p>
+      <p>📊 System totals for today (all employees):</p>
+      <p>💵 Cash: <strong id="sysCash">RM 0.00</strong></p>
+      <p>💳 Card: <strong id="sysCard">RM 0.00</strong></p>
+      <p>📱 QR Pay: <strong id="sysQR">RM 0.00</strong></p>
+      <p>❌ Refunds: <strong id="sysRefund">RM 0.00</strong></p>
+      <p style="font-size: 1.4rem; font-weight: 800; margin-top: 12px;">💰 Net Total: <strong id="sysNetTotal">RM 0.00</strong></p>
     </div>
     <div class="filter-group">
       <label>Cash Count (Actual)</label>
@@ -1295,9 +1295,10 @@
     </div>
   </div>
 </div>
-<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">?? Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>?? Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead>?<th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody>    </table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="receiptsModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeReceiptsModal">×</span><div class="modal-title">?? Receipt History</div><div class="receipts-filters"><div class="filter-group" id="receiptsStoreFilterGroup"><label>Store</label><select id="receiptsStoreSelect"><option value="all">All Stores</option></select></div><div id="receiptsEmployeeFilter" class="filter-group" style="display: none;"><label>Employee</label><select id="receiptsEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="receiptsDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="receiptsCustomDateRange" style="display: none;" class="date-range"><input type="date" id="receiptsFromDate"><input type="date" id="receiptsToDate"></div><div class="filter-group" style="flex: 2;"><label>Search (Receipt # or Product)</label><input type="text" id="receiptsSearch" placeholder="Type to filter..."></div></div><div id="receiptsList" class="receipts-list">Loading receipts...</div><div class="modal-buttons"><button id="closeReceiptsBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead>汽<th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody>    </table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+
+<div id="receiptsModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeReceiptsModal">×</span><div class="modal-title">📜 Receipt History</div><div class="receipts-filters"><div class="filter-group" id="receiptsStoreFilterGroup"><label>Store</label><select id="receiptsStoreSelect"><option value="all">All Stores</option></select></div><div id="receiptsEmployeeFilter" class="filter-group" style="display: none;"><label>Employee</label><select id="receiptsEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="receiptsDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="receiptsCustomDateRange" style="display: none;" class="date-range"><input type="date" id="receiptsFromDate"><input type="date" id="receiptsToDate"></div><div class="filter-group" style="flex: 2;"><label>Search (Receipt # or Product)</label><input type="text" id="receiptsSearch" placeholder="Type to filter..."></div></div><div id="receiptsList" class="receipts-list">Loading receipts...</div><div class="modal-buttons"><button id="closeReceiptsBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="alertModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAlertModal">×</span><div class="modal-title" id="alertModalTitle"></div><div class="modal-message" id="alertModalMessage"></div><div class="modal-buttons"><button class="modal-btn modal-btn-primary" id="alertModalOk">OK</button></div></div></div>
 
@@ -1309,7 +1310,7 @@
 <div id="customerModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
     <span class="close-modal" id="closeCustomerModal">×</span>
-    <div class="modal-title">?? Customer Loyalty</div>
+    <div class="modal-title">👤 Customer Loyalty</div>
     <div class="filter-group">
       <label>Phone Number (required)</label>
       <input type="tel" id="customerPhone" class="modal-input" placeholder="e.g., 0123456789">
@@ -1331,8 +1332,8 @@
       <input type="text" id="customerPoints" class="modal-input" readonly disabled>
     </div>
     <div class="modal-buttons">
-      <button id="findCustomerBtn" class="modal-btn modal-btn-primary">?? Find</button>
-      <button id="saveCustomerBtn" class="modal-btn modal-btn-primary">?? Save / Update</button>
+      <button id="findCustomerBtn" class="modal-btn modal-btn-primary">🔍 Find</button>
+      <button id="saveCustomerBtn" class="modal-btn modal-btn-primary">💾 Save / Update</button>
       <button id="cancelCustomerBtn" class="modal-btn modal-btn-secondary">Cancel</button>
     </div>
     <div id="customerError" style="color:#ef4444; margin-top: 12px; display: none;"></div>
@@ -1372,9 +1373,12 @@
   let preloadedDataMap = {};
   let preloadedStores = [];
   let selectedCustomer = null; // { id, phone, name, email, birthday, points }
-let notificationsEnabled = false;               // Tracks if user granted notification permission
-let alertedOutOfStockProducts = new Set();      // Prevents duplicate alerts for the same product
-  // DOM elements
+
+  // ==================== NOTIFICATION VARIABLES ====================
+  let notificationsEnabled = false;
+  let alertedOutOfStockProducts = new Set(); // Track which products already triggered a notification
+
+  // ==================== DOM ELEMENTS (existing) ====================
   const productGridEl = document.getElementById('productGrid');
   const cartContainer = document.getElementById('cartItemsContainer');
   const subtotalSpan = document.getElementById('subtotal');
@@ -1432,22 +1436,6 @@ let alertedOutOfStockProducts = new Set();      // Prevents duplicate alerts for
       closeBtn.addEventListener('click', onClose);
     });
   }
-
-// ==================== HELPER: CHECK AND NOTIFY ====================
-function checkAndNotifyOutOfStock(productId, productName, newStock) {
-  if (!notificationsEnabled) return;
-  if (newStock === 0 && !alertedOutOfStockProducts.has(productId)) {
-    alertedOutOfStockProducts.add(productId);
-    new Notification(`⚠️ Out of Stock`, {
-      body: `${productName} is now out of stock. Please restock.`,
-      icon: "https://i.imgur.com/STBkLrm.jpeg",   // optional, change to your logo
-      silent: false
-    });
-  } else if (newStock > 0 && alertedOutOfStockProducts.has(productId)) {
-    // Reset so that if it goes out again later, a new notification will fire
-    alertedOutOfStockProducts.delete(productId);
-  }
-}
 
   function showInputModal(title, placeholder = '') {
     return new Promise((resolve) => {
@@ -1546,6 +1534,70 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
     return employeeNameMap[employeeId] || employeeId;
   }
 
+  // ==================== NOTIFICATION FUNCTIONS ====================
+  async function enableStockNotifications() {
+    if (!("Notification" in window)) {
+      await showAlertModal("Not supported", "Your browser does not support desktop notifications.");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      notificationsEnabled = true;
+      updateStockAlertButtonUI();
+      await showAlertModal("Enabled", "Stock alerts are now enabled.");
+    } else if (Notification.permission !== "denied") {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        notificationsEnabled = true;
+        updateStockAlertButtonUI();
+        await showAlertModal("Enabled", "Stock alerts are now enabled.");
+      } else {
+        notificationsEnabled = false;
+        updateStockAlertButtonUI();
+        await showAlertModal("Permission denied", "You denied notification permission. Stock alerts will not work.");
+      }
+    } else {
+      notificationsEnabled = false;
+      updateStockAlertButtonUI();
+      await showAlertModal("Permission blocked", "Notification permission is blocked. Please allow it in your browser settings.");
+    }
+  }
+
+  function disableStockNotifications() {
+    notificationsEnabled = false;
+    updateStockAlertButtonUI();
+    showAlertModal("Disabled", "Stock alerts have been disabled.");
+  }
+
+  function updateStockAlertButtonUI() {
+    const btn = document.getElementById('sideStockAlertBtn');
+    if (btn) {
+      if (notificationsEnabled) {
+        btn.innerText = "🔔 Stock Alerts: ON";
+        btn.style.background = "#10b981";
+        btn.style.color = "white";
+      } else {
+        btn.innerText = "🔔 Stock Alerts: OFF";
+        btn.style.background = "#f1f5f9";
+        btn.style.color = "#1e293b";
+      }
+    }
+  }
+
+  function checkAndNotifyOutOfStock(productId, productName, newStock) {
+    if (!notificationsEnabled) return;
+    if (newStock === 0 && !alertedOutOfStockProducts.has(productId)) {
+      alertedOutOfStockProducts.add(productId);
+      new Notification(`⚠️ Out of Stock`, {
+        body: `${productName} is now out of stock. Please restock.`,
+        icon: "https://i.imgur.com/STBkLrm.jpeg",
+        silent: false
+      });
+    } else if (newStock > 0 && alertedOutOfStockProducts.has(productId)) {
+      // Reset so that if it goes out again later, a new notification will fire
+      alertedOutOfStockProducts.delete(productId);
+    }
+  }
+
   // ==================== CUSTOMER LOYALTY FUNCTIONS ====================
   async function fetchCustomerByPhone(phone) {
     try {
@@ -1599,15 +1651,15 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
     if (selectedCustomer) {
       customerInfoDisplay.innerHTML = `
         <div class="customer-info">
-          <div class="customer-name">?? ${escapeHtml(selectedCustomer.name || 'Customer')} (${escapeHtml(selectedCustomer.phone)})</div>
-          <div class="customer-points">? Points: ${selectedCustomer.points || 0}</div>
+          <div class="customer-name">👤 ${escapeHtml(selectedCustomer.name || 'Customer')} (${escapeHtml(selectedCustomer.phone)})</div>
+          <div class="customer-points">⭐ Points: ${selectedCustomer.points || 0}</div>
           <button id="removeCustomerBtn">Remove</button>
         </div>
       `;
       customerInfoDisplay.style.display = 'block';
       document.getElementById('removeCustomerBtn').addEventListener('click', () => {
         selectedCustomer = null;
-        customerInfoDisplay.style.display = 'none';
+        updateCustomerDisplay();
       });
     } else {
       customerInfoDisplay.style.display = 'none';
@@ -1728,7 +1780,7 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
     for (const entry of aggregated.values()) {
       const deltaClass = entry.delta > 0 ? 'delta' : 'delta negative';
       const deltaSymbol = entry.delta > 0 ? `+${entry.delta}` : `${entry.delta}`;
-      const stockChange = `Net change: ${deltaSymbol} ? Final stock: ${entry.newStock}`;
+      const stockChange = `Net change: ${deltaSymbol} → Final stock: ${entry.newStock}`;
       html += `
         <div class="history-entry">
           <div class="delta-badge ${deltaClass}">${deltaSymbol}</div>
@@ -1826,14 +1878,14 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
     if (inventoryMode) {
       cartNormalContent.style.display = 'none';
       stockHistoryContainerDiv.style.display = 'flex';
-      cartTitleElement.innerText = '?? Inventory Mode';
+      cartTitleElement.innerText = '📦 Inventory Mode';
       if (updateStockTimeout) clearTimeout(updateStockTimeout);
       loadStockHistoryFromSheet();
       renderProductGrid();
     } else {
       cartNormalContent.style.display = 'block';
       stockHistoryContainerDiv.style.display = 'none';
-      cartTitleElement.innerText = '?? Current Sale';
+      cartTitleElement.innerText = '🧾 Current Sale';
       renderProductGrid();
     }
   }
@@ -1854,7 +1906,7 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
         })).sort((a, b) => a.name.localeCompare(b.name));
 
         const categories = [...new Set(products.map(p => p.category))].sort();
-        categorySelect.innerHTML = '<option value="all">?? All Categories</option>';
+        categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
         categories.forEach(cat => {
           const option = document.createElement('option');
           option.value = cat;
@@ -1902,7 +1954,7 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
           if (now - timestamp < 5 * 60 * 1000) {
             products = cachedProducts;
             const categories = [...new Set(products.map(p => p.category))].sort();
-            categorySelect.innerHTML = '<option value="all">?? All Categories</option>';
+            categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
             categories.forEach(cat => {
               const option = document.createElement('option');
               option.value = cat;
@@ -1934,7 +1986,7 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
         })).sort((a, b) => a.name.localeCompare(b.name));
 
         const categories = [...new Set(products.map(p => p.category))].sort();
-        categorySelect.innerHTML = '<option value="all">?? All Categories</option>';
+        categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
         categories.forEach(cat => {
           const option = document.createElement('option');
           option.value = cat;
@@ -1961,55 +2013,37 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
 
   // ==================== STOCK UPDATE ====================
   async function updateStockOnServer(productId, newStock) {
-  try {
-    const formData = new URLSearchParams();
-    formData.append("action", "updateStock");
-    formData.append("productId", productId);
-    formData.append("newStock", newStock);
-    formData.append("store", currentStore);
-    const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
-    const result = await response.json();
+    try {
+      const formData = new URLSearchParams();
+      formData.append("action", "updateStock");
+      formData.append("productId", productId);
+      formData.append("newStock", newStock);
+      formData.append("store", currentStore);
+      const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
+      const result = await response.json();
 
-    if (!result.success) {
-      console.error("Stock update failed:", result.error);
-    } else {
-      // Update local product array
-      const product = products.find(p => p.id == productId);
-      if (product) {
-        product.stock = newStock;
-        // 🔔 Send out-of-stock notification if stock becomes 0
-        checkAndNotifyOutOfStock(product.id, product.name, newStock);
+      if (!result.success) {
+        console.error("Stock update failed:", result.error);
+      } else {
+        const product = products.find(p => p.id == productId);
+        if (product) {
+          product.stock = newStock;
+          // 🔔 Check for out-of-stock notification
+          checkAndNotifyOutOfStock(product.id, product.name, newStock);
+        }
+        localStorage.removeItem(`products_${currentStore}`);
       }
-      // Invalidate cache so next product fetch gets fresh data
-      localStorage.removeItem(`products_${currentStore}`);
+    } catch (err) {
+      console.error("Error updating stock:", err);
     }
-  } catch (err) {
-    console.error("Error updating stock:", err);
   }
-}
-async function enableStockNotifications() {
-  if (!("Notification" in window)) {
-    await showAlertModal("Not supported", "Your browser does not support desktop notifications.");
-    return;
-  }
-  if (Notification.permission === "granted") {
-    notificationsEnabled = true;
-    await showAlertModal("Enabled", "Stock alerts are now enabled.");
-  } else if (Notification.permission !== "denied") {
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-      notificationsEnabled = true;
-      await showAlertModal("Enabled", "Stock alerts are now enabled.");
-    } else {
-      await showAlertModal("Permission denied", "You denied notification permission. Stock alerts will not work.");
-    }
-  } else {
-    await showAlertModal("Permission blocked", "Notification permission is blocked. Please allow it in your browser settings.");
-  }
-}
 
-// Attach to button (make sure the button exists in your HTML)
-document.getElementById('enableStockAlertBtn')?.addEventListener('click', enableStockNotifications);
+  function scheduleStockUpdate(productId, newStock) {
+    if (updateStockTimeout) clearTimeout(updateStockTimeout);
+    updateStockTimeout = setTimeout(() => {
+      updateStockOnServer(productId, newStock);
+    }, 500);
+  }
 
   // ==================== CART FUNCTIONS ====================
   function updateCartUI() {
@@ -2042,8 +2076,8 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
         : '';
       const freeClass = item.freeQuantity > 0 ? 'active' : '';
       const buttonText = item.freeQuantity > 0 
-        ? `?? ${item.freeQuantity} Free` 
-        : '??Activate Free Gift';
+        ? `🎁 ${item.freeQuantity} Free` 
+        : '🎁Activate Free Gift';
       html += `
         <div class="cart-item" data-index="${idx}">
           <div class="cart-item-info">
@@ -2055,12 +2089,12 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
             <button class="free-toggle-btn ${freeClass}" data-index="${idx}">${buttonText}</button>
           </div>
           <div class="cart-item-qty">
-            <button class="qty-btn" data-index="${idx}" data-delta="-1">?</button>
+            <button class="qty-btn" data-index="${idx}" data-delta="-1">−</button>
             <span>${item.quantity}</span>
             <button class="qty-btn" data-index="${idx}" data-delta="1">+</button>
           </div>
           <div class="cart-item-total">RM ${itemTotal.toFixed(2)}</div>
-          <button class="remove-item" data-index="${idx}">?</button>
+          <button class="remove-item" data-index="${idx}">✕</button>
         </div>
       `;
     });
@@ -2179,6 +2213,8 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
     customDiscount = 0;
     claimedReceiptInfo = null;
     pendingPrize = null;
+    selectedCustomer = null;
+    updateCustomerDisplay();
     updateCartUI();
   }
 
@@ -2470,7 +2506,6 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
     };
     const success = await saveTransactionToSheet(transaction);
     if (success) {
-      // Add points if customer exists (backend also adds points, but we can do it here too for immediate UI update)
       if (selectedCustomer && selectedCustomer.id) {
         const pointsEarned = Math.floor(totalAmount);
         if (pointsEarned > 0) {
@@ -2490,7 +2525,7 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
       } else {
         await showAlertModal('Receipt', 'Sale recorded. Printer not connected, no receipt printed.');
       }
-      await showAlertModal('? Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
+      await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
       document.getElementById('luckyTxId').innerText = transactionId;
       const luckyModal = document.getElementById('luckyDrawModal');
       luckyModal.style.display = 'flex';
@@ -2650,9 +2685,9 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
         ? `<span class="receipt-id">[REFUND] ${rec.transaction_id}</span>`
         : `<span class="receipt-id">${rec.transaction_id}</span>`;
 
-      let actionsHtml = `<button class="reprint-btn" data-receipt='${JSON.stringify(rec)}'>??? Reprint</button>`;
+      let actionsHtml = `<button class="reprint-btn" data-receipt='${JSON.stringify(rec)}'>🖨️ Reprint</button>`;
       if (!isRefund && !isRefundedOriginal) {
-        actionsHtml += `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">?? Refund</button>`;
+        actionsHtml += `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">💰 Refund</button>`;
       }
 
       html += `<div class="receipt-item ${refundClass}" data-receipt='${JSON.stringify(rec)}'>
@@ -2916,7 +2951,7 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
   function renderProductDetails(productsData) {
     const tbody = document.getElementById('productDetailsBody');
     if (!productsData || productsData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No products sold in this period.</td></tr>';
+      tbody.innerHTML = '|<td colspan="4" style="text-align: center;">No products sold in this period.  ';
       return;
     }
     let html = '';
@@ -3101,7 +3136,7 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
 
       const alreadySettled = await checkSettlementStatus(store, todayStr);
       if (alreadySettled) {
-        document.getElementById('settlementError').innerHTML = '?? Settlement has already been recorded for today. No further settlement allowed.';
+        document.getElementById('settlementError').innerHTML = '⚠️ Settlement has already been recorded for today. No further settlement allowed.';
         document.getElementById('settlementError').style.display = 'block';
         document.getElementById('checkSettlementBtn').disabled = true;
         document.getElementById('recordSettlementBtn').style.display = 'none';
@@ -3155,10 +3190,10 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
 
     function updatePrinterStatusUI() {
       if (isConnected) {
-        printerStatusModal.innerText = '? Printer connected';
+        printerStatusModal.innerText = '✅ Printer connected';
         printerStatusModal.style.color = '#2c7a4b';
       } else {
-        printerStatusModal.innerText = '? Not connected';
+        printerStatusModal.innerText = '⚪ Not connected';
         printerStatusModal.style.color = '#64748b';
       }
     }
@@ -3364,7 +3399,7 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
     async function connectPrinter() {
       try {
         connectBtnModal.disabled = true;
-        printerStatusModal.innerText = '?? Scanning...';
+        printerStatusModal.innerText = '🔍 Scanning...';
         const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] });
         gattServer = await device.gatt.connect();
         const services = await gattServer.getPrimaryServices();
@@ -3386,7 +3421,7 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
         updatePrinterStatusUI();
         await showAlertModal('Printer Connected', 'Bluetooth printer is ready.');
       } catch (err) {
-        printerStatusModal.innerText = `? ${err.message}`;
+        printerStatusModal.innerText = `❌ ${err.message}`;
         console.error(err);
       } finally {
         connectBtnModal.disabled = false;
@@ -3437,13 +3472,13 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
           <div class="product-category">${escapeHtml(prod.category)}</div>
           <div class="product-price">RM ${prod.price.toFixed(2)}</div>
           <div class="inventory-controls">
-            <button class="inventory-btn dec-stock" data-id="${prod.id}" data-current="${prod.stock}">?</button>
+            <button class="inventory-btn dec-stock" data-id="${prod.id}" data-current="${prod.stock}">−</button>
             <span class="stock-display" data-id="${prod.id}">${prod.stock}</span>
             <button class="inventory-btn inc-stock" data-id="${prod.id}" data-current="${prod.stock}">+</button>
           </div>
         </div>`;
       } else {
-        const stockStatus = prod.stock > 0 ? `?? Stock: ${prod.stock}` : '? Out of stock';
+        const stockStatus = prod.stock > 0 ? `📦 Stock: ${prod.stock}` : '❌ Out of stock';
         html += `<div class="product-card">
           <div class="product-name">${escapeHtml(prod.name)}</div>
           <div class="product-category">${escapeHtml(prod.category)}</div>
@@ -3469,6 +3504,8 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
             if (displaySpan) displaySpan.innerText = newStock;
             scheduleStockUpdate(id, newStock);
             logStockChange(product.id, product.name, product.category, oldStock, newStock, -1);
+            // 🔔 Check for out-of-stock notification
+            checkAndNotifyOutOfStock(product.id, product.name, newStock);
             btn.dataset.current = newStock;
             const incBtn = document.querySelector(`.inc-stock[data-id="${id}"]`);
             if (incBtn) incBtn.dataset.current = newStock;
@@ -3488,6 +3525,8 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
             if (displaySpan) displaySpan.innerText = newStock;
             scheduleStockUpdate(id, newStock);
             logStockChange(product.id, product.name, product.category, oldStock, newStock, 1);
+            // 🔔 Reset notification if restocked
+            checkAndNotifyOutOfStock(product.id, product.name, newStock);
             btn.dataset.current = newStock;
             const decBtn = document.querySelector(`.dec-stock[data-id="${id}"]`);
             if (decBtn) decBtn.dataset.current = newStock;
@@ -3525,7 +3564,7 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
     if (preloaded && preloaded.products && preloaded.products.length > 0) {
       products = preloaded.products;
       const categories = [...new Set(products.map(p => p.category))].sort();
-      categorySelect.innerHTML = '<option value="all">?? All Categories</option>';
+      categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
       categories.forEach(cat => {
         const option = document.createElement('option');
         option.value = cat;
@@ -3578,7 +3617,7 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
       const result = await response.json();
       if (result.success) {
         currentEmployee = result.employee;
-        document.getElementById('employeeNameHeader').innerText = `?? ${currentEmployee.name}`;
+        document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
         document.getElementById('loginModal').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
 
@@ -3730,6 +3769,19 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
   const sideInventoryBtn = document.getElementById('sideInventoryBtn');
   const sideReceiptsBtn = document.getElementById('sideReceiptsBtn');
   const sideDrawerBtn = document.getElementById('sideDrawerBtn');
+  const sideStockAlertBtn = document.getElementById('sideStockAlertBtn');
+  let stockAlertEnabled = false; // local flag, but we use notificationsEnabled globally
+
+  if (sideStockAlertBtn) {
+    sideStockAlertBtn.addEventListener('click', async () => {
+      if (!notificationsEnabled) {
+        await enableStockNotifications();
+      } else {
+        disableStockNotifications();
+      }
+      updateStockAlertButtonUI();
+    });
+  }
 
   async function openReportsModal() {
     if (currentEmployee?.isAdmin) {
@@ -3936,9 +3988,9 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
           if (!cashOk) errorMessages.push(`Cash (System: RM ${currentSettlementTotals.cash.toFixed(2)}, Entered: RM ${actualCash.toFixed(2)})`);
           if (!cardOk) errorMessages.push(`Card (System: RM ${currentSettlementTotals.card.toFixed(2)}, Entered: RM ${actualCard.toFixed(2)})`);
           if (!qrOk) errorMessages.push(`QR (System: RM ${currentSettlementTotals.qr.toFixed(2)}, Entered: RM ${actualQR.toFixed(2)})`);
-          settlementError.innerHTML = `? Mismatch in:<br>${errorMessages.join('<br>')}<br>Please correct and try again.`;
+          settlementError.innerHTML = `❌ Mismatch in:<br>${errorMessages.join('<br>')}<br>Please correct and try again.`;
         } else {
-          settlementError.innerHTML = `? Mismatch detected! Count properly and try again.`;
+          settlementError.innerHTML = `❌ Mismatch detected! Count properly and try again.`;
         }
         settlementError.style.display = 'block';
       }
@@ -4057,6 +4109,8 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
     document.getElementById('loginError').innerText = '';
     cart = [];
     products = [];
+    selectedCustomer = null;
+    updateCustomerDisplay();
     renderProductGrid();
   });
   document.getElementById('closeLoginModal')?.addEventListener('click', () => {});
@@ -4137,11 +4191,11 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
       productDetailsVisible = !productDetailsVisible;
       if (productDetailsVisible) {
         productDetailsContainer.style.display = 'block';
-        toggleBtn.innerText = '?? Hide Product Details';
+        toggleBtn.innerText = '📦 Hide Product Details';
         if (lastProductData) renderProductDetails(lastProductData);
       } else {
         productDetailsContainer.style.display = 'none';
-        toggleBtn.innerText = '?? Show Product Details';
+        toggleBtn.innerText = '📦 Show Product Details';
       }
     });
   }
@@ -4168,7 +4222,7 @@ document.getElementById('enableStockAlertBtn')?.addEventListener('click', enable
   const applyCustomPromoBtn = document.getElementById('applyCustomPromoBtn');
   if (applyCustomPromoBtn) applyCustomPromoBtn.addEventListener('click', applyCustomDiscount);
 
-  // New modal event listeners for Lucky Draw Print Modal
+  // Lucky Draw Print Modal
   const closeLuckyDrawPrintModal = document.getElementById('closeLuckyDrawPrintModal');
   const closeLuckyDrawPrintModalBtn = document.getElementById('closeLuckyDrawPrintModalBtn');
   const printPrizeVoucherBtn = document.getElementById('printPrizeVoucherBtn');

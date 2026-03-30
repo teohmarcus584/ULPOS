@@ -1368,7 +1368,7 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzH4V-jgV2iiAUqBEKNRG5Ho7yXruRmG0zguNT9OBqi2OAvgN1LIGP1Z8pY6fkBbHB6EQ/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxeXlDy7Bo-BpGuHRhNx-YU9jldr7Jf7H1RmvuJ29wRgB0xNtMsl0NOno0pervg0QQGOg/exec"; // REPLACE WITH YOUR URL
 
   // ==================== GLOBAL VARIABLES ====================
   let products = [];
@@ -2900,12 +2900,16 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
     else await showAlertModal('Error', 'Print failed.');
   }
 
-  function openLuckyDraw(transactionId) {
-    window.open(`https://teohmarcus584.github.io/salesanalysis/?receipt=${encodeURIComponent(transactionId)}`, '_blank');
-    document.getElementById('luckyDrawModal').style.display = 'none';
-    document.getElementById('luckyDrawReceiptNumber').innerText = transactionId;
-    document.getElementById('luckyDrawPrintModal').style.display = 'flex';
+ function openLuckyDraw(transactionId) {
+  let url = `https://teohmarcus584.github.io/salesanalysis/?receipt=${encodeURIComponent(transactionId)}`;
+  if (selectedCustomer && selectedCustomer.id) {
+    url += `&customer_id=${encodeURIComponent(selectedCustomer.id)}`;
   }
+  window.open(url, '_blank');
+  document.getElementById('luckyDrawModal').style.display = 'none';
+  document.getElementById('luckyDrawReceiptNumber').innerText = transactionId;
+  document.getElementById('luckyDrawPrintModal').style.display = 'flex';
+}
 
   async function processRefund(transactionId, store) {
     showLoading('Processing refund...');

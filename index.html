@@ -1201,11 +1201,27 @@
 
 <div id="luckyDrawModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeLuckyDrawModal">×</span><div class="modal-title">🎲 Lucky Draw</div><p>Transaction ID: <strong id="luckyTxId"></strong></p><p>Click below to enter the Lucky Draw with this receipt number.</p><div class="modal-buttons"><button id="openLuckyDrawBtn" class="modal-btn modal-btn-primary">🎁 Go to Lucky Draw</button><button id="closeLuckyDrawBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
+<!-- NEW MODAL: Lucky Draw Prize Voucher -->
+<div id="luckyDrawPrintModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 400px;">
+    <span class="close-modal" id="closeLuckyDrawPrintModal">×</span>
+    <div class="modal-title">🎉 Congratulations!</div>
+    <div id="luckyDrawPrintContent">
+      <p>You have won a Lucky Draw prize!</p>
+      <p>Receipt ID: <strong id="luckyDrawReceiptNumber"></strong></p>
+      <div class="modal-buttons">
+        <button id="printPrizeVoucherBtn" class="modal-btn modal-btn-primary">🖨️ Print Voucher</button>
+        <button id="closeLuckyDrawPrintModalBtn" class="modal-btn modal-btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="claimPrizeModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeClaimPrizeModal">×</span><div class="modal-title">🎁 Claim Prize</div><div id="claimStep1"><p>Enter the receipt number from your Lucky Draw:</p><input type="text" id="claimReceiptInput" class="modal-input" placeholder="e.g., TXN-1234567890-123" style="width: 100%; margin: 12px 0; padding: 12px;"><div class="modal-buttons"><button id="checkReceiptBtn" class="modal-btn modal-btn-primary">Check</button><button id="cancelClaimBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimStep2" style="display: none;"><p>Receipt: <strong id="validReceiptId"></strong></p><p>Select your prize:</p><select id="prizeSelect" class="modal-input" style="width: 100%; margin: 12px 0; padding: 12px;"><option value="38">CAR AROMATIC - RM 38</option><option value="75">15ML TRAVEL PERFUME - RM 75</option><option value="109">300ML LOTION - RM 109</option><option value="75">100ML PILLOW MIST - RM 75</option></select><div class="modal-buttons"><button id="applyPrizeBtn" class="modal-btn modal-btn-primary">Apply Discount</button><button id="cancelClaimStep2Btn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimError" style="color:#ef4444; margin-top: 12px; display: none;"></div></div></div>
 
 <div id="specialPromoModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeSpecialPromoModal">×</span><div class="modal-title">🎁 Special Promo</div><div id="promoOptions"><button id="promoBuy2Free1Perfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 2 Free 1 (100ml Perfume EDP)</button><button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 3 Free 1 (Excluding Perfume)</button><div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">💰 Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💰 Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead>汽<th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>  </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💰 Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead>汽<th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>   </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="settlementModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
@@ -1251,7 +1267,7 @@
     </div>
   </div>
 </div>
-<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead>汽<th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody>  </table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead>汽<th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody>   </table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="receiptsModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeReceiptsModal">×</span><div class="modal-title">📜 Receipt History</div><div class="receipts-filters"><div class="filter-group" id="receiptsStoreFilterGroup"><label>Store</label><select id="receiptsStoreSelect"><option value="all">All Stores</option></select></div><div id="receiptsEmployeeFilter" class="filter-group" style="display: none;"><label>Employee</label><select id="receiptsEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="receiptsDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="receiptsCustomDateRange" style="display: none;" class="date-range"><input type="date" id="receiptsFromDate"><input type="date" id="receiptsToDate"></div><div class="filter-group" style="flex: 2;"><label>Search (Receipt # or Product)</label><input type="text" id="receiptsSearch" placeholder="Type to filter..."></div></div><div id="receiptsList" class="receipts-list">Loading receipts...</div><div class="modal-buttons"><button id="closeReceiptsBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
@@ -2697,7 +2713,12 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
     else await showAlertModal('Error', 'Print failed.');
   }
 
-  function openLuckyDraw(transactionId) { window.open(`https://teohmarcus584.github.io/salesanalysis/?receipt=${encodeURIComponent(transactionId)}`, '_blank'); }
+  function openLuckyDraw(transactionId) {
+    // Close the initial lucky draw modal and open the new print modal
+    document.getElementById('luckyDrawModal').style.display = 'none';
+    document.getElementById('luckyDrawReceiptNumber').innerText = transactionId;
+    document.getElementById('luckyDrawPrintModal').style.display = 'flex';
+  }
 
   async function processRefund(transactionId, store) {
     showLoading('Processing refund...');
@@ -2907,17 +2928,17 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
   function renderProductDetails(productsData) {
     const tbody = document.getElementById('productDetailsBody');
     if (!productsData || productsData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No products sold in this period.</td></tr>';
+      tbody.innerHTML = '|<td colspan="4" style="text-align: center;">No products sold in this period.   ';
       return;
     }
     let html = '';
     productsData.forEach(p => {
       html += `<tr>
-        <td>${escapeHtml(p.name)}</td>
-        <td>${escapeHtml(p.category)}</td>
+         <td>${escapeHtml(p.name)}</td>
+         <td>${escapeHtml(p.category)}</td>
         <td style="text-align: right;">${p.quantity}</td>
         <td style="text-align: right;">RM ${p.total.toFixed(2)}</td>
-      </tr>`;
+       </tr>`;
     });
     tbody.innerHTML = html;
   }
@@ -3288,6 +3309,71 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
       }
     }
 
+    // New function to print a prize voucher with barcode
+    async function printPrizeVoucher(prizeLabel, receiptNumber, spinDate = new Date()) {
+      if (!isConnected || !printerCharacteristic) {
+        await showAlertModal('Printer not connected', 'Please connect a printer first.');
+        return false;
+      }
+      try {
+        const encoder = new TextEncoder();
+        function formatDate(date) {
+          const d = date.getDate().toString().padStart(2, '0');
+          const m = (date.getMonth() + 1).toString().padStart(2, '0');
+          const y = date.getFullYear();
+          return `${d}/${m}/${y}`;
+        }
+        const validFrom = new Date(spinDate.getFullYear(), spinDate.getMonth(), spinDate.getDate());
+        const validTill = new Date(validFrom);
+        validTill.setDate(validTill.getDate() + 30);
+        const lines = [
+          '',
+          'LUCKY DRAW',
+          'CONGRATULATIONS',
+          'YOU ARE ENTITLED',
+          '',
+          `FREE ${prizeLabel}`,
+          'WITH ANY PURCHASE',
+          '(EXCEPT OPENING PROMOTION)',
+          '',
+          `VALID FROM ${formatDate(validFrom)}`,
+          `TILL ${formatDate(validTill)}`,
+          `Receipt No: ${receiptNumber}`,
+          ''
+        ];
+        const text = lines.join('\n');
+        const commands = [];
+        commands.push(0x1B, 0x40); // init
+        commands.push(0x1B, 0x52, 0x00); // international character set
+        commands.push(0x1B, 0x21, 0x00); // font normal
+        commands.push(0x1B, 0x61, 0x01); // center alignment
+        for (let i = 0; i < text.length; i++) {
+          commands.push(text.charCodeAt(i));
+        }
+        commands.push(0x0A); // newline
+
+        // Barcode settings
+        commands.push(0x1D, 0x68, 0x32); // barcode height = 50 dots
+        commands.push(0x1D, 0x77, 0x01); // barcode width = 1
+        commands.push(0x1B, 0x61, 0x01); // center barcode
+        // Code128 (GS k 73) + length + data
+        const barcodeData = encoder.encode(receiptNumber);
+        const len = barcodeData.length;
+        commands.push(0x1D, 0x6B, 0x49, len);
+        for (let i = 0; i < len; i++) commands.push(barcodeData[i]);
+        // feed and cut
+        commands.push(0x0A, 0x0A);
+        commands.push(0x1B, 0x64, 0x03); // feed 3 lines
+        commands.push(0x1D, 0x56, 0x41, 0x00); // cut
+
+        await sendChunkedData(new Uint8Array(commands), 500);
+        return true;
+      } catch (err) {
+        console.error('Print voucher error:', err);
+        return false;
+      }
+    }
+
     async function connectPrinter() {
       try {
         connectBtnModal.disabled = true;
@@ -3309,7 +3395,7 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
         if (!foundChar) throw new Error('No writable characteristic');
         printerCharacteristic = foundChar;
         isConnected = true;
-        window.printerAPI = { isConnected: true, printReceipt: printReceipt, openDrawer: openCashDrawer };
+        window.printerAPI = { isConnected: true, printReceipt: printReceipt, openDrawer: openCashDrawer, printPrizeVoucher: printPrizeVoucher };
         updatePrinterStatusUI();
         await showAlertModal('Printer Connected', 'Bluetooth printer is ready.');
       } catch (err) {
@@ -3323,7 +3409,7 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
     function disconnectPrinter() {
       if (gattServer) { gattServer.disconnect(); gattServer = null; printerCharacteristic = null; }
       isConnected = false;
-      window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer };
+      window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer, printPrizeVoucher: printPrizeVoucher };
       updatePrinterStatusUI();
     }
 
@@ -3341,7 +3427,7 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
     const savedSize = localStorage.getItem('printerPaperSize') || '80';
     paperSizeSelectModal.value = savedSize;
 
-    window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer };
+    window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer, printPrizeVoucher: printPrizeVoucher };
   })();
 
   // ==================== RENDER PRODUCT GRID ====================
@@ -3596,45 +3682,37 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
   document.getElementById('clearStockHistoryBtn')?.addEventListener('click', clearStockHistory);
   document.getElementById('saveStockHistoryBtn')?.addEventListener('click', saveStockHistoryToSheet);
 
-  // In your JavaScript, after DOM is ready, replace the existing keypad logic with this:
+  // PIN keypad logic for login
+  const pinInputEl = document.getElementById('pinInput');
+  if (pinInputEl) {
+    document.querySelectorAll('.keypad-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const digit = btn.dataset.digit;
+        const action = btn.dataset.action;
 
-const pinInputEl = document.getElementById('pinInput');
-if (pinInputEl) {
-  // Handle all keypad buttons
-  document.querySelectorAll('.keypad-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const digit = btn.dataset.digit;
-      const action = btn.dataset.action;
-
-      if (digit && pinInputEl.value.length < 4) {
-        // Append digit
-        pinInputEl.value += digit;
-        // Auto-submit if 4 digits are entered
-        if (pinInputEl.value.length === 4) {
-          verifyEmployeeByPin(pinInputEl.value);
+        if (digit && pinInputEl.value.length < 4) {
+          pinInputEl.value += digit;
+          if (pinInputEl.value.length === 4) {
+            verifyEmployeeByPin(pinInputEl.value);
+          }
+        } else if (action === 'clear') {
+          pinInputEl.value = pinInputEl.value.slice(0, -1);
+          document.getElementById('loginError').innerText = '';
+        } else if (action === 'enter') {
+          if (pinInputEl.value.length === 4) {
+            verifyEmployeeByPin(pinInputEl.value);
+          } else {
+            document.getElementById('loginError').innerText = 'Please enter 4-digit PIN';
+          }
         }
-      } else if (action === 'clear') {
-        // Remove last character
-        pinInputEl.value = pinInputEl.value.slice(0, -1);
-        document.getElementById('loginError').innerText = '';
-      } else if (action === 'enter') {
-        // Manual enter button
-        if (pinInputEl.value.length === 4) {
-          verifyEmployeeByPin(pinInputEl.value);
-        } else {
-          document.getElementById('loginError').innerText = 'Please enter 4-digit PIN';
-        }
+      });
+    });
+    pinInputEl.addEventListener('input', () => {
+      if (pinInputEl.value.length === 4) {
+        verifyEmployeeByPin(pinInputEl.value);
       }
     });
-  });
-
-  // Optional: keep the input event for safety (won't fire on readonly)
-  pinInputEl.addEventListener('input', () => {
-    if (pinInputEl.value.length === 4) {
-      verifyEmployeeByPin(pinInputEl.value);
-    }
-  });
-}
+  }
 
   // Side menu
   const logo = document.getElementById('logoImage');
@@ -4104,6 +4182,56 @@ if (pinInputEl) {
   const applyCustomPromoBtn = document.getElementById('applyCustomPromoBtn');
   if (applyCustomPromoBtn) applyCustomPromoBtn.addEventListener('click', applyCustomDiscount);
 
+  // New modal event listeners for Lucky Draw Print Modal
+  const closeLuckyDrawPrintModal = document.getElementById('closeLuckyDrawPrintModal');
+  const closeLuckyDrawPrintModalBtn = document.getElementById('closeLuckyDrawPrintModalBtn');
+  const printPrizeVoucherBtn = document.getElementById('printPrizeVoucherBtn');
+
+  function closeLuckyDrawPrintModalFunc() {
+    document.getElementById('luckyDrawPrintModal').style.display = 'none';
+  }
+  if (closeLuckyDrawPrintModal) closeLuckyDrawPrintModal.addEventListener('click', closeLuckyDrawPrintModalFunc);
+  if (closeLuckyDrawPrintModalBtn) closeLuckyDrawPrintModalBtn.addEventListener('click', closeLuckyDrawPrintModalFunc);
+
+  if (printPrizeVoucherBtn) {
+    printPrizeVoucherBtn.addEventListener('click', async () => {
+      const receiptNumber = document.getElementById('luckyDrawReceiptNumber').innerText;
+      if (!receiptNumber) {
+        await showAlertModal('Error', 'No receipt number found.');
+        return;
+      }
+      showLoading('Printing voucher...');
+      try {
+        // Fetch transaction details to get the prize label (or use a default)
+        const url = `${APPS_SCRIPT_URL}?action=get&receipt=${encodeURIComponent(receiptNumber)}`;
+        const response = await fetch(url);
+        const result = await response.json();
+        if (!result.success) throw new Error('Transaction not found');
+        const transaction = result.data;
+        // Choose a prize label based on transaction total or just a default
+        let prizeLabel = 'RM 38 FREE GIFT'; // default
+        // Optionally, you can customise based on total
+        // For example: if (transaction.total > 100) prizeLabel = 'RM 75 FREE GIFT';
+        if (!window.printerAPI || !window.printerAPI.printPrizeVoucher) {
+          await showAlertModal('Printer Error', 'Printer API not available. Please connect printer first.');
+          return;
+        }
+        const success = await window.printerAPI.printPrizeVoucher(prizeLabel, receiptNumber);
+        if (success) {
+          await showAlertModal('Printed', 'Prize voucher printed successfully.');
+          closeLuckyDrawPrintModalFunc();
+        } else {
+          await showAlertModal('Print Failed', 'Could not print voucher. Check printer connection.');
+        }
+      } catch (err) {
+        console.error(err);
+        await showAlertModal('Error', 'Failed to fetch transaction details: ' + err.message);
+      } finally {
+        hideLoading();
+      }
+    });
+  }
+
   // ==================== CASH COLLECTION ====================
   let currentUnsettledCash = [];
 
@@ -4161,18 +4289,18 @@ if (pinInputEl) {
   function renderCollectionTable() {
     const tbody = document.getElementById('collectionTableBody');
     if (!currentUnsettledCash.length) {
-      tbody.innerHTML = '|<td colspan="4" style="text-align: center;">No unsettled cash records found.  ';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.</td></tr>';
       return;
     }
     let html = '';
     currentUnsettledCash.forEach(rec => {
       const date = new Date(rec.timestamp).toLocaleDateString();
       html += `<tr data-id="${rec.id}">
-        <td><input type="checkbox" class="collection-checkbox" value="${rec.id}">    </td>
+        <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"></td>
         <td>${date}</td>
         <td>${getEmployeeName(rec.employee_id)}</td>
         <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
-       </tr>`;
+      </tr>`;
     });
     tbody.innerHTML = html;
     document.querySelectorAll('.collection-checkbox').forEach(cb => {
@@ -4208,4 +4336,4 @@ if (pinInputEl) {
   allStores.forEach(store => preloadProductsForStore(store));
 </script>
 </body>
-</html> 
+</html>

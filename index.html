@@ -2903,7 +2903,6 @@ clearCart();
 
  function openLuckyDraw(transactionId) {
   let url = `https://teohmarcus584.github.io/salesanalysis/?receipt=${encodeURIComponent(transactionId)}`;
-  // Add customer_id if a customer is selected
   if (selectedCustomer && selectedCustomer.id) {
     url += `&customer_id=${encodeURIComponent(selectedCustomer.id)}`;
   }

@@ -1365,7 +1365,7 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyps7EdXaNoub2jepIgXwin49-zrFgi2jA5KoGd7qQt47hXFayxMU-bOZitHIwBU3VsLA/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKh9k0V8qESFi0rZHZwFgJlgMpsH9dUwvUzX77g2Ofa9bfoFkalXOZmMJS6KvgLj9pwg/exec"; // REPLACE WITH YOUR URL
 
   // ==================== GLOBAL VARIABLES ====================
   let products = [];
@@ -2525,38 +2525,38 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
   }
 
     // ==================== CHECKOUT ====================
-  async function startCheckout() {
-    if (cart.length === 0) {
-      await showAlertModal('Empty Cart', 'No items to checkout.');
-      return;
-    }
-    showLoading('Refreshing stock data...');
-    const refreshed = await fetchProductsFromSheet(true);
-    hideLoading();
-    if (!refreshed) {
-      await showAlertModal('Error', 'Failed to refresh product data.');
-      return;
-    }
-    for (let item of cart) {
-      const originalProduct = products.find(p => p.id === item.product.id);
-      if (!originalProduct) {
-        await showAlertModal('Product Missing', `${item.product.name} no longer exists.`);
-        return;
-      }
-      if (originalProduct.stock < item.quantity) {
-        await showAlertModal('Stock Changed', `${item.product.name} stock is now only ${originalProduct.stock} units.`);
-        return;
-      }
-    }
-    let subtotal = 0;
-    for (let item of cart) {
-      const effectivePrice = item.isFreeGift ? 0 : item.product.price;
-      subtotal += effectivePrice * item.quantity;
-    }
-    const totalAmount = subtotal - discountAmount - (buy2Free1Discount + buy3Free1Discount + customDiscount);
-    pendingTransaction = { totalAmount };
-    showPaymentModal(totalAmount);
+ async function startCheckout() {
+  if (cart.length === 0) {
+    await showAlertModal('Empty Cart', 'No items to checkout.');
+    return;
   }
+  showLoading('Refreshing stock data...');
+  const refreshed = await fetchProductsFromSheet(true);
+  hideLoading();
+  if (!refreshed) {
+    await showAlertModal('Error', 'Failed to refresh product data.');
+    return;
+  }
+  for (let item of cart) {
+    const originalProduct = products.find(p => p.id === item.product.id);
+    if (!originalProduct) {
+      await showAlertModal('Product Missing', `${item.product.name} no longer exists.`);
+      return;
+    }
+    if (originalProduct.stock < item.quantity) {
+      await showAlertModal('Stock Changed', `${item.product.name} stock is now only ${originalProduct.stock} units.`);
+      return;
+    }
+  }
+  let subtotal = 0;
+  for (let item of cart) {
+    const paidQty = item.quantity - item.freeQuantity;
+    subtotal += paidQty * item.product.price;
+  }
+  const totalAmount = subtotal - discountAmount - (buy2Free1Discount + buy3Free1Discount + customDiscount);
+  pendingTransaction = { totalAmount };
+  showPaymentModal(totalAmount);
+}
 
   function showPaymentModal(totalAmount) {
     const modal = document.getElementById('paymentModal');

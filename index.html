@@ -1690,55 +1690,46 @@ let alertedLowStockProducts = new Set(); // Track which products already trigger
   }
 
   // Main out‑of‑stock handler: sends Telegram + optional desktop notification
- function checkAndNotifyOutOfStock(productId, productName, newStock) {
+ 
+function checkAndNotifyOutOfStock(productId, productName, newStock) {
   const storeName = currentStore.charAt(0).toUpperCase() + currentStore.slice(1);
   const timestamp = new Date().toLocaleString();
 
-  // --- LOW STOCK ALERT (when stock <= threshold and not yet alerted) ---
+  // --- LOW STOCK ALERT (1 to threshold) ---
   if (newStock <= LOW_STOCK_THRESHOLD && newStock > 0 && !alertedLowStockProducts.has(productId)) {
     alertedLowStockProducts.add(productId);
     const message = `⚠️ LOW STOCK ⚠️\nStore: ${storeName}\nProduct: ${productName}\nQuantity left: ${newStock}\nTime: ${timestamp}`;
-    if (telegramBotToken && telegramChatId) {
-      sendTelegramMessage(message);
-    }
-    // Optional desktop notification if enabled
+    if (telegramBotToken && telegramChatId) sendTelegramMessage(message);
+    // optional desktop notification
     if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
-      new Notification(`⚠️ Low Stock`, {
-        body: `${productName} only ${newStock} left.`,
-        icon: "https://i.imgur.com/STBkLrm.jpeg"
-      });
+      new Notification(`⚠️ Low Stock`, { body: `${productName} only ${newStock} left.` });
     } else if (notificationsEnabled) {
       showOutOfStockAlert(`${productName} only ${newStock} left.`);
     }
   }
-  
-  // --- OUT OF STOCK ALERT (when stock == 0 and not yet alerted) ---
+
+  // --- OUT OF STOCK ALERT (0) ---
   if (newStock === 0 && !alertedOutOfStockProducts.has(productId)) {
     alertedOutOfStockProducts.add(productId);
     const message = `❌ OUT OF STOCK ❌\nStore: ${storeName}\nProduct: ${productName}\nTime: ${timestamp}`;
-    if (telegramBotToken && telegramChatId) {
-      sendTelegramMessage(message);
-    }
-    // Optional desktop notification
+    if (telegramBotToken && telegramChatId) sendTelegramMessage(message);
     if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
-      new Notification(`❌ Out of Stock`, {
-        body: `${productName} is out of stock.`,
-        icon: "https://i.imgur.com/STBkLrm.jpeg"
-      });
+      new Notification(`❌ Out of Stock`, { body: `${productName} is out of stock.` });
     } else if (notificationsEnabled) {
       showOutOfStockAlert(`${productName} is out of stock.`);
     }
   }
-  
-  // --- Reset low stock alert when stock goes above threshold ---
+
+  // Reset alerts when stock goes above threshold or above zero
   if (newStock > LOW_STOCK_THRESHOLD && alertedLowStockProducts.has(productId)) {
     alertedLowStockProducts.delete(productId);
   }
-  
-  // --- Reset out-of-stock alert when restocked (stock > 0) ---
   if (newStock > 0 && alertedOutOfStockProducts.has(productId)) {
     alertedOutOfStockProducts.delete(productId);
   }
+}
+function showOutOfStockAlert(productName) {
+    showAlertModal("⚠️ Out of Stock", `${productName} is now out of stock. Please restock.`);
 }
   // ==================== CUSTOMER LOYALTY FUNCTIONS ====================
   async function fetchCustomerByPhone(phone) {
@@ -2647,39 +2638,54 @@ let alertedLowStockProducts = new Set(); // Track which products already trigger
       customer_id: selectedCustomer ? selectedCustomer.id : null
     };
     const success = await saveTransactionToSheet(transaction);
-    if (success) {
-      if (selectedCustomer && selectedCustomer.id) {
+if (success) {
+    // --- NEW: Update local stock and trigger notifications for each sold item ---
+    for (let item of saleItems) {
+        const product = products.find(p => p.id == item.id);
+        if (product) {
+            const oldStock = product.stock;
+            const newStock = oldStock - item.quantity;
+            product.stock = newStock;
+            // Trigger low stock / out of stock notification
+            checkAndNotifyOutOfStock(product.id, product.name, newStock);
+            // Update stock display if inventory mode is active
+            const stockSpan = document.querySelector(`.stock-display[data-id="${product.id}"]`);
+            if (stockSpan) stockSpan.innerText = newStock;
+        }
+    }
+    // --- End of new code ---
+
+    if (selectedCustomer && selectedCustomer.id) {
         const pointsEarned = Math.floor(totalAmount);
         if (pointsEarned > 0) {
-          await addPointsToCustomer(selectedCustomer.id, pointsEarned);
-          selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
-          updateCustomerDisplay();
+            await addPointsToCustomer(selectedCustomer.id, pointsEarned);
+            selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
+            updateCustomerDisplay();
         }
-      }
-      if (pendingPrize) {
+    }
+    if (pendingPrize) {
         await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
         pendingPrize = null;
-      }
-      localStorage.removeItem(`products_${currentStore}`);
-      if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
+    }
+    localStorage.removeItem(`products_${currentStore}`);
+    if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
         const transactionWithName = { ...transaction, employee_name: currentEmployee.name };
         await window.printerAPI.printReceipt(transactionWithName);
-      } else {
-        await showAlertModal('Receipt', 'Sale recorded. Printer not connected, no receipt printed.');
-      }
-      await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
-      document.getElementById('luckyTxId').innerText = transactionId;
-      const luckyModal = document.getElementById('luckyDrawModal');
-      luckyModal.style.display = 'flex';
-      document.getElementById('openLuckyDrawBtn').onclick = () => { openLuckyDraw(transactionId); luckyModal.style.display = 'none'; };
-      document.getElementById('closeLuckyDrawBtn').onclick = () => luckyModal.style.display = 'none';
-      document.getElementById('closeLuckyDrawModal').onclick = () => luckyModal.style.display = 'none';
-      await fetchProductsFromSheet();
-      clearCart();
     } else {
-      await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
+        await showAlertModal('Receipt', 'Sale recorded. Printer not connected, no receipt printed.');
     }
-  }
+    await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
+    document.getElementById('luckyTxId').innerText = transactionId;
+    const luckyModal = document.getElementById('luckyDrawModal');
+    luckyModal.style.display = 'flex';
+    document.getElementById('openLuckyDrawBtn').onclick = () => { openLuckyDraw(transactionId); luckyModal.style.display = 'none'; };
+    document.getElementById('closeLuckyDrawBtn').onclick = () => luckyModal.style.display = 'none';
+    document.getElementById('closeLuckyDrawModal').onclick = () => luckyModal.style.display = 'none';
+    await fetchProductsFromSheet();   // This will now sync with backend (stock already updated locally)
+    clearCart();
+} else {
+    await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
+}
 
   async function saveTransactionToSheet(transaction) {
     showLoading('Recording sale...');

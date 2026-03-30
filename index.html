@@ -1015,6 +1015,9 @@
   cursor: pointer;
   margin-left: 8px;
 }
+#sideStockAlertBtn.disabled-btn {
+  display: none;
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -1365,7 +1368,7 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyps7EdXaNoub2jepIgXwin49-zrFgi2jA5KoGd7qQt47hXFayxMU-bOZitHIwBU3VsLA/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKh9k0V8qESFi0rZHZwFgJlgMpsH9dUwvUzX77g2Ofa9bfoFkalXOZmMJS6KvgLj9pwg/exec"; // REPLACE WITH YOUR URL
 
   // ==================== GLOBAL VARIABLES ====================
   let products = [];
@@ -2348,19 +2351,23 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
     clearPromo();
   }
 
-  function clearCart() {
-    if (cart.length === 0) return;
-    cart = [];
-    discountAmount = 0;
-    buy2Free1Discount = 0;
-    buy3Free1Discount = 0;
-    customDiscount = 0;
-    claimedReceiptInfo = null;
-    pendingPrize = null;
-    selectedCustomer = null;
-    updateCustomerDisplay();
-    updateCartUI();
-  }
+ function clearCart() {
+  // Clear all cart items and related data
+  cart = [];
+  discountAmount = 0;
+  buy2Free1Discount = 0;
+  buy3Free1Discount = 0;
+  customDiscount = 0;
+  claimedReceiptInfo = null;
+  pendingPrize = null;
+
+  // Remove the selected customer as well
+  selectedCustomer = null;
+  updateCustomerDisplay();   // Hides the customer info block
+
+  // Refresh the cart UI
+  updateCartUI();
+}
 
   function clearPromo() {
     buy2Free1Discount = 0;

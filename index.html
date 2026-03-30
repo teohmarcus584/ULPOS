@@ -1365,7 +1365,7 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyps7EdXaNoub2jepIgXwin49-zrFgi2jA5KoGd7qQt47hXFayxMU-bOZitHIwBU3VsLA/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKh9k0V8qESFi0rZHZwFgJlgMpsH9dUwvUzX77g2Ofa9bfoFkalXOZmMJS6KvgLj9pwg/exec"; // REPLACE WITH YOUR URL
 
   // ==================== GLOBAL VARIABLES ====================
   let products = [];
@@ -1695,42 +1695,53 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
   const storeName = currentStore.charAt(0).toUpperCase() + currentStore.slice(1);
   const timestamp = new Date().toLocaleString();
 
-  // --- LOW STOCK ALERT (1 to threshold) ---
+  // --- LOW STOCK ALERT (when stock <= threshold and not yet alerted) ---
   if (newStock <= LOW_STOCK_THRESHOLD && newStock > 0 && !alertedLowStockProducts.has(productId)) {
     alertedLowStockProducts.add(productId);
     const message = `⚠️ LOW STOCK ⚠️\nStore: ${storeName}\nProduct: ${productName}\nQuantity left: ${newStock}\nTime: ${timestamp}`;
-    if (telegramBotToken && telegramChatId) sendTelegramMessage(message);
-    // optional desktop notification
+    if (telegramBotToken && telegramChatId) {
+      sendTelegramMessage(message);
+    }
+    // Optional desktop notification if enabled
     if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
-      new Notification(`⚠️ Low Stock`, { body: `${productName} only ${newStock} left.` });
+      new Notification(`⚠️ Low Stock`, {
+        body: `${productName} only ${newStock} left.`,
+        icon: "https://i.imgur.com/STBkLrm.jpeg"
+      });
     } else if (notificationsEnabled) {
       showOutOfStockAlert(`${productName} only ${newStock} left.`);
     }
   }
-
-  // --- OUT OF STOCK ALERT (0) ---
+  
+  // --- OUT OF STOCK ALERT (when stock == 0 and not yet alerted) ---
   if (newStock === 0 && !alertedOutOfStockProducts.has(productId)) {
     alertedOutOfStockProducts.add(productId);
     const message = `❌ OUT OF STOCK ❌\nStore: ${storeName}\nProduct: ${productName}\nTime: ${timestamp}`;
-    if (telegramBotToken && telegramChatId) sendTelegramMessage(message);
+    if (telegramBotToken && telegramChatId) {
+      sendTelegramMessage(message);
+    }
+    // Optional desktop notification
     if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
-      new Notification(`❌ Out of Stock`, { body: `${productName} is out of stock.` });
+      new Notification(`❌ Out of Stock`, {
+        body: `${productName} is out of stock.`,
+        icon: "https://i.imgur.com/STBkLrm.jpeg"
+      });
     } else if (notificationsEnabled) {
       showOutOfStockAlert(`${productName} is out of stock.`);
     }
   }
-
-  // Reset alerts when stock goes above threshold or above zero
+  
+  // --- Reset low stock alert when stock goes above threshold ---
   if (newStock > LOW_STOCK_THRESHOLD && alertedLowStockProducts.has(productId)) {
     alertedLowStockProducts.delete(productId);
   }
+  
+  // --- Reset out-of-stock alert when restocked (stock > 0) ---
   if (newStock > 0 && alertedOutOfStockProducts.has(productId)) {
     alertedOutOfStockProducts.delete(productId);
   }
 }
-function showOutOfStockAlert(productName) {
-    showAlertModal("⚠️ Out of Stock", `${productName} is now out of stock. Please restock.`);
-}
+
   // ==================== CUSTOMER LOYALTY FUNCTIONS ====================
   async function fetchCustomerByPhone(phone) {
     try {
@@ -2637,7 +2648,7 @@ function showOutOfStockAlert(productName) {
       prize_claimed: claimedReceiptInfo,
       customer_id: selectedCustomer ? selectedCustomer.id : null
     };
-    const success = await saveTransactionToSheet(transaction);
+const success = await saveTransactionToSheet(transaction);
 if (success) {
     // --- NEW: Update local stock and trigger notifications for each sold item ---
     for (let item of saleItems) {

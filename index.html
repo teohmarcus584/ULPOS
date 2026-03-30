@@ -989,6 +989,32 @@
   transform: scale(0.98);
 }
 
+/* Customer info in cart */
+.customer-info {
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 12px;
+  margin: 8px 0;
+  font-size: 0.85rem;
+  border-left: 4px solid #8b5cf6;
+}
+.customer-info .customer-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.customer-info .customer-points {
+  color: #2c7a4b;
+  font-weight: 500;
+}
+.customer-info button {
+  background: #e2e8f0;
+  border: none;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  margin-left: 8px;
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -1074,10 +1100,13 @@
             <option value="">Loading...</option>
           </select>
           <div class="cart-header-buttons">
+            <button id="customerBtn" class="cart-header-btn">👤 Customer</button>
             <button id="clearCartBtn" class="cart-header-btn">🗑️ Clear</button>
           </div>
         </div>
       </div>
+      <!-- Customer info display -->
+      <div id="customerInfoDisplay" style="display: none;"></div>
       <!-- Normal cart content (visible by default) -->
       <div id="cartNormalContent">
         <div id="cartItemsContainer" class="cart-items">Cart is empty</div>
@@ -1124,7 +1153,7 @@
   </div>
 </div>
 
-<!-- Side Menu -->
+<!-- Side Menu (unchanged) -->
 <div id="sideMenuOverlay" class="side-menu-overlay">
   <div id="sideMenu" class="side-menu">
     <div class="menu-header">
@@ -1196,12 +1225,11 @@
   </div>
 </div>
 
-<!-- All modals (corrected) -->
+<!-- All modals (existing) -->
 <div id="paymentModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closePaymentModal">×</span><div class="modal-title">💳 Select Payment Method</div><div class="payment-buttons"><button class="payment-btn" data-method="Cash">💵 Cash</button><button class="payment-btn" data-method="Card">💳 Card</button><button class="payment-btn" data-method="QR Pay">📱 QR Pay</button></div><div id="cashOptions" style="display: none;"><div class="suggestions" id="suggestionsContainer"></div><input type="number" id="customCashInput" class="custom-cash-input" placeholder="Enter amount received (RM)" step="0.01"><div class="modal-buttons"><button id="confirmCashBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelPaymentBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="otherPaymentOptions" style="display: none;"><div class="modal-buttons"><button id="confirmOtherBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelOtherBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div></div></div>
 
 <div id="luckyDrawModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeLuckyDrawModal">×</span><div class="modal-title">🎲 Lucky Draw</div><p>Transaction ID: <strong id="luckyTxId"></strong></p><p>Click below to enter the Lucky Draw with this receipt number.</p><div class="modal-buttons"><button id="openLuckyDrawBtn" class="modal-btn modal-btn-primary">🎁 Go to Lucky Draw</button><button id="closeLuckyDrawBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<!-- NEW MODAL: Lucky Draw Prize Voucher -->
 <div id="luckyDrawPrintModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 400px;">
     <span class="close-modal" id="closeLuckyDrawPrintModal">×</span>
@@ -1221,7 +1249,7 @@
 
 <div id="specialPromoModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeSpecialPromoModal">×</span><div class="modal-title">🎁 Special Promo</div><div id="promoOptions"><button id="promoBuy2Free1Perfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 2 Free 1 (100ml Perfume EDP)</button><button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 3 Free 1 (Excluding Perfume)</button><div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">💰 Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💰 Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead>汽<th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>   </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💰 Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead>汽<th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>    </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="settlementModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
@@ -1267,7 +1295,7 @@
     </div>
   </div>
 </div>
-<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead>汽<th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody>   </table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead>汽<th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody>    </table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="receiptsModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeReceiptsModal">×</span><div class="modal-title">📜 Receipt History</div><div class="receipts-filters"><div class="filter-group" id="receiptsStoreFilterGroup"><label>Store</label><select id="receiptsStoreSelect"><option value="all">All Stores</option></select></div><div id="receiptsEmployeeFilter" class="filter-group" style="display: none;"><label>Employee</label><select id="receiptsEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="receiptsDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="receiptsCustomDateRange" style="display: none;" class="date-range"><input type="date" id="receiptsFromDate"><input type="date" id="receiptsToDate"></div><div class="filter-group" style="flex: 2;"><label>Search (Receipt # or Product)</label><input type="text" id="receiptsSearch" placeholder="Type to filter..."></div></div><div id="receiptsList" class="receipts-list">Loading receipts...</div><div class="modal-buttons"><button id="closeReceiptsBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
@@ -1277,12 +1305,43 @@
 
 <div id="selectModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeSelectModal">×</span><div class="modal-title" id="selectModalTitle"></div><select id="selectModalField" class="modal-select"></select><div class="modal-buttons"><button class="modal-btn modal-btn-secondary" id="selectModalCancel">Cancel</button><button class="modal-btn modal-btn-primary" id="selectModalOk">OK</button></div></div></div>
 
+<!-- Customer Loyalty Modal -->
+<div id="customerModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 500px;">
+    <span class="close-modal" id="closeCustomerModal">×</span>
+    <div class="modal-title">👤 Customer Loyalty</div>
+    <div class="filter-group">
+      <label>Phone Number (required)</label>
+      <input type="tel" id="customerPhone" class="modal-input" placeholder="e.g., 0123456789">
+    </div>
+    <div class="filter-group">
+      <label>Email (optional)</label>
+      <input type="email" id="customerEmail" class="modal-input" placeholder="email@example.com">
+    </div>
+    <div class="filter-group">
+      <label>Birthday (optional)</label>
+      <input type="date" id="customerBirthday" class="modal-input">
+    </div>
+    <div class="filter-group">
+      <label>Points</label>
+      <input type="text" id="customerPoints" class="modal-input" readonly disabled>
+    </div>
+    <div class="modal-buttons">
+      <button id="findCustomerBtn" class="modal-btn modal-btn-primary">🔍 Find</button>
+      <button id="saveCustomerBtn" class="modal-btn modal-btn-primary">💾 Save / Update</button>
+      <button id="cancelCustomerBtn" class="modal-btn modal-btn-secondary">Cancel</button>
+    </div>
+    <div id="customerError" style="color:#ef4444; margin-top: 12px; display: none;"></div>
+  </div>
+</div>
+
 <div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"></div><div class="loading-text" id="loadingMessage">Processing...</div></div>
+
 <script>
   // ==================== CONFIGURATION ====================
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKh9k0V8qESFi0rZHZwFgJlgMpsH9dUwvUzX77g2Ofa9bfoFkalXOZmMJS6KvgLj9pwg/exec"; // REPLACE WITH YOUR URL
 
-  // ==================== GLOBAL VARIABLES ====================
+   // ==================== GLOBAL VARIABLES ====================
   let products = [];
   let cart = [];
   let currentStore = "queens";
@@ -1308,8 +1367,9 @@
   let stockHistory = [];
   let preloadedDataMap = {};
   let preloadedStores = [];
+  let selectedCustomer = null; // { id, phone, name?, email, birthday, points }
 
-  // DOM elements
+  // DOM elements (existing)
   const productGridEl = document.getElementById('productGrid');
   const cartContainer = document.getElementById('cartItemsContainer');
   const subtotalSpan = document.getElementById('subtotal');
@@ -1326,10 +1386,10 @@
   const categorySelect = document.getElementById('categorySelect');
   const storeSelect = document.getElementById('storeSelect');
   const soldBySelectCart = document.getElementById('soldBySelectCart');
-  const inventoryModeBtn = document.getElementById('inventoryModeBtn');
   const cartNormalContent = document.getElementById('cartNormalContent');
   const stockHistoryContainerDiv = document.getElementById('stockHistoryContainer');
   const cartTitleElement = document.getElementById('cartTitle');
+  const customerInfoDisplay = document.getElementById('customerInfoDisplay');
 
   // ==================== HELPER FUNCTIONS ====================
   function showLoading(msg = 'Loading...') {
@@ -1354,7 +1414,136 @@ document.getElementById('sideChangePinBtn').addEventListener('click', () => {
   openChangePinModal();
   closeSideMenu();
 });
+ // ==================== CUSTOMER LOYALTY FUNCTIONS ====================
+  async function fetchCustomerByPhone(phone) {
+    try {
+      const url = `${APPS_SCRIPT_URL}?action=getCustomerByPhone&phone=${encodeURIComponent(phone)}`;
+      const response = await fetch(url);
+      const result = await response.json();
+      if (result.success && result.customer) {
+        return result.customer;
+      } else {
+        return null;
+      }
+    } catch (err) {
+      console.error('Error fetching customer:', err);
+      return null;
+    }
+  }
 
+  async function saveCustomer(customerData) {
+    try {
+      const formData = new URLSearchParams();
+      formData.append('action', 'saveCustomer');
+      formData.append('phone', customerData.phone);
+      if (customerData.email) formData.append('email', customerData.email);
+      if (customerData.birthday) formData.append('birthday', customerData.birthday);
+      if (customerData.points !== undefined) formData.append('points', customerData.points);
+      if (customerData.name) formData.append('name', customerData.name);
+      const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+      const result = await response.json();
+      return result.success ? result.customer : null;
+    } catch (err) {
+      console.error('Error saving customer:', err);
+      return null;
+    }
+  }
+
+  async function addPointsToCustomer(customerId, pointsToAdd) {
+    try {
+      const formData = new URLSearchParams();
+      formData.append('action', 'addPoints');
+      formData.append('customer_id', customerId);
+      formData.append('points', pointsToAdd);
+      const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+      const result = await response.json();
+      return result.success;
+    } catch (err) {
+      console.error('Error adding points:', err);
+      return false;
+    }
+  }
+
+  function updateCustomerDisplay() {
+    if (selectedCustomer) {
+      customerInfoDisplay.innerHTML = `
+        <div class="customer-info">
+          <div class="customer-name">👤 ${selectedCustomer.name || 'Customer'} (${selectedCustomer.phone})</div>
+          <div class="customer-points">⭐ Points: ${selectedCustomer.points || 0}</div>
+          <button id="removeCustomerBtn">Remove</button>
+        </div>
+      `;
+      customerInfoDisplay.style.display = 'block';
+      document.getElementById('removeCustomerBtn').addEventListener('click', () => {
+        selectedCustomer = null;
+        customerInfoDisplay.style.display = 'none';
+      });
+    } else {
+      customerInfoDisplay.style.display = 'none';
+    }
+  }
+
+  async function showCustomerModal() {
+    document.getElementById('customerPhone').value = '';
+    document.getElementById('customerEmail').value = '';
+    document.getElementById('customerBirthday').value = '';
+    document.getElementById('customerPoints').value = '';
+    document.getElementById('customerError').style.display = 'none';
+    document.getElementById('customerModal').style.display = 'flex';
+  }
+
+  async function findCustomer() {
+    const phone = document.getElementById('customerPhone').value.trim();
+    if (!phone) {
+      showCustomerError('Please enter a phone number');
+      return;
+    }
+    showLoading('Searching customer...');
+    const customer = await fetchCustomerByPhone(phone);
+    hideLoading();
+    if (customer) {
+      document.getElementById('customerEmail').value = customer.email || '';
+      document.getElementById('customerBirthday').value = customer.birthday || '';
+      document.getElementById('customerPoints').value = customer.points || 0;
+      selectedCustomer = customer;
+      updateCustomerDisplay();
+      document.getElementById('customerModal').style.display = 'none';
+      await showAlertModal('Customer Found', `Customer ${customer.name || 'found'} with ${customer.points || 0} points.`);
+    } else {
+      // New customer: keep fields as they are, let user fill email/birthday then save.
+      document.getElementById('customerPoints').value = '0';
+      selectedCustomer = null;
+      showCustomerError('Not found. Fill details and click Save to create new customer.');
+    }
+  }
+
+  async function saveCustomerFromModal() {
+    const phone = document.getElementById('customerPhone').value.trim();
+    if (!phone) {
+      showCustomerError('Phone number is required');
+      return;
+    }
+    const email = document.getElementById('customerEmail').value.trim();
+    const birthday = document.getElementById('customerBirthday').value;
+    const points = parseInt(document.getElementById('customerPoints').value) || 0;
+    showLoading('Saving customer...');
+    const customer = await saveCustomer({ phone, email, birthday, points });
+    hideLoading();
+    if (customer) {
+      selectedCustomer = customer;
+      updateCustomerDisplay();
+      document.getElementById('customerModal').style.display = 'none';
+      await showAlertModal('Success', `Customer ${customer.name || 'saved'} successfully.`);
+    } else {
+      showCustomerError('Failed to save customer. Check connection.');
+    }
+  }
+
+  function showCustomerError(msg) {
+    const errorDiv = document.getElementById('customerError');
+    errorDiv.innerText = msg;
+    errorDiv.style.display = 'block';
+  }
 // ==================== CHANGE PIN ====================
 let currentKeypad = null;
 let currentStep = 1; // 1=current, 2=new, 3=confirm
@@ -2463,7 +2652,7 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
     document.getElementById('closePaymentModal').onclick = () => modal.style.display = 'none';
   }
 
-  async function completeCheckout(paymentMethod, cashReceived) {
+    async function completeCheckout(paymentMethod, cashReceived) {
     document.getElementById('paymentModal').style.display = 'none';
     const totalAmount = pendingTransaction.totalAmount;
     const transactionId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -2487,10 +2676,20 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
       buy2_free1_discount: buy2Free1Discount,
       buy3_free1_discount: buy3Free1Discount,
       custom_discount: customDiscount,
-      prize_claimed: claimedReceiptInfo
+      prize_claimed: claimedReceiptInfo,
+      customer_id: selectedCustomer ? selectedCustomer.id : null
     };
     const success = await saveTransactionToSheet(transaction);
     if (success) {
+      // Add points if customer exists
+      if (selectedCustomer && selectedCustomer.id) {
+        const pointsEarned = Math.floor(totalAmount); // RM 1 = 1 point
+        if (pointsEarned > 0) {
+          await addPointsToCustomer(selectedCustomer.id, pointsEarned);
+          selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
+          updateCustomerDisplay();
+        }
+      }
       if (pendingPrize) {
         await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
         pendingPrize = null;
@@ -2515,7 +2714,6 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
       await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
     }
   }
-
   async function saveTransactionToSheet(transaction) {
     showLoading('Recording sale...');
     try {
@@ -3583,7 +3781,11 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
       document.getElementById('pinInput').focus();
     }
   });
-
+ document.getElementById('customerBtn').addEventListener('click', showCustomerModal);
+  document.getElementById('findCustomerBtn').addEventListener('click', findCustomer);
+  document.getElementById('saveCustomerBtn').addEventListener('click', saveCustomerFromModal);
+  document.getElementById('cancelCustomerBtn').addEventListener('click', () => document.getElementById('customerModal').style.display = 'none');
+  document.getElementById('closeCustomerModal').addEventListener('click', () => document.getElementById('customerModal').style.display = 'none');
   async function verifyEmployeeByPin(pin) {
     showLoading('Verifying...');
     try {
@@ -4332,7 +4534,7 @@ document.getElementById('changePinCancelBtn').addEventListener('click', () => {
       });
     }
   })();
-
+ console.log("POS system with customer loyalty ready.");
   const allStores = ["queens", "sunshine", "gurney_paragon"];
   allStores.forEach(store => preloadProductsForStore(store));
 </script>

@@ -1386,39 +1386,39 @@
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxK18cCto43LIQ3bNBzMujm8XxpDlJAePqM1oeiUULhS-a84o08OxL1xtjjhU_jJ1zdKA/exec"; // REPLACE WITH YOUR URL
 
   // ==================== GLOBAL VARIABLES ====================
-  let products = [];
-  let cart = [];
-  let currentStore = "queens";
-  let currentEmployee = null;
-  let viewMode = "grid";
-  let productDetailsVisible = false;
-  let lastProductData = null;
-  let employeeNameMap = {};
-  let initialStore = null;
-  let pendingTransaction = null;
-  let searchTimeout = null;
-  let initialDataPromise = null;
-  let discountAmount = 0;
-  let buy2Free1Discount = 0;
-  let buy3Free1Discount = 0;
-  let customDiscount = 0;
-  let claimedReceiptInfo = null;
-  let pendingPrize = null;
-  let pendingClaimReceipt = null;
-  let loadingTimeout = null;
-  let inventoryMode = false;
-  let updateStockTimeout = null;
-  let stockHistory = [];
-  let preloadedDataMap = {};
-  let preloadedStores = [];
-  let selectedCustomer = null; // { id, phone, name, email, birthday, points }
+    let products = [];
+    let cart = [];
+    let currentStore = "queens";
+    let currentEmployee = null;
+    let viewMode = "grid";
+    let productDetailsVisible = false;
+    let lastProductData = null;
+    let employeeNameMap = {};
+    let initialStore = null;
+    let pendingTransaction = null;
+    let searchTimeout = null;
+    let initialDataPromise = null;
+    let discountAmount = 0;
+    let buy2Free1Discount = 0;
+    let buy3Free1Discount = 0;
+    let customDiscount = 0;
+    let claimedReceiptInfo = null;
+    let pendingPrize = null;
+    let pendingClaimReceipt = null;
+    let loadingTimeout = null;
+    let inventoryMode = false;
+    let updateStockTimeout = null;
+    let stockHistory = [];
+    let preloadedDataMap = {};
+    let preloadedStores = [];
+    let selectedCustomer = null;
 
-  // ==================== NOTIFICATION & TELEGRAM VARIABLES ====================
-  let notificationsSupported = false;
-  let notificationsEnabled = false;
-  let alertedOutOfStockProducts = new Set(); // Track which products already triggered a notification
-  let telegramBotToken = localStorage.getItem('telegramBotToken') || '8585264579:AAGW6fb4uMp2qGJa0yC6q2itWd2xgwI3NDY';
-  let telegramChatId = localStorage.getItem('telegramChatId') || '7888819771';
+    // ==================== NOTIFICATION & TELEGRAM VARIABLES ====================
+    let notificationsSupported = false;
+    let notificationsEnabled = false;
+    let alertedOutOfStockProducts = new Set();
+    let telegramBotToken = localStorage.getItem('telegramBotToken') || '8585264579:AAGW6fb4uMp2qGJa0yC6q2itWd2xgwI3NDY';
+    let telegramChatId = localStorage.getItem('telegramChatId') || '7888819771';
 
   // ==================== DOM ELEMENTS ====================
   const productGridEl = document.getElementById('productGrid');

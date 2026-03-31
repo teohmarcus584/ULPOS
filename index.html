@@ -3656,23 +3656,23 @@
     const storeLocation = transaction.store ? transaction.store.charAt(0).toUpperCase() + transaction.store.slice(1) : 'Queens';
     const maxChars = paperSize === '58' ? 32 : 48;
 
-    // Helper: format a product line with bold total
+    // Format a product: name line (no price), then qty+price+total line (total bold)
     function formatProductLine(name, price, qty, total) {
-      const priceStr = `RM ${price.toFixed(2)}`;
-      let line1 = name;
-      let spaceNeeded = maxChars - priceStr.length;
-      if (line1.length > spaceNeeded) line1 = line1.substring(0, spaceNeeded - 3) + '...';
-      line1 = line1.padEnd(spaceNeeded) + priceStr;
-
+      // Name line: just the name – let printer wrap if needed
+      const nameLine = name;
+      // Second line: quantity x price (left) and total (right, bold)
       const qtyStr = `${qty} x RM ${price.toFixed(2)}`;
       const totalStr = `RM ${total.toFixed(2)}`;
-      let line2 = qtyStr;
-      spaceNeeded = maxChars - totalStr.length;
-      if (line2.length > spaceNeeded) line2 = line2.substring(0, spaceNeeded - 3) + '...';
-      // Build second line with bold around the total
-      line2 = line2.padEnd(spaceNeeded) + `\x1B\x45\x01${totalStr}\x1B\x45\x00`;
-
-      return [line1, line2];
+      let spaceNeeded = maxChars - totalStr.length;
+      let qtyLine = qtyStr;
+      if (qtyLine.length > spaceNeeded) {
+        qtyLine = qtyLine.substring(0, spaceNeeded - 3) + '...';
+      } else {
+        qtyLine = qtyLine.padEnd(spaceNeeded);
+      }
+      // Add bold around the total
+      qtyLine += `\x1B\x45\x01${totalStr}\x1B\x45\x00`;
+      return [nameLine, qtyLine];
     }
 
     const lines = [];
@@ -3683,6 +3683,7 @@
     lines.push(`EMPLOYEE : ${employeeName}`);
     lines.push(separator);
 
+    // Group items by category
     const grouped = {};
     for (const item of transaction.items) {
       const cat = item.category || 'Uncategorized';
@@ -3701,15 +3702,16 @@
         const paidQty = item.quantity - (item.free_quantity || 0);
         if (paidQty > 0) {
           const itemTotal = paidQty * item.price;
-          const [line1, line2] = formatProductLine(item.name, item.price, paidQty, itemTotal);
-          lines.push(line1);
-          lines.push(line2);
+          const [nameLine, qtyLine] = formatProductLine(item.name, item.price, paidQty, itemTotal);
+          lines.push(nameLine);
+          lines.push(qtyLine);
         }
       }
     }
 
     lines.push(separator);
 
+    // Discounts (if any)
     if (transaction.discount > 0) {
       lines.push(`Lucky Draw Discount : -RM ${transaction.discount.toFixed(2)}`);
     }
@@ -3724,7 +3726,7 @@
     }
 
     const totalAmount = transaction.total;
-    // Total line with bold
+    // Total line in bold
     lines.push(`\x1B\x45\x01TOTAL : RM ${totalAmount.toFixed(2)}\x1B\x45\x00`);
     lines.push(`PAYMENT METHOD : ${transaction.payment_method}`);
     if (transaction.cash_received && transaction.payment_method === 'Cash') {
@@ -3763,7 +3765,6 @@
     return false;
   }
 }
-
     async function printPrizeVoucher(prizeLabel, receiptNumber, spinDate = new Date()) {
       if (!isConnected || !printerCharacteristic) {
         await showAlertModal('Printer not connected', 'Please connect a printer first.');

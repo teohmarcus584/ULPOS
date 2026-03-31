@@ -508,6 +508,27 @@
     .receipt-date { font-size: 0.8rem; color: #64748b; }
     .receipt-total { font-weight: 700; color: #2c7a4b; }
     .receipt-details { font-size: 0.85rem; margin: 8px 0; color: #334155; }
+    .receipt-items-list {
+      margin: 8px 0;
+      padding-left: 12px;
+      border-left: 2px solid #e2e8f0;
+    }
+    .receipt-item-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin: 4px 0;
+      flex-wrap: wrap;
+    }
+    .receipt-item-name { font-weight: 500; flex: 2; }
+    .receipt-item-detail { color: #475569; margin-left: 8px; }
+    .receipt-discount-row {
+      color: #dc2626;
+      margin: 6px 0;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+    }
     .receipt-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
     .reprint-btn, .lucky-btn, .refund-btn {
       background: #8b5cf6; border: none; color: white; padding: 4px 12px;
@@ -1254,7 +1275,7 @@
 
 <div id="specialPromoModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeSpecialPromoModal">×</span><div class="modal-title">🎁 Special Promo</div><div id="promoOptions"><button id="promoBuy2Free1Perfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 2 Free 1 (100ml Perfume EDP)</button><button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 3 Free 1 (Excluding Perfume)</button><div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">💰 Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💰 Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead><tr><th>Product</th><th>Category</th><th>Quantity</th><th>Total</th></tr></thead><tbody id="productDetailsBody"></tbody></table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💰 Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead>汽<th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>      </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="settlementModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
@@ -1301,7 +1322,7 @@
   </div>
 </div>
 
-<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead><tr><th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th></tr></thead><tbody id="collectionTableBody"></tbody></table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead>汽<th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody>      </table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="receiptsModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeReceiptsModal">×</span><div class="modal-title">📜 Receipt History</div><div class="receipts-filters"><div class="filter-group" id="receiptsStoreFilterGroup"><label>Store</label><select id="receiptsStoreSelect"><option value="all">All Stores</option></select></div><div id="receiptsEmployeeFilter" class="filter-group" style="display: none;"><label>Employee</label><select id="receiptsEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="receiptsDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="receiptsCustomDateRange" style="display: none;" class="date-range"><input type="date" id="receiptsFromDate"><input type="date" id="receiptsToDate"></div><div class="filter-group" style="flex: 2;"><label>Search (Receipt # or Product)</label><input type="text" id="receiptsSearch" placeholder="Type to filter..."></div></div><div id="receiptsList" class="receipts-list">Loading receipts...</div><div class="modal-buttons"><button id="closeReceiptsBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
@@ -2908,19 +2929,17 @@
     }
   }
 
+  // ========== UPDATED RECEIPT RENDERING WITH DETAILED ITEMS, DISCOUNTS, FREE GIFTS ==========
   function renderReceiptsList(receipts) {
     const container = document.getElementById('receiptsList');
     if (!receipts.length) {
       container.innerHTML = '<div style="text-align:center; padding:30px;">No receipts found.</div>';
       return;
     }
+
     let html = '';
     receipts.forEach(rec => {
       const date = new Date(rec.timestamp).toLocaleString();
-      const itemsSummary = rec.items.map(i => {
-        const displayName = i.category ? `${i.category}: ${i.name}` : i.name;
-        return `${displayName} x${i.quantity}`;
-      }).join(', ');
       const employeeName = getEmployeeName(rec.employee_id);
       const isRefund = rec.total < 0;
       const isRefundedOriginal = rec.refunded === true && !isRefund;
@@ -2929,28 +2948,86 @@
         ? `<span class="receipt-id">[REFUND] ${rec.transaction_id}</span>`
         : `<span class="receipt-id">${rec.transaction_id}</span>`;
 
-      let actionsHtml = `<button class="reprint-btn" data-receipt='${JSON.stringify(rec)}'>🖨️ Reprint</button>`;
-      if (!isRefund && !isRefundedOriginal) {
-        actionsHtml += `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">💰 Refund</button>`;
+      // Build detailed items list
+      let itemsHtml = '<div class="receipt-items-list">';
+      let subtotal = 0;
+      for (const item of rec.items) {
+        const paidQty = item.quantity - (item.free_quantity || 0);
+        const itemTotal = paidQty * item.price;
+        subtotal += itemTotal;
+
+        // Main paid line
+        itemsHtml += `
+          <div class="receipt-item-row">
+            <span class="receipt-item-name">${escapeHtml(item.name)}</span>
+            <span class="receipt-item-detail">${paidQty} x RM ${item.price.toFixed(2)}</span>
+            <span class="receipt-item-detail">RM ${itemTotal.toFixed(2)}</span>
+          </div>
+        `;
+        // Free gift line (if any)
+        if (item.free_quantity > 0) {
+          itemsHtml += `
+            <div class="receipt-item-row" style="color:#10b981; font-style:italic;">
+              <span class="receipt-item-name">🎁 FREE GIFT</span>
+              <span class="receipt-item-detail">${item.free_quantity} x ${escapeHtml(item.name)}</span>
+              <span class="receipt-item-detail">RM 0.00</span>
+            </div>
+          `;
+        }
+      }
+      itemsHtml += '</div>';
+
+      // Discounts (if present in receipt object)
+      let discountsHtml = '';
+      if (rec.discount && rec.discount > 0) {
+        discountsHtml += `<div class="receipt-discount-row"><span>🎲 Lucky Draw Discount</span><span>-RM ${rec.discount.toFixed(2)}</span></div>`;
+      }
+      if (rec.buy2_free1_discount && rec.buy2_free1_discount > 0) {
+        discountsHtml += `<div class="receipt-discount-row"><span>🎯 Buy 2 Free 1 (Perfume)</span><span>-RM ${rec.buy2_free1_discount.toFixed(2)}</span></div>`;
+      }
+      if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
+        discountsHtml += `<div class="receipt-discount-row"><span>🎯 Buy 3 Free 1 (Excluding Perfume)</span><span>-RM ${rec.buy3_free1_discount.toFixed(2)}</span></div>`;
+      }
+      if (rec.custom_discount && rec.custom_discount > 0) {
+        discountsHtml += `<div class="receipt-discount-row"><span>💰 Custom Discount</span><span>-RM ${rec.custom_discount.toFixed(2)}</span></div>`;
       }
 
-      html += `<div class="receipt-item ${refundClass}" data-receipt='${JSON.stringify(rec)}'>
-        <div class="receipt-header">
-          ${receiptIdHtml}
-          <span class="receipt-date">${date}</span>
-          <span class="receipt-total">RM ${rec.total.toFixed(2)}</span>
-        </div>
-        <div class="receipt-details">
-          <div>Store: ${rec.store} | Payment: ${rec.payment_method} | Employee: ${employeeName}</div>
-          <div>Items: ${itemsSummary}</div>
-        </div>
+      // Total line (already provided by receipt total)
+      const total = rec.total;
+
+      // Optional: show subtotal if needed
+      // const subtotalLine = `<div class="receipt-item-row" style="font-weight:500;"><span>Subtotal</span><span></span><span>RM ${subtotal.toFixed(2)}</span></div>`;
+
+      const actionsHtml = `
         <div class="receipt-actions">
+          <button class="reprint-btn" data-receipt='${JSON.stringify(rec)}'>🖨️ Reprint</button>
+          ${!isRefund && !isRefundedOriginal ? `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">💰 Refund</button>` : ''}
+        </div>
+      `;
+
+      html += `
+        <div class="receipt-item ${refundClass}" data-receipt='${JSON.stringify(rec)}'>
+          <div class="receipt-header">
+            ${receiptIdHtml}
+            <span class="receipt-date">${date}</span>
+            <span class="receipt-total">RM ${total.toFixed(2)}</span>
+          </div>
+          <div class="receipt-details">
+            <div>Store: ${rec.store} | Payment: ${rec.payment_method} | Employee: ${employeeName}</div>
+          </div>
+          ${itemsHtml}
+          ${discountsHtml ? `<div class="receipt-items-list" style="margin-top:4px;">${discountsHtml}</div>` : ''}
+          <div class="receipt-item-row total-row" style="margin-top:8px; padding-top:6px; border-top:1px dashed #cbd5e1;">
+            <strong>TOTAL</strong>
+            <strong>RM ${total.toFixed(2)}</strong>
+          </div>
           ${actionsHtml}
         </div>
-      </div>`;
+      `;
     });
     container.innerHTML = html;
 
+    // Attach event listeners for reprint and refund
     document.querySelectorAll('.reprint-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         reprintReceipt(JSON.parse(btn.dataset.receipt));
@@ -3163,17 +3240,17 @@
   function renderProductDetails(productsData) {
     const tbody = document.getElementById('productDetailsBody');
     if (!productsData || productsData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No products sold in this period.</td></tr>';
+      tbody.innerHTML = '|<td colspan="4" style="text-align: center;">No products sold in this period.  ';
       return;
     }
     let html = '';
     productsData.forEach(p => {
-      html += `<tr>
-        <td>${escapeHtml(p.name)}</td>
-        <td>${escapeHtml(p.category)}</td>
+      html += `汽
+         <td>${escapeHtml(p.name)}</td>
+         <td>${escapeHtml(p.category)}</td>
         <td style="text-align: right;">${p.quantity}</td>
         <td style="text-align: right;">RM ${p.total.toFixed(2)}</td>
-      </tr>`;
+       `;
     });
     tbody.innerHTML = html;
   }
@@ -4749,18 +4826,18 @@
   function renderCollectionTable() {
     const tbody = document.getElementById('collectionTableBody');
     if (!currentUnsettledCash.length) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.</td></tr>';
+      tbody.innerHTML = '|<td colspan="4" style="text-align: center;">No unsettled cash records found.  ';
       return;
     }
     let html = '';
     currentUnsettledCash.forEach(rec => {
       const date = new Date(rec.timestamp).toLocaleDateString();
       html += `<tr data-id="${rec.id}">
-        <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"></td>
-        <td>${date}</td>
-        <td>${getEmployeeName(rec.employee_id)}</td>
+         <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"></td>
+         <td>${date}</td>
+         <td>${getEmployeeName(rec.employee_id)}</td>
         <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
-      </tr>`;
+       </tr>`;
     });
     tbody.innerHTML = html;
     document.querySelectorAll('.collection-checkbox').forEach(cb => {

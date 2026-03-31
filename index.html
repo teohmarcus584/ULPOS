@@ -2760,14 +2760,16 @@
         }
       }
 
-      if (selectedCustomer && selectedCustomer.id) {
-        const pointsEarned = Math.floor(totalAmount);
-        if (pointsEarned > 0) {
-          await addPointsToCustomer(selectedCustomer.id, pointsEarned);
-          selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
-          updateCustomerDisplay();
-        }
-      }
+     if (selectedCustomer && selectedCustomer.id) {
+  // Points will be added by the backend. We can still update the UI locally for a smoother experience.
+  const POINTS_PER_RM = 1;  // Set this to the same value as in your backend
+  const pointsEarned = Math.floor(totalAmount * POINTS_PER_RM);
+  if (pointsEarned > 0) {
+    // Only update the local points (no API call) – backend already added them.
+    selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
+    updateCustomerDisplay();
+  }
+}
       if (pendingPrize) {
         await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
         pendingPrize = null;

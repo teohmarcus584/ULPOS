@@ -1758,7 +1758,7 @@ function toggleLowStockFilter() {
     if (newStock === 0 && !alertedOutOfStockProducts.has(productId)) {
       alertedOutOfStockProducts.add(productId);
       const message = `❌ OUT OF STOCK ❌\nStore: ${storeName}\nProduct: ${productName}\nTime: ${timestamp}`;
-      if (telegramBotToken && telegramChatId) sendTelegramMessage(message);
+     if (telegramAccounts) sendTelegramMessage(message);
       if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
         new Notification(`❌ Out of Stock`, { body: `${productName} is out of stock.` });
       } else if (notificationsEnabled) {

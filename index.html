@@ -1484,7 +1484,10 @@ let lowStockFilterActive = false;   // track filter state
   let notificationsSupported = false;
   let notificationsEnabled = false;
   let alertedOutOfStockProducts = new Set();
-  let telegramAccounts = localStorage.getItem('telegramAccounts') || '8585264579:AAGW6fb4uMp2qGJa0yC6q2itWd2xgwI3NDY,7888819771';
+  let telegramAccounts = localStorage.getItem('telegramAccounts') ||
+  '8585264579:AAGW6fb4uMp2qGJa0yC6q2itWd2xgwI3NDY,7888819771\n' +
+  '8722182854:AAFCXGhMDeLaoD3axUzS2zcBXeep1c-yhI0,1103858184\n' +
+  '8601764444:AAGeq2nTVUYjUUOqRSHvJzFpfLEIOPwsT7o,8668159537';
 
   // ==================== DOM ELEMENTS ====================
   const productGridEl = document.getElementById('productGrid');

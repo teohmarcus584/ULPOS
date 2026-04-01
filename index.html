@@ -1652,40 +1652,63 @@ async function sendTelegramMessage(message) {
   document.getElementById('telegramModal').style.display = 'flex';
 }
 
-  async function saveTelegramSettings() {
+ async function saveTelegramSettings() {
   const accountsRaw = document.getElementById('telegramAccounts').value.trim();
   if (!accountsRaw) {
     document.getElementById('telegramStatus').innerHTML = '❌ Please enter at least one Telegram account (token,chatId).';
     return;
   }
 
-  // Parse first line to test
-  const firstLine = accountsRaw.split('\n')[0].trim();
-  const [testToken, testChatId] = firstLine.split(',').map(s => s.trim());
-  if (!testToken || !testChatId) {
-    document.getElementById('telegramStatus').innerHTML = '❌ Invalid format. Use token,chatId per line.';
+  // Split into lines, ignore empty lines
+  const lines = accountsRaw.split('\n').filter(line => line.trim());
+  const results = [];
+
+  // Show a “testing…” message
+  document.getElementById('telegramStatus').innerHTML = '⏳ Testing all accounts...';
+  document.getElementById('telegramStatus').style.color = '#2c7a4b';
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    const [token, chatId] = line.split(',').map(s => s.trim());
+    if (!token || !chatId) {
+      results.push(`❌ Line ${i+1}: Invalid format (must be token,chatId)`);
+      continue;
+    }
+
+    const testUrl = `https://api.telegram.org/bot${token}/sendMessage`;
+    try {
+      const response = await fetch(testUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: '✅ Out‑of‑stock alert test from POS system.' })
+      });
+      const result = await response.json();
+      if (result.ok) {
+        results.push(`✅ Account ${i+1}: Sent to ${chatId}`);
+      } else {
+        results.push(`❌ Account ${i+1}: ${result.description}`);
+      }
+    } catch (err) {
+      results.push(`❌ Account ${i+1}: Connection failed – ${err.message}`);
+    }
+    // Small delay to avoid rate limiting
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+
+  // If all accounts failed, do not save
+  const allFailed = results.every(r => r.startsWith('❌'));
+  if (allFailed) {
+    document.getElementById('telegramStatus').innerHTML = results.join('<br>');
+    document.getElementById('telegramStatus').style.color = '#ef4444';
     return;
   }
 
-  const testUrl = `https://api.telegram.org/bot${testToken}/sendMessage`;
-  try {
-    const response = await fetch(testUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: testChatId, text: '✅ Out‑of‑stock alert test from POS system.' })
-    });
-    const result = await response.json();
-    if (result.ok) {
-      telegramAccounts = accountsRaw;
-      localStorage.setItem('telegramAccounts', accountsRaw);
-      document.getElementById('telegramStatus').innerHTML = '✅ Settings saved and test message sent to the first account!';
-      setTimeout(() => document.getElementById('telegramModal').style.display = 'none', 1500);
-    } else {
-      document.getElementById('telegramStatus').innerHTML = `❌ Error with first account: ${result.description}`;
-    }
-  } catch (err) {
-    document.getElementById('telegramStatus').innerHTML = `❌ Connection failed: ${err.message}`;
-  }
+  // Save the settings
+  telegramAccounts = accountsRaw;
+  localStorage.setItem('telegramAccounts', accountsRaw);
+  document.getElementById('telegramStatus').innerHTML = results.join('<br>') + '<br>✅ Settings saved.';
+  document.getElementById('telegramStatus').style.color = '#2c7a4b';
+  setTimeout(() => document.getElementById('telegramModal').style.display = 'none', 3000);
 }
 
   // ==================== NOTIFICATION FUNCTIONS (stock alerts) ====================

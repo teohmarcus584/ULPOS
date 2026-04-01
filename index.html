@@ -153,25 +153,6 @@
     .refresh-btn:active {
       transform: scale(0.97);
     }
-    .low-stock-toggle {
-      background: #f1f5f9;
-      border: none;
-      border-radius: 40px;
-      padding: 8px 16px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: 0.2s;
-      color: #334155;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .low-stock-toggle.active {
-      background: #ef4444;
-      color: white;
-      box-shadow: 0 2px 4px rgba(239,68,68,0.3);
-    }
     #categorySelect, .search-bar {
       padding: 12px 20px;
       border-radius: 60px;
@@ -216,11 +197,6 @@
       flex-wrap: wrap;
     }
     .product-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-color: #cbd5e1; }
-    .product-card.low-stock-card {
-      background: #fee2e2;
-      border-left: 4px solid #ef4444;
-      box-shadow: 0 1px 3px rgba(239,68,68,0.2);
-    }
     .product-name { font-weight: 600; font-size: 1rem; margin-bottom: 8px; color: #0f172a; }
     .product-list .product-name { margin-bottom: 0; flex: 2; }
     .product-price { font-weight: 700; color: #2c7a4b; font-size: 1.2rem; margin: 6px 0; }
@@ -1064,6 +1040,16 @@
   cursor: pointer;
   margin-left: 8px;
 }
+.low-stock-toggle.active {
+  background: #ef4444;
+  color: white;
+  box-shadow: 0 2px 4px rgba(239,68,68,0.3);
+}
+.product-card.low-stock-card {
+  background: #fee2e2;
+  border-left: 4px solid #ef4444;
+  box-shadow: 0 1px 3px rgba(239,68,68,0.2);
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -1300,7 +1286,7 @@
 
 <div id="specialPromoModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeSpecialPromoModal">×</span><div class="modal-title">🎁 Special Promo</div><div id="promoOptions"><button id="promoBuy2Free1Perfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 2 Free 1 (100ml Perfume EDP)</button><button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">🎯 Buy 3 Free 1 (Excluding Perfume)</button><div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">💰 Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💰 Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead>汽<th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>       </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💰 Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead>汽<th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>      </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="settlementModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
@@ -1347,7 +1333,7 @@
   </div>
 </div>
 
-<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead>汽<th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody>       </table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead>汽<th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody>      </table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="receiptsModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeReceiptsModal">×</span><div class="modal-title">📜 Receipt History</div><div class="receipts-filters"><div class="filter-group" id="receiptsStoreFilterGroup"><label>Store</label><select id="receiptsStoreSelect"><option value="all">All Stores</option></select></div><div id="receiptsEmployeeFilter" class="filter-group" style="display: none;"><label>Employee</label><select id="receiptsEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="receiptsDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="receiptsCustomDateRange" style="display: none;" class="date-range"><input type="date" id="receiptsFromDate"><input type="date" id="receiptsToDate"></div><div class="filter-group" style="flex: 2;"><label>Search (Receipt # or Product)</label><input type="text" id="receiptsSearch" placeholder="Type to filter..."></div></div><div id="receiptsList" class="receipts-list">Loading receipts...</div><div class="modal-buttons"><button id="closeReceiptsBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
@@ -1410,13 +1396,10 @@
     <span class="close-modal" id="closeTelegramModal">×</span>
     <div class="modal-title">📱 Telegram Out‑of‑Stock Alerts</div>
     <div class="filter-group">
-      <label>Bot Token</label>
-      <input type="text" id="telegramBotToken" class="modal-input" placeholder="e.g., 123456789:ABCdefGHIjklmNOPqrstUVwxyz" value="8585264579:AAGW6fb4uMp2qGJa0yC6q2itWd2xgwI3NDY">
-    </div>
-    <div class="filter-group">
-      <label>Chat ID</label>
-      <input type="text" id="telegramChatId" class="modal-input" placeholder="e.g., 123456789" value="7888819771">
-    </div>
+  <label>Telegram Accounts (token,chatId)</label>
+  <textarea id="telegramAccounts" rows="4" class="modal-input" placeholder="e.g.,&#10;8585264579:AAGW6fb4uMp2qGJa0yC6q2itWd2xgwI3NDY,7888819771&#10;8722182854:AAFCXGhMDeLaoD3axUzS2zcBXeep1c-yhI0,1103858184&#10;8601764444:AAGeq2nTVUYjUUOqRSHvJzFpfLEIOPwsT7o,8668159537"></textarea>
+  <small style="font-size:0.75rem; color:#64748b;">Each line: bot_token,chat_id (comma separated)</small>
+</div>
     <div class="modal-buttons">
       <button id="saveTelegramSettingsBtn" class="modal-btn modal-btn-primary">Save & Test</button>
       <button id="closeTelegramModalBtn" class="modal-btn modal-btn-secondary">Cancel</button>
@@ -1458,8 +1441,7 @@
   let preloadedDataMap = {};
   let preloadedStores = [];
   let selectedCustomer = null;
-  let lowStockFilterActive = false;   // track low stock filter state
-
+let lowStockFilterActive = false;   // track filter state
   // New variables for preloaded report and settlement data
   let preloadedSettlementTotals = null;      // cache settlement totals for current store today
   let preloadedReportCache = null;            // { store, employeeId, from, to, totals, productDetails, chartData }
@@ -1468,8 +1450,7 @@
   let notificationsSupported = false;
   let notificationsEnabled = false;
   let alertedOutOfStockProducts = new Set();
-  let telegramBotToken = localStorage.getItem('telegramBotToken') || '8585264579:AAGW6fb4uMp2qGJa0yC6q2itWd2xgwI3NDY';
-  let telegramChatId = localStorage.getItem('telegramChatId') || '7888819771';
+  let telegramAccounts = localStorage.getItem('telegramAccounts') || '8585264579:AAGW6fb4uMp2qGJa0yC6q2itWd2xgwI3NDY,7888819771';
 
   // ==================== DOM ELEMENTS ====================
   const productGridEl = document.getElementById('productGrid');
@@ -1492,7 +1473,7 @@
   const stockHistoryContainerDiv = document.getElementById('stockHistoryContainer');
   const cartTitleElement = document.getElementById('cartTitle');
   const customerInfoDisplay = document.getElementById('customerInfoDisplay');
-  const LOW_STOCK_THRESHOLD = 3;   // Changed from 5 to 3
+  const LOW_STOCK_THRESHOLD = 5;
   let alertedLowStockProducts = new Set();
 
   // ==================== HELPER FUNCTIONS ====================
@@ -1532,17 +1513,12 @@
     });
   }
 
-  // Low stock toggle function
-  function toggleLowStockFilter() {
-    lowStockFilterActive = !lowStockFilterActive;
-    const btn = document.getElementById('lowStockToggleBtn');
-    if (btn) btn.classList.toggle('active', lowStockFilterActive);
-    renderProductGrid();   // refresh product display
-  }
-
-  // Attach event listener for low stock toggle button
-  document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLowStockFilter);
-
+function toggleLowStockFilter() {
+  lowStockFilterActive = !lowStockFilterActive;
+  const btn = document.getElementById('lowStockToggleBtn');
+  if (btn) btn.classList.toggle('active', lowStockFilterActive);
+  renderProductGrid();   // refresh product display
+}
   function showInputModal(title, placeholder = '') {
     return new Promise((resolve) => {
       const overlay = document.getElementById('inputModal');
@@ -1641,63 +1617,76 @@
   }
 
   // ==================== TELEGRAM FUNCTIONS ====================
-  async function sendTelegramMessage(message) {
-    if (!telegramBotToken || !telegramChatId) return false;
+ async function sendTelegramMessage(message) {
+  if (!telegramAccounts) return false;
+
+  // Split by newline, then by comma
+  const lines = telegramAccounts.split('\n').filter(line => line.trim());
+  const results = await Promise.all(lines.map(async (line) => {
+    const [token, chatId] = line.split(',').map(s => s.trim());
+    if (!token || !chatId) return false;
     try {
-      const url = `https://api.telegram.org/bot${telegramBotToken}/sendMessage`;
+      const url = `https://api.telegram.org/bot${token}/sendMessage`;
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chat_id: telegramChatId,
+          chat_id: chatId,
           text: message,
           parse_mode: 'HTML'
         })
       });
       const result = await response.json();
-      return result.ok === true;
+      return result.ok;
     } catch (err) {
-      console.error('Telegram send failed:', err);
+      console.error(`Telegram send failed for ${token}:`, err);
       return false;
     }
-  }
+  }));
+  return results.some(success => success); // at least one succeeded
+}
 
   function showTelegramModal() {
-    document.getElementById('telegramBotToken').value = telegramBotToken;
-    document.getElementById('telegramChatId').value = telegramChatId;
-    document.getElementById('telegramStatus').innerHTML = '';
-    document.getElementById('telegramModal').style.display = 'flex';
-  }
+  document.getElementById('telegramAccounts').value = telegramAccounts;
+  document.getElementById('telegramStatus').innerHTML = '';
+  document.getElementById('telegramModal').style.display = 'flex';
+}
 
   async function saveTelegramSettings() {
-    const token = document.getElementById('telegramBotToken').value.trim();
-    const chatId = document.getElementById('telegramChatId').value.trim();
-    if (!token || !chatId) {
-      document.getElementById('telegramStatus').innerHTML = '❌ Both Bot Token and Chat ID are required.';
-      return;
-    }
-    const testUrl = `https://api.telegram.org/bot${token}/sendMessage`;
-    try {
-      const response = await fetch(testUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text: '✅ Out‑of‑stock alert test from POS system.' })
-      });
-      const result = await response.json();
-      if (result.ok) {
-        telegramBotToken = token;
-        telegramChatId = chatId;
-        localStorage.setItem('telegramBotToken', token);
-        localStorage.setItem('telegramChatId', chatId);
-        document.getElementById('telegramStatus').innerHTML = '✅ Settings saved and test message sent!';
-        setTimeout(() => document.getElementById('telegramModal').style.display = 'none', 1500);
-      } else {
-        document.getElementById('telegramStatus').innerHTML = `❌ Error: ${result.description}`;
-      }
-    } catch (err) {
-      document.getElementById('telegramStatus').innerHTML = `❌ Connection failed: ${err.message}`;
-    }
+  const accountsRaw = document.getElementById('telegramAccounts').value.trim();
+  if (!accountsRaw) {
+    document.getElementById('telegramStatus').innerHTML = '❌ Please enter at least one Telegram account (token,chatId).';
+    return;
   }
+
+  // Parse first line to test
+  const firstLine = accountsRaw.split('\n')[0].trim();
+  const [testToken, testChatId] = firstLine.split(',').map(s => s.trim());
+  if (!testToken || !testChatId) {
+    document.getElementById('telegramStatus').innerHTML = '❌ Invalid format. Use token,chatId per line.';
+    return;
+  }
+
+  const testUrl = `https://api.telegram.org/bot${testToken}/sendMessage`;
+  try {
+    const response = await fetch(testUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: testChatId, text: '✅ Out‑of‑stock alert test from POS system.' })
+    });
+    const result = await response.json();
+    if (result.ok) {
+      telegramAccounts = accountsRaw;
+      localStorage.setItem('telegramAccounts', accountsRaw);
+      document.getElementById('telegramStatus').innerHTML = '✅ Settings saved and test message sent to the first account!';
+      setTimeout(() => document.getElementById('telegramModal').style.display = 'none', 1500);
+    } else {
+      document.getElementById('telegramStatus').innerHTML = `❌ Error with first account: ${result.description}`;
+    }
+  } catch (err) {
+    document.getElementById('telegramStatus').innerHTML = `❌ Connection failed: ${err.message}`;
+  }
+}
 
   // ==================== NOTIFICATION FUNCTIONS (stock alerts) ====================
   function checkNotificationSupport() {
@@ -1759,7 +1748,7 @@
     if (newStock <= LOW_STOCK_THRESHOLD && newStock > 0 && !alertedLowStockProducts.has(productId)) {
       alertedLowStockProducts.add(productId);
       const message = `⚠️ LOW STOCK ⚠️\nStore: ${storeName}\nProduct: ${productName}\nQuantity left: ${newStock}\nTime: ${timestamp}`;
-      if (telegramBotToken && telegramChatId) sendTelegramMessage(message);
+      if (telegramAccounts) sendTelegramMessage(message);
       if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
         new Notification(`⚠️ Low Stock`, { body: `${productName} only ${newStock} left.` });
       } else if (notificationsEnabled) {
@@ -2085,22 +2074,21 @@
   }
 
   // ==================== INVENTORY MODE TOGGLE ====================
-  function toggleInventoryMode() {
-    inventoryMode = !inventoryMode;
-    if (inventoryMode) {
-      cartNormalContent.style.display = 'none';
-      stockHistoryContainerDiv.style.display = 'flex';
-      cartTitleElement.innerText = '📦 Inventory Mode';
-      if (updateStockTimeout) clearTimeout(updateStockTimeout);
-      loadStockHistoryFromSheet();
-    } else {
-      cartNormalContent.style.display = 'block';
-      stockHistoryContainerDiv.style.display = 'none';
-      cartTitleElement.innerText = '🧾 Current Sale';
-    }
-    renderProductGrid();   // refresh product display
+ function toggleInventoryMode() {
+  inventoryMode = !inventoryMode;
+  if (inventoryMode) {
+    cartNormalContent.style.display = 'none';
+    stockHistoryContainerDiv.style.display = 'flex';
+    cartTitleElement.innerText = '📦 Inventory Mode';
+    if (updateStockTimeout) clearTimeout(updateStockTimeout);
+    loadStockHistoryFromSheet();
+  } else {
+    cartNormalContent.style.display = 'block';
+    stockHistoryContainerDiv.style.display = 'none';
+    cartTitleElement.innerText = '🧾 Current Sale';
   }
-
+  renderProductGrid();
+}
   // ==================== PRELOAD ALL STORES IN BACKGROUND ====================
   async function preloadAllStoresData() {
     const stores = ["queens", "sunshine", "gurney_paragon"];
@@ -3286,11 +3274,11 @@
     let html = '';
     productsData.forEach(p => {
       html += `汽
-          <td>${escapeHtml(p.name)}</td>
-          <td>${escapeHtml(p.category)}</td>
-          <td style="text-align: right;">${p.quantity}</td>
-          <td style="text-align: right;">RM ${p.total.toFixed(2)}</td>
-        </tr>`;
+         <td>${escapeHtml(p.name)}</td>
+         <td>${escapeHtml(p.category)}</td>
+        <td style="text-align: right;">${p.quantity}</td>
+        <td style="text-align: right;">RM ${p.total.toFixed(2)}</td>
+       `;
     });
     tbody.innerHTML = html;
   }
@@ -3937,7 +3925,7 @@
     filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm));
   }
 
-  // 5. Apply low‑stock filter if toggle is active
+  // 5. NEW: Apply low‑stock filter if toggle is active
   if (lowStockFilterActive) {
     filtered = filtered.filter(p => p.stock < LOW_STOCK_THRESHOLD);
   }
@@ -3951,7 +3939,7 @@
   // 7. Build HTML based on view mode and inventory mode
   let html = '';
   filtered.forEach(prod => {
-    // Determine if product should be highlighted (only in inventory mode)
+    // NEW: Determine if product should be highlighted (only in inventory mode)
     const isLowStock = prod.stock < LOW_STOCK_THRESHOLD;
     const lowStockClass = (inventoryMode && isLowStock) ? 'low-stock-card' : '';
 
@@ -4897,18 +4885,18 @@
   function renderCollectionTable() {
     const tbody = document.getElementById('collectionTableBody');
     if (!currentUnsettledCash.length) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.</td></tr>';
+      tbody.innerHTML = '|<td colspan="4" style="text-align: center;">No unsettled cash records found.  ';
       return;
     }
     let html = '';
     currentUnsettledCash.forEach(rec => {
       const date = new Date(rec.timestamp).toLocaleDateString();
       html += `<tr data-id="${rec.id}">
-          <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"></td>
-          <td>${date}</td>
-          <td>${getEmployeeName(rec.employee_id)}</td>
-          <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
-        </tr>`;
+         <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"></td>
+         <td>${date}</td>
+         <td>${getEmployeeName(rec.employee_id)}</td>
+        <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
+       </tr>`;
     });
     tbody.innerHTML = html;
     document.querySelectorAll('.collection-checkbox').forEach(cb => {

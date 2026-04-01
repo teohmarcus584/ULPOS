@@ -1652,18 +1652,16 @@ async function sendTelegramMessage(message) {
   document.getElementById('telegramModal').style.display = 'flex';
 }
 
- async function saveTelegramSettings() {
+async function saveTelegramSettings() {
   const accountsRaw = document.getElementById('telegramAccounts').value.trim();
   if (!accountsRaw) {
     document.getElementById('telegramStatus').innerHTML = '❌ Please enter at least one Telegram account (token,chatId).';
     return;
   }
 
-  // Split into lines, ignore empty lines
   const lines = accountsRaw.split('\n').filter(line => line.trim());
   const results = [];
 
-  // Show a “testing…” message
   document.getElementById('telegramStatus').innerHTML = '⏳ Testing all accounts...';
   document.getElementById('telegramStatus').style.color = '#2c7a4b';
 
@@ -1691,11 +1689,9 @@ async function sendTelegramMessage(message) {
     } catch (err) {
       results.push(`❌ Account ${i+1}: Connection failed – ${err.message}`);
     }
-    // Small delay to avoid rate limiting
     await new Promise(resolve => setTimeout(resolve, 500));
   }
 
-  // If all accounts failed, do not save
   const allFailed = results.every(r => r.startsWith('❌'));
   if (allFailed) {
     document.getElementById('telegramStatus').innerHTML = results.join('<br>');
@@ -1703,7 +1699,6 @@ async function sendTelegramMessage(message) {
     return;
   }
 
-  // Save the settings
   telegramAccounts = accountsRaw;
   localStorage.setItem('telegramAccounts', accountsRaw);
   document.getElementById('telegramStatus').innerHTML = results.join('<br>') + '<br>✅ Settings saved.';

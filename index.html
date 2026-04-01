@@ -1047,6 +1047,9 @@
   border-left: 4px solid #ef4444;
   box-shadow: 0 1px 3px rgba(239,68,68,0.2);
 }
+#lowStockToggleBtn {
+  display: none;
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -2073,16 +2076,27 @@ async function sendTelegramMessage(message) {
   // ==================== INVENTORY MODE TOGGLE ====================
  function toggleInventoryMode() {
   inventoryMode = !inventoryMode;
+  const lowStockBtn = document.getElementById('lowStockToggleBtn');
   if (inventoryMode) {
     cartNormalContent.style.display = 'none';
     stockHistoryContainerDiv.style.display = 'flex';
     cartTitleElement.innerText = '📦 Inventory Mode';
     if (updateStockTimeout) clearTimeout(updateStockTimeout);
     loadStockHistoryFromSheet();
+    // Show low stock button
+    if (lowStockBtn) lowStockBtn.style.display = 'inline-flex'; // or '' to use default display
   } else {
     cartNormalContent.style.display = 'block';
     stockHistoryContainerDiv.style.display = 'none';
     cartTitleElement.innerText = '🧾 Current Sale';
+    // Hide low stock button
+    if (lowStockBtn) lowStockBtn.style.display = 'none';
+    // Optionally reset the low stock filter when leaving inventory mode
+    if (lowStockFilterActive) {
+      lowStockFilterActive = false;
+      if (lowStockBtn) lowStockBtn.classList.remove('active');
+      renderProductGrid();
+    }
   }
   renderProductGrid();
 }

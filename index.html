@@ -1614,7 +1614,7 @@ function toggleLowStockFilter() {
   }
 
   // ==================== TELEGRAM FUNCTIONS ====================
- async function sendTelegramMessage(message) {
+async function sendTelegramMessage(message) {
   if (!telegramAccounts) return false;
 
   // Split by newline, then by comma
@@ -1640,7 +1640,7 @@ function toggleLowStockFilter() {
       return false;
     }
   }));
-  return results.some(success => success); // at least one succeeded
+  return results.some(success => success);
 }
 
   function showTelegramModal() {

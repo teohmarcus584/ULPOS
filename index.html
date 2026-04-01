@@ -4248,7 +4248,7 @@ async function sendTelegramMessage(message) {
     gridBtn.addEventListener('click', () => setViewMode('grid'));
     listBtn.addEventListener('click', () => setViewMode('list'));
   }
-
+document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLowStockFilter);
   document.getElementById('clearStockHistoryBtn')?.addEventListener('click', clearStockHistory);
   document.getElementById('saveStockHistoryBtn')?.addEventListener('click', saveStockHistoryToSheet);
 

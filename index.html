@@ -2273,7 +2273,7 @@ async function fetchProductsFromSheet(force = false) {
     if (cached) {
       const { timestamp, products: cachedProducts } = JSON.parse(cached);
       // Cache is fresh (less than 5 minutes)
-      if (now - timestamp < 5 * 60 * 1000) {
+      if (now - timestamp < 1 * 60 * 1000) {
         products = cachedProducts;
         updateCategoryDropdown();
         renderProductGrid();
@@ -2883,7 +2883,8 @@ window.addEventListener('online', syncPendingSales);
       prize_claimed: claimedReceiptInfo,
       customer_id: selectedCustomer ? selectedCustomer.id : null
     };
-    const success = await saveTransactionToSheet(transaction);
+    queueSale(transaction);
+const success = true;  // assume success, will sync later
     const customerIdForLuckyDraw = selectedCustomer ? selectedCustomer.id : null;
     if (success) {
       // Update local stock and trigger notifications for each sold item

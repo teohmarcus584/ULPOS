@@ -2902,118 +2902,103 @@ window.addEventListener('online', syncPendingSales);
     document.getElementById('closePaymentModal').onclick = () => modal.style.display = 'none';
   }
 
- async function completeCheckout(paymentMethod, cashReceived) {
+async function completeCheckout(paymentMethod, cashReceived) {
     document.getElementById('paymentModal').style.display = 'none';
     const totalAmount = pendingTransaction.totalAmount;
-    const transactionId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    // ========== SIMPLIFIED TRANSACTION ID (store‑specific) ==========
+    function toBase36(num) {
+        return num.toString(36);
+    }
+    function randomHex() {
+        return Math.floor(Math.random() * 256).toString(16).padStart(2, '0');
+    }
+    const storeCodeMap = {
+        queens: 'Q',
+        sunshine: 'S',
+        gurney_paragon: 'GP'
+    };
+    const storeCode = storeCodeMap[currentStore] || 'X';
+    const timestampBase36 = toBase36(Date.now());
+    const transactionId = `${storeCode}-${timestampBase36}-${randomHex()}`;
+    // ========== END SIMPLIFIED ID ==========
+
     const saleItems = cart.map(item => ({
-      id: item.product.id,
-      category: item.product.category,
-      name: item.product.name,
-      price: item.product.price,
-      quantity: item.quantity,
-      free_quantity: item.freeQuantity,
-      total: (item.quantity - item.freeQuantity) * item.product.price
+        id: item.product.id,
+        category: item.product.category,
+        name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+        free_quantity: item.freeQuantity,
+        total: (item.quantity - item.freeQuantity) * item.product.price
     }));
     const transaction = {
-      transaction_id: transactionId,
-      items: saleItems,
-      total: totalAmount,
-      payment_method: paymentMethod,
-      cash_received: cashReceived,
-      timestamp: new Date().toISOString(),
-      discount: discountAmount,
-      buy2_free1_discount: buy2Free1Discount,
-      buy3_free1_discount: buy3Free1Discount,
-      custom_discount: customDiscount,
-      prize_claimed: claimedReceiptInfo,
-      customer_id: selectedCustomer ? selectedCustomer.id : null
+        transaction_id: transactionId,
+        items: saleItems,
+        total: totalAmount,
+        payment_method: paymentMethod,
+        cash_received: cashReceived,
+        timestamp: new Date().toISOString(),
+        discount: discountAmount,
+        buy2_free1_discount: buy2Free1Discount,
+        buy3_free1_discount: buy3Free1Discount,
+        custom_discount: customDiscount,
+        prize_claimed: claimedReceiptInfo,
+        customer_id: selectedCustomer ? selectedCustomer.id : null
     };
     queueSale(transaction);
-const success = true;  // assume success, will sync later
+    const success = true;  // assume success, will sync later
     const customerIdForLuckyDraw = selectedCustomer ? selectedCustomer.id : null;
     if (success) {
-      // Update local stock and trigger notifications for each sold item
-      for (let item of saleItems) {
-        const product = products.find(p => p.id == item.id);
-        if (product) {
-          const oldStock = product.stock;
-          const newStock = oldStock - item.quantity;
-          product.stock = newStock;
-          checkAndNotifyOutOfStock(product.id, product.name, newStock);
-        //  const stockSpan = document.querySelector(`.stock-display[data-id="${product.id}"]`);
-        //  if (stockSpan) stockSpan.innerText = newStock;
+        // Update local stock and trigger notifications for each sold item
+        for (let item of saleItems) {
+            const product = products.find(p => p.id == item.id);
+            if (product) {
+                const oldStock = product.stock;
+                const newStock = oldStock - item.quantity;
+                product.stock = newStock;
+                checkAndNotifyOutOfStock(product.id, product.name, newStock);
+                //  const stockSpan = document.querySelector(`.stock-display[data-id="${product.id}"]`);
+                //  if (stockSpan) stockSpan.innerText = newStock;
+            }
         }
-      }
-       localStorage.setItem(`products_${currentStore}`, JSON.stringify({
-    timestamp: Date.now(),
-    products: products
-  }));
-renderProductGrid();
-     if (selectedCustomer && selectedCustomer.id) {
-  const POINTS_PER_RM = 1;  // Set this to the same value as in your backend
-  const pointsEarned = Math.floor(totalAmount * POINTS_PER_RM);
-  if (pointsEarned > 0) {
-    selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
-    updateCustomerDisplay();
-  }
-}
-      if (pendingPrize) {
-        await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
-        pendingPrize = null;
-      }
-    //  localStorage.removeItem(`products_${currentStore}`);
-      if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
-        const transactionWithName = { ...transaction, employee_name: currentEmployee.name };
-        await window.printerAPI.printReceipt(transactionWithName);
-      } else {
-        await showAlertModal('Receipt', 'Sale recorded. Printer not connected, no receipt printed.');
-      }
-      await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
-      document.getElementById('luckyTxId').innerText = transactionId;
-      const luckyModal = document.getElementById('luckyDrawModal');
-      luckyModal.style.display = 'flex';
-      document.getElementById('openLuckyDrawBtn').onclick = () => { openLuckyDraw(transactionId, customerIdForLuckyDraw); luckyModal.style.display = 'none'; };
-      document.getElementById('closeLuckyDrawBtn').onclick = () => luckyModal.style.display = 'none';
-      document.getElementById('closeLuckyDrawModal').onclick = () => luckyModal.style.display = 'none';
-     // await fetchProductsFromSheet();
-      clearCart();
+        localStorage.setItem(`products_${currentStore}`, JSON.stringify({
+            timestamp: Date.now(),
+            products: products
+        }));
+        renderProductGrid();
+        if (selectedCustomer && selectedCustomer.id) {
+            const POINTS_PER_RM = 1;
+            const pointsEarned = Math.floor(totalAmount * POINTS_PER_RM);
+            if (pointsEarned > 0) {
+                selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
+                updateCustomerDisplay();
+            }
+        }
+        if (pendingPrize) {
+            await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
+            pendingPrize = null;
+        }
+        //  localStorage.removeItem(`products_${currentStore}`);
+        if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
+            const transactionWithName = { ...transaction, employee_name: currentEmployee.name };
+            await window.printerAPI.printReceipt(transactionWithName);
+        } else {
+            await showAlertModal('Receipt', 'Sale recorded. Printer not connected, no receipt printed.');
+        }
+        await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
+        document.getElementById('luckyTxId').innerText = transactionId;
+        const luckyModal = document.getElementById('luckyDrawModal');
+        luckyModal.style.display = 'flex';
+        document.getElementById('openLuckyDrawBtn').onclick = () => { openLuckyDraw(transactionId, customerIdForLuckyDraw); luckyModal.style.display = 'none'; };
+        document.getElementById('closeLuckyDrawBtn').onclick = () => luckyModal.style.display = 'none';
+        document.getElementById('closeLuckyDrawModal').onclick = () => luckyModal.style.display = 'none';
+        // await fetchProductsFromSheet();
+        clearCart();
     } else {
-      await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
+        await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
     }
-  }
-
-  async function saveTransactionToSheet(transaction) {
-    
-    try {
-      const selectedEmployeeId = soldBySelectCart.value;
-      const employeeIdForRecord = selectedEmployeeId || currentEmployee.id;
-      const formData = new URLSearchParams();
-      formData.append("action", "saveSale");
-      formData.append("transaction_id", transaction.transaction_id);
-      formData.append("items", JSON.stringify(transaction.items));
-      formData.append("total", transaction.total);
-      formData.append("payment_method", transaction.payment_method);
-      formData.append("cash_received", transaction.cash_received || '');
-      formData.append("timestamp", transaction.timestamp);
-      formData.append("store", currentStore);
-      formData.append("employee_id", employeeIdForRecord);
-      formData.append("discount", transaction.discount || 0);
-      formData.append("buy2_free1_discount", transaction.buy2_free1_discount || 0);
-      formData.append("buy3_free1_discount", transaction.buy3_free1_discount || 0);
-      formData.append("custom_discount", transaction.custom_discount || 0);
-      formData.append("prize_claimed", transaction.prize_claimed ? JSON.stringify(transaction.prize_claimed) : '');
-      if (transaction.customer_id) formData.append("customer_id", transaction.customer_id);
-      const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
-      const result = await response.json();
-      return result.success === true;
-    } catch (err) {
-      console.error(err);
-      return false;
-    } finally {
-      hideLoading();
-    }
-  }
+}
 
   // ==================== RECEIPTS (polling, etc.) ====================
   let cachedReceipts = null;

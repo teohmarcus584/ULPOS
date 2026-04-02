@@ -2237,14 +2237,14 @@ async function saveTelegramSettings() {
     
 
   // ==================== FETCH PRODUCTS ====================
- async function fetchProductsFromSheet(force = false) {
+async function fetchProductsFromSheet(force = false) {
   showLoading('Fetching products...');
   try {
     const store = currentStore;
     const cacheKey = `products_${store}`;
     const now = Date.now();
 
-    // 1. If forced, do a full fetch and reset timestamp
+    // 1. Forced full fetch
     if (force) {
       let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
       const response = await fetch(url);
@@ -2258,8 +2258,9 @@ async function saveTelegramSettings() {
         category: p.category || "Uncategorized"
       })).sort((a, b) => a.name.localeCompare(b.name));
       localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
-      // Reset last sync timestamp for this store (full fetch)
-      lastSyncTimestamps[store] = new Date(now).toISOString();
+      // ✅ Set a valid timestamp after full fetch
+      const nowISO = new Date().toISOString();
+      lastSyncTimestamps[store] = nowISO;
       localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
       updateCategoryDropdown();
       renderProductGrid();
@@ -2271,7 +2272,7 @@ async function saveTelegramSettings() {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       const { timestamp, products: cachedProducts } = JSON.parse(cached);
-      // Cache is still fresh (less than 5 minutes) – use it directly
+      // Cache is fresh (less than 5 minutes)
       if (now - timestamp < 5 * 60 * 1000) {
         products = cachedProducts;
         updateCategoryDropdown();
@@ -2280,19 +2281,18 @@ async function saveTelegramSettings() {
         return true;
       }
 
-      // Cache is stale – try incremental sync
+      // Cache stale – try incremental sync
       const lastSync = lastSyncTimestamps[store];
       if (lastSync) {
         const changesUrl = `${APPS_SCRIPT_URL}?action=getProductChanges&store=${store}&since=${encodeURIComponent(lastSync)}&_=${now}`;
         const changesResponse = await fetch(changesUrl);
         const changes = await changesResponse.json();
-        if (changes.success && changes.products) {
-          // Merge changes into cached products
+        // ✅ Check that server returned both products and a newSince
+        if (changes.success && changes.products && changes.newSince) {
           const merged = mergeProductChanges(cachedProducts, changes.products);
           products = merged.sort((a, b) => a.name.localeCompare(b.name));
-          // Update cache with new timestamp and merged products
           localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: merged }));
-          // Update the last sync timestamp to the server's returned newSince
+          // ✅ Update timestamp with server's newSince
           lastSyncTimestamps[store] = changes.newSince;
           localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
           updateCategoryDropdown();
@@ -2300,12 +2300,12 @@ async function saveTelegramSettings() {
           hideLoading();
           return true;
         }
-        // If incremental sync fails (e.g., server error), fall back to full fetch
+        // If incremental sync fails (e.g., no newSince or error), fall through to full fetch
       }
     }
 
-    // 3. No valid cache or incremental failed – do a full fetch
-    let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}`;
+    // 3. No valid cache or incremental sync failed – full fetch
+    let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
     const response = await fetch(url);
     const result = await response.json();
     if (!result.success || !Array.isArray(result.products)) throw new Error('Invalid data');
@@ -2317,8 +2317,9 @@ async function saveTelegramSettings() {
       category: p.category || "Uncategorized"
     })).sort((a, b) => a.name.localeCompare(b.name));
     localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
-    // Reset last sync timestamp (full fetch)
-    lastSyncTimestamps[store] = null;
+    // ✅ After full fetch (fallback), set a valid ISO timestamp
+    const nowISO = new Date().toISOString();
+    lastSyncTimestamps[store] = nowISO;
     localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
     updateCategoryDropdown();
     renderProductGrid();
@@ -2331,6 +2332,7 @@ async function saveTelegramSettings() {
     return false;
   }
 }
+
 function mergeProductChanges(existingProducts, changes) {
   const map = new Map();
   existingProducts.forEach(p => map.set(p.id, p));

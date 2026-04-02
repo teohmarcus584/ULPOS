@@ -2213,7 +2213,7 @@ async function saveTelegramSettings() {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const { timestamp, products: cachedProducts } = JSON.parse(cached);
-       if (now - timestamp < 1 * 60 * 1000) {   // 1 minute stale
+      if (now - timestamp < 1 * 1000) {   // 1 second
           const empResponse = await fetch(`${APPS_SCRIPT_URL}?action=getEmployees`);
           const empResult = await empResponse.json();
           if (empResult.success) {
@@ -2314,7 +2314,7 @@ async function fetchProductsFromSheet(force = false) {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const { timestamp, products: cachedProducts } = JSON.parse(cached);
-        if (now - timestamp < 1 * 60 * 1000) {
+        if (now - timestamp < 1 * 1000) {   // 1 second
           products = cachedProducts;
           updateCategoryDropdown();
           renderProductGrid();

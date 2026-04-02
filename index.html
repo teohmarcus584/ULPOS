@@ -2277,7 +2277,7 @@ async function saveTelegramSettings() {
 
   // ==================== FETCH PRODUCTS ====================
 async function fetchProductsFromSheet(force = false) {
-  showLoading('Fetching products...');
+  
   let attempt = 0;
   const maxAttempts = force ? 1 : 2; // if not forced, try once normally, then once forced
 

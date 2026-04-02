@@ -1479,7 +1479,9 @@ let lowStockFilterActive = false;   // track filter state
   // New variables for preloaded report and settlement data
   let preloadedSettlementTotals = null;      // cache settlement totals for current store today
   let preloadedReportCache = null;            // { store, employeeId, from, to, totals, productDetails, chartData }
-
+let cachedEmployees = [];        // { id, name, pin, isAdmin }
+let employeesLastFetched = 0;
+const EMPLOYEE_CACHE_TTL = 1 * 60 * 1000; // 1 hour
   // ==================== NOTIFICATION & TELEGRAM VARIABLES ====================
   let notificationsSupported = false;
   let notificationsEnabled = false;
@@ -1656,7 +1658,40 @@ function toggleLowStockFilter() {
   function getEmployeeName(employeeId) {
     return employeeNameMap[employeeId] || employeeId;
   }
-
+async function loadAndCacheEmployees(force = false) {
+  const now = Date.now();
+  if (!force && cachedEmployees.length > 0 && (now - employeesLastFetched) < EMPLOYEE_CACHE_TTL) {
+    return cachedEmployees;
+  }
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=getEmployees`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      cachedEmployees = result.employees;
+      employeesLastFetched = now;
+      // Also store in localStorage for offline use
+      localStorage.setItem('cachedEmployees', JSON.stringify({
+        timestamp: now,
+        employees: cachedEmployees
+      }));
+      return cachedEmployees;
+    }
+  } catch (err) {
+    console.error('Failed to fetch employees:', err);
+    // Try to load from localStorage as fallback
+    const local = localStorage.getItem('cachedEmployees');
+    if (local) {
+      const { timestamp, employees } = JSON.parse(local);
+      if (now - timestamp < EMPLOYEE_CACHE_TTL) {
+        cachedEmployees = employees;
+        employeesLastFetched = timestamp;
+        return cachedEmployees;
+      }
+    }
+  }
+  return [];
+}
   // ==================== TELEGRAM FUNCTIONS ====================
 async function sendTelegramMessage(message) {
   if (!telegramAccounts) return false;
@@ -4208,7 +4243,7 @@ renderProductGrid();
     currentStore = initialStore;
     storeSelect.value = initialStore;
     document.getElementById('storeSelectModal').style.display = 'none';
-
+loadAndCacheEmployees().catch(console.warn);
     const preloaded = preloadedDataMap[initialStore];
     if (preloaded && preloaded.products && preloaded.products.length > 0) {
       products = preloaded.products;
@@ -4258,102 +4293,52 @@ renderProductGrid();
     }
   });
 
-  async function verifyEmployeeByPin(pin) {
-    showLoading('Verifying...');
-    try {
-      const url = `${APPS_SCRIPT_URL}?action=verifyByPin&pin=${encodeURIComponent(pin)}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) {
-        currentEmployee = result.employee;
-        document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
-        document.getElementById('loginModal').style.display = 'none';
-        document.getElementById('mainContent').style.display = 'block';
-
-        if (initialDataPromise) await initialDataPromise;
-        else await loadInitialData();
-
-        soldBySelectCart.value = currentEmployee.id;
-
-        const sideInventory = document.getElementById('sideInventoryBtn');
-        const sideCollection = document.getElementById('sideCollectionBtn');
-        if (currentEmployee.isAdmin) {
-          if (sideInventory) sideInventory.style.display = 'flex';
-          if (sideCollection) sideCollection.style.display = 'flex';
-          storeSelect.disabled = false;
-        } else {
-          if (sideInventory) sideInventory.style.display = 'none';
-          if (sideCollection) sideCollection.style.display = 'none';
-          storeSelect.disabled = true;
-        }
-
-        const systemTotalsDiv = document.getElementById('systemTotalsDisplay');
-        if (systemTotalsDiv) {
-          if (!currentEmployee.isAdmin) {
-            systemTotalsDiv.style.display = 'block';
-            const breakdownIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund'];
-            breakdownIds.forEach(id => {
-              const el = document.getElementById(id);
-              if (el && el.parentElement) el.parentElement.style.display = 'none';
-            });
-            const netTotalParent = document.getElementById('sysNetTotal')?.parentElement;
-            if (netTotalParent) netTotalParent.style.display = 'block';
-          } else {
-            systemTotalsDiv.style.display = 'block';
-            const allIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund', 'sysNetTotal'];
-            allIds.forEach(id => {
-              const el = document.getElementById(id);
-              if (el && el.parentElement) el.parentElement.style.display = 'block';
-            });
-          }
-        }
-
-        const reportStoreFilter = document.getElementById('reportStoreFilterGroup');
-        const employeeFilterGroup = document.getElementById('employeeFilterGroup');
-        const storeChartContainer = document.getElementById('storeChartContainer');
-        const employeeChartContainer = document.getElementById('employeeChartContainer');
-        if (currentEmployee.isAdmin) {
-          reportStoreFilter.style.display = 'flex';
-          employeeFilterGroup.style.display = 'flex';
-          storeChartContainer.style.display = 'block';
-          employeeChartContainer.style.display = 'block';
-        } else {
-          reportStoreFilter.style.display = 'none';
-          employeeFilterGroup.style.display = 'none';
-          storeChartContainer.style.display = 'none';
-          employeeChartContainer.style.display = 'none';
-        }
-
-        const settlementStoreSelect = document.getElementById('settlementStoreSelect');
-        if (!currentEmployee.isAdmin) {
-          settlementStoreSelect.value = initialStore;
-          settlementStoreSelect.disabled = true;
-        } else {
-          settlementStoreSelect.disabled = false;
-        }
-        startReceiptPolling();
-        updateCartUI();
-        checkNotificationSupport();
-        updateStockAlertButtonUI();
-
-        // Preload settlement and report data in background
-        preloadSettlement(); // fire and forget
-        preloadReport();     // fire and forget
-
-        return true;
-      } else {
-        document.getElementById('loginError').innerText = result.error || 'Invalid PIN';
-        return false;
-      }
-    } catch (err) {
-      console.error(err);
-      document.getElementById('loginError').innerText = 'Connection error';
-      return false;
-    } finally {
-      hideLoading();
-    }
+ async function verifyEmployeeByPin(pin) {
+  // 1. Try cache first
+  const cachedEmp = cachedEmployees.find(emp => emp.pin == pin);
+  if (cachedEmp) {
+    currentEmployee = cachedEmp;
+    document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
+    document.getElementById('loginModal').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    // Proceed with rest of login setup (load products, etc.)
+    await finishLoginAfterVerification();
+    return true;
   }
 
+  // 2. Cache miss – fallback to server
+  showLoading('Verifying...');
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=verifyByPin&pin=${encodeURIComponent(pin)}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      currentEmployee = result.employee;
+      // Add this employee to cache for next time
+      if (!cachedEmployees.find(e => e.id == currentEmployee.id)) {
+        cachedEmployees.push(currentEmployee);
+        localStorage.setItem('cachedEmployees', JSON.stringify({
+          timestamp: Date.now(),
+          employees: cachedEmployees
+        }));
+      }
+      document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
+      document.getElementById('loginModal').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'block';
+      await finishLoginAfterVerification();
+      return true;
+    } else {
+      document.getElementById('loginError').innerText = result.error || 'Invalid PIN';
+      return false;
+    }
+  } catch (err) {
+    console.error(err);
+    document.getElementById('loginError').innerText = 'Connection error';
+    return false;
+  } finally {
+    hideLoading();
+  }
+}
   const gridBtn = document.getElementById('gridViewBtn');
   const listBtn = document.getElementById('listViewBtn');
   if (gridBtn && listBtn) {
@@ -4444,7 +4429,89 @@ document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLo
   document.getElementById('saveTelegramSettingsBtn')?.addEventListener('click', saveTelegramSettings);
   document.getElementById('closeTelegramModal')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
   document.getElementById('closeTelegramModalBtn')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
+async function finishLoginAfterVerification() {
+  // Load initial data (products and employees) if not already loaded
+  if (initialDataPromise) await initialDataPromise;
+  else await loadInitialData();
 
+  // Set the sold-by select to current employee
+  soldBySelectCart.value = currentEmployee.id;
+
+  // Show/hide admin-only buttons and controls
+  const sideInventory = document.getElementById('sideInventoryBtn');
+  const sideCollection = document.getElementById('sideCollectionBtn');
+  if (currentEmployee.isAdmin) {
+    if (sideInventory) sideInventory.style.display = 'flex';
+    if (sideCollection) sideCollection.style.display = 'flex';
+    storeSelect.disabled = false;
+  } else {
+    if (sideInventory) sideInventory.style.display = 'none';
+    if (sideCollection) sideCollection.style.display = 'none';
+    storeSelect.disabled = true;
+  }
+
+  // Configure settlement totals display based on admin role
+  const systemTotalsDiv = document.getElementById('systemTotalsDisplay');
+  if (systemTotalsDiv) {
+    if (!currentEmployee.isAdmin) {
+      systemTotalsDiv.style.display = 'block';
+      const breakdownIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund'];
+      breakdownIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.parentElement) el.parentElement.style.display = 'none';
+      });
+      const netTotalParent = document.getElementById('sysNetTotal')?.parentElement;
+      if (netTotalParent) netTotalParent.style.display = 'block';
+    } else {
+      systemTotalsDiv.style.display = 'block';
+      const allIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund', 'sysNetTotal'];
+      allIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.parentElement) el.parentElement.style.display = 'block';
+      });
+    }
+  }
+
+  // Show/hide report filters and charts based on admin role
+  const reportStoreFilter = document.getElementById('reportStoreFilterGroup');
+  const employeeFilterGroup = document.getElementById('employeeFilterGroup');
+  const storeChartContainer = document.getElementById('storeChartContainer');
+  const employeeChartContainer = document.getElementById('employeeChartContainer');
+  if (currentEmployee.isAdmin) {
+    if (reportStoreFilter) reportStoreFilter.style.display = 'flex';
+    if (employeeFilterGroup) employeeFilterGroup.style.display = 'flex';
+    if (storeChartContainer) storeChartContainer.style.display = 'block';
+    if (employeeChartContainer) employeeChartContainer.style.display = 'block';
+  } else {
+    if (reportStoreFilter) reportStoreFilter.style.display = 'none';
+    if (employeeFilterGroup) employeeFilterGroup.style.display = 'none';
+    if (storeChartContainer) storeChartContainer.style.display = 'none';
+    if (employeeChartContainer) employeeChartContainer.style.display = 'none';
+  }
+
+  // Set settlement store select (disabled for non‑admin)
+  const settlementStoreSelect = document.getElementById('settlementStoreSelect');
+  if (!currentEmployee.isAdmin) {
+    if (settlementStoreSelect) {
+      settlementStoreSelect.value = initialStore;
+      settlementStoreSelect.disabled = true;
+    }
+  } else {
+    if (settlementStoreSelect) settlementStoreSelect.disabled = false;
+  }
+
+  // Start background polling for receipts and other tasks
+  startReceiptPolling();
+  updateCartUI();
+  checkNotificationSupport();
+  updateStockAlertButtonUI();
+  // ✅ ADD THESE TWO LINES HERE
+  loadPendingSales();
+  syncPendingSales();
+  // Preload settlement and report data in background
+  preloadSettlement();
+  preloadReport();
+}
   async function openReportsModal() {
     if (currentEmployee?.isAdmin) {
       const employees = await fetchEmployees();

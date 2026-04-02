@@ -2174,7 +2174,7 @@ async function saveTelegramSettings() {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const { timestamp, products: cachedProducts } = JSON.parse(cached);
-        if (now - timestamp < 5 * 60 * 1000) {
+       if (now - timestamp < 1 * 60 * 1000) {   // 1 minute stale
           const empResponse = await fetch(`${APPS_SCRIPT_URL}?action=getEmployees`);
           const empResult = await empResponse.json();
           if (empResult.success) {
@@ -2721,38 +2721,37 @@ function mergeProductChanges(existingProducts, changes) {
   }
 
   // ==================== CHECKOUT ====================
-  async function startCheckout() {
-    if (cart.length === 0) {
-      await showAlertModal('Empty Cart', 'No items to checkout.');
-      return;
-    }
-    showLoading('Refreshing stock data...');
-    const refreshed = await fetchProductsFromSheet(true);
-    hideLoading();
-    if (!refreshed) {
-      await showAlertModal('Error', 'Failed to refresh product data.');
-      return;
-    }
-    for (let item of cart) {
-      const originalProduct = products.find(p => p.id === item.product.id);
-      if (!originalProduct) {
-        await showAlertModal('Product Missing', `${item.product.name} no longer exists.`);
-        return;
-      }
-      if (originalProduct.stock < item.quantity) {
-        await showAlertModal('Stock Changed', `${item.product.name} stock is now only ${originalProduct.stock} units.`);
-        return;
-      }
-    }
-    let subtotal = 0;
-    for (let item of cart) {
-      const paidQty = item.quantity - item.freeQuantity;
-      subtotal += paidQty * item.product.price;
-    }
-    const totalAmount = subtotal - discountAmount - (buy2Free1Discount + buy3Free1Discount + customDiscount);
-    pendingTransaction = { totalAmount };
-    showPaymentModal(totalAmount);
+ async function startCheckout() {
+  if (cart.length === 0) {
+    await showAlertModal('Empty Cart', 'No items to checkout.');
+    return;
   }
+  // ❌ REMOVED: showLoading('Refreshing stock data...');
+  // ❌ REMOVED: const refreshed = await fetchProductsFromSheet(true);
+  // ❌ REMOVED: hideLoading();
+  // ❌ REMOVED: if (!refreshed) { ... }
+  
+  // ✅ Direct stock validation using current products (may be stale)
+  for (let item of cart) {
+    const originalProduct = products.find(p => p.id === item.product.id);
+    if (!originalProduct) {
+      await showAlertModal('Product Missing', `${item.product.name} no longer exists.`);
+      return;
+    }
+    if (originalProduct.stock < item.quantity) {
+      await showAlertModal('Stock Changed', `${item.product.name} stock is now only ${originalProduct.stock} units.`);
+      return;
+    }
+  }
+  let subtotal = 0;
+  for (let item of cart) {
+    const paidQty = item.quantity - item.freeQuantity;
+    subtotal += paidQty * item.product.price;
+  }
+  const totalAmount = subtotal - discountAmount - (buy2Free1Discount + buy3Free1Discount + customDiscount);
+  pendingTransaction = { totalAmount };
+  showPaymentModal(totalAmount);
+}
 
   function showPaymentModal(totalAmount) {
     const modal = document.getElementById('paymentModal');
@@ -2886,7 +2885,7 @@ function mergeProductChanges(existingProducts, changes) {
       document.getElementById('openLuckyDrawBtn').onclick = () => { openLuckyDraw(transactionId, customerIdForLuckyDraw); luckyModal.style.display = 'none'; };
       document.getElementById('closeLuckyDrawBtn').onclick = () => luckyModal.style.display = 'none';
       document.getElementById('closeLuckyDrawModal').onclick = () => luckyModal.style.display = 'none';
-      await fetchProductsFromSheet();
+     // await fetchProductsFromSheet();
       clearCart();
     } else {
       await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');

@@ -4259,7 +4259,7 @@ renderProductGrid();
     currentStore = initialStore;
     storeSelect.value = initialStore;
     document.getElementById('storeSelectModal').style.display = 'none';
-    await loadAndCacheEmployees();   // ✅ single call, awaited
+    loadAndCacheEmployees().catch(console.warn);
     const preloaded = preloadedDataMap[initialStore];
     if (preloaded && preloaded.products && preloaded.products.length > 0) {
       products = preloaded.products;

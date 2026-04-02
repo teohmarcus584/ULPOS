@@ -4068,21 +4068,37 @@ renderProductGrid();
     filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm));
   }
 
-  // 5. NEW: Apply low‑stock filter if toggle is active
+  // 5. Apply low‑stock filter if toggle is active
   if (lowStockFilterActive) {
     filtered = filtered.filter(p => p.stock < LOW_STOCK_THRESHOLD);
   }
 
-  // 6. If nothing matches, show a message
-  if (filtered.length === 0) {
-    productGridEl.innerHTML = '<div style="text-align:center; padding:20px;">No products found</div>';
+  // 6. NEW: If products array is empty (no data at all)
+  if (products.length === 0) {
+    productGridEl.innerHTML = `
+      <div style="text-align:center; padding:20px;">
+        ⏳ Loading products...<br>
+        <button id="retryLoadProductsBtn" style="margin-top:10px; padding:8px 16px; border-radius:40px; background:#3b82f6; color:white; border:none; cursor:pointer;">Retry</button>
+      </div>
+    `;
+    const retryBtn = document.getElementById('retryLoadProductsBtn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', async () => {
+        await fetchProductsFromSheet(true);
+      });
+    }
     return;
   }
 
-  // 7. Build HTML based on view mode and inventory mode
+  // 7. If nothing matches the current filters (but products exist)
+  if (filtered.length === 0) {
+    productGridEl.innerHTML = '<div style="text-align:center; padding:20px;">No products match your filters.</div>';
+    return;
+  }
+
+  // 8. Build HTML based on view mode and inventory mode
   let html = '';
   filtered.forEach(prod => {
-    // NEW: Determine if product should be highlighted (only in inventory mode)
     const isLowStock = prod.stock < LOW_STOCK_THRESHOLD;
     const lowStockClass = (inventoryMode && isLowStock) ? 'low-stock-card' : '';
 
@@ -4111,11 +4127,11 @@ renderProductGrid();
     }
   });
 
-  // 8. Insert into the DOM and set correct view mode class
+  // 9. Insert into the DOM and set correct view mode class
   productGridEl.innerHTML = html;
   productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
 
-  // 9. Attach event listeners (for buttons inside the product cards)
+  // 10. Attach event listeners for inventory or add‑to‑cart buttons
   if (inventoryMode) {
     document.querySelectorAll('.dec-stock').forEach(btn => {
       btn.addEventListener('click', (e) => {

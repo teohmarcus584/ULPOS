@@ -1549,7 +1549,11 @@ let lowStockFilterActive = false;   // track filter state
       closeBtn.addEventListener('click', onClose);
     });
   }
-
+let lastSyncTimestamps = {};
+try {
+  const stored = localStorage.getItem('lastSyncTimestamps');
+  if (stored) lastSyncTimestamps = JSON.parse(stored);
+} catch(e) { console.warn(e); }
 function toggleLowStockFilter() {
   lowStockFilterActive = !lowStockFilterActive;
   const btn = document.getElementById('lowStockToggleBtn');
@@ -2230,79 +2234,121 @@ async function saveTelegramSettings() {
   }
 }
 
-     initialDataPromise = loadInitialData();
+    
 
   // ==================== FETCH PRODUCTS ====================
-  async function fetchProductsFromSheet(force = false) {
-    showLoading('Fetching products...');
-    try {
-      const currentCategory = categorySelect ? categorySelect.value : 'all';
-      const cacheKey = `products_${currentStore}`;
-      const now = Date.now();
+ async function fetchProductsFromSheet(force = false) {
+  showLoading('Fetching products...');
+  try {
+    const store = currentStore;
+    const cacheKey = `products_${store}`;
+    const now = Date.now();
 
-      if (!force) {
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-          const { timestamp, products: cachedProducts } = JSON.parse(cached);
-          if (now - timestamp < 5 * 60 * 1000) {
-            products = cachedProducts;
-            const categories = [...new Set(products.map(p => p.category))].sort();
-            categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
-            categories.forEach(cat => {
-              const option = document.createElement('option');
-              option.value = cat;
-              option.textContent = cat;
-              categorySelect.appendChild(option);
-            });
-            if (categories.includes(currentCategory)) categorySelect.value = currentCategory;
-            else categorySelect.value = 'all';
-            renderProductGrid();
-            hideLoading();
-            return true;
-          }
-        }
-      }
-
-      let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${currentStore}`;
-      if (force) url += `&_=${now}`;
-
+    // 1. If forced, do a full fetch and reset timestamp
+    if (force) {
+      let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
       const response = await fetch(url);
       const result = await response.json();
-
-      if (result.success && Array.isArray(result.products)) {
-        products = result.products.map(p => ({
-          id: p.id,
-          name: p.name,
-          price: parseFloat(p.price),
-          stock: parseInt(p.stock) || 0,
-          category: p.category || "Uncategorized"
-        })).sort((a, b) => a.name.localeCompare(b.name));
-
-        const categories = [...new Set(products.map(p => p.category))].sort();
-        categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
-        categories.forEach(cat => {
-          const option = document.createElement('option');
-          option.value = cat;
-          option.textContent = cat;
-          categorySelect.appendChild(option);
-        });
-        if (categories.includes(currentCategory)) categorySelect.value = currentCategory;
-        else categorySelect.value = 'all';
-
-        renderProductGrid();
-        localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
-        return true;
-      } else {
-        throw new Error('Invalid data format');
-      }
-    } catch (err) {
-      console.error(err);
-      await showAlertModal('Error', 'Failed to load products. Check URL & sheet.');
-      return false;
-    } finally {
+      if (!result.success || !Array.isArray(result.products)) throw new Error('Invalid data');
+      products = result.products.map(p => ({
+        id: p.id,
+        name: p.name,
+        price: parseFloat(p.price),
+        stock: parseInt(p.stock) || 0,
+        category: p.category || "Uncategorized"
+      })).sort((a, b) => a.name.localeCompare(b.name));
+      localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
+      // Reset last sync timestamp for this store (full fetch)
+      lastSyncTimestamps[store] = new Date(now).toISOString();
+      localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
+      updateCategoryDropdown();
+      renderProductGrid();
       hideLoading();
+      return true;
+    }
+
+    // 2. Check local cache
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const { timestamp, products: cachedProducts } = JSON.parse(cached);
+      // Cache is still fresh (less than 5 minutes) – use it directly
+      if (now - timestamp < 5 * 60 * 1000) {
+        products = cachedProducts;
+        updateCategoryDropdown();
+        renderProductGrid();
+        hideLoading();
+        return true;
+      }
+
+      // Cache is stale – try incremental sync
+      const lastSync = lastSyncTimestamps[store];
+      if (lastSync) {
+        const changesUrl = `${APPS_SCRIPT_URL}?action=getProductChanges&store=${store}&since=${encodeURIComponent(lastSync)}&_=${now}`;
+        const changesResponse = await fetch(changesUrl);
+        const changes = await changesResponse.json();
+        if (changes.success && changes.products) {
+          // Merge changes into cached products
+          const merged = mergeProductChanges(cachedProducts, changes.products);
+          products = merged.sort((a, b) => a.name.localeCompare(b.name));
+          // Update cache with new timestamp and merged products
+          localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: merged }));
+          // Update the last sync timestamp to the server's returned newSince
+          lastSyncTimestamps[store] = changes.newSince;
+          localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
+          updateCategoryDropdown();
+          renderProductGrid();
+          hideLoading();
+          return true;
+        }
+        // If incremental sync fails (e.g., server error), fall back to full fetch
+      }
+    }
+
+    // 3. No valid cache or incremental failed – do a full fetch
+    let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (!result.success || !Array.isArray(result.products)) throw new Error('Invalid data');
+    products = result.products.map(p => ({
+      id: p.id,
+      name: p.name,
+      price: parseFloat(p.price),
+      stock: parseInt(p.stock) || 0,
+      category: p.category || "Uncategorized"
+    })).sort((a, b) => a.name.localeCompare(b.name));
+    localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
+    // Reset last sync timestamp (full fetch)
+    lastSyncTimestamps[store] = null;
+    localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
+    updateCategoryDropdown();
+    renderProductGrid();
+    hideLoading();
+    return true;
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Error', 'Failed to load products. Check URL & sheet.');
+    hideLoading();
+    return false;
+  }
+}
+function mergeProductChanges(existingProducts, changes) {
+  const map = new Map();
+  existingProducts.forEach(p => map.set(p.id, p));
+  for (const change of changes) {
+    if (change.deleted) {
+      map.delete(change.id);
+    } else {
+      map.set(change.id, {
+        id: change.id,
+        name: change.name,
+        price: parseFloat(change.price),
+        stock: parseInt(change.stock) || 0,
+        category: change.category || "Uncategorized"
+      });
     }
   }
+  return Array.from(map.values());
+}
 
   // ==================== STOCK UPDATE ====================
   async function updateStockOnServer(productId, newStock) {
@@ -4684,7 +4730,19 @@ document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLo
     renderProductGrid();
   });
   document.getElementById('closeLoginModal')?.addEventListener('click', () => {});
-
+function updateCategoryDropdown() {
+  const categories = [...new Set(products.map(p => p.category))].sort();
+  categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
+  categories.forEach(cat => {
+    const option = document.createElement('option');
+    option.value = cat;
+    option.textContent = cat;
+    categorySelect.appendChild(option);
+  });
+  const currentCategory = categorySelect.value;
+  if (categories.includes(currentCategory)) categorySelect.value = currentCategory;
+  else categorySelect.value = 'all';
+}
   async function fetchEmployees() {
     try {
       const response = await fetch(`${APPS_SCRIPT_URL}?action=getEmployees`);

@@ -4243,7 +4243,7 @@ renderProductGrid();
     currentStore = initialStore;
     storeSelect.value = initialStore;
     document.getElementById('storeSelectModal').style.display = 'none';
-  await loadAndCacheEmployees();   // ✅ wait for cache to be ready
+await loadAndCacheEmployees();   // ✅ now allowed
     const preloaded = preloadedDataMap[initialStore];
     if (preloaded && preloaded.products && preloaded.products.length > 0) {
       products = preloaded.products;

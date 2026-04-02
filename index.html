@@ -2451,7 +2451,7 @@ async function syncPendingSales() {
   if (!navigator.onLine) return;
   if (pendingSales.length === 0) return;
 
-  showLoading(`Syncing ${pendingSales.length} pending sale(s)...`);
+  
   const failed = [];
   for (const sale of pendingSales) {
     const success = await saveTransactionToSheet(sale);

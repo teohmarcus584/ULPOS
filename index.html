@@ -2854,10 +2854,14 @@ function mergeProductChanges(existingProducts, changes) {
           const newStock = oldStock - item.quantity;
           product.stock = newStock;
           checkAndNotifyOutOfStock(product.id, product.name, newStock);
-          const stockSpan = document.querySelector(`.stock-display[data-id="${product.id}"]`);
-          if (stockSpan) stockSpan.innerText = newStock;
+        //  const stockSpan = document.querySelector(`.stock-display[data-id="${product.id}"]`);
+        //  if (stockSpan) stockSpan.innerText = newStock;
         }
       }
+       localStorage.setItem(`products_${currentStore}`, JSON.stringify({
+    timestamp: Date.now(),
+    products: products
+  }));
 renderProductGrid();
      if (selectedCustomer && selectedCustomer.id) {
   const POINTS_PER_RM = 1;  // Set this to the same value as in your backend
@@ -2871,7 +2875,7 @@ renderProductGrid();
         await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
         pendingPrize = null;
       }
-      localStorage.removeItem(`products_${currentStore}`);
+    //  localStorage.removeItem(`products_${currentStore}`);
       if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
         const transactionWithName = { ...transaction, employee_name: currentEmployee.name };
         await window.printerAPI.printReceipt(transactionWithName);

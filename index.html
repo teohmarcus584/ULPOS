@@ -1450,7 +1450,7 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyFsoYo58RLaPvgrCA-h6f4ZNRlERTjBx8p1n3icOBivFggrhVotDGOoAbFCtUkvpFE/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxsNSuj6T3N5Yre-5xSS6tp8-u2wAsGoHcAE6gDdiBSzfXfw8k5pPljaSwXaHj0lPhqdg/exec"; // REPLACE WITH YOUR URL
 
   // ==================== GLOBAL VARIABLES ====================
   let products = [];
@@ -4550,6 +4550,22 @@ async function finishLoginAfterVerification() {
     }
   }, 5000); // 5 seconds – adjust as needed
 }
+async function fetchEmployees() {
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=getEmployees`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      return result.employees;
+    } else {
+      console.error('Failed to fetch employees:', result.error);
+      return [];
+    }
+  } catch (err) {
+    console.error('Error fetching employees:', err);
+    return [];
+  }
+}
   async function openReportsModal() {
     if (currentEmployee?.isAdmin) {
       const employees = await fetchEmployees();
@@ -4924,12 +4940,17 @@ function updateCategoryDropdown() {
 
   function updateReceipts() {
     let store;
-    if (currentEmployee?.isAdmin) {
-      const receiptsStore = document.getElementById('receiptsStoreSelect');
-if (receiptsStore) receiptsStore.disabled = false;
-    } else {
-      store = currentStore;
-    }
+   if (currentEmployee?.isAdmin) {
+  const receiptsStore = document.getElementById('receiptsStoreSelect');
+  if (receiptsStore) {
+    receiptsStore.disabled = false;
+    store = receiptsStore.value;
+  } else {
+    store = 'all';
+  }
+} else {
+  store = currentStore;
+}
     let employeeId = 'all';
     if (currentEmployee?.isAdmin) {
       const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');

@@ -2384,7 +2384,47 @@ function mergeProductChanges(existingProducts, changes) {
       updateStockOnServer(productId, newStock);
     }, 500);
   }
+let pendingSales = [];
 
+// Load pending sales from localStorage on startup
+function loadPendingSales() {
+  const stored = localStorage.getItem('pendingSales');
+  if (stored) pendingSales = JSON.parse(stored);
+}
+
+// Save a sale to the queue
+function queueSale(transaction) {
+  pendingSales.push(transaction);
+  localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
+  // Try to sync immediately (if online)
+  syncPendingSales();
+}
+
+// Attempt to send all pending sales
+async function syncPendingSales() {
+  if (!navigator.onLine) return;
+  if (pendingSales.length === 0) return;
+
+  showLoading(`Syncing ${pendingSales.length} pending sale(s)...`);
+  const failed = [];
+  for (const sale of pendingSales) {
+    const success = await saveTransactionToSheet(sale);
+    if (!success) failed.push(sale);
+  }
+  if (failed.length === 0) {
+    pendingSales = [];
+    localStorage.removeItem('pendingSales');
+    showAlertModal('Sync Complete', 'All pending sales recorded.');
+  } else {
+    pendingSales = failed;
+    localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
+    showAlertModal('Sync Partial', `${failed.length} sale(s) failed. Will retry later.`);
+  }
+  hideLoading();
+}
+
+// Listen for online events
+window.addEventListener('online', syncPendingSales);
   // ==================== CART FUNCTIONS ====================
   function updateCartUI() {
     if (!cartContainer) return;
@@ -2816,7 +2856,7 @@ function mergeProductChanges(existingProducts, changes) {
     document.getElementById('closePaymentModal').onclick = () => modal.style.display = 'none';
   }
 
-  async function completeCheckout(paymentMethod, cashReceived) {
+ async function completeCheckout(paymentMethod, cashReceived) {
     document.getElementById('paymentModal').style.display = 'none';
     const totalAmount = pendingTransaction.totalAmount;
     const transactionId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;

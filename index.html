@@ -4882,6 +4882,9 @@ async function finishLoginAfterVerification() {
   });
   document.getElementById('closeLoginModal')?.addEventListener('click', () => {});
 function updateCategoryDropdown() {
+  // Store the currently selected category BEFORE modifying the dropdown
+  const previousCategory = categorySelect.value;
+  
   const categories = [...new Set(products.map(p => p.category))].sort();
   categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
   categories.forEach(cat => {
@@ -4890,20 +4893,14 @@ function updateCategoryDropdown() {
     option.textContent = cat;
     categorySelect.appendChild(option);
   });
-  const currentCategory = categorySelect.value;
-  if (categories.includes(currentCategory)) categorySelect.value = currentCategory;
-  else categorySelect.value = 'all';
-}
-  async function fetchEmployees() {
-    try {
-      const response = await fetch(`${APPS_SCRIPT_URL}?action=getEmployees`);
-      const result = await response.json();
-      return result.success ? result.employees : [];
-    } catch (err) {
-      console.error(err);
-      return [];
-    }
+  
+  // Restore previous selection if it still exists, otherwise default to "all"
+  if (categories.includes(previousCategory)) {
+    categorySelect.value = previousCategory;
+  } else {
+    categorySelect.value = 'all';
   }
+}
 
   function populateStoreSelects() {
     const stores = Array.from(storeSelect.options).map(opt => ({ value: opt.value, text: opt.text }));

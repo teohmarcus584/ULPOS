@@ -2274,13 +2274,70 @@ async function saveTelegramSettings() {
   // ==================== FETCH PRODUCTS ====================
 async function fetchProductsFromSheet(force = false) {
   showLoading('Fetching products...');
-  try {
-    const store = currentStore;
-    const cacheKey = `products_${store}`;
-    const now = Date.now();
+  let attempt = 0;
+  const maxAttempts = force ? 1 : 2; // if not forced, try once normally, then once forced
 
-    // 1. Forced full fetch
-    if (force) {
+  while (attempt < maxAttempts) {
+    try {
+      const store = currentStore;
+      const cacheKey = `products_${store}`;
+      const now = Date.now();
+
+      // 1. Forced full fetch
+      if (force || attempt === 1) {
+        let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
+        const response = await fetch(url);
+        const result = await response.json();
+        if (!result.success || !Array.isArray(result.products)) throw new Error('Invalid data');
+        products = result.products.map(p => ({
+          id: p.id,
+          name: p.name,
+          price: parseFloat(p.price),
+          stock: parseInt(p.stock) || 0,
+          category: p.category || "Uncategorized"
+        })).sort((a, b) => a.name.localeCompare(b.name));
+        localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
+        const nowISO = new Date().toISOString();
+        lastSyncTimestamps[store] = nowISO;
+        localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
+        updateCategoryDropdown();
+        renderProductGrid();
+        hideLoading();
+        return true;
+      }
+
+      // 2. Normal path (cache + incremental sync)
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const { timestamp, products: cachedProducts } = JSON.parse(cached);
+        if (now - timestamp < 1 * 60 * 1000) {
+          products = cachedProducts;
+          updateCategoryDropdown();
+          renderProductGrid();
+          hideLoading();
+          return true;
+        }
+
+        const lastSync = lastSyncTimestamps[store];
+        if (lastSync) {
+          const changesUrl = `${APPS_SCRIPT_URL}?action=getProductChanges&store=${store}&since=${encodeURIComponent(lastSync)}&_=${now}`;
+          const changesResponse = await fetch(changesUrl);
+          const changes = await changesResponse.json();
+          if (changes.success && changes.products && changes.newSince) {
+            const merged = mergeProductChanges(cachedProducts, changes.products);
+            products = merged.sort((a, b) => a.name.localeCompare(b.name));
+            localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: merged }));
+            lastSyncTimestamps[store] = changes.newSince;
+            localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
+            updateCategoryDropdown();
+            renderProductGrid();
+            hideLoading();
+            return true;
+          }
+        }
+      }
+
+      // 3. No valid cache or incremental failed – full fetch
       let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
       const response = await fetch(url);
       const result = await response.json();
@@ -2293,7 +2350,6 @@ async function fetchProductsFromSheet(force = false) {
         category: p.category || "Uncategorized"
       })).sort((a, b) => a.name.localeCompare(b.name));
       localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
-      // ✅ Set a valid timestamp after full fetch
       const nowISO = new Date().toISOString();
       lastSyncTimestamps[store] = nowISO;
       localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
@@ -2301,71 +2357,22 @@ async function fetchProductsFromSheet(force = false) {
       renderProductGrid();
       hideLoading();
       return true;
-    }
 
-    // 2. Check local cache
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      const { timestamp, products: cachedProducts } = JSON.parse(cached);
-      // Cache is fresh (less than 5 minutes)
-      if (now - timestamp < 1 * 60 * 1000) {
-        products = cachedProducts;
-        updateCategoryDropdown();
-        renderProductGrid();
-        hideLoading();
-        return true;
+    } catch (err) {
+      console.error(`Attempt ${attempt + 1} failed:`, err);
+      if (attempt === 0 && !force) {
+        // First attempt failed – retry with forced fetch
+        attempt++;
+        force = true; // force the next attempt
+        continue;
       }
-
-      // Cache stale – try incremental sync
-      const lastSync = lastSyncTimestamps[store];
-      if (lastSync) {
-        const changesUrl = `${APPS_SCRIPT_URL}?action=getProductChanges&store=${store}&since=${encodeURIComponent(lastSync)}&_=${now}`;
-        const changesResponse = await fetch(changesUrl);
-        const changes = await changesResponse.json();
-        // ✅ Check that server returned both products and a newSince
-        if (changes.success && changes.products && changes.newSince) {
-          const merged = mergeProductChanges(cachedProducts, changes.products);
-          products = merged.sort((a, b) => a.name.localeCompare(b.name));
-          localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: merged }));
-          // ✅ Update timestamp with server's newSince
-          lastSyncTimestamps[store] = changes.newSince;
-          localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
-          updateCategoryDropdown();
-          renderProductGrid();
-          hideLoading();
-          return true;
-        }
-        // If incremental sync fails (e.g., no newSince or error), fall through to full fetch
-      }
+      // Both attempts failed
+      await showAlertModal('Error', 'Failed to load products. Check URL & sheet.');
+      hideLoading();
+      return false;
     }
-
-    // 3. No valid cache or incremental sync failed – full fetch
-    let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
-    const response = await fetch(url);
-    const result = await response.json();
-    if (!result.success || !Array.isArray(result.products)) throw new Error('Invalid data');
-    products = result.products.map(p => ({
-      id: p.id,
-      name: p.name,
-      price: parseFloat(p.price),
-      stock: parseInt(p.stock) || 0,
-      category: p.category || "Uncategorized"
-    })).sort((a, b) => a.name.localeCompare(b.name));
-    localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
-    // ✅ After full fetch (fallback), set a valid ISO timestamp
-    const nowISO = new Date().toISOString();
-    lastSyncTimestamps[store] = nowISO;
-    localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
-    updateCategoryDropdown();
-    renderProductGrid();
-    hideLoading();
-    return true;
-  } catch (err) {
-    console.error(err);
-    await showAlertModal('Error', 'Failed to load products. Check URL & sheet.');
-    hideLoading();
-    return false;
   }
+  return false;
 }
 
 function mergeProductChanges(existingProducts, changes) {

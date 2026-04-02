@@ -3295,66 +3295,67 @@ renderProductGrid();
     if (!silent) hideLoading();
   }
 }
-  async function fetchSalesChartData(store, employeeId, from, to) {
-    try {
-      let url = `${APPS_SCRIPT_URL}?action=getSalesChartData&store=${store}&employeeId=${employeeId}`;
-      if (from) url += `&from=${encodeURIComponent(from)}`;
-      if (to) url += `&to=${encodeURIComponent(to)}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-        if (currentEmployee.isAdmin && result.salesByStore) {
-          const storeCanvas = document.getElementById('storeChart');
-          if (storeCanvas) {
-            if (window.storeChart && typeof window.storeChart.destroy === 'function') window.storeChart.destroy();
-            const storeLabels = result.salesByStore.labels || [];
-            const storeData = result.salesByStore.data || [];
-            if (storeLabels.length > 0) {
-              storeCanvas.style.display = 'block';
-              const ctx = storeCanvas.getContext('2d');
-              window.storeChart = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: storeLabels, datasets: [{ label: 'Sales (RM)', data: storeData, backgroundColor: 'rgba(54,162,235,0.6)', borderColor: 'rgba(54,162,235,1)', borderWidth: 1 }] },
-                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
-              });
-            } else {
-              storeCanvas.style.display = 'none';
-            }
-          }
-        }
-        const dayCanvas = document.getElementById('dayChart');
-        if (dayCanvas) {
-          if (window.dayChart && typeof window.dayChart.destroy === 'function') window.dayChart.destroy();
-          let labels, data, chartTitle;
-          if (result.type === 'hourly') {
-            labels = result.hourly.labels;
-            data = result.hourly.data;
-            chartTitle = 'Hourly Sales (RM)';
-          } else {
-            labels = result.salesByDay?.labels || [];
-            data = result.salesByDay?.data || [];
-            chartTitle = 'Sales by Day (RM)';
-          }
-          if (labels.length > 0) {
-            dayCanvas.style.display = 'block';
-            const ctx = dayCanvas.getContext('2d');
-            window.dayChart = new Chart(ctx, {
+ async function fetchSalesChartData(store, employeeId, from, to) {
+  try {
+    let url = `${APPS_SCRIPT_URL}?action=getSalesChartData&store=${store}&employeeId=${employeeId}`;
+    if (from) url += `&from=${encodeURIComponent(from)}`;
+    if (to) url += `&to=${encodeURIComponent(to)}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      // ✅ Guard: only try to render store chart if currentEmployee exists and is admin
+      if (currentEmployee && currentEmployee.isAdmin && result.salesByStore) {
+        const storeCanvas = document.getElementById('storeChart');
+        if (storeCanvas) {
+          if (window.storeChart && typeof window.storeChart.destroy === 'function') window.storeChart.destroy();
+          const storeLabels = result.salesByStore.labels || [];
+          const storeData = result.salesByStore.data || [];
+          if (storeLabels.length > 0) {
+            storeCanvas.style.display = 'block';
+            const ctx = storeCanvas.getContext('2d');
+            window.storeChart = new Chart(ctx, {
               type: 'bar',
-              data: { labels: labels, datasets: [{ label: chartTitle, data: data, backgroundColor: 'rgba(75,192,192,0.6)', borderColor: 'rgba(75,192,192,1)', borderWidth: 1 }] },
+              data: { labels: storeLabels, datasets: [{ label: 'Sales (RM)', data: storeData, backgroundColor: 'rgba(54,162,235,0.6)', borderColor: 'rgba(54,162,235,1)', borderWidth: 1 }] },
               options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
             });
           } else {
-            dayCanvas.style.display = 'none';
+            storeCanvas.style.display = 'none';
           }
         }
-      } else {
-        console.error('Chart data error:', result);
       }
-    } catch (err) {
-      console.error('fetchSalesChartData error:', err);
+      const dayCanvas = document.getElementById('dayChart');
+      if (dayCanvas) {
+        if (window.dayChart && typeof window.dayChart.destroy === 'function') window.dayChart.destroy();
+        let labels, data, chartTitle;
+        if (result.type === 'hourly') {
+          labels = result.hourly.labels;
+          data = result.hourly.data;
+          chartTitle = 'Hourly Sales (RM)';
+        } else {
+          labels = result.salesByDay?.labels || [];
+          data = result.salesByDay?.data || [];
+          chartTitle = 'Sales by Day (RM)';
+        }
+        if (labels.length > 0) {
+          dayCanvas.style.display = 'block';
+          const ctx = dayCanvas.getContext('2d');
+          window.dayChart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ label: chartTitle, data: data, backgroundColor: 'rgba(75,192,192,0.6)', borderColor: 'rgba(75,192,192,1)', borderWidth: 1 }] },
+            options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
+          });
+        } else {
+          dayCanvas.style.display = 'none';
+        }
+      }
+    } else {
+      console.error('Chart data error:', result);
     }
+  } catch (err) {
+    console.error('fetchSalesChartData error:', err);
   }
+}
 
   async function fetchEmployeeSalesData(store, from, to) {
     try {
@@ -4206,6 +4207,7 @@ renderProductGrid();
   }
 
   async function preloadReport() {
+  if (!currentEmployee) return;   // safety guard
   try {
     // Default filters: today, current store, employee 'all' (if admin) or current employee
     const todayStr = getLocalDateString(new Date());
@@ -4257,7 +4259,7 @@ renderProductGrid();
     currentStore = initialStore;
     storeSelect.value = initialStore;
     document.getElementById('storeSelectModal').style.display = 'none';
-    loadAndCacheEmployees().catch(console.warn); 
+    await loadAndCacheEmployees();   // ✅ single call, awaited
     const preloaded = preloadedDataMap[initialStore];
     if (preloaded && preloaded.products && preloaded.products.length > 0) {
       products = preloaded.products;

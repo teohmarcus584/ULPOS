@@ -2200,86 +2200,37 @@ async function saveTelegramSettings() {
   }
 
   // ==================== INITIAL DATA LOAD ====================
-  async function loadInitialData() {
-    try {
-      if (preloadedDataMap[currentStore] && preloadedDataMap[currentStore].products) {
-        products = preloadedDataMap[currentStore].products.map(p => ({
-          id: p.id,
-          name: p.name,
-          price: parseFloat(p.price),
-          stock: parseInt(p.stock) || 0,
-          category: p.category || "Uncategorized"
-        })).sort((a, b) => a.name.localeCompare(b.name));
+ async function loadInitialData() {
+  try {
+    // Directly fetch products from the sheet (uses caching internally)
+    const success = await fetchProductsFromSheet();
+    if (!success) throw new Error('Failed to load products');
 
-        const categories = [...new Set(products.map(p => p.category))].sort();
-        categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
-        categories.forEach(cat => {
-          const option = document.createElement('option');
-          option.value = cat;
-          option.textContent = cat;
-          categorySelect.appendChild(option);
-        });
-        renderProductGrid();
-
-        employeeNameMap = {};
-        const employees = preloadedDataMap[currentStore].employees;
-        soldBySelectCart.innerHTML = '';
-        employees.forEach(emp => {
-          employeeNameMap[emp.id] = emp.name;
-          const option = document.createElement('option');
-          option.value = emp.id;
-          option.textContent = `${emp.name} (ID: ${emp.id})`;
-          if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
-          soldBySelectCart.appendChild(option);
-        });
-        return true;
-      }
-
-      const url = `${APPS_SCRIPT_URL}?action=getInitialData&store=${currentStore}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) {
-        products = result.products.map(p => ({
-          id: p.id,
-          name: p.name,
-          price: parseFloat(p.price),
-          stock: parseInt(p.stock) || 0,
-          category: p.category || "Uncategorized"
-        })).sort((a, b) => a.name.localeCompare(b.name));
-
-        const categories = [...new Set(products.map(p => p.category))].sort();
-        categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
-        categories.forEach(cat => {
-          const option = document.createElement('option');
-          option.value = cat;
-          option.textContent = cat;
-          categorySelect.appendChild(option);
-        });
-        renderProductGrid();
-
-        employeeNameMap = {};
-        const employees = result.employees;
-        soldBySelectCart.innerHTML = '';
-        employees.forEach(emp => {
-          employeeNameMap[emp.id] = emp.name;
-          const option = document.createElement('option');
-          option.value = emp.id;
-          option.textContent = `${emp.name} (ID: ${emp.id})`;
-          if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
-          soldBySelectCart.appendChild(option);
-        });
-        return true;
-      } else {
-        throw new Error('Failed to load initial data');
-      }
-    } catch (err) {
-      console.error(err);
-      await showAlertModal('Error', 'Failed to load initial data. Check URL & sheet.');
-      return false;
-    } finally {
-      hideLoading();
+    // Now load employees
+    const url = `${APPS_SCRIPT_URL}?action=getEmployees`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      employeeNameMap = {};
+      soldBySelectCart.innerHTML = '';
+      result.employees.forEach(emp => {
+        employeeNameMap[emp.id] = emp.name;
+        const option = document.createElement('option');
+        option.value = emp.id;
+        option.textContent = `${emp.name} (ID: ${emp.id})`;
+        if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
+        soldBySelectCart.appendChild(option);
+      });
     }
+    return true;
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Error', 'Failed to load initial data. Check URL & sheet.');
+    return false;
   }
+}
+
+     initialDataPromise = loadInitialData();
 
   // ==================== FETCH PRODUCTS ====================
   async function fetchProductsFromSheet(force = false) {
@@ -4994,11 +4945,7 @@ document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLo
     }
   })();
 
-  const allStores = ["queens", "sunshine", "gurney_paragon"];
-  allStores.forEach(store => preloadProductsForStore(store));
-
-  // ==================== START BACKGROUND PRELOAD ON PAGE LOAD ====================
-  preloadAllStoresData();
+  
 </script>
 </body>
 </html>

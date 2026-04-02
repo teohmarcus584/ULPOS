@@ -3705,9 +3705,9 @@ renderProductGrid();
     }
   }
 
-  async function refreshSettlementTotals(store) {
-    const todayStr = getLocalDateString(new Date());
-    const report = await fetchSalesReport(store, 'all', todayStr, todayStr, true);
+ async function refreshSettlementTotals(store, silent = false) {
+  const todayStr = getLocalDateString(new Date());
+  const report = await fetchSalesReport(store, 'all', todayStr, todayStr, true, silent);
     if (report) {
       currentSettlementTotals = {
         cash: report.cashTotal,
@@ -4204,19 +4204,18 @@ renderProductGrid();
   }
 
   // ==================== PRELOAD SETTLEMENT AND REPORT AFTER LOGIN ====================
-  async function preloadSettlement() {
-    try {
-      const store = currentStore;
-      const todayStr = getLocalDateString(new Date());
-      const alreadySettled = await checkSettlementStatus(store, todayStr);
-      if (!alreadySettled) {
-        await refreshSettlementTotals(store);
-      }
-    } catch (err) {
-      console.error('Preload settlement failed:', err);
+ async function preloadSettlement() {
+  try {
+    const store = currentStore;
+    const todayStr = getLocalDateString(new Date());
+    const alreadySettled = await checkSettlementStatus(store, todayStr);
+    if (!alreadySettled) {
+      await refreshSettlementTotals(store, true);   // ✅ silent preload
     }
+  } catch (err) {
+    console.error('Preload settlement failed:', err);
   }
-
+}
   async function preloadReport() {
   if (!currentEmployee) return;   // safety guard
   try {

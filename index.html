@@ -2984,7 +2984,7 @@ renderProductGrid();
   }
 
   async function saveTransactionToSheet(transaction) {
-    showLoading('Recording sale...');
+    
     try {
       const selectedEmployeeId = soldBySelectCart.value;
       const employeeIdForRecord = selectedEmployeeId || currentEmployee.id;

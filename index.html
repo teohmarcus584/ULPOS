@@ -4455,6 +4455,9 @@ document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLo
   document.getElementById('closeTelegramModal')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
   document.getElementById('closeTelegramModalBtn')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
 async function finishLoginAfterVerification() {
+  // Clear any existing auto-sync interval to avoid duplicates
+  if (window.autoSyncInterval) clearInterval(window.autoSyncInterval);
+
   // Load initial data (products and employees) if not already loaded
   if (initialDataPromise) await initialDataPromise;
   else await loadInitialData();
@@ -4530,12 +4533,22 @@ async function finishLoginAfterVerification() {
   updateCartUI();
   checkNotificationSupport();
   updateStockAlertButtonUI();
-  // ✅ ADD THESE TWO LINES HERE
+
+  // Load any pending sales from previous sessions and try to sync them
   loadPendingSales();
   syncPendingSales();
-  // Preload settlement and report data in background
+
+  // Preload settlement and report data in background (silent)
   preloadSettlement();
   preloadReport();
+
+  // ========== AUTO-SYNC PRODUCTS EVERY 5 SECONDS ==========
+  window.autoSyncInterval = setInterval(async () => {
+    // Only sync if the main dashboard is visible and user is logged in
+    if (currentEmployee && document.getElementById('mainContent').style.display === 'block') {
+      await fetchProductsFromSheet(false); // silent background sync
+    }
+  }, 5000); // 5 seconds – adjust as needed
 }
   async function openReportsModal() {
     if (currentEmployee?.isAdmin) {

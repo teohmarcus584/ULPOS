@@ -2278,70 +2278,13 @@ async function saveTelegramSettings() {
   // ==================== FETCH PRODUCTS ====================
 async function fetchProductsFromSheet(force = false) {
   showLoading('Fetching products...');
-  let attempt = 0;
-  const maxAttempts = force ? 1 : 2; // if not forced, try once normally, then once forced
+  try {
+    const store = currentStore;
+    const cacheKey = `products_${store}`;
+    const now = Date.now();
 
-  while (attempt < maxAttempts) {
-    try {
-      const store = currentStore;
-      const cacheKey = `products_${store}`;
-      const now = Date.now();
-
-      // 1. Forced full fetch
-      if (force || attempt === 1) {
-        let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
-        const response = await fetch(url);
-        const result = await response.json();
-        if (!result.success || !Array.isArray(result.products)) throw new Error('Invalid data');
-        products = result.products.map(p => ({
-          id: p.id,
-          name: p.name,
-          price: parseFloat(p.price),
-          stock: parseInt(p.stock) || 0,
-          category: p.category || "Uncategorized"
-        })).sort((a, b) => a.name.localeCompare(b.name));
-        localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
-        const nowISO = new Date().toISOString();
-        lastSyncTimestamps[store] = nowISO;
-        localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
-        updateCategoryDropdown();
-        renderProductGrid();
-        hideLoading();
-        return true;
-      }
-
-      // 2. Normal path (cache + incremental sync)
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        const { timestamp, products: cachedProducts } = JSON.parse(cached);
-        if (now - timestamp < 60 * 1000) {   // 1 second
-          products = cachedProducts;
-          updateCategoryDropdown();
-          renderProductGrid();
-          hideLoading();
-          return true;
-        }
-
-        const lastSync = lastSyncTimestamps[store];
-        if (lastSync) {
-          const changesUrl = `${APPS_SCRIPT_URL}?action=getProductChanges&store=${store}&since=${encodeURIComponent(lastSync)}&_=${now}`;
-          const changesResponse = await fetch(changesUrl);
-          const changes = await changesResponse.json();
-          if (changes.success && changes.products && changes.newSince) {
-            const merged = mergeProductChanges(cachedProducts, changes.products);
-            products = merged.sort((a, b) => a.name.localeCompare(b.name));
-            localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: merged }));
-            lastSyncTimestamps[store] = changes.newSince;
-            localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
-            updateCategoryDropdown();
-            renderProductGrid();
-            hideLoading();
-            return true;
-          }
-        }
-      }
-
-      // 3. No valid cache or incremental failed – full fetch
+    // 1. Forced full fetch (e.g., user clicked refresh button)
+    if (force) {
       let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
       const response = await fetch(url);
       const result = await response.json();
@@ -2361,22 +2304,72 @@ async function fetchProductsFromSheet(force = false) {
       renderProductGrid();
       hideLoading();
       return true;
-
-    } catch (err) {
-      console.error(`Attempt ${attempt + 1} failed:`, err);
-      if (attempt === 0 && !force) {
-        // First attempt failed – retry with forced fetch
-        attempt++;
-        force = true; // force the next attempt
-        continue;
-      }
-      // Both attempts failed
-      await showAlertModal('Error', 'Failed to load products. Check URL & sheet.');
-      hideLoading();
-      return false;
     }
+
+    // 2. Check local cache
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const { timestamp, products: cachedProducts } = JSON.parse(cached);
+      // ✅ CHANGE THIS VALUE to control how often the cache is considered stale
+      //    Default: 5 seconds (5000 ms) – adjust as needed
+      const STALE_TIME_MS = 5 * 1000;   // 5 seconds
+      if (now - timestamp < STALE_TIME_MS) {
+        // Cache is still fresh → use it without contacting server
+        products = cachedProducts;
+        updateCategoryDropdown();
+        renderProductGrid();
+        hideLoading();
+        return true;
+      }
+
+      // Cache is stale – try incremental sync
+      const lastSync = lastSyncTimestamps[store];
+      if (lastSync) {
+        const changesUrl = `${APPS_SCRIPT_URL}?action=getProductChanges&store=${store}&since=${encodeURIComponent(lastSync)}&_=${now}`;
+        const changesResponse = await fetch(changesUrl);
+        const changes = await changesResponse.json();
+        // Only accept incremental update if server returned changes and a newSince
+        if (changes.success && changes.products && changes.newSince) {
+          const merged = mergeProductChanges(cachedProducts, changes.products);
+          products = merged.sort((a, b) => a.name.localeCompare(b.name));
+          localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: merged }));
+          lastSyncTimestamps[store] = changes.newSince;
+          localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
+          updateCategoryDropdown();
+          renderProductGrid();
+          hideLoading();
+          return true;
+        }
+        // If incremental sync fails (no newSince or error), fall through to full fetch
+      }
+    }
+
+    // 3. No valid cache or incremental sync failed – full fetch
+    let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (!result.success || !Array.isArray(result.products)) throw new Error('Invalid data');
+    products = result.products.map(p => ({
+      id: p.id,
+      name: p.name,
+      price: parseFloat(p.price),
+      stock: parseInt(p.stock) || 0,
+      category: p.category || "Uncategorized"
+    })).sort((a, b) => a.name.localeCompare(b.name));
+    localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
+    const nowISO = new Date().toISOString();
+    lastSyncTimestamps[store] = nowISO;
+    localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
+    updateCategoryDropdown();
+    renderProductGrid();
+    hideLoading();
+    return true;
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Error', 'Failed to load products. Check URL & sheet.');
+    hideLoading();
+    return false;
   }
-  return false;
 }
 
 function mergeProductChanges(existingProducts, changes) {

@@ -4902,25 +4902,31 @@ function updateCategoryDropdown() {
   }
 }
 
-  function populateStoreSelects() {
-    const stores = Array.from(storeSelect.options).map(opt => ({ value: opt.value, text: opt.text }));
-    const receiptsStore = document.getElementById('receiptsStoreSelect');
-    if (receiptsStore) {
-      receiptsStore.innerHTML = '<option value="all">All Stores</option>';
-      stores.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.value;
-        opt.textContent = s.text;
-        receiptsStore.appendChild(opt);
-      });
+ function populateStoreSelects() {
+  const stores = Array.from(storeSelect.options).map(opt => ({ value: opt.value, text: opt.text }));
+  const receiptsStore = document.getElementById('receiptsStoreSelect');
+  if (receiptsStore) {
+    receiptsStore.innerHTML = '<option value="all">All Stores</option>';
+    stores.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.value;
+      opt.textContent = s.text;
+      receiptsStore.appendChild(opt);
+    });
+    // ✅ Ensure it's enabled for admin
+    if (currentEmployee && currentEmployee.isAdmin) {
+      receiptsStore.disabled = false;
+    } else {
+      receiptsStore.disabled = true;
     }
   }
+}
 
   function updateReceipts() {
     let store;
     if (currentEmployee?.isAdmin) {
       const receiptsStore = document.getElementById('receiptsStoreSelect');
-      store = receiptsStore ? receiptsStore.value : 'all';
+if (receiptsStore) receiptsStore.disabled = false;
     } else {
       store = currentStore;
     }

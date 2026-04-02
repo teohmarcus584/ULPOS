@@ -4238,12 +4238,12 @@ renderProductGrid();
   }
 
   // ==================== EVENT LISTENERS ====================
-  document.getElementById('confirmStoreBtn').addEventListener('click', () => {
+ document.getElementById('confirmStoreBtn').addEventListener('click', async () => {
     initialStore = document.getElementById('initialStoreSelect').value;
     currentStore = initialStore;
     storeSelect.value = initialStore;
     document.getElementById('storeSelectModal').style.display = 'none';
-await loadAndCacheEmployees();   // ✅ now allowed
+    await loadAndCacheEmployees();   // ✅ now allowed because the function is async
     const preloaded = preloadedDataMap[initialStore];
     if (preloaded && preloaded.products && preloaded.products.length > 0) {
       products = preloaded.products;
@@ -4291,8 +4291,7 @@ await loadAndCacheEmployees();   // ✅ now allowed
       document.getElementById('loginModal').style.display = 'flex';
       document.getElementById('pinInput').focus();
     }
-  });
-
+});
  async function verifyEmployeeByPin(pin) {
   // 1. Try cache first
   const cachedEmp = cachedEmployees.find(emp => emp.pin == pin);

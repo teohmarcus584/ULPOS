@@ -1081,7 +1081,10 @@
 .low-stock-toggle.active:hover {
   background: #dc2626;
 }
-
+/* Hide Stock Alert button in side menu */
+#sideStockAlertBtn {
+  display: none;
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -2274,7 +2277,7 @@ async function saveTelegramSettings() {
 
   // ==================== FETCH PRODUCTS ====================
 async function fetchProductsFromSheet(force = false) {
-  
+  showLoading('Fetching products...');
   let attempt = 0;
   const maxAttempts = force ? 1 : 2; // if not forced, try once normally, then once forced
 
@@ -2441,12 +2444,6 @@ function queueSale(transaction) {
   localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
   // Try to sync immediately (if online)
   syncPendingSales();
-  // Register background sync if supported (ensures retry even if browser closed)
-  if ('serviceWorker' in navigator && 'SyncManager' in window) {
-    navigator.serviceWorker.ready.then(reg => {
-      reg.sync.register('sales-sync').catch(err => console.warn('Background sync registration failed:', err));
-    });
-  }
 }
 
 // Attempt to send all pending sales
@@ -3433,8 +3430,10 @@ renderProductGrid();
     productsData.forEach(p => {
       html += `汽
          <td>${escapeHtml(p.name)}</td>
-         <td>${escapeHtml(p.category)}</          <td style="text-align: right;">${p.total.toFixed(2)}</td>
-        `;
+         <td>${escapeHtml(p.category)}</td>
+        <td style="text-align: right;">${p.quantity}</td>
+        <td style="text-align: right;">RM ${p.total.toFixed(2)}</td>
+       `;
     });
     tbody.innerHTML = html;
   }
@@ -3477,12 +3476,13 @@ renderProductGrid();
       if (!from || !to) return;
     }
 
-    // Check cache
+    // Check if we have cached data matching the current filters
     if (preloadedReportCache && 
         preloadedReportCache.store === store && 
         preloadedReportCache.employeeId === employeeId &&
         preloadedReportCache.from === from &&
         preloadedReportCache.to === to) {
+      // Use cached data
       const cached = preloadedReportCache;
       document.getElementById('adminReportTotalSales').innerText = `RM ${cached.totals.totalSales.toFixed(2)}`;
       document.getElementById('adminReportCashTotal').innerText = `RM ${cached.totals.cashTotal.toFixed(2)}`;
@@ -3494,72 +3494,102 @@ renderProductGrid();
       document.getElementById('adminReportTotalItems').innerText = cached.totals.totalItems;
       lastProductData = cached.productDetails;
       if (productDetailsVisible) renderProductDetails(lastProductData);
-      // Render charts from cached data
+      // Render charts from cached data (we need to simulate the chart rendering)
       if (cached.chartData) {
-        if (cached.chartData.salesByStore && currentEmployee.isAdmin) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        // Re‑render charts if needed (simplified, we can trust that they are already rendered in preload)
+        if (cached.chartData.salesByStore) {
           const storeCanvas = document.getElementById('storeChart');
-          if (storeCanvas) {
-            if (window.storeChart) window.storeChart.destroy();
+          if (storeCanvas && currentEmployee.isAdmin) {
+            if (window.storeChart && typeof window.storeChart.destroy === 'function') window.storeChart.destroy();
             const storeLabels = cached.chartData.salesByStore.labels || [];
             const storeData = cached.chartData.salesByStore.data || [];
-            if (storeLabels.length) {
+            if (storeLabels.length > 0) {
               storeCanvas.style.display = 'block';
-              window.storeChart = new Chart(storeCanvas.getContext('2d'), {
+              const ctx = storeCanvas.getContext('2d');
+              window.storeChart = new Chart(ctx, {
                 type: 'bar',
-                data: { labels: storeLabels, datasets: [{ label: 'Sales (RM)', data: storeData, backgroundColor: 'rgba(54,162,235,0.6)' }] }
+                data: { labels: storeLabels, datasets: [{ label: 'Sales (RM)', data: storeData, backgroundColor: 'rgba(54,162,235,0.6)', borderColor: 'rgba(54,162,235,1)', borderWidth: 1 }] },
+                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
               });
-            } else storeCanvas.style.display = 'none';
+            } else {
+              storeCanvas.style.display = 'none';
+            }
           }
         }
-        const dayCanvas = document.getElementById('dayChart');
-        if (dayCanvas) {
-          if (window.dayChart) window.dayChart.destroy();
-          let labels, data;
-          if (cached.chartData.type === 'hourly') {
-            labels = cached.chartData.hourly.labels;
-            data = cached.chartData.hourly.data;
-          } else {
-            labels = cached.chartData.salesByDay?.labels || [];
-            data = cached.chartData.salesByDay?.data || [];
+        if (cached.chartData.salesByDay || cached.chartData.hourly) {
+          const dayCanvas = document.getElementById('dayChart');
+          if (dayCanvas) {
+            if (window.dayChart && typeof window.dayChart.destroy === 'function') window.dayChart.destroy();
+            let labels, data, chartTitle;
+            if (cached.chartData.type === 'hourly') {
+              labels = cached.chartData.hourly.labels;
+              data = cached.chartData.hourly.data;
+              chartTitle = 'Hourly Sales (RM)';
+            } else {
+              labels = cached.chartData.salesByDay?.labels || [];
+              data = cached.chartData.salesByDay?.data || [];
+              chartTitle = 'Sales by Day (RM)';
+            }
+            if (labels.length > 0) {
+              dayCanvas.style.display = 'block';
+              const ctx = dayCanvas.getContext('2d');
+              window.dayChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: labels, datasets: [{ label: chartTitle, data: data, backgroundColor: 'rgba(75,192,192,0.6)', borderColor: 'rgba(75,192,192,1)', borderWidth: 1 }] },
+                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
+              });
+            } else {
+              dayCanvas.style.display = 'none';
+            }
           }
-          if (labels.length) {
-            dayCanvas.style.display = 'block';
-            window.dayChart = new Chart(dayCanvas.getContext('2d'), {
-              type: 'bar',
-              data: { labels: labels, datasets: [{ label: 'Sales', data: data, backgroundColor: 'rgba(75,192,192,0.6)' }] }
-            });
-          } else dayCanvas.style.display = 'none';
         }
         if (cached.chartData.employeeSales && currentEmployee.isAdmin) {
-          const empCanvas = document.getElementById('employeeChart');
-          if (empCanvas) {
-            if (window.employeeChart) window.employeeChart.destroy();
+          const employeeCanvas = document.getElementById('employeeChart');
+          if (employeeCanvas) {
+            if (window.employeeChart && typeof window.employeeChart.destroy === 'function') window.employeeChart.destroy();
             const labels = cached.chartData.employeeSales.labels || [];
             const data = cached.chartData.employeeSales.data || [];
-            if (labels.length) {
-              empCanvas.style.display = 'block';
-              window.employeeChart = new Chart(empCanvas.getContext('2d'), {
+            if (labels.length > 0) {
+              employeeCanvas.style.display = 'block';
+              const ctx = employeeCanvas.getContext('2d');
+              window.employeeChart = new Chart(ctx, {
                 type: 'bar',
-                data: { labels: labels, datasets: [{ label: 'Sales by Employee', data: data, backgroundColor: 'rgba(255,99,132,0.6)' }] }
+                data: { labels: labels, datasets: [{ label: 'Sales by Employee (RM)', data: data, backgroundColor: 'rgba(255,99,132,0.6)', borderColor: 'rgba(255,99,132,1)', borderWidth: 1 }] },
+                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
               });
-            } else empCanvas.style.display = 'none';
+            } else {
+              employeeCanvas.style.display = 'none';
+            }
           }
         }
       }
       return;
     }
 
-    // Fetch fresh
-    const totals = await fetchSalesReport(store, employeeId, from, to);
-    const chartData = await fetchSalesChartData(store, employeeId, from, to);
-    const productData = await fetchProductSalesReport(store, employeeId, from, to);
-    let employeeSalesData = null;
+    // Otherwise fetch fresh
+    const promises = [
+      fetchSalesReport(store, employeeId, from, to),
+      fetchSalesChartData(store, employeeId, from, to),
+      fetchProductSalesReport(store, employeeId, from, to)
+    ];
     if (currentEmployee.isAdmin) {
-      employeeSalesData = await fetchEmployeeSalesData(store, from, to);
+      promises.push(fetchEmployeeSalesData(store, from, to));
     }
+
+    const results = await Promise.all(promises);
+    const totals = results[0];
+    const chartData = results[1];
+    const productData = results[2];
+    const employeeSalesData = results[3] ? { labels: results[3].labels, data: results[3].data } : null;
+
     if (totals) {
+      // Cache the fresh data
       preloadedReportCache = {
-        store, employeeId, from, to,
+        store,
+        employeeId,
+        from,
+        to,
         totals: {
           totalSales: totals.totalSales,
           cashTotal: totals.cashTotal,
@@ -3574,177 +3604,1210 @@ renderProductGrid();
         chartData: { ...chartData, employeeSales: employeeSalesData }
       };
     }
+
     if (productData) {
       lastProductData = productData;
       if (productDetailsVisible) renderProductDetails(lastProductData);
     }
+
     const loadingMsg = document.getElementById('adminReportLoadingMsg');
     if (loadingMsg) loadingMsg.style.display = 'none';
   }
 
-  // ==================== CASH COLLECTION (continued) ====================
-  async function openCollectionModal() {
-    const modal = document.getElementById('collectionModal');
+  // ==================== SETTLEMENT & COLLECTION ====================
+  async function openSettlementModal() {
+    const modal = document.getElementById('settlementModal');
     modal.style.display = 'flex';
-    let loadingMsg = document.getElementById('collectionLoadingMsg');
+
+    document.getElementById('recordSettlementBtn').style.display = 'none';
+    document.getElementById('checkSettlementBtn').style.display = 'block';
+    document.getElementById('settlementError').style.display = 'none';
+    document.getElementById('settlementError').innerHTML = '';
+    document.getElementById('actualCash').value = '';
+    document.getElementById('actualCard').value = '';
+    document.getElementById('actualQR').value = '';
+    document.getElementById('pettyCashFloat').value = '0.00';
+    document.getElementById('actualCash').classList.remove('error-field');
+    document.getElementById('actualCard').classList.remove('error-field');
+    document.getElementById('actualQR').classList.remove('error-field');
+
+    const fieldsToDisable = ['actualCash', 'actualCard', 'actualQR'];
+    fieldsToDisable.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = true;
+    });
+    const checkBtn = document.getElementById('checkSettlementBtn');
+    if (checkBtn) checkBtn.disabled = true;
+
+    const totalsContainer = document.getElementById('systemTotalsDisplay');
+    if (totalsContainer) totalsContainer.style.display = 'none';
+
+    let loadingMsg = document.getElementById('settlementLoadingMsg');
     if (!loadingMsg) {
       loadingMsg = document.createElement('div');
-      loadingMsg.id = 'collectionLoadingMsg';
+      loadingMsg.id = 'settlementLoadingMsg';
       loadingMsg.style.textAlign = 'center';
       loadingMsg.style.padding = '20px';
       loadingMsg.style.background = '#f8fafc';
       loadingMsg.style.borderRadius = '12px';
       loadingMsg.style.margin = '10px 0';
-      loadingMsg.innerText = 'Loading unsettled cash...';
-      const container = document.querySelector('#collectionModal .modal-container');
-      const collectionTotalDiv = document.getElementById('collectionTotal');
-      if (container && collectionTotalDiv) {
-        container.insertBefore(loadingMsg, collectionTotalDiv);
-      }
+      loadingMsg.innerHTML = `
+        <div class="settlement-loading-spinner"></div>
+        <span style="vertical-align: middle;">Loading settlement data...</span>
+      `;
+      if (totalsContainer) totalsContainer.insertAdjacentElement('afterend', loadingMsg);
     }
     loadingMsg.style.display = 'block';
-    await loadUnsettledCash();
-    loadingMsg.style.display = 'none';
+
+    try {
+      let store;
+      if (!currentEmployee.isAdmin) {
+        store = initialStore;
+        document.getElementById('settlementStoreSelect').value = store;
+        document.getElementById('settlementStoreSelect').disabled = true;
+      } else {
+        store = document.getElementById('settlementStoreSelect').value;
+        document.getElementById('settlementStoreSelect').disabled = false;
+      }
+
+      const todayStr = getLocalDateString(new Date());
+      const alreadySettled = await checkSettlementStatus(store, todayStr);
+
+      if (alreadySettled) {
+        loadingMsg.style.display = 'none';
+        if (totalsContainer) totalsContainer.style.display = 'block';
+        await showAlertModal('Settlement Already Done', 'Settlement has already been recorded for today. No further settlement allowed.');
+        modal.style.display = 'none';
+        return;
+      }
+
+      await refreshSettlementTotals(store);
+      loadingMsg.style.display = 'none';
+      if (totalsContainer) totalsContainer.style.display = 'block';
+    } catch (err) {
+      console.error(err);
+      loadingMsg.style.display = 'none';
+      if (totalsContainer) totalsContainer.style.display = 'block';
+      await showAlertModal('Error', 'Failed to load settlement data.');
+      modal.style.display = 'none';
+    }
+  }
+
+  async function checkSettlementStatus(store, date) {
+    try {
+      const url = `${APPS_SCRIPT_URL}?action=getSettlementStatus&store=${store}&date=${date}`;
+      const response = await fetch(url);
+      const result = await response.json();
+      return result.success && result.settled;
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
+  }
+
+ async function refreshSettlementTotals(store, silent = false) {
+  const todayStr = getLocalDateString(new Date());
+  const report = await fetchSalesReport(store, 'all', todayStr, todayStr, true, silent);
+    if (report) {
+      currentSettlementTotals = {
+        cash: report.cashTotal,
+        card: report.cardTotal,
+        qr: report.otherTotal,
+        refund: report.refundTotal
+      };
+      document.getElementById('sysCash').innerText = `RM ${currentSettlementTotals.cash.toFixed(2)}`;
+      document.getElementById('sysCard').innerText = `RM ${currentSettlementTotals.card.toFixed(2)}`;
+      document.getElementById('sysQR').innerText = `RM ${currentSettlementTotals.qr.toFixed(2)}`;
+      document.getElementById('sysRefund').innerText = `RM ${Math.abs(currentSettlementTotals.refund).toFixed(2)}`;
+
+      const netTotal = currentSettlementTotals.cash + currentSettlementTotals.card + currentSettlementTotals.qr;
+      document.getElementById('sysNetTotal').innerText = `RM ${netTotal.toFixed(2)}`;
+
+      const alreadySettled = await checkSettlementStatus(store, todayStr);
+      if (alreadySettled) {
+        document.getElementById('settlementError').innerHTML = '⚠️ Settlement has already been recorded for today. No further settlement allowed.';
+        document.getElementById('settlementError').style.display = 'block';
+        document.getElementById('checkSettlementBtn').disabled = true;
+        document.getElementById('recordSettlementBtn').style.display = 'none';
+        setSettlementFieldsEnabled(false);
+      } else {
+        setSettlementFieldsEnabled(true);
+        document.getElementById('actualCash').value = '';
+        document.getElementById('actualCard').value = '';
+        document.getElementById('actualQR').value = '';
+        document.getElementById('pettyCashFloat').value = '0.00';
+        document.getElementById('settlementError').style.display = 'none';
+        document.getElementById('recordSettlementBtn').style.display = 'none';
+        document.getElementById('checkSettlementBtn').style.display = 'block';
+        document.getElementById('checkSettlementBtn').disabled = false;
+        document.getElementById('actualCash').classList.remove('error-field');
+        document.getElementById('actualCard').classList.remove('error-field');
+        document.getElementById('actualQR').classList.remove('error-field');
+      }
+    }
+  }
+
+  let currentSettlementTotals = null;
+
+  function setSettlementFieldsEnabled(enabled) {
+    const fields = ['settlementStoreSelect', 'pettyCashFloat', 'actualCash', 'actualCard', 'actualQR'];
+    const isNonAdmin = !currentEmployee?.isAdmin;
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (id === 'settlementStoreSelect' && isNonAdmin) {
+          el.disabled = true;
+        } else {
+          el.disabled = !enabled;
+        }
+      }
+    });
+    const checkBtn = document.getElementById('checkSettlementBtn');
+    if (checkBtn) checkBtn.disabled = !enabled;
+  }
+
+  // ==================== PRINTER SETUP ====================
+  (function setupPrinter() {
+    let gattServer = null, printerCharacteristic = null, isConnected = false;
+    const printerModal = document.getElementById('printerModal');
+    const connectBtnModal = document.getElementById('connectPrinterModalBtn');
+    const printerStatusModal = document.getElementById('printerStatusModal');
+    const paperSizeSelectModal = document.getElementById('paperSizeSelectModal');
+    const printerIconBtn = document.getElementById('printerIconBtn');
+    const closePrinterModal = document.getElementById('closePrinterModal');
+    const closePrinterModalBtn = document.getElementById('closePrinterModalBtn');
+
+    function updatePrinterStatusUI() {
+      if (isConnected) {
+        printerStatusModal.innerText = '✅ Printer connected';
+        printerStatusModal.style.color = '#2c7a4b';
+      } else {
+        printerStatusModal.innerText = '⚪ Not connected';
+        printerStatusModal.style.color = '#64748b';
+      }
+    }
+
+    async function sendChunkedData(data, chunkSize = 500) {
+      if (!printerCharacteristic) return false;
+      let offset = 0;
+      while (offset < data.length) {
+        const chunk = data.slice(offset, offset + chunkSize);
+        try {
+          await printerCharacteristic.writeValueWithResponse(chunk);
+          await new Promise(resolve => setTimeout(resolve, 50));
+        } catch (err) {
+          console.error('Chunk write failed:', err);
+          throw err;
+        }
+        offset += chunkSize;
+      }
+      return true;
+    }
+
+    async function openCashDrawer() {
+      if (!isConnected || !printerCharacteristic) {
+        await showAlertModal('Printer not connected', 'Please connect a printer first.');
+        return false;
+      }
+      try {
+        const drawerCommand = new Uint8Array([0x1B, 0x70, 0x00, 0x19, 0xFA]);
+        await printerCharacteristic.writeValueWithResponse(drawerCommand);
+        await showAlertModal('Drawer Opened', 'Cash drawer opened successfully.');
+        return true;
+      } catch (err) {
+        console.error(err);
+        await showAlertModal('Drawer Error', 'Failed to open drawer.');
+        return false;
+      }
+    }
+
+    async function printReceipt(transaction) {
+  if (!isConnected || !printerCharacteristic) {
+    await showAlertModal('Printer required', 'Connect Bluetooth printer first.');
+    return false;
+  }
+  try {
+    const openDrawer = (transaction.payment_method === 'Cash');
+    const paperSize = paperSizeSelectModal.value;
+    localStorage.setItem('printerPaperSize', paperSize);
+    const encoder = new TextEncoder();
+    const employeeName = transaction.employee_name || getEmployeeName(transaction.employee_id) || 'N/A';
+    const storeLocation = transaction.store ? transaction.store.charAt(0).toUpperCase() + transaction.store.slice(1) : 'Queens';
+    const maxChars = paperSize === '58' ? 32 : 48;
+
+    // Format a product: name line (no price), then qty+price+total line (total bold)
+    function formatProductLine(name, price, qty, total) {
+      // Name line: just the name – let printer wrap if needed
+      const nameLine = name;
+      // Second line: quantity x price (left) and total (right, bold)
+      const qtyStr = `${qty} x RM ${price.toFixed(2)}`;
+      const totalStr = `RM ${total.toFixed(2)}`;
+      let spaceNeeded = maxChars - totalStr.length;
+      let qtyLine = qtyStr;
+      if (qtyLine.length > spaceNeeded) {
+        qtyLine = qtyLine.substring(0, spaceNeeded - 3) + '...';
+      } else {
+        qtyLine = qtyLine.padEnd(spaceNeeded);
+      }
+      // Add bold around the total
+      qtyLine += `\x1B\x45\x01${totalStr}\x1B\x45\x00`;
+      return [nameLine, qtyLine];
+    }
+
+    const lines = [];
+    const separator = '-'.repeat(maxChars);
+
+    lines.push('', '    UL PERFUMERY', separator);
+    lines.push(`STORE LOCATION : ${storeLocation}`);
+    lines.push(`EMPLOYEE : ${employeeName}`);
+    lines.push(separator);
+
+    // Group items by category
+    const grouped = {};
+    for (const item of transaction.items) {
+      const cat = item.category || 'Uncategorized';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(item);
+    }
+
+    for (const [category, items] of Object.entries(grouped)) {
+      let categoryTotal = 0;
+      for (const item of items) {
+        const paidQty = item.quantity - (item.free_quantity || 0);
+        categoryTotal += paidQty * item.price;
+      }
+      lines.push(category, `${'-'.repeat(category.length)}`);
+      for (const item of items) {
+        const paidQty = item.quantity - (item.free_quantity || 0);
+        if (paidQty > 0) {
+          const itemTotal = paidQty * item.price;
+          const [nameLine, qtyLine] = formatProductLine(item.name, item.price, paidQty, itemTotal);
+          lines.push(nameLine);
+          lines.push(qtyLine);
+        }
+      }
+    }
+
+    lines.push(separator);
+
+    // Discounts (if any)
+    if (transaction.discount > 0) {
+      lines.push(`Lucky Draw Discount : -RM ${transaction.discount.toFixed(2)}`);
+    }
+    if (transaction.buy2_free1_discount > 0) {
+      lines.push(`Buy 2 Free 1 Promo : -RM ${transaction.buy2_free1_discount.toFixed(2)}`);
+    }
+    if (transaction.buy3_free1_discount > 0) {
+      lines.push(`Buy 3 Free 1 Promo : -RM ${transaction.buy3_free1_discount.toFixed(2)}`);
+    }
+    if (transaction.custom_discount > 0) {
+      lines.push(`Custom Discount     : -RM ${transaction.custom_discount.toFixed(2)}`);
+    }
+
+    const totalAmount = transaction.total;
+    // Total line in bold
+    lines.push(`\x1B\x45\x01TOTAL : RM ${totalAmount.toFixed(2)}\x1B\x45\x00`);
+    lines.push(`PAYMENT METHOD : ${transaction.payment_method}`);
+    if (transaction.cash_received && transaction.payment_method === 'Cash') {
+      const change = transaction.cash_received - totalAmount;
+      lines.push(`CHANGE : RM ${change.toFixed(2)}`);
+    }
+    lines.push(separator);
+    lines.push('THANK YOU FOR YOUR PURCHASE');
+    lines.push('ANY ENQUIRY PLEASE CONTACT');
+    lines.push('+60134665831 ( MARCUS )');
+    lines.push('GOODS SOLD ARE NOT REFUNDABLE');
+    lines.push(separator);
+
+    const date = new Date(transaction.timestamp);
+    const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    lines.push(`TXN   : ${transaction.transaction_id}`);
+    lines.push(`DATE  : ${formattedDate}`);
+    lines.push('');
+
+    const text = lines.join('\n');
+
+    let commands = [];
+    commands.push(0x1B, 0x40); // Initialize
+    commands.push(0x1B, 0x61, 0x00); // Left align
+    commands.push(...encoder.encode(text));
+    commands.push(0x1B, 0x64, 0x03); // Feed 3 lines
+    commands.push(0x1D, 0x56, 0x41, 0x00); // Cut
+    if (openDrawer) {
+      const drawerCommand = [0x1B, 0x70, 0x00, 0x19, 0xFA];
+      commands = commands.slice(0, -4).concat(drawerCommand, commands.slice(-4));
+    }
+    await sendChunkedData(new Uint8Array(commands), 500);
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
+    async function printPrizeVoucher(prizeLabel, receiptNumber, spinDate = new Date()) {
+      if (!isConnected || !printerCharacteristic) {
+        await showAlertModal('Printer not connected', 'Please connect a printer first.');
+        return false;
+      }
+      try {
+        const encoder = new TextEncoder();
+        function formatDate(date) {
+          const d = date.getDate().toString().padStart(2, '0');
+          const m = (date.getMonth() + 1).toString().padStart(2, '0');
+          const y = date.getFullYear();
+          return `${d}/${m}/${y}`;
+        }
+        const validFrom = new Date(spinDate.getFullYear(), spinDate.getMonth(), spinDate.getDate());
+        const validTill = new Date(validFrom);
+        validTill.setDate(validTill.getDate() + 30);
+        const lines = [
+          '',
+          'LUCKY DRAW',
+          'CONGRATULATIONS',
+          'YOU ARE ENTITLED',
+          '',
+          `FREE ${prizeLabel}`,
+          'WITH ANY PURCHASE',
+          '(EXCEPT OPENING PROMOTION)',
+          '',
+          `VALID FROM ${formatDate(validFrom)}`,
+          `TILL ${formatDate(validTill)}`,
+          `Receipt No: ${receiptNumber}`,
+          ''
+        ];
+        const text = lines.join('\n');
+        const commands = [];
+        commands.push(0x1B, 0x40); // init
+        commands.push(0x1B, 0x52, 0x00); // international character set
+        commands.push(0x1B, 0x21, 0x00); // font normal
+        commands.push(0x1B, 0x61, 0x01); // center alignment
+        for (let i = 0; i < text.length; i++) {
+          commands.push(text.charCodeAt(i));
+        }
+        commands.push(0x0A); // newline
+
+        commands.push(0x1D, 0x68, 0x32); // barcode height = 50 dots
+        commands.push(0x1D, 0x77, 0x01); // barcode width = 1
+        commands.push(0x1B, 0x61, 0x01); // center barcode
+        const barcodeData = encoder.encode(receiptNumber);
+        const len = barcodeData.length;
+        commands.push(0x1D, 0x6B, 0x49, len);
+        for (let i = 0; i < len; i++) commands.push(barcodeData[i]);
+        commands.push(0x0A, 0x0A);
+        commands.push(0x1B, 0x64, 0x03);
+        commands.push(0x1D, 0x56, 0x41, 0x00);
+
+        await sendChunkedData(new Uint8Array(commands), 500);
+        return true;
+      } catch (err) {
+        console.error('Print voucher error:', err);
+        return false;
+      }
+    }
+
+    async function connectPrinter() {
+      try {
+        connectBtnModal.disabled = true;
+        printerStatusModal.innerText = '🔍 Scanning...';
+        const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] });
+        gattServer = await device.gatt.connect();
+        const services = await gattServer.getPrimaryServices();
+        let foundChar = null;
+        for (const service of services) {
+          const chars = await service.getCharacteristics();
+          for (const char of chars) {
+            if (char.properties.write || char.properties.writeWithoutResponse) {
+              foundChar = char;
+              break;
+            }
+          }
+          if (foundChar) break;
+        }
+        if (!foundChar) throw new Error('No writable characteristic');
+        printerCharacteristic = foundChar;
+        isConnected = true;
+        window.printerAPI = { isConnected: true, printReceipt: printReceipt, openDrawer: openCashDrawer, printPrizeVoucher: printPrizeVoucher };
+        updatePrinterStatusUI();
+        await showAlertModal('Printer Connected', 'Bluetooth printer is ready.');
+      } catch (err) {
+        printerStatusModal.innerText = `❌ ${err.message}`;
+        console.error(err);
+      } finally {
+        connectBtnModal.disabled = false;
+      }
+    }
+
+    function disconnectPrinter() {
+      if (gattServer) { gattServer.disconnect(); gattServer = null; printerCharacteristic = null; }
+      isConnected = false;
+      window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer, printPrizeVoucher: printPrizeVoucher };
+      updatePrinterStatusUI();
+    }
+
+    printerIconBtn.addEventListener('click', () => {
+      printerModal.style.display = 'flex';
+      updatePrinterStatusUI();
+    });
+    connectBtnModal.addEventListener('click', () => {
+      if (!isConnected) connectPrinter();
+      else disconnectPrinter();
+    });
+    function closeModal() { printerModal.style.display = 'none'; }
+    closePrinterModal.addEventListener('click', closeModal);
+    closePrinterModalBtn.addEventListener('click', closeModal);
+    const savedSize = localStorage.getItem('printerPaperSize') || '80';
+    paperSizeSelectModal.value = savedSize;
+
+    window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer, printPrizeVoucher: printPrizeVoucher };
+  })();
+
+  // ==================== RENDER PRODUCT GRID ====================
+ function renderProductGrid() {
+  // 1. Get filter values
+  const searchTerm = searchInput.value.toLowerCase();
+  const selectedCategory = categorySelect.value;
+
+  // 2. Start with all products
+  let filtered = products.slice();
+
+  // 3. Filter by category
+  if (selectedCategory !== 'all') {
+    filtered = filtered.filter(p => p.category === selectedCategory);
+  }
+
+  // 4. Filter by search term
+  if (searchTerm) {
+    filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm));
+  }
+
+  // 5. Apply low‑stock filter if toggle is active
+  if (lowStockFilterActive) {
+    filtered = filtered.filter(p => p.stock < LOW_STOCK_THRESHOLD);
+  }
+
+  // 6. NEW: If products array is empty (no data at all)
+  if (products.length === 0) {
+    productGridEl.innerHTML = `
+      <div style="text-align:center; padding:20px;">
+        ⏳ Loading products...<br>
+        <button id="retryLoadProductsBtn" style="margin-top:10px; padding:8px 16px; border-radius:40px; background:#3b82f6; color:white; border:none; cursor:pointer;">Retry</button>
+      </div>
+    `;
+    const retryBtn = document.getElementById('retryLoadProductsBtn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', async () => {
+        await fetchProductsFromSheet(true);
+      });
+    }
+    return;
+  }
+
+  // 7. If nothing matches the current filters (but products exist)
+  if (filtered.length === 0) {
+    productGridEl.innerHTML = '<div style="text-align:center; padding:20px;">No products match your filters.</div>';
+    return;
+  }
+
+  // 8. Build HTML based on view mode and inventory mode
+  let html = '';
+  filtered.forEach(prod => {
+    const isLowStock = prod.stock < LOW_STOCK_THRESHOLD;
+    const lowStockClass = (inventoryMode && isLowStock) ? 'low-stock-card' : '';
+
+    if (inventoryMode) {
+      // Inventory mode: show stock adjustment controls
+      html += `<div class="product-card ${lowStockClass}">
+        <div class="product-name">${escapeHtml(prod.name)}</div>
+        <div class="product-category">${escapeHtml(prod.category)}</div>
+        <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+        <div class="inventory-controls">
+          <button class="inventory-btn dec-stock" data-id="${prod.id}" data-current="${prod.stock}">−</button>
+          <span class="stock-display" data-id="${prod.id}">${prod.stock}</span>
+          <button class="inventory-btn inc-stock" data-id="${prod.id}" data-current="${prod.stock}">+</button>
+        </div>
+      </div>`;
+    } else {
+      // Normal mode: show add-to-cart button
+      const stockStatus = prod.stock > 0 ? `📦 Stock: ${prod.stock}` : '❌ Out of stock';
+      html += `<div class="product-card ${lowStockClass}">
+        <div class="product-name">${escapeHtml(prod.name)}</div>
+        <div class="product-category">${escapeHtml(prod.category)}</div>
+        <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+        <div class="product-stock">${stockStatus}</div>
+        <button class="add-btn" data-id="${prod.id}" ${prod.stock <= 0 ? 'disabled' : ''}>+ Add to cart</button>
+      </div>`;
+    }
+  });
+
+  // 9. Insert into the DOM and set correct view mode class
+  productGridEl.innerHTML = html;
+  productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
+
+  // 10. Attach event listeners for inventory or add‑to‑cart buttons
+  if (inventoryMode) {
+    document.querySelectorAll('.dec-stock').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = btn.dataset.id;
+        const product = products.find(p => p.id == id);
+        if (product && product.stock > 0) {
+          const oldStock = product.stock;
+          const newStock = product.stock - 1;
+          product.stock = newStock;
+          const displaySpan = document.querySelector(`.stock-display[data-id="${id}"]`);
+          if (displaySpan) displaySpan.innerText = newStock;
+          scheduleStockUpdate(id, newStock);
+          logStockChange(product.id, product.name, product.category, oldStock, newStock, -1);
+          checkAndNotifyOutOfStock(product.id, product.name, newStock);
+          btn.dataset.current = newStock;
+          const incBtn = document.querySelector(`.inc-stock[data-id="${id}"]`);
+          if (incBtn) incBtn.dataset.current = newStock;
+        }
+        e.stopPropagation();
+      });
+    });
+    document.querySelectorAll('.inc-stock').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = btn.dataset.id;
+        const product = products.find(p => p.id == id);
+        if (product) {
+          const oldStock = product.stock;
+          const newStock = product.stock + 1;
+          product.stock = newStock;
+          const displaySpan = document.querySelector(`.stock-display[data-id="${id}"]`);
+          if (displaySpan) displaySpan.innerText = newStock;
+          scheduleStockUpdate(id, newStock);
+          logStockChange(product.id, product.name, product.category, oldStock, newStock, 1);
+          checkAndNotifyOutOfStock(product.id, product.name, newStock);
+          btn.dataset.current = newStock;
+          const decBtn = document.querySelector(`.dec-stock[data-id="${id}"]`);
+          if (decBtn) decBtn.dataset.current = newStock;
+        }
+        e.stopPropagation();
+      });
+    });
+  } else {
+    document.querySelectorAll('.add-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const product = products.find(p => p.id == btn.dataset.id);
+        if (product && product.stock > 0) addToCart(product);
+        e.stopPropagation();
+      });
+    });
+  }
+}
+  // ==================== VIEW TOGGLE ====================
+  function setViewMode(mode) {
+    viewMode = mode;
+    document.getElementById('gridViewBtn').classList.toggle('active', mode === 'grid');
+    document.getElementById('listViewBtn').classList.toggle('active', mode === 'list');
+    renderProductGrid();
+  }
+
+  // ==================== PRELOAD SETTLEMENT AND REPORT AFTER LOGIN ====================
+ async function preloadSettlement() {
+  try {
+    const store = currentStore;
+    const todayStr = getLocalDateString(new Date());
+    const alreadySettled = await checkSettlementStatus(store, todayStr);
+    if (!alreadySettled) {
+      await refreshSettlementTotals(store, true);   // ✅ silent preload
+    }
+  } catch (err) {
+    console.error('Preload settlement failed:', err);
+  }
+}
+  async function preloadReport() {
+  if (!currentEmployee) return;   // safety guard
+  try {
+    // Default filters: today, current store, employee 'all' (if admin) or current employee
+    const todayStr = getLocalDateString(new Date());
+    let store, employeeId;
+    if (currentEmployee.isAdmin) {
+      store = 'all';
+      employeeId = 'all';
+    } else {
+      store = currentStore;
+      employeeId = currentEmployee.id;
+    }
+    // ✅ Fetch sales report silently (no loading overlay)
+    const totals = await fetchSalesReport(store, employeeId, todayStr, todayStr, false, true);
+    if (!totals) return;
+    const chartData = await fetchSalesChartData(store, employeeId, todayStr, todayStr);
+    const productData = await fetchProductSalesReport(store, employeeId, todayStr, todayStr);
+    let employeeSalesData = null;
+    if (currentEmployee.isAdmin) {
+      const empData = await fetchEmployeeSalesData(store, todayStr, todayStr);
+      if (empData) employeeSalesData = empData;
+    }
+    // Cache the preloaded data
+    preloadedReportCache = {
+      store,
+      employeeId,
+      from: todayStr,
+      to: todayStr,
+      totals: {
+        totalSales: totals.totalSales,
+        cashTotal: totals.cashTotal,
+        cardTotal: totals.cardTotal,
+        otherTotal: totals.otherTotal,
+        refundTotal: totals.refundTotal,
+        refundedTransactionCount: totals.refundedTransactionCount,
+        transactionCount: totals.transactionCount,
+        totalItems: totals.totalItems
+      },
+      productDetails: productData,
+      chartData: { ...chartData, employeeSales: employeeSalesData }
+    };
+    lastProductData = productData;
+  } catch (err) {
+    console.error('Preload report failed:', err);
+  }
+}
+  // ==================== EVENT LISTENERS ====================
+ document.getElementById('confirmStoreBtn').addEventListener('click', async () => {
+    initialStore = document.getElementById('initialStoreSelect').value;
+    currentStore = initialStore;
+    storeSelect.value = initialStore;
+    document.getElementById('storeSelectModal').style.display = 'none';
+    loadAndCacheEmployees().catch(console.warn);
+    const preloaded = preloadedDataMap[initialStore];
+    if (preloaded && preloaded.products && preloaded.products.length > 0) {
+      products = preloaded.products;
+      const categories = [...new Set(products.map(p => p.category))].sort();
+      categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
+      categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        categorySelect.appendChild(option);
+      });
+      renderProductGrid();
+
+      if (preloaded.employees && preloaded.employees.length > 0) {
+        employeeNameMap = {};
+        soldBySelectCart.innerHTML = '';
+        preloaded.employees.forEach(emp => {
+          employeeNameMap[emp.id] = emp.name;
+          const option = document.createElement('option');
+          option.value = emp.id;
+          option.textContent = `${emp.name} (ID: ${emp.id})`;
+          if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
+          soldBySelectCart.appendChild(option);
+        });
+      } else {
+        fetchEmployees().then(employees => {
+          employeeNameMap = {};
+          soldBySelectCart.innerHTML = '';
+          employees.forEach(emp => {
+            employeeNameMap[emp.id] = emp.name;
+            const option = document.createElement('option');
+            option.value = emp.id;
+            option.textContent = `${emp.name} (ID: ${emp.id})`;
+            if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
+            soldBySelectCart.appendChild(option);
+          });
+        });
+      }
+
+      initialDataPromise = Promise.resolve(true);
+      document.getElementById('loginModal').style.display = 'flex';
+      document.getElementById('pinInput').focus();
+    } else {
+      initialDataPromise = loadInitialData();
+      document.getElementById('loginModal').style.display = 'flex';
+      document.getElementById('pinInput').focus();
+    }
+});
+ async function verifyEmployeeByPin(pin) {
+  // 1. Try cache first
+  const cachedEmp = cachedEmployees.find(emp => emp.pin == pin);
+  if (cachedEmp) {
+    currentEmployee = cachedEmp;
+    document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
+    document.getElementById('loginModal').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    // Proceed with rest of login setup (load products, etc.)
+    await finishLoginAfterVerification();
+    return true;
+  }
+
+  // 2. Cache miss – fallback to server
+  showLoading('Verifying...');
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=verifyByPin&pin=${encodeURIComponent(pin)}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      currentEmployee = result.employee;
+      // Add this employee to cache for next time
+      if (!cachedEmployees.find(e => e.id == currentEmployee.id)) {
+        cachedEmployees.push(currentEmployee);
+        localStorage.setItem('cachedEmployees', JSON.stringify({
+          timestamp: Date.now(),
+          employees: cachedEmployees
+        }));
+      }
+      document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
+      document.getElementById('loginModal').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'block';
+      await finishLoginAfterVerification();
+      return true;
+    } else {
+      document.getElementById('loginError').innerText = result.error || 'Invalid PIN';
+      return false;
+    }
+  } catch (err) {
+    console.error(err);
+    document.getElementById('loginError').innerText = 'Connection error';
+    return false;
+  } finally {
+    hideLoading();
+  }
+}
+  const gridBtn = document.getElementById('gridViewBtn');
+  const listBtn = document.getElementById('listViewBtn');
+  if (gridBtn && listBtn) {
+    gridBtn.addEventListener('click', () => setViewMode('grid'));
+    listBtn.addEventListener('click', () => setViewMode('list'));
+  }
+document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLowStockFilter);
+  document.getElementById('clearStockHistoryBtn')?.addEventListener('click', clearStockHistory);
+  document.getElementById('saveStockHistoryBtn')?.addEventListener('click', saveStockHistoryToSheet);
+
+  const pinInputEl = document.getElementById('pinInput');
+  if (pinInputEl) {
+    document.querySelectorAll('.keypad-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const digit = btn.dataset.digit;
+        const action = btn.dataset.action;
+
+        if (digit && pinInputEl.value.length < 4) {
+          pinInputEl.value += digit;
+          if (pinInputEl.value.length === 4) {
+            verifyEmployeeByPin(pinInputEl.value);
+          }
+        } else if (action === 'clear') {
+          pinInputEl.value = pinInputEl.value.slice(0, -1);
+          document.getElementById('loginError').innerText = '';
+        } else if (action === 'enter') {
+          if (pinInputEl.value.length === 4) {
+            verifyEmployeeByPin(pinInputEl.value);
+          } else {
+            document.getElementById('loginError').innerText = 'Please enter 4-digit PIN';
+          }
+        }
+      });
+    });
+    pinInputEl.addEventListener('input', () => {
+      if (pinInputEl.value.length === 4) {
+        verifyEmployeeByPin(pinInputEl.value);
+      }
+    });
+  }
+
+  // Side menu
+  const logo = document.getElementById('logoImage');
+  const sideMenuOverlay = document.getElementById('sideMenuOverlay');
+  const sideMenuDiv = document.getElementById('sideMenu');
+  const closeSideMenuBtn = document.getElementById('closeSideMenuBtn');
+
+  function openSideMenu() {
+    sideMenuOverlay.style.display = 'flex';
+    setTimeout(() => {
+      sideMenuDiv.classList.add('open');
+    }, 10);
+  }
+
+  function closeSideMenu() {
+    sideMenuDiv.classList.remove('open');
+    setTimeout(() => {
+      sideMenuOverlay.style.display = 'none';
+    }, 300);
+  }
+
+  if (logo) logo.addEventListener('click', openSideMenu);
+  if (closeSideMenuBtn) closeSideMenuBtn.addEventListener('click', closeSideMenu);
+  if (sideMenuOverlay) sideMenuOverlay.addEventListener('click', (e) => { if (e.target === sideMenuOverlay) closeSideMenu(); });
+
+  const sideReportBtn = document.getElementById('sideReportBtn');
+  const sideSettlementBtn = document.getElementById('sideSettlementBtn');
+  const sideCollectionBtn = document.getElementById('sideCollectionBtn');
+  const sideInventoryBtn = document.getElementById('sideInventoryBtn');
+  const sideReceiptsBtn = document.getElementById('sideReceiptsBtn');
+  const sideDrawerBtn = document.getElementById('sideDrawerBtn');
+  const sideStockAlertBtn = document.getElementById('sideStockAlertBtn');
+  const sideTelegramBtn = document.getElementById('sideTelegramBtn');
+  if (sideStockAlertBtn) {
+    sideStockAlertBtn.addEventListener('click', async () => {
+      if (!notificationsEnabled) {
+        await enableStockNotifications();
+      } else {
+        disableStockNotifications();
+      }
+      updateStockAlertButtonUI();
+    });
+  }
+  if (sideTelegramBtn) {
+    sideTelegramBtn.addEventListener('click', showTelegramModal);
+  }
+
+  document.getElementById('saveTelegramSettingsBtn')?.addEventListener('click', saveTelegramSettings);
+  document.getElementById('closeTelegramModal')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
+  document.getElementById('closeTelegramModalBtn')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
+async function finishLoginAfterVerification() {
+  // Clear any existing auto-sync interval to avoid duplicates
+  if (window.autoSyncInterval) clearInterval(window.autoSyncInterval);
+
+  // Load initial data (products and employees) if not already loaded
+  if (initialDataPromise) await initialDataPromise;
+  else await loadInitialData();
+
+  // Set the sold-by select to current employee
+  soldBySelectCart.value = currentEmployee.id;
+
+  // Show/hide admin-only buttons and controls
+  const sideInventory = document.getElementById('sideInventoryBtn');
+  const sideCollection = document.getElementById('sideCollectionBtn');
+  if (currentEmployee.isAdmin) {
+    if (sideInventory) sideInventory.style.display = 'flex';
+    if (sideCollection) sideCollection.style.display = 'flex';
+    storeSelect.disabled = false;
+  } else {
+    if (sideInventory) sideInventory.style.display = 'none';
+    if (sideCollection) sideCollection.style.display = 'none';
+    storeSelect.disabled = true;
+  }
+
+  // Configure settlement totals display based on admin role
+  const systemTotalsDiv = document.getElementById('systemTotalsDisplay');
+  if (systemTotalsDiv) {
+    if (!currentEmployee.isAdmin) {
+      systemTotalsDiv.style.display = 'block';
+      const breakdownIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund'];
+      breakdownIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.parentElement) el.parentElement.style.display = 'none';
+      });
+      const netTotalParent = document.getElementById('sysNetTotal')?.parentElement;
+      if (netTotalParent) netTotalParent.style.display = 'block';
+    } else {
+      systemTotalsDiv.style.display = 'block';
+      const allIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund', 'sysNetTotal'];
+      allIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.parentElement) el.parentElement.style.display = 'block';
+      });
+    }
+  }
+
+  // Show/hide report filters and charts based on admin role
+  const reportStoreFilter = document.getElementById('reportStoreFilterGroup');
+  const employeeFilterGroup = document.getElementById('employeeFilterGroup');
+  const storeChartContainer = document.getElementById('storeChartContainer');
+  const employeeChartContainer = document.getElementById('employeeChartContainer');
+  if (currentEmployee.isAdmin) {
+    if (reportStoreFilter) reportStoreFilter.style.display = 'flex';
+    if (employeeFilterGroup) employeeFilterGroup.style.display = 'flex';
+    if (storeChartContainer) storeChartContainer.style.display = 'block';
+    if (employeeChartContainer) employeeChartContainer.style.display = 'block';
+  } else {
+    if (reportStoreFilter) reportStoreFilter.style.display = 'none';
+    if (employeeFilterGroup) employeeFilterGroup.style.display = 'none';
+    if (storeChartContainer) storeChartContainer.style.display = 'none';
+    if (employeeChartContainer) employeeChartContainer.style.display = 'none';
+  }
+
+  // Set settlement store select (disabled for non‑admin)
+  const settlementStoreSelect = document.getElementById('settlementStoreSelect');
+  if (!currentEmployee.isAdmin) {
+    if (settlementStoreSelect) {
+      settlementStoreSelect.value = initialStore;
+      settlementStoreSelect.disabled = true;
+    }
+  } else {
+    if (settlementStoreSelect) settlementStoreSelect.disabled = false;
+  }
+
+  // Start background polling for receipts and other tasks
+  startReceiptPolling();
+  updateCartUI();
+  checkNotificationSupport();
+  updateStockAlertButtonUI();
+
+  // Load any pending sales from previous sessions and try to sync them
+  loadPendingSales();
+  syncPendingSales();
+
+  // Preload settlement and report data in background (silent)
+  preloadSettlement();
+  preloadReport();
+
+  // ========== AUTO-SYNC PRODUCTS EVERY 5 SECONDS ==========
+  window.autoSyncInterval = setInterval(async () => {
+    // Only sync if the main dashboard is visible and user is logged in
+    if (currentEmployee && document.getElementById('mainContent').style.display === 'block') {
+      await fetchProductsFromSheet(false); // silent background sync
+    }
+  }, 5000); // 5 seconds – adjust as needed
+}
+  async function openReportsModal() {
+    if (currentEmployee?.isAdmin) {
+      const employees = await fetchEmployees();
+      const adminReportEmpSelect = document.getElementById('adminReportEmployeeSelect');
+      const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
+      if (adminReportEmpSelect && receiptsEmpSelect) {
+        adminReportEmpSelect.innerHTML = '<option value="all">All Employees</option>';
+        receiptsEmpSelect.innerHTML = '<option value="all">All Employees</option>';
+        employees.forEach(emp => {
+          const opt1 = document.createElement('option');
+          opt1.value = emp.id;
+          opt1.textContent = `${emp.name} (ID: ${emp.id})`;
+          const opt2 = document.createElement('option');
+          opt2.value = emp.id;
+          opt2.textContent = `${emp.name} (ID: ${emp.id})`;
+          adminReportEmpSelect.appendChild(opt1);
+          receiptsEmpSelect.appendChild(opt2);
+        });
+      }
+      const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
+      const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
+      if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'flex';
+      if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'flex';
+    } else {
+      const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
+      const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
+      if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'none';
+      if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'none';
+      const receiptsStore = document.getElementById('receiptsStoreSelect');
+      if (receiptsStore) receiptsStore.value = currentStore;
+    }
+    populateStoreSelects();
+
+    const modal = document.getElementById('adminReportModal');
+    if (modal) {
+      modal.style.display = 'flex';
+      let loadingMsg = document.getElementById('adminReportLoadingMsg');
+      if (!loadingMsg) {
+        loadingMsg = document.createElement('div');
+        loadingMsg.id = 'adminReportLoadingMsg';
+        loadingMsg.style.textAlign = 'center';
+        loadingMsg.style.padding = '20px';
+        loadingMsg.style.background = '#f8fafc';
+        loadingMsg.style.borderRadius = '12px';
+        loadingMsg.style.margin = '10px 0';
+        loadingMsg.innerText = 'Loading report data...';
+        const reportStats = document.querySelector('#adminReportModal .report-stats');
+        if (reportStats) reportStats.insertAdjacentElement('beforebegin', loadingMsg);
+      }
+      loadingMsg.style.display = 'block';
+      setTimeout(() => updateAdminReport(), 200);
+    }
     closeSideMenu();
   }
 
-  async function loadUnsettledCash() {
-    const store = document.getElementById('collectionStoreSelect').value;
-    showLoading('Loading unsettled cash...');
+  if (sideReportBtn) sideReportBtn.addEventListener('click', openReportsModal);
+  if (sideSettlementBtn) sideSettlementBtn.addEventListener('click', () => { openSettlementModal(); closeSideMenu(); });
+  if (sideCollectionBtn) sideCollectionBtn.addEventListener('click', () => { openCollectionModal(); closeSideMenu(); });
+  if (sideInventoryBtn) sideInventoryBtn.addEventListener('click', () => { toggleInventoryMode(); closeSideMenu(); });
+  if (sideReceiptsBtn) sideReceiptsBtn.addEventListener('click', async () => {
+    const modal = document.getElementById('receiptsModal');
+    if (modal) {
+      modal.style.display = 'flex';
+      let loadingMsg = document.getElementById('receiptsLoadingMsg');
+      if (!loadingMsg) {
+        loadingMsg = document.createElement('div');
+        loadingMsg.id = 'receiptsLoadingMsg';
+        loadingMsg.style.textAlign = 'center';
+        loadingMsg.style.padding = '20px';
+        loadingMsg.style.background = '#f8fafc';
+        loadingMsg.style.borderRadius = '12px';
+        loadingMsg.style.margin = '10px 0';
+        loadingMsg.innerText = 'Loading receipts...';
+        const receiptsList = document.getElementById('receiptsList');
+        if (receiptsList) receiptsList.insertAdjacentElement('beforebegin', loadingMsg);
+      }
+      loadingMsg.style.display = 'block';
+    }
+
+    if (currentEmployee?.isAdmin) {
+      const employees = await fetchEmployees();
+      const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
+      if (receiptsEmpSelect) {
+        receiptsEmpSelect.innerHTML = '<option value="all">All Employees</option>';
+        employees.forEach(emp => {
+          const opt = document.createElement('option');
+          opt.value = emp.id;
+          opt.textContent = `${emp.name} (ID: ${emp.id})`;
+          receiptsEmpSelect.appendChild(opt);
+        });
+      }
+      const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
+      const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
+      if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'flex';
+      if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'flex';
+    } else {
+      const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
+      const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
+      if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'none';
+      if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'none';
+      const receiptsStore = document.getElementById('receiptsStoreSelect');
+      if (receiptsStore) receiptsStore.value = currentStore;
+    }
+
+    populateStoreSelects();
+
+    if (cachedReceipts) {
+      renderReceiptsList(cachedReceipts);
+      const msg = document.getElementById('receiptsLoadingMsg');
+      if (msg) msg.style.display = 'none';
+    }
+
+    updateReceipts();
+    closeSideMenu();
+  });
+  if (sideDrawerBtn) sideDrawerBtn.addEventListener('click', async () => {
+    if (!window.printerAPI || !window.printerAPI.isConnected) {
+      await showAlertModal('Printer not connected', 'Please connect a printer first using the printer icon.');
+    } else {
+      await window.printerAPI.openDrawer();
+    }
+    closeSideMenu();
+  });
+
+  document.getElementById('closeAdminReportBtn')?.addEventListener('click', () => document.getElementById('adminReportModal').style.display = 'none');
+  document.getElementById('closeAdminReportModal')?.addEventListener('click', () => document.getElementById('adminReportModal').style.display = 'none');
+  document.getElementById('adminReportStoreSelect')?.addEventListener('change', updateAdminReport);
+  document.getElementById('adminReportEmployeeSelect')?.addEventListener('change', updateAdminReport);
+  document.getElementById('adminReportDateRangeSelect')?.addEventListener('change', (e) => {
+    const customRange = document.getElementById('adminReportCustomDateRange');
+    if (customRange) customRange.style.display = e.target.value === 'custom' ? 'flex' : 'none';
+    updateAdminReport();
+  });
+  document.getElementById('adminReportFromDate')?.addEventListener('change', updateAdminReport);
+  document.getElementById('adminReportToDate')?.addEventListener('change', updateAdminReport);
+  document.getElementById('closeReceiptsBtn')?.addEventListener('click', () => document.getElementById('receiptsModal').style.display = 'none');
+  document.getElementById('closeReceiptsModal')?.addEventListener('click', () => document.getElementById('receiptsModal').style.display = 'none');
+  document.getElementById('receiptsStoreSelect')?.addEventListener('change', updateReceipts);
+  document.getElementById('receiptsEmployeeSelect')?.addEventListener('change', updateReceipts);
+  document.getElementById('receiptsDateRangeSelect')?.addEventListener('change', (e) => {
+    const customRange = document.getElementById('receiptsCustomDateRange');
+    if (customRange) customRange.style.display = e.target.value === 'custom' ? 'flex' : 'none';
+    updateReceipts();
+  });
+  document.getElementById('receiptsFromDate')?.addEventListener('change', updateReceipts);
+  document.getElementById('receiptsToDate')?.addEventListener('change', updateReceipts);
+  document.getElementById('receiptsSearch')?.addEventListener('input', updateReceipts);
+
+  document.getElementById('settlementBtn')?.addEventListener('click', openSettlementModal);
+  document.getElementById('closeSettlementModal')?.addEventListener('click', () => document.getElementById('settlementModal').style.display = 'none');
+  document.getElementById('closeSettlementModalBtn')?.addEventListener('click', () => document.getElementById('settlementModal').style.display = 'none');
+  document.getElementById('settlementStoreSelect')?.addEventListener('change', async () => {
+    if (currentEmployee?.isAdmin) {
+      const newStore = document.getElementById('settlementStoreSelect').value;
+      await refreshSettlementTotals(newStore);
+    }
+  });
+
+  document.getElementById('checkSettlementBtn')?.addEventListener('click', async () => {
+    const actualCash = parseFloat(document.getElementById('actualCash').value);
+    const actualCard = parseFloat(document.getElementById('actualCard').value);
+    const actualQR = parseFloat(document.getElementById('actualQR').value);
+    const errors = [];
+    if (isNaN(actualCash)) errors.push('Cash Count');
+    if (isNaN(actualCard)) errors.push('Card Settlement');
+    if (isNaN(actualQR)) errors.push('QR Settlement');
+    if (errors.length > 0) {
+      const settlementError = document.getElementById('settlementError');
+      if (settlementError) {
+        settlementError.innerText = `Please enter valid numbers for: ${errors.join(', ')}`;
+        settlementError.style.display = 'block';
+      }
+      return;
+    }
+
+    const cashOk = Math.abs(actualCash - currentSettlementTotals.cash) < 0.01;
+    const cardOk = Math.abs(actualCard - currentSettlementTotals.card) < 0.01;
+    const qrOk = Math.abs(actualQR - currentSettlementTotals.qr) < 0.01;
+
+    const actualCashEl = document.getElementById('actualCash');
+    const actualCardEl = document.getElementById('actualCard');
+    const actualQREl = document.getElementById('actualQR');
+    if (actualCashEl) actualCashEl.classList.toggle('error-field', !cashOk);
+    if (actualCardEl) actualCardEl.classList.toggle('error-field', !cardOk);
+    if (actualQREl) actualQREl.classList.toggle('error-field', !qrOk);
+
+    if (cashOk && cardOk && qrOk) {
+      const settlementError = document.getElementById('settlementError');
+      if (settlementError) settlementError.style.display = 'none';
+      setSettlementFieldsEnabled(false);
+      const checkBtn = document.getElementById('checkSettlementBtn');
+      const recordBtn = document.getElementById('recordSettlementBtn');
+      if (checkBtn) checkBtn.style.display = 'none';
+      if (recordBtn) {
+        recordBtn.style.display = 'block';
+        recordBtn.disabled = false;
+      }
+    } else {
+      const settlementError = document.getElementById('settlementError');
+      if (settlementError) {
+        if (currentEmployee && currentEmployee.isAdmin) {
+          const errorMessages = [];
+          if (!cashOk) errorMessages.push(`Cash (System: RM ${currentSettlementTotals.cash.toFixed(2)}, Entered: RM ${actualCash.toFixed(2)})`);
+          if (!cardOk) errorMessages.push(`Card (System: RM ${currentSettlementTotals.card.toFixed(2)}, Entered: RM ${actualCard.toFixed(2)})`);
+          if (!qrOk) errorMessages.push(`QR (System: RM ${currentSettlementTotals.qr.toFixed(2)}, Entered: RM ${actualQR.toFixed(2)})`);
+          settlementError.innerHTML = `❌ Mismatch in:<br>${errorMessages.join('<br>')}<br>Please correct and try again.`;
+        } else {
+          settlementError.innerHTML = `❌ Mismatch detected! Count properly and try again.`;
+        }
+        settlementError.style.display = 'block';
+      }
+    }
+  });
+
+  document.getElementById('recordSettlementBtn')?.addEventListener('click', async () => {
+    const store = document.getElementById('settlementStoreSelect').value;
+    const pettyCash = parseFloat(document.getElementById('pettyCashFloat').value) || 0;
+    const actualCash = parseFloat(document.getElementById('actualCash').value);
+    const actualCard = parseFloat(document.getElementById('actualCard').value);
+    const actualQR = parseFloat(document.getElementById('actualQR').value);
+    const recordBtn = document.getElementById('recordSettlementBtn');
+    if (recordBtn) recordBtn.disabled = true;
+    showLoading('Recording settlement...');
     try {
-      let url = `${APPS_SCRIPT_URL}?action=getUnsettledCash&store=${store}`;
-      const response = await fetch(url);
+      const formData = new URLSearchParams();
+      formData.append("action", "recordSettlement");
+      formData.append("employee_id", currentEmployee.id);
+      formData.append("employee_name", currentEmployee.name);
+      formData.append("store", store);
+      formData.append("petty_cash_float", pettyCash);
+      formData.append("date", getLocalDateString(new Date()));
+      formData.append("cash_system", currentSettlementTotals.cash);
+      formData.append("card_system", currentSettlementTotals.card);
+      formData.append("qr_system", currentSettlementTotals.qr);
+      formData.append("cash_actual", actualCash);
+      formData.append("card_actual", actualCard);
+      formData.append("qr_actual", actualQR);
+      const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
       const result = await response.json();
       if (result.success) {
-        currentUnsettledCash = result.records;
-        renderCollectionTable();
-        updateTotalOutstanding();
-        document.getElementById('collectSelectedBtn').disabled = true;
-        const selectAll = document.getElementById('selectAllCheckbox');
-        if (selectAll) selectAll.checked = false;
+        await showAlertModal('Settlement Recorded', 'Settlement has been successfully recorded.');
+        await refreshSettlementTotals(store);
+        document.getElementById('settlementModal').style.display = 'none';
       } else {
-        await showAlertModal('Error', 'Failed to load unsettled cash: ' + (result.error || 'Unknown error'));
+        await showAlertModal('Error', 'Failed to record settlement: ' + (result.error || 'Unknown error'));
       }
     } catch (err) {
       console.error(err);
-      await showAlertModal('Error', 'Connection error while loading unsettled cash.');
+      await showAlertModal('Error', 'Connection error while recording settlement.');
     } finally {
       hideLoading();
+      if (recordBtn) recordBtn.disabled = false;
     }
-  }
+  });
 
-  function renderCollectionTable() {
-    const tbody = document.getElementById('collectionTableBody');
-    if (!currentUnsettledCash.length) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.</td></tr>';
-      return;
-    }
-    let html = '';
-    currentUnsettledCash.forEach(rec => {
-      const date = new Date(rec.timestamp).toLocaleDateString();
-      html += `<tr data-id="${rec.id}">
-          <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"></td>
-          <td>${date}</td>
-          <td>${getEmployeeName(rec.employee_id)}</td>
-          <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
-        </tr>`;
-    });
-    tbody.innerHTML = html;
-    document.querySelectorAll('.collection-checkbox').forEach(cb => {
-      cb.addEventListener('change', updateCollectionButtonState);
-    });
-  }
-
-  function updateTotalOutstanding() {
-    const total = currentUnsettledCash.reduce((sum, rec) => sum + rec.cash_actual, 0);
-    document.getElementById('totalOutstandingCash').innerText = `RM ${total.toFixed(2)}`;
-  }
-
-  function updateCollectionButtonState() {
-    const anyChecked = document.querySelectorAll('.collection-checkbox:checked').length > 0;
-    document.getElementById('collectSelectedBtn').disabled = !anyChecked;
-  }
-
-  // ==================== SERVICE WORKER REGISTRATION (Offline & Background Sync) ====================
-  function registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
-      // Create a service worker script dynamically as a Blob and register it
-      const swCode = `
-        const CACHE_NAME = 'pos-cache-v1';
-        const urlsToCache = [
-          '/',
-          '/index.html',
-          'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'
-        ];
-
-        self.addEventListener('install', event => {
-          event.waitUntil(
-            caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
-          );
-          self.skipWaiting();
-        });
-
-        self.addEventListener('fetch', event => {
-          event.respondWith(
-            caches.match(event.request).then(response => {
-              if (response) return response;
-              return fetch(event.request).then(fetchResponse => {
-                if (event.request.method === 'GET' && event.request.url.startsWith('http')) {
-                  return caches.open(CACHE_NAME).then(cache => {
-                    cache.put(event.request, fetchResponse.clone());
-                    return fetchResponse;
-                  });
-                }
-                return fetchResponse;
-              }).catch(() => {
-                if (event.request.mode === 'navigate') {
-                  return caches.match('/index.html');
-                }
-                return new Response('Offline content not available', { status: 404 });
-              });
-            })
-          );
-        });
-
-        self.addEventListener('sync', event => {
-          if (event.tag === 'sales-sync') {
-            event.waitUntil(syncSales());
-          }
-        });
-
-        async function syncSales() {
-          const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
-          if (clients.length) {
-            clients.forEach(client => client.postMessage({ type: 'SYNC_SALES' }));
-          }
-        }
-      `;
-      const blob = new Blob([swCode], { type: 'application/javascript' });
-      const swUrl = URL.createObjectURL(blob);
-      navigator.serviceWorker.register(swUrl).then(reg => {
-        console.log('Service Worker registered with scope:', reg.scope);
-        // Listen for messages from service worker
-        navigator.serviceWorker.addEventListener('message', event => {
-          if (event.data.type === 'SYNC_SALES') {
-            syncPendingSales();
-          }
-        });
-      }).catch(err => console.error('Service Worker registration failed:', err));
-    }
-  }
-
-  // ==================== INITIALIZE APPLICATION ====================
-  async function init() {
-    registerServiceWorker();
-    loadPendingSales();
-    syncPendingSales();
-    preloadAllStoresData();
-    // Set up event listeners for the rest of UI (already done inline)
-  }
-
-  init();
-
-  // ==================== FINAL EVENT LISTENERS (some missing) ====================
+  document.getElementById('collectionBtn')?.addEventListener('click', openCollectionModal);
+  document.getElementById('closeCollectionModal')?.addEventListener('click', () => document.getElementById('collectionModal').style.display = 'none');
+  document.getElementById('closeCollectionModalBtn')?.addEventListener('click', () => document.getElementById('collectionModal').style.display = 'none');
   document.getElementById('collectionStoreSelect')?.addEventListener('change', loadUnsettledCash);
   document.getElementById('selectAllCheckbox')?.addEventListener('change', (e) => {
     const checkboxes = document.querySelectorAll('.collection-checkbox');
@@ -3776,22 +4839,322 @@ renderProductGrid();
       hideLoading();
     }
   });
-  document.getElementById('closeCollectionModal')?.addEventListener('click', () => document.getElementById('collectionModal').style.display = 'none');
-  document.getElementById('closeCollectionModalBtn')?.addEventListener('click', () => document.getElementById('collectionModal').style.display = 'none');
-  document.getElementById('sideChangePinBtn')?.addEventListener('click', () => {
-    // Placeholder for change PIN functionality
-    showAlertModal('Change PIN', 'This feature will be implemented soon.');
-    closeSideMenu();
+
+  if (storeSelect) {
+    storeSelect.addEventListener('change', async () => {
+      if (!storeSelect.disabled) {
+        currentStore = storeSelect.value;
+        await fetchProductsFromSheet();
+        clearCart();
+      }
+    });
+  }
+  document.getElementById('checkoutBtn')?.addEventListener('click', startCheckout);
+  document.getElementById('claimPrizeBtn')?.addEventListener('click', showClaimPrizeModal);
+  document.getElementById('specialPromoBtn')?.addEventListener('click', showSpecialPromoModal);
+  document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
+  document.getElementById('refreshProductsPanelBtn')?.addEventListener('click', () => {
+    localStorage.removeItem(`products_${currentStore}`);
+    fetchProductsFromSheet(true);
   });
-  document.getElementById('logoImage')?.addEventListener('click', openSideMenu);
-  document.getElementById('closeSideMenuBtn')?.addEventListener('click', closeSideMenu);
-  sideMenuOverlay?.addEventListener('click', (e) => { if (e.target === sideMenuOverlay) closeSideMenu(); });
 
-  // Ensure low stock button is hidden initially
-  const lowStockBtn = document.getElementById('lowStockToggleBtn');
-  if (lowStockBtn) lowStockBtn.style.display = 'none';
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => renderProductGrid(), 300);
+    });
+  }
+  if (categorySelect) categorySelect.addEventListener('change', renderProductGrid);
 
-  console.log('POS System fully loaded with Service Worker and offline capabilities');
+  document.getElementById('logoutHeaderBtn')?.addEventListener('click', () => {
+    if (typeof stopReceiptPolling === 'function') stopReceiptPolling();
+    cachedReceipts = null;
+    currentEmployee = null;
+    document.getElementById('mainContent').style.display = 'none';
+    document.getElementById('loginModal').style.display = 'flex';
+    document.getElementById('pinInput').value = '';
+    document.getElementById('loginError').innerText = '';
+    cart = [];
+    products = [];
+    selectedCustomer = null;
+    updateCustomerDisplay();
+    renderProductGrid();
+  });
+  document.getElementById('closeLoginModal')?.addEventListener('click', () => {});
+function updateCategoryDropdown() {
+  const categories = [...new Set(products.map(p => p.category))].sort();
+  categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
+  categories.forEach(cat => {
+    const option = document.createElement('option');
+    option.value = cat;
+    option.textContent = cat;
+    categorySelect.appendChild(option);
+  });
+  const currentCategory = categorySelect.value;
+  if (categories.includes(currentCategory)) categorySelect.value = currentCategory;
+  else categorySelect.value = 'all';
+}
+  async function fetchEmployees() {
+    try {
+      const response = await fetch(`${APPS_SCRIPT_URL}?action=getEmployees`);
+      const result = await response.json();
+      return result.success ? result.employees : [];
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
+  }
+
+  function populateStoreSelects() {
+    const stores = Array.from(storeSelect.options).map(opt => ({ value: opt.value, text: opt.text }));
+    const receiptsStore = document.getElementById('receiptsStoreSelect');
+    if (receiptsStore) {
+      receiptsStore.innerHTML = '<option value="all">All Stores</option>';
+      stores.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.value;
+        opt.textContent = s.text;
+        receiptsStore.appendChild(opt);
+      });
+    }
+  }
+
+  function updateReceipts() {
+    let store;
+    if (currentEmployee?.isAdmin) {
+      const receiptsStore = document.getElementById('receiptsStoreSelect');
+      store = receiptsStore ? receiptsStore.value : 'all';
+    } else {
+      store = currentStore;
+    }
+    let employeeId = 'all';
+    if (currentEmployee?.isAdmin) {
+      const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
+      employeeId = receiptsEmpSelect ? receiptsEmpSelect.value : 'all';
+    }
+    const rangeSelect = document.getElementById('receiptsDateRangeSelect');
+    const range = rangeSelect ? rangeSelect.value : 'today';
+    const search = document.getElementById('receiptsSearch').value;
+    let from = null, to = null;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    if (range === 'today') {
+      from = getLocalDateString(today);
+      to = from;
+    } else if (range === 'week') {
+      const start = new Date(today);
+      const dayOfWeek = today.getDay();
+      const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+      start.setDate(today.getDate() - diffToMonday);
+      from = getLocalDateString(start);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      to = getLocalDateString(end);
+    } else if (range === 'month') {
+      const start = new Date(today.getFullYear(), today.getMonth(), 1);
+      from = getLocalDateString(start);
+      const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      to = getLocalDateString(end);
+    } else if (range === 'custom') {
+      from = document.getElementById('receiptsFromDate').value;
+      to = document.getElementById('receiptsToDate').value;
+      if (!from || !to) return;
+    }
+    fetchReceipts(store, employeeId, from, to, search);
+  }
+
+  const toggleBtn = document.getElementById('toggleProductDetailsBtn');
+  const productDetailsContainer = document.getElementById('productDetailsContainer');
+  if (toggleBtn && productDetailsContainer) {
+    toggleBtn.addEventListener('click', () => {
+      productDetailsVisible = !productDetailsVisible;
+      if (productDetailsVisible) {
+        productDetailsContainer.style.display = 'block';
+        toggleBtn.innerText = '📦 Hide Product Details';
+        if (lastProductData) renderProductDetails(lastProductData);
+      } else {
+        productDetailsContainer.style.display = 'none';
+        toggleBtn.innerText = '📦 Show Product Details';
+      }
+    });
+  }
+
+  const closeClaimPrizeModal = document.getElementById('closeClaimPrizeModal');
+  if (closeClaimPrizeModal) closeClaimPrizeModal.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');
+  const cancelClaimBtn = document.getElementById('cancelClaimBtn');
+  if (cancelClaimBtn) cancelClaimBtn.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');
+  const cancelClaimStep2Btn = document.getElementById('cancelClaimStep2Btn');
+  if (cancelClaimStep2Btn) cancelClaimStep2Btn.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');
+  const checkReceiptBtn = document.getElementById('checkReceiptBtn');
+  if (checkReceiptBtn) checkReceiptBtn.addEventListener('click', checkReceiptForClaim);
+  const applyPrizeBtn = document.getElementById('applyPrizeBtn');
+  if (applyPrizeBtn) applyPrizeBtn.addEventListener('click', applyPrizeToCart);
+
+  const closeSpecialPromoModal = document.getElementById('closeSpecialPromoModal');
+  if (closeSpecialPromoModal) closeSpecialPromoModal.addEventListener('click', () => document.getElementById('specialPromoModal').style.display = 'none');
+  const closeSpecialPromoModalBtn = document.getElementById('closeSpecialPromoModalBtn');
+  if (closeSpecialPromoModalBtn) closeSpecialPromoModalBtn.addEventListener('click', () => document.getElementById('specialPromoModal').style.display = 'none');
+  const promoBuy2Free1Perfume = document.getElementById('promoBuy2Free1Perfume');
+  if (promoBuy2Free1Perfume) promoBuy2Free1Perfume.addEventListener('click', applyBuy2Free1Perfume);
+  const promoBuy3Free1ExcludePerfume = document.getElementById('promoBuy3Free1ExcludePerfume');
+  if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener('click', applyBuy3Free1ExcludePerfume);
+  const applyCustomPromoBtn = document.getElementById('applyCustomPromoBtn');
+  if (applyCustomPromoBtn) applyCustomPromoBtn.addEventListener('click', applyCustomDiscount);
+
+  const closeLuckyDrawPrintModal = document.getElementById('closeLuckyDrawPrintModal');
+  const closeLuckyDrawPrintModalBtn = document.getElementById('closeLuckyDrawPrintModalBtn');
+  const printPrizeVoucherBtn = document.getElementById('printPrizeVoucherBtn');
+
+  function closeLuckyDrawPrintModalFunc() {
+    document.getElementById('luckyDrawPrintModal').style.display = 'none';
+  }
+  if (closeLuckyDrawPrintModal) closeLuckyDrawPrintModal.addEventListener('click', closeLuckyDrawPrintModalFunc);
+  if (closeLuckyDrawPrintModalBtn) closeLuckyDrawPrintModalBtn.addEventListener('click', closeLuckyDrawPrintModalFunc);
+
+  if (printPrizeVoucherBtn) {
+    printPrizeVoucherBtn.addEventListener('click', async () => {
+      const receiptNumber = document.getElementById('luckyDrawReceiptNumber').innerText;
+      if (!receiptNumber) {
+        await showAlertModal('Error', 'No receipt number found.');
+        return;
+      }
+      showLoading('Printing voucher...');
+      try {
+        const url = `${APPS_SCRIPT_URL}?action=get&receipt=${encodeURIComponent(receiptNumber)}`;
+        const response = await fetch(url);
+        const result = await response.json();
+        if (!result.success) throw new Error('Transaction not found');
+        const transaction = result.data;
+        let prizeLabel = 'RM 38 FREE GIFT';
+        if (!window.printerAPI || !window.printerAPI.printPrizeVoucher) {
+          await showAlertModal('Printer Error', 'Printer API not available. Please connect printer first.');
+          return;
+        }
+        const success = await window.printerAPI.printPrizeVoucher(prizeLabel, receiptNumber);
+        if (success) {
+          await showAlertModal('Printed', 'Prize voucher printed successfully.');
+          closeLuckyDrawPrintModalFunc();
+        } else {
+          await showAlertModal('Print Failed', 'Could not print voucher. Check printer connection.');
+        }
+      } catch (err) {
+        console.error(err);
+        await showAlertModal('Error', 'Failed to fetch transaction details: ' + err.message);
+      } finally {
+        hideLoading();
+      }
+    });
+  }
+
+  // Customer modal listeners
+  document.getElementById('customerBtn').addEventListener('click', showCustomerModal);
+  document.getElementById('findCustomerBtn').addEventListener('click', findCustomer);
+  document.getElementById('saveCustomerBtn').addEventListener('click', saveCustomerFromModal);
+  document.getElementById('cancelCustomerStep1Btn').addEventListener('click', () => document.getElementById('customerModal').style.display = 'none');
+  document.getElementById('cancelCustomerStep2Btn').addEventListener('click', () => document.getElementById('customerModal').style.display = 'none');
+  document.getElementById('closeCustomerModal').addEventListener('click', () => document.getElementById('customerModal').style.display = 'none');
+
+  // ==================== CASH COLLECTION ====================
+  let currentUnsettledCash = [];
+
+  async function openCollectionModal() {
+    const modal = document.getElementById('collectionModal');
+    modal.style.display = 'flex';
+
+    let loadingMsg = document.getElementById('collectionLoadingMsg');
+    if (!loadingMsg) {
+      loadingMsg = document.createElement('div');
+      loadingMsg.id = 'collectionLoadingMsg';
+      loadingMsg.style.textAlign = 'center';
+      loadingMsg.style.padding = '20px';
+      loadingMsg.style.background = '#f8fafc';
+      loadingMsg.style.borderRadius = '12px';
+      loadingMsg.style.margin = '10px 0';
+      loadingMsg.innerText = 'Loading unsettled cash...';
+      const container = document.querySelector('#collectionModal .modal-container');
+      const collectionTotalDiv = document.getElementById('collectionTotal');
+      if (container && collectionTotalDiv) {
+        container.insertBefore(loadingMsg, collectionTotalDiv);
+      }
+    }
+    loadingMsg.style.display = 'block';
+
+    await loadUnsettledCash();
+    loadingMsg.style.display = 'none';
+  }
+
+  async function loadUnsettledCash() {
+    const store = document.getElementById('collectionStoreSelect').value;
+    showLoading('Loading unsettled cash...');
+    try {
+      let url = `${APPS_SCRIPT_URL}?action=getUnsettledCash&store=${store}`;
+      const response = await fetch(url);
+      const result = await response.json();
+      if (result.success) {
+        currentUnsettledCash = result.records;
+        renderCollectionTable();
+        updateTotalOutstanding();
+        document.getElementById('collectSelectedBtn').disabled = true;
+        const selectAll = document.getElementById('selectAllCheckbox');
+        if (selectAll) selectAll.checked = false;
+      } else {
+        await showAlertModal('Error', 'Failed to load unsettled cash: ' + (result.error || 'Unknown error'));
+      }
+    } catch (err) {
+      console.error(err);
+      await showAlertModal('Error', 'Connection error while loading unsettled cash.');
+    } finally {
+      hideLoading();
+    }
+  }
+
+  function renderCollectionTable() {
+    const tbody = document.getElementById('collectionTableBody');
+    if (!currentUnsettledCash.length) {
+      tbody.innerHTML = '|<td colspan="4" style="text-align: center;">No unsettled cash records found.  ';
+      return;
+    }
+    let html = '';
+    currentUnsettledCash.forEach(rec => {
+      const date = new Date(rec.timestamp).toLocaleDateString();
+      html += `<tr data-id="${rec.id}">
+         <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"></td>
+         <td>${date}</td>
+         <td>${getEmployeeName(rec.employee_id)}</td>
+        <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
+       </tr>`;
+    });
+    tbody.innerHTML = html;
+    document.querySelectorAll('.collection-checkbox').forEach(cb => {
+      cb.addEventListener('change', updateCollectionButtonState);
+    });
+  }
+
+  function updateTotalOutstanding() {
+    const total = currentUnsettledCash.reduce((sum, rec) => sum + rec.cash_actual, 0);
+    document.getElementById('totalOutstandingCash').innerText = `RM ${total.toFixed(2)}`;
+  }
+
+  function updateCollectionButtonState() {
+    const anyChecked = document.querySelectorAll('.collection-checkbox:checked').length > 0;
+    document.getElementById('collectSelectedBtn').disabled = !anyChecked;
+  }
+
+  (async function initEmployeeSelects() {
+    const employees = await fetchEmployees();
+    const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
+    if (receiptsEmpSelect && employees.length) {
+      receiptsEmpSelect.innerHTML = '<option value="all">All Employees</option>';
+      employees.forEach(emp => {
+        const opt = document.createElement('option');
+        opt.value = emp.id;
+        opt.textContent = `${emp.name} (ID: ${emp.id})`;
+        receiptsEmpSelect.appendChild(opt);
+      });
+    }
+  })();
+
+  
 </script>
 </body>
 </html>

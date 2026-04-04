@@ -5004,10 +5004,11 @@ function updateCategoryDropdown() {
   if (closeSpecialPromoModal) closeSpecialPromoModal.addEventListener('click', () => document.getElementById('specialPromoModal').style.display = 'none');
   const closeSpecialPromoModalBtn = document.getElementById('closeSpecialPromoModalBtn');
   if (closeSpecialPromoModalBtn) closeSpecialPromoModalBtn.addEventListener('click', () => document.getElementById('specialPromoModal').style.display = 'none');
-  const promoBuy2Free1Perfume = document.getElementById('promoBuy2Free1Perfume');
-  if (promoBuy2Free1Perfume) promoBuy2Free1Perfume.addEventListener('click', applyBuy2Free1Perfume);
-  const promoBuy3Free1ExcludePerfume = document.getElementById('promoBuy3Free1ExcludePerfume');
-  if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener('click', applyBuy3Free1ExcludePerfume);
+  // AFTER (fixed)
+const promoBuy2Free1Perfume = document.getElementById('promoBuy2Free1Perfume');
+if (promoBuy2Free1Perfume) promoBuy2Free1Perfume.addEventListener('click', applyCarAromaticPromo);
+const promoBuy3Free1ExcludePerfume = document.getElementById('promoBuy3Free1ExcludePerfume');
+if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener('click', apply15mlPerfumeEdpPromo);
   const applyCustomPromoBtn = document.getElementById('applyCustomPromoBtn');
   if (applyCustomPromoBtn) applyCustomPromoBtn.addEventListener('click', applyCustomDiscount);
 

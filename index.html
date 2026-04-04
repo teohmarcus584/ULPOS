@@ -1098,7 +1098,7 @@
       <option value="gurney_paragon">Gurney Paragon</option>
     </select>
     <div class="modal-buttons" style="margin-top: 24px;">
-      <button id="confirmStoreBtn" class="modal-btn modal-btn-primary">Next ?</button>
+      <button id="confirmStoreBtn" class="modal-btn modal-btn-primary">Next →</button>
     </div>
   </div>
 </div>
@@ -1106,7 +1106,7 @@
 <div id="loginModal" class="modal-overlay" style="display: none;">
   <div class="modal-container" style="max-width: 400px;">
     <span class="close-modal" id="closeLoginModal">×</span>
-    <div class="modal-title">?? Enter PIN</div>
+    <div class="modal-title">🔐 Enter PIN</div>
     <div class="login-form">
       <input type="password" id="pinInput" class="pin-input" placeholder="****" maxlength="4" inputmode="numeric" autofocus readonly>
       <div class="pin-keypad">
@@ -1119,9 +1119,9 @@
         <button class="keypad-btn" data-digit="7">7</button>
         <button class="keypad-btn" data-digit="8">8</button>
         <button class="keypad-btn" data-digit="9">9</button>
-        <button class="keypad-btn clear" data-action="clear">?</button>
+        <button class="keypad-btn clear" data-action="clear">⌫</button>
         <button class="keypad-btn" data-digit="0">0</button>
-        <button class="keypad-btn enter" data-action="enter">?</button>
+        <button class="keypad-btn enter" data-action="enter">↵</button>
       </div>
       <div id="loginError" class="error-msg" style="color:#ef4444; font-size:0.9rem; text-align:center; margin-top:12px;"></div>
     </div>
@@ -1144,20 +1144,20 @@
     <div class="pos-header-right">
       <span class="cashier-info" id="employeeNameHeader"></span>
       <button id="logoutHeaderBtn" class="logout-header-btn">Logout</button>
-      <button id="printerIconBtn" class="printer-icon-btn">???</button>
+      <button id="printerIconBtn" class="printer-icon-btn">🖨️</button>
     </div>
   </div>
 
   <div class="pos-dashboard">
     <div class="products-panel">
       <div class="filter-bar">
-        <select id="categorySelect"><option value="all">?? All Categories</option></select>
-        <input type="text" id="searchInput" class="search-bar" placeholder="?? Search product...">
-        <button id="refreshProductsPanelBtn" class="refresh-btn" title="Refresh products">??</button>
-        <button id="lowStockToggleBtn" class="low-stock-toggle">?? Low Stock</button>
+        <select id="categorySelect"><option value="all">📂 All Categories</option></select>
+        <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search product...">
+        <button id="refreshProductsPanelBtn" class="refresh-btn" title="Refresh products">🔄</button>
+        <button id="lowStockToggleBtn" class="low-stock-toggle">⚠️ Low Stock</button>
         <div class="view-toggle">
-          <button id="gridViewBtn" class="active" title="Grid view">?</button>
-          <button id="listViewBtn" title="List view">?</button>
+          <button id="gridViewBtn" class="active" title="Grid view">⊞</button>
+          <button id="listViewBtn" title="List view">≡</button>
         </div>
       </div>
       <div id="productGrid" class="product-grid">Loading products...</div>
@@ -1165,14 +1165,14 @@
 
     <div class="cart-panel">
       <div class="cart-header">
-        <div class="cart-title" id="cartTitle">?? Current Sale</div>
+        <div class="cart-title" id="cartTitle">🧾 Current Sale</div>
         <div class="cart-header-right">
           <select id="soldBySelectCart" class="sold-by-select-cart">
             <option value="">Loading...</option>
           </select>
           <div class="cart-header-buttons">
-            <button id="customerBtn" class="cart-header-btn">?? Customer</button>
-            <button id="clearCartBtn" class="cart-header-btn">??? Clear</button>
+            <button id="customerBtn" class="cart-header-btn">👤 Customer</button>
+            <button id="clearCartBtn" class="cart-header-btn">🗑️ Clear</button>
           </div>
         </div>
       </div>
@@ -1184,36 +1184,36 @@
         <div class="cart-summary" id="cartSummary">
           <div class="summary-row"><span>Subtotal</span><span id="subtotal">RM 0.00</span></div>
           <div id="discountRow" class="summary-row discount-row" style="display: none;">
-            <span><i>??</i> Lucky Draw</span>
+            <span><i>🎲</i> Lucky Draw</span>
             <span id="discountAmount">RM 0.00</span>
           </div>
          <div id="promoBuy2Free1Row" class="summary-row discount-row" style="display: none;">
-  <span><i>🚗</i> Car Aromatic Promo (1 item → RM 2)</span>
+  <span><i>🚗</i> Car Aromatic Promo (RM 2)</span>
   <span id="promoBuy2Free1Amount">RM 0.00</span>
 </div>
 <div id="promoBuy3Free1Row" class="summary-row discount-row" style="display: none;">
-  <span><i>🌸</i> 15ml Perfume EDP Promo (1 item → RM 8)</span>
+  <span><i>🌸</i> 15ml Perfume EDP Promo (RM 8)</span>
   <span id="promoBuy3Free1Amount">RM 0.00</span>
 </div>
           <div id="customDiscountRow" class="summary-row discount-row" style="display: none;">
-            <span><i>??</i> Custom Discount</span>
+            <span><i>💰</i> Custom Discount</span>
             <span id="customDiscountAmount">RM 0.00</span>
           </div>
           <div class="summary-row total-row"><span>TOTAL</span><span id="totalAmount">RM 0.00</span></div>
         </div>
         <div class="cart-actions" id="cartActions">
-          <button id="checkoutBtn">?? CHECKOUT</button>
-          <button id="claimPrizeBtn">?? Claim Prize</button>
-          <button id="specialPromoBtn">?? Special Promo</button>
+          <button id="checkoutBtn">💳 CHECKOUT</button>
+          <button id="claimPrizeBtn">🎁 Claim Prize</button>
+          <button id="specialPromoBtn">🎁 Special Promo</button>
         </div>
       </div>
       <!-- Stock History Panel (hidden by default) -->
       <div id="stockHistoryContainer" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div class="cart-title">?? Stock Adjustment History</div>
+          <div class="cart-title">📋 Stock Adjustment History</div>
           <div>
-            <button id="saveStockHistoryBtn" class="cart-header-btn">?? Save History</button>
-            <button id="clearStockHistoryBtn" class="cart-header-btn">??? Clear History</button>
+            <button id="saveStockHistoryBtn" class="cart-header-btn">💾 Save History</button>
+            <button id="clearStockHistoryBtn" class="cart-header-btn">🗑️ Clear History</button>
           </div>
         </div>
         <div id="stockHistoryList" style="max-height: 55vh; overflow-y: auto; margin-top: 16px;">
@@ -1229,19 +1229,19 @@
   <div id="sideMenu" class="side-menu">
     <div class="menu-header">
       <h3>Menu</h3>
-      <button class="close-menu" id="closeSideMenuBtn">?</button>
+      <button class="close-menu" id="closeSideMenuBtn">✕</button>
     </div>
     <div class="menu-buttons">
-      <button id="sideReportBtn" class="menu-btn">?? Report</button>
-      <button id="sideSettlementBtn" class="menu-btn">?? Settlement</button>
-      <button id="sideCollectionBtn" class="menu-btn" style="display: none;">?? Cash Collection</button>
-      <button id="sideInventoryBtn" class="menu-btn" style="display: none;">?? Inventory</button>
-      <button id="sideReceiptsBtn" class="menu-btn">?? Receipts</button>
-      <button id="sideDrawerBtn" class="menu-btn">?? Open Drawer</button>
-      <button id="sideChangePinBtn" class="menu-btn">?? Change PIN</button>
+      <button id="sideReportBtn" class="menu-btn">📊 Report</button>
+      <button id="sideSettlementBtn" class="menu-btn">💰 Settlement</button>
+      <button id="sideCollectionBtn" class="menu-btn" style="display: none;">💵 Cash Collection</button>
+      <button id="sideInventoryBtn" class="menu-btn" style="display: none;">📦 Inventory</button>
+      <button id="sideReceiptsBtn" class="menu-btn">📜 Receipts</button>
+      <button id="sideDrawerBtn" class="menu-btn">💰 Open Drawer</button>
+      <button id="sideChangePinBtn" class="menu-btn">🔑 Change PIN</button>
       <!-- Stock Alert and Telegram buttons are hidden via CSS (display: none) but their functionality remains -->
-      <button id="sideStockAlertBtn" class="menu-btn" >?? Stock Alerts: OFF</button>
-      <button id="sideTelegramBtn" class="menu-btn">?? Telegram Alerts</button>
+      <button id="sideStockAlertBtn" class="menu-btn" >🔔 Stock Alerts: OFF</button>
+      <button id="sideTelegramBtn" class="menu-btn">📱 Telegram Alerts</button>
     </div>
   </div>
 </div>
@@ -1250,7 +1250,7 @@
 <div id="changePinModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 400px;">
     <span class="close-modal" id="closeChangePinModal">×</span>
-    <div class="modal-title">?? Change PIN</div>
+    <div class="modal-title">🔐 Change PIN</div>
     <div id="changePinStep1">
       <div class="filter-group">
         <label>Current PIN</label>
@@ -1280,7 +1280,7 @@
 <div id="printerModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 400px;">
     <span class="close-modal" id="closePrinterModal">×</span>
-    <div class="modal-title">??? Printer Settings</div>
+    <div class="modal-title">🖨️ Printer Settings</div>
     <div class="filter-group" style="margin-bottom: 20px;">
       <label>Paper Size</label>
       <select id="paperSizeSelectModal">
@@ -1292,43 +1292,43 @@
       <button id="connectPrinterModalBtn" class="modal-btn modal-btn-primary">Connect Printer</button>
       <button id="closePrinterModalBtn" class="modal-btn modal-btn-secondary">Close</button>
     </div>
-    <div id="printerStatusModal" style="margin-top: 12px; font-size: 0.9rem; text-align: center;">? Not connected</div>
+    <div id="printerStatusModal" style="margin-top: 12px; font-size: 0.9rem; text-align: center;">⚪ Not connected</div>
   </div>
 </div>
 
 <!-- Payment Modal -->
-<div id="paymentModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closePaymentModal">×</span><div class="modal-title">?? Select Payment Method</div><div class="payment-buttons"><button class="payment-btn" data-method="Cash">?? Cash</button><button class="payment-btn" data-method="Card">?? Card</button><button class="payment-btn" data-method="QR Pay">?? QR Pay</button></div><div id="cashOptions" style="display: none;"><div class="suggestions" id="suggestionsContainer"></div><input type="number" id="customCashInput" class="custom-cash-input" placeholder="Enter amount received (RM)" step="0.01"><div class="modal-buttons"><button id="confirmCashBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelPaymentBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="otherPaymentOptions" style="display: none;"><div class="modal-buttons"><button id="confirmOtherBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelOtherBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div></div></div>
+<div id="paymentModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closePaymentModal">×</span><div class="modal-title">💳 Select Payment Method</div><div class="payment-buttons"><button class="payment-btn" data-method="Cash">💵 Cash</button><button class="payment-btn" data-method="Card">💳 Card</button><button class="payment-btn" data-method="QR Pay">📱 QR Pay</button></div><div id="cashOptions" style="display: none;"><div class="suggestions" id="suggestionsContainer"></div><input type="number" id="customCashInput" class="custom-cash-input" placeholder="Enter amount received (RM)" step="0.01"><div class="modal-buttons"><button id="confirmCashBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelPaymentBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="otherPaymentOptions" style="display: none;"><div class="modal-buttons"><button id="confirmOtherBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelOtherBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div></div></div>
 
 <!-- Lucky Draw Modal -->
-<div id="luckyDrawModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeLuckyDrawModal">×</span><div class="modal-title">?? Lucky Draw</div><p>Transaction ID: <strong id="luckyTxId"></strong></p><p>Click below to enter the Lucky Draw with this receipt number.</p><div class="modal-buttons"><button id="openLuckyDrawBtn" class="modal-btn modal-btn-primary">?? Go to Lucky Draw</button><button id="closeLuckyDrawBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="luckyDrawModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeLuckyDrawModal">×</span><div class="modal-title">🎲 Lucky Draw</div><p>Transaction ID: <strong id="luckyTxId"></strong></p><p>Click below to enter the Lucky Draw with this receipt number.</p><div class="modal-buttons"><button id="openLuckyDrawBtn" class="modal-btn modal-btn-primary">🎁 Go to Lucky Draw</button><button id="closeLuckyDrawBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="luckyDrawPrintModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 400px;">
     <span class="close-modal" id="closeLuckyDrawPrintModal">×</span>
-    <div class="modal-title">?? Congratulations!</div>
+    <div class="modal-title">🎉 Congratulations!</div>
     <div id="luckyDrawPrintContent">
       <p>You have won a Lucky Draw prize!</p>
       <p>Receipt ID: <strong id="luckyDrawReceiptNumber"></strong></p>
       <div class="modal-buttons">
-        <button id="printPrizeVoucherBtn" class="modal-btn modal-btn-primary">??? Print Voucher</button>
+        <button id="printPrizeVoucherBtn" class="modal-btn modal-btn-primary">🖨️ Print Voucher</button>
         <button id="closeLuckyDrawPrintModalBtn" class="modal-btn modal-btn-secondary">Close</button>
       </div>
     </div>
   </div>
 </div>
 
-<div id="claimPrizeModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeClaimPrizeModal">×</span><div class="modal-title">?? Claim Prize</div><div id="claimStep1"><p>Enter the receipt number from your Lucky Draw:</p><input type="text" id="claimReceiptInput" class="modal-input" placeholder="e.g., TXN-1234567890-123" style="width: 100%; margin: 12px 0; padding: 12px;"><div class="modal-buttons"><button id="checkReceiptBtn" class="modal-btn modal-btn-primary">Check</button><button id="cancelClaimBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimStep2" style="display: none;"><p>Receipt: <strong id="validReceiptId"></strong></p><p>Select your prize:</p><select id="prizeSelect" class="modal-input" style="width: 100%; margin: 12px 0; padding: 12px;"><option value="38">CAR AROMATIC - RM 38</option><option value="75">15ML TRAVEL PERFUME - RM 75</option><option value="109">300ML LOTION - RM 109</option><option value="75">100ML PILLOW MIST - RM 75</option></select><div class="modal-buttons"><button id="applyPrizeBtn" class="modal-btn modal-btn-primary">Apply Discount</button><button id="cancelClaimStep2Btn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimError" style="color:#ef4444; margin-top: 12px; display: none;"></div></div></div>
+<div id="claimPrizeModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeClaimPrizeModal">×</span><div class="modal-title">🎁 Claim Prize</div><div id="claimStep1"><p>Enter the receipt number from your Lucky Draw:</p><input type="text" id="claimReceiptInput" class="modal-input" placeholder="e.g., TXN-1234567890-123" style="width: 100%; margin: 12px 0; padding: 12px;"><div class="modal-buttons"><button id="checkReceiptBtn" class="modal-btn modal-btn-primary">Check</button><button id="cancelClaimBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimStep2" style="display: none;"><p>Receipt: <strong id="validReceiptId"></strong></p><p>Select your prize:</p><select id="prizeSelect" class="modal-input" style="width: 100%; margin: 12px 0; padding: 12px;"><option value="38">CAR AROMATIC - RM 38</option><option value="75">15ML TRAVEL PERFUME - RM 75</option><option value="109">300ML LOTION - RM 109</option><option value="75">100ML PILLOW MIST - RM 75</option></select><div class="modal-buttons"><button id="applyPrizeBtn" class="modal-btn modal-btn-primary">Apply Discount</button><button id="cancelClaimStep2Btn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimError" style="color:#ef4444; margin-top: 12px; display: none;"></div></div></div>
 
-<div id="specialPromoModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeSpecialPromoModal">×</span><div class="modal-title">?? Special Promo</div><div id="promoOptions"><button id="promoBuy2Free1Perfume" class="modal-btn modal-btn-primary promo-option-btn">🚗 CAR AROMATIC PROMO (RM 2)</button>
+<div id="specialPromoModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeSpecialPromoModal">×</span><div class="modal-title">🎁 Special Promo</div><div id="promoOptions"><button id="promoBuy2Free1Perfume" class="modal-btn modal-btn-primary promo-option-btn">🚗 CAR AROMATIC PROMO (RM 2)</button>
 <button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">🌸 15ML PERFUME EDP PROMO (RM 8)</button>
-<div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">?? Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">💰 Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">?? Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">?? Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">?? Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">?? Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">?? Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">?? Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">?? Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead>?<th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>      </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">❌ Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead><th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>       </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="settlementModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
     <span class="close-modal" id="closeSettlementModal">×</span>
-    <div class="modal-title">?? Daily Settlement</div>
+    <div class="modal-title">💰 Daily Settlement</div>
     <div class="filter-group">
       <label>Store Location</label>
       <select id="settlementStoreSelect">
@@ -1342,12 +1342,12 @@
       <input type="number" id="pettyCashFloat" class="modal-input" placeholder="Enter starting cash float" step="0.01" value="0.00">
     </div>
     <div class="settlement-stats" id="systemTotalsDisplay">
-      <p>?? System totals for today (all employees):</p>
-      <p>?? Cash: <strong id="sysCash">RM 0.00</strong></p>
-      <p>?? Card: <strong id="sysCard">RM 0.00</strong></p>
-      <p>?? QR Pay: <strong id="sysQR">RM 0.00</strong></p>
-      <p>? Refunds: <strong id="sysRefund">RM 0.00</strong></p>
-      <p style="font-size: 1.4rem; font-weight: 800; margin-top: 12px;">?? Net Total: <strong id="sysNetTotal">RM 0.00</strong></p>
+      <p>📊 System totals for today (all employees):</p>
+      <p>💵 Cash: <strong id="sysCash">RM 0.00</strong></p>
+      <p>💳 Card: <strong id="sysCard">RM 0.00</strong></p>
+      <p>📱 QR Pay: <strong id="sysQR">RM 0.00</strong></p>
+      <p>❌ Refunds: <strong id="sysRefund">RM 0.00</strong></p>
+      <p style="font-size: 1.4rem; font-weight: 800; margin-top: 12px;">💰 Net Total: <strong id="sysNetTotal">RM 0.00</strong></p>
     </div>
     <div class="filter-group">
       <label>Cash Count (Actual)</label>
@@ -1370,9 +1370,9 @@
   </div>
 </div>
 
-<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">?? Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>?? Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead>?<th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody>      </table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead><th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody>       </table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="receiptsModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeReceiptsModal">×</span><div class="modal-title">?? Receipt History</div><div class="receipts-filters"><div class="filter-group" id="receiptsStoreFilterGroup"><label>Store</label><select id="receiptsStoreSelect"><option value="all">All Stores</option></select></div><div id="receiptsEmployeeFilter" class="filter-group" style="display: none;"><label>Employee</label><select id="receiptsEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="receiptsDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="receiptsCustomDateRange" style="display: none;" class="date-range"><input type="date" id="receiptsFromDate"><input type="date" id="receiptsToDate"></div><div class="filter-group" style="flex: 2;"><label>Search (Receipt # or Product)</label><input type="text" id="receiptsSearch" placeholder="Type to filter..."></div></div><div id="receiptsList" class="receipts-list">Loading receipts...</div><div class="modal-buttons"><button id="closeReceiptsBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="receiptsModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeReceiptsModal">×</span><div class="modal-title">📜 Receipt History</div><div class="receipts-filters"><div class="filter-group" id="receiptsStoreFilterGroup"><label>Store</label><select id="receiptsStoreSelect"><option value="all">All Stores</option></select></div><div id="receiptsEmployeeFilter" class="filter-group" style="display: none;"><label>Employee</label><select id="receiptsEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="receiptsDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="receiptsCustomDateRange" style="display: none;" class="date-range"><input type="date" id="receiptsFromDate"><input type="date" id="receiptsToDate"></div><div class="filter-group" style="flex: 2;"><label>Search (Receipt # or Product)</label><input type="text" id="receiptsSearch" placeholder="Type to filter..."></div></div><div id="receiptsList" class="receipts-list">Loading receipts...</div><div class="modal-buttons"><button id="closeReceiptsBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="alertModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAlertModal">×</span><div class="modal-title" id="alertModalTitle"></div><div class="modal-message" id="alertModalMessage"></div><div class="modal-buttons"><button class="modal-btn modal-btn-primary" id="alertModalOk">OK</button></div></div></div>
 
@@ -1384,7 +1384,7 @@
 <div id="customerModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
     <span class="close-modal" id="closeCustomerModal">×</span>
-    <div class="modal-title">?? Customer Loyalty</div>
+    <div class="modal-title">👤 Customer Loyalty</div>
     <!-- Step 1: Only phone + Find button -->
     <div id="customerStep1">
       <div class="filter-group">
@@ -1392,7 +1392,7 @@
         <input type="tel" id="customerPhone" class="modal-input" placeholder="+60 123456789">
       </div>
       <div class="modal-buttons">
-        <button id="findCustomerBtn" class="modal-btn modal-btn-primary">?? Find</button>
+        <button id="findCustomerBtn" class="modal-btn modal-btn-primary">🔍 Find</button>
         <button id="cancelCustomerStep1Btn" class="modal-btn modal-btn-secondary">Cancel</button>
       </div>
     </div>
@@ -1419,7 +1419,7 @@
         <input type="text" id="customerPoints" class="modal-input" readonly disabled>
       </div>
       <div class="modal-buttons">
-        <button id="saveCustomerBtn" class="modal-btn modal-btn-primary">?? Save / Update</button>
+        <button id="saveCustomerBtn" class="modal-btn modal-btn-primary">💾 Save / Update</button>
         <button id="cancelCustomerStep2Btn" class="modal-btn modal-btn-secondary">Cancel</button>
       </div>
     </div>
@@ -1431,7 +1431,7 @@
 <div id="telegramModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
     <span class="close-modal" id="closeTelegramModal">×</span>
-    <div class="modal-title">?? Telegram Out?of?Stock Alerts</div>
+    <div class="modal-title">📱 Telegram Out‑of‑Stock Alerts</div>
     <div class="filter-group">
   <label>Telegram Accounts (token,chatId)</label>
  <textarea id="telegramAccounts" rows="4" class="modal-input" placeholder="e.g.,
@@ -1737,21 +1737,21 @@ async function sendTelegramMessage(message) {
 async function saveTelegramSettings() {
   const accountsRaw = document.getElementById('telegramAccounts').value.trim();
   if (!accountsRaw) {
-    document.getElementById('telegramStatus').innerHTML = '? Please enter at least one Telegram account (token,chatId).';
+    document.getElementById('telegramStatus').innerHTML = '❌ Please enter at least one Telegram account (token,chatId).';
     return;
   }
 
   const lines = accountsRaw.split('\n').filter(line => line.trim());
   const results = [];
 
-  document.getElementById('telegramStatus').innerHTML = '? Testing all accounts...';
+  document.getElementById('telegramStatus').innerHTML = '⏳ Testing all accounts...';
   document.getElementById('telegramStatus').style.color = '#2c7a4b';
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     const [token, chatId] = line.split(',').map(s => s.trim());
     if (!token || !chatId) {
-      results.push(`? Line ${i+1}: Invalid format (must be token,chatId)`);
+      results.push(`❌ Line ${i+1}: Invalid format (must be token,chatId)`);
       continue;
     }
 
@@ -1760,21 +1760,21 @@ async function saveTelegramSettings() {
       const response = await fetch(testUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text: '? Out?of?stock alert test from POS system.' })
+        body: JSON.stringify({ chat_id: chatId, text: '✅ Out‑of‑stock alert test from POS system.' })
       });
       const result = await response.json();
       if (result.ok) {
-        results.push(`? Account ${i+1}: Sent to ${chatId}`);
+        results.push(`✅ Account ${i+1}: Sent to ${chatId}`);
       } else {
-        results.push(`? Account ${i+1}: ${result.description}`);
+        results.push(`❌ Account ${i+1}: ${result.description}`);
       }
     } catch (err) {
-      results.push(`? Account ${i+1}: Connection failed – ${err.message}`);
+      results.push(`❌ Account ${i+1}: Connection failed – ${err.message}`);
     }
     await new Promise(resolve => setTimeout(resolve, 500));
   }
 
-  const allFailed = results.every(r => r.startsWith('?'));
+  const allFailed = results.every(r => r.startsWith('❌'));
   if (allFailed) {
     document.getElementById('telegramStatus').innerHTML = results.join('<br>');
     document.getElementById('telegramStatus').style.color = '#ef4444';
@@ -1783,7 +1783,7 @@ async function saveTelegramSettings() {
 
   telegramAccounts = accountsRaw;
   localStorage.setItem('telegramAccounts', accountsRaw);
-  document.getElementById('telegramStatus').innerHTML = results.join('<br>') + '<br>? Settings saved.';
+  document.getElementById('telegramStatus').innerHTML = results.join('<br>') + '<br>✅ Settings saved.';
   document.getElementById('telegramStatus').style.color = '#2c7a4b';
   setTimeout(() => document.getElementById('telegramModal').style.display = 'none', 3000);
 }
@@ -1816,7 +1816,7 @@ async function saveTelegramSettings() {
         updateStockAlertButtonUI();
         await showAlertModal("Enabled", "Stock alerts are now enabled (desktop notifications).");
       } else {
-        notificationsEnabled = true; // fallback to in?app alerts
+        notificationsEnabled = true; // fallback to in‑app alerts
         updateStockAlertButtonUI();
         await showAlertModal("Permission denied", "Desktop notifications blocked. We will use in-app alerts instead.");
       }
@@ -1838,7 +1838,7 @@ async function saveTelegramSettings() {
   }
 
   function showOutOfStockAlert(productName) {
-    showAlertModal("?? Out of Stock", `${productName} is now out of stock. Please restock.`);
+    showAlertModal("⚠️ Out of Stock", `${productName} is now out of stock. Please restock.`);
   }
 
   function checkAndNotifyOutOfStock(productId, productName, newStock) {
@@ -1847,20 +1847,20 @@ async function saveTelegramSettings() {
 
     if (newStock <= LOW_STOCK_THRESHOLD && newStock > 0 && !alertedLowStockProducts.has(productId)) {
       alertedLowStockProducts.add(productId);
-      const message = `?? LOW STOCK ??\nStore: ${storeName}\nProduct: ${productName}\nQuantity left: ${newStock}\nTime: ${timestamp}`;
+      const message = `⚠️ LOW STOCK ⚠️\nStore: ${storeName}\nProduct: ${productName}\nQuantity left: ${newStock}\nTime: ${timestamp}`;
       if (telegramAccounts) sendTelegramMessage(message);
       if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
-        new Notification(`?? Low Stock`, { body: `${productName} only ${newStock} left.` });
+        new Notification(`⚠️ Low Stock`, { body: `${productName} only ${newStock} left.` });
       } else if (notificationsEnabled) {
         showOutOfStockAlert(`${productName} only ${newStock} left.`);
       }
     }
     if (newStock === 0 && !alertedOutOfStockProducts.has(productId)) {
       alertedOutOfStockProducts.add(productId);
-      const message = `? OUT OF STOCK ?\nStore: ${storeName}\nProduct: ${productName}\nTime: ${timestamp}`;
+      const message = `❌ OUT OF STOCK ❌\nStore: ${storeName}\nProduct: ${productName}\nTime: ${timestamp}`;
      if (telegramAccounts) sendTelegramMessage(message);
       if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
-        new Notification(`? Out of Stock`, { body: `${productName} is out of stock.` });
+        new Notification(`❌ Out of Stock`, { body: `${productName} is out of stock.` });
       } else if (notificationsEnabled) {
         showOutOfStockAlert(`${productName} is out of stock.`);
       }
@@ -1926,8 +1926,8 @@ async function saveTelegramSettings() {
     if (selectedCustomer) {
       customerInfoDisplay.innerHTML = `
         <div class="customer-info">
-          <div class="customer-name">?? ${escapeHtml(selectedCustomer.name || 'Customer')} (${escapeHtml(selectedCustomer.phone)})</div>
-          <div class="customer-points">? Points: ${selectedCustomer.points || 0}</div>
+          <div class="customer-name">👤 ${escapeHtml(selectedCustomer.name || 'Customer')} (${escapeHtml(selectedCustomer.phone)})</div>
+          <div class="customer-points">⭐ Points: ${selectedCustomer.points || 0}</div>
           <button id="removeCustomerBtn">Remove</button>
         </div>
       `;
@@ -2081,7 +2081,7 @@ async function saveTelegramSettings() {
     for (const entry of aggregated.values()) {
       const deltaClass = entry.delta > 0 ? 'delta' : 'delta negative';
       const deltaSymbol = entry.delta > 0 ? `+${entry.delta}` : `${entry.delta}`;
-      const stockChange = `Net change: ${deltaSymbol} ? Final stock: ${entry.newStock}`;
+      const stockChange = `Net change: ${deltaSymbol} → Final stock: ${entry.newStock}`;
       html += `
         <div class="history-entry">
           <div class="delta-badge ${deltaClass}">${deltaSymbol}</div>
@@ -2180,7 +2180,7 @@ async function saveTelegramSettings() {
   if (inventoryMode) {
     cartNormalContent.style.display = 'none';
     stockHistoryContainerDiv.style.display = 'flex';
-    cartTitleElement.innerText = '?? Inventory Mode';
+    cartTitleElement.innerText = '📦 Inventory Mode';
     if (updateStockTimeout) clearTimeout(updateStockTimeout);
     loadStockHistoryFromSheet();
     // Show low stock button
@@ -2188,7 +2188,7 @@ async function saveTelegramSettings() {
   } else {
     cartNormalContent.style.display = 'block';
     stockHistoryContainerDiv.style.display = 'none';
-    cartTitleElement.innerText = '?? Current Sale';
+    cartTitleElement.innerText = '🧾 Current Sale';
     // Hide low stock button
     if (lowStockBtn) lowStockBtn.style.display = 'none';
     // Optionally reset the low stock filter when leaving inventory mode
@@ -2504,8 +2504,8 @@ window.addEventListener('online', syncPendingSales);
         : '';
       const freeClass = item.freeQuantity > 0 ? 'active' : '';
       const buttonText = item.freeQuantity > 0 
-        ? `?? ${item.freeQuantity} Free` 
-        : '??Activate Free Gift';
+        ? `🎁 ${item.freeQuantity} Free` 
+        : '🎁 Activate Free Gift';
       html += `
         <div class="cart-item" data-index="${idx}">
           <div class="cart-item-info">
@@ -2517,12 +2517,12 @@ window.addEventListener('online', syncPendingSales);
             <button class="free-toggle-btn ${freeClass}" data-index="${idx}">${buttonText}</button>
           </div>
           <div class="cart-item-qty">
-            <button class="qty-btn" data-index="${idx}" data-delta="-1">?</button>
+            <button class="qty-btn" data-index="${idx}" data-delta="-1">−</button>
             <span>${item.quantity}</span>
             <button class="qty-btn" data-index="${idx}" data-delta="1">+</button>
           </div>
           <div class="cart-item-total">RM ${itemTotal.toFixed(2)}</div>
-          <button class="remove-item" data-index="${idx}">?</button>
+          <button class="remove-item" data-index="${idx}">✕</button>
         </div>
       `;
     });
@@ -2823,12 +2823,12 @@ function applyCustomDiscount() {
     await showAlertModal('Empty Cart', 'No items to checkout.');
     return;
   }
-  // ? REMOVED: showLoading('Refreshing stock data...');
-  // ? REMOVED: const refreshed = await fetchProductsFromSheet(true);
-  // ? REMOVED: hideLoading();
-  // ? REMOVED: if (!refreshed) { ... }
+  // ❌ REMOVED: showLoading('Refreshing stock data...');
+  // ❌ REMOVED: const refreshed = await fetchProductsFromSheet(true);
+  // ❌ REMOVED: hideLoading();
+  // ❌ REMOVED: if (!refreshed) { ... }
   
-  // ? Direct stock validation using current products (may be stale)
+  // ✅ Direct stock validation using current products (may be stale)
   for (let item of cart) {
     const originalProduct = products.find(p => p.id === item.product.id);
     if (!originalProduct) {
@@ -2980,7 +2980,7 @@ renderProductGrid();
       } else {
         await showAlertModal('Receipt', 'Sale recorded. Printer not connected, no receipt printed.');
       }
-      await showAlertModal('? Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
+      await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
       document.getElementById('luckyTxId').innerText = transactionId;
       const luckyModal = document.getElementById('luckyDrawModal');
       luckyModal.style.display = 'flex';
@@ -3138,7 +3138,7 @@ renderProductGrid();
       ? `<span class="receipt-id">[REFUND] ${rec.transaction_id}</span>`
       : `<span class="receipt-id">${rec.transaction_id}</span>`;
 
-    // Build detailed items list (cart?like)
+    // Build detailed items list (cart‑like)
     let itemsHtml = '<div class="receipt-items-list">';
     let subtotal = 0;
     for (const item of rec.items) {
@@ -3158,7 +3158,7 @@ renderProductGrid();
       if (item.free_quantity > 0) {
         itemsHtml += `
           <div class="receipt-item-row" style="color:#10b981; font-style:italic;">
-            <span class="receipt-item-name">?? FREE GIFT</span>
+            <span class="receipt-item-name">🎁 FREE GIFT</span>
             <span class="receipt-item-detail">${item.free_quantity} x ${escapeHtml(item.name)}</span>
             <span class="receipt-item-detail">RM 0.00</span>
           </div>
@@ -3170,7 +3170,7 @@ renderProductGrid();
     // Discounts (if any)
     let discountsHtml = '';
     if (rec.discount && rec.discount > 0) {
-      discountsHtml += `<div class="receipt-discount-row"><span>?? Lucky Draw Discount</span><span>-RM ${rec.discount.toFixed(2)}</span></div>`;
+      discountsHtml += `<div class="receipt-discount-row"><span>🎲 Lucky Draw Discount</span><span>-RM ${rec.discount.toFixed(2)}</span></div>`;
     }
    if (rec.buy2_free1_discount && rec.buy2_free1_discount > 0) {
   discountsHtml += `<div class="receipt-discount-row"><span>🚗 Car Aromatic Promo</span><span>-RM ${rec.buy2_free1_discount.toFixed(2)}</span></div>`;
@@ -3179,7 +3179,7 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
   discountsHtml += `<div class="receipt-discount-row"><span>🌸 15ml Perfume EDP Promo</span><span>-RM ${rec.buy3_free1_discount.toFixed(2)}</span></div>`;
 }
     if (rec.custom_discount && rec.custom_discount > 0) {
-      discountsHtml += `<div class="receipt-discount-row"><span>?? Custom Discount</span><span>-RM ${rec.custom_discount.toFixed(2)}</span></div>`;
+      discountsHtml += `<div class="receipt-discount-row"><span>💰 Custom Discount</span><span>-RM ${rec.custom_discount.toFixed(2)}</span></div>`;
     }
 
     const total = rec.total;
@@ -3187,8 +3187,8 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
     // Actions: reprint (store only transaction_id) and refund
     const actionsHtml = `
       <div class="receipt-actions">
-        <button class="reprint-btn" data-txid="${rec.transaction_id}">??? Reprint</button>
-        ${!isRefund && !isRefundedOriginal ? `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">?? Refund</button>` : ''}
+        <button class="reprint-btn" data-txid="${rec.transaction_id}">🖨️ Reprint</button>
+        ${!isRefund && !isRefundedOriginal ? `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">💰 Refund</button>` : ''}
       </div>
     `;
 
@@ -3326,7 +3326,7 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
     const result = await response.json();
     if (result.success) {
       await new Promise(resolve => setTimeout(resolve, 200));
-      // ? Guard: only try to render store chart if currentEmployee exists and is admin
+      // ✅ Guard: only try to render store chart if currentEmployee exists and is admin
       if (currentEmployee && currentEmployee.isAdmin && result.salesByStore) {
         const storeCanvas = document.getElementById('storeChart');
         if (storeCanvas) {
@@ -3434,14 +3434,14 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
   function renderProductDetails(productsData) {
     const tbody = document.getElementById('productDetailsBody');
     if (!productsData || productsData.length === 0) {
-      tbody.innerHTML = '|<td colspan="4" style="text-align: center;">No products sold in this period.  ';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No products sold in this period.</td></tr>';
       return;
     }
     let html = '';
     productsData.forEach(p => {
-      html += `?
-         <td>${escapeHtml(p.name)}</td>
-         <td>${escapeHtml(p.category)}</td>
+      html += `<tr>
+          <td>${escapeHtml(p.name)}</td>
+          <td>${escapeHtml(p.category)}</td>
         <td style="text-align: right;">${p.quantity}</td>
         <td style="text-align: right;">RM ${p.total.toFixed(2)}</td>
        `;
@@ -3508,7 +3508,7 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
       // Render charts from cached data (we need to simulate the chart rendering)
       if (cached.chartData) {
         await new Promise(resolve => setTimeout(resolve, 200));
-        // Re?render charts if needed (simplified, we can trust that they are already rendered in preload)
+        // Re‑render charts if needed (simplified, we can trust that they are already rendered in preload)
         if (cached.chartData.salesByStore) {
           const storeCanvas = document.getElementById('storeChart');
           if (storeCanvas && currentEmployee.isAdmin) {
@@ -3736,7 +3736,7 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
 
       const alreadySettled = await checkSettlementStatus(store, todayStr);
       if (alreadySettled) {
-        document.getElementById('settlementError').innerHTML = '?? Settlement has already been recorded for today. No further settlement allowed.';
+        document.getElementById('settlementError').innerHTML = '⚠️ Settlement has already been recorded for today. No further settlement allowed.';
         document.getElementById('settlementError').style.display = 'block';
         document.getElementById('checkSettlementBtn').disabled = true;
         document.getElementById('recordSettlementBtn').style.display = 'none';
@@ -3790,10 +3790,10 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
 
     function updatePrinterStatusUI() {
       if (isConnected) {
-        printerStatusModal.innerText = '? Printer connected';
+        printerStatusModal.innerText = '✅ Printer connected';
         printerStatusModal.style.color = '#2c7a4b';
       } else {
-        printerStatusModal.innerText = '? Not connected';
+        printerStatusModal.innerText = '⚪ Not connected';
         printerStatusModal.style.color = '#64748b';
       }
     }
@@ -4019,7 +4019,7 @@ if (transaction.buy3_free1_discount > 0) {
     async function connectPrinter() {
       try {
         connectBtnModal.disabled = true;
-        printerStatusModal.innerText = '?? Scanning...';
+        printerStatusModal.innerText = '🔍 Scanning...';
         const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] });
         gattServer = await device.gatt.connect();
         const services = await gattServer.getPrimaryServices();
@@ -4041,7 +4041,7 @@ if (transaction.buy3_free1_discount > 0) {
         updatePrinterStatusUI();
         await showAlertModal('Printer Connected', 'Bluetooth printer is ready.');
       } catch (err) {
-        printerStatusModal.innerText = `? ${err.message}`;
+        printerStatusModal.innerText = `❌ ${err.message}`;
         console.error(err);
       } finally {
         connectBtnModal.disabled = false;
@@ -4091,7 +4091,7 @@ if (transaction.buy3_free1_discount > 0) {
     filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm));
   }
 
-  // 5. Apply low?stock filter if toggle is active
+  // 5. Apply low‑stock filter if toggle is active
   if (lowStockFilterActive) {
     filtered = filtered.filter(p => p.stock < LOW_STOCK_THRESHOLD);
   }
@@ -4100,7 +4100,7 @@ if (transaction.buy3_free1_discount > 0) {
   if (products.length === 0) {
     productGridEl.innerHTML = `
       <div style="text-align:center; padding:20px;">
-        ? Loading products...<br>
+        ⏳ Loading products...<br>
         <button id="retryLoadProductsBtn" style="margin-top:10px; padding:8px 16px; border-radius:40px; background:#3b82f6; color:white; border:none; cursor:pointer;">Retry</button>
       </div>
     `;
@@ -4132,14 +4132,14 @@ if (transaction.buy3_free1_discount > 0) {
         <div class="product-category">${escapeHtml(prod.category)}</div>
         <div class="product-price">RM ${prod.price.toFixed(2)}</div>
         <div class="inventory-controls">
-          <button class="inventory-btn dec-stock" data-id="${prod.id}" data-current="${prod.stock}">?</button>
+          <button class="inventory-btn dec-stock" data-id="${prod.id}" data-current="${prod.stock}">−</button>
           <span class="stock-display" data-id="${prod.id}">${prod.stock}</span>
           <button class="inventory-btn inc-stock" data-id="${prod.id}" data-current="${prod.stock}">+</button>
         </div>
       </div>`;
     } else {
       // Normal mode: show add-to-cart button
-      const stockStatus = prod.stock > 0 ? `?? Stock: ${prod.stock}` : '? Out of stock';
+      const stockStatus = prod.stock > 0 ? `📦 Stock: ${prod.stock}` : '❌ Out of stock';
       html += `<div class="product-card ${lowStockClass}">
         <div class="product-name">${escapeHtml(prod.name)}</div>
         <div class="product-category">${escapeHtml(prod.category)}</div>
@@ -4154,7 +4154,7 @@ if (transaction.buy3_free1_discount > 0) {
   productGridEl.innerHTML = html;
   productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
 
-  // 10. Attach event listeners for inventory or add?to?cart buttons
+  // 10. Attach event listeners for inventory or add‑to‑cart buttons
   if (inventoryMode) {
     document.querySelectorAll('.dec-stock').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -4221,7 +4221,7 @@ if (transaction.buy3_free1_discount > 0) {
     const todayStr = getLocalDateString(new Date());
     const alreadySettled = await checkSettlementStatus(store, todayStr);
     if (!alreadySettled) {
-      await refreshSettlementTotals(store, true);   // ? silent preload
+      await refreshSettlementTotals(store, true);   // ✅ silent preload
     }
   } catch (err) {
     console.error('Preload settlement failed:', err);
@@ -4240,7 +4240,7 @@ if (transaction.buy3_free1_discount > 0) {
       store = currentStore;
       employeeId = currentEmployee.id;
     }
-    // ? Fetch sales report silently (no loading overlay)
+    // ✅ Fetch sales report silently (no loading overlay)
     const totals = await fetchSalesReport(store, employeeId, todayStr, todayStr, false, true);
     if (!totals) return;
     const chartData = await fetchSalesChartData(store, employeeId, todayStr, todayStr);
@@ -4285,7 +4285,7 @@ if (transaction.buy3_free1_discount > 0) {
     if (preloaded && preloaded.products && preloaded.products.length > 0) {
       products = preloaded.products;
       const categories = [...new Set(products.map(p => p.category))].sort();
-      categorySelect.innerHTML = '<option value="all">?? All Categories</option>';
+      categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
       categories.forEach(cat => {
         const option = document.createElement('option');
         option.value = cat;
@@ -4334,7 +4334,7 @@ if (transaction.buy3_free1_discount > 0) {
   const cachedEmp = cachedEmployees.find(emp => emp.pin == pin);
   if (cachedEmp) {
     currentEmployee = cachedEmp;
-    document.getElementById('employeeNameHeader').innerText = `?? ${currentEmployee.name}`;
+    document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
     document.getElementById('loginModal').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
     // Proceed with rest of login setup (load products, etc.)
@@ -4358,7 +4358,7 @@ if (transaction.buy3_free1_discount > 0) {
           employees: cachedEmployees
         }));
       }
-      document.getElementById('employeeNameHeader').innerText = `?? ${currentEmployee.name}`;
+      document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
       document.getElementById('loginModal').style.display = 'none';
       document.getElementById('mainContent').style.display = 'block';
       await finishLoginAfterVerification();
@@ -4528,7 +4528,7 @@ async function finishLoginAfterVerification() {
     if (employeeChartContainer) employeeChartContainer.style.display = 'none';
   }
 
-  // Set settlement store select (disabled for non?admin)
+  // Set settlement store select (disabled for non‑admin)
   const settlementStoreSelect = document.getElementById('settlementStoreSelect');
   if (!currentEmployee.isAdmin) {
     if (settlementStoreSelect) {
@@ -4766,9 +4766,9 @@ async function finishLoginAfterVerification() {
           if (!cashOk) errorMessages.push(`Cash (System: RM ${currentSettlementTotals.cash.toFixed(2)}, Entered: RM ${actualCash.toFixed(2)})`);
           if (!cardOk) errorMessages.push(`Card (System: RM ${currentSettlementTotals.card.toFixed(2)}, Entered: RM ${actualCard.toFixed(2)})`);
           if (!qrOk) errorMessages.push(`QR (System: RM ${currentSettlementTotals.qr.toFixed(2)}, Entered: RM ${actualQR.toFixed(2)})`);
-          settlementError.innerHTML = `? Mismatch in:<br>${errorMessages.join('<br>')}<br>Please correct and try again.`;
+          settlementError.innerHTML = `❌ Mismatch in:<br>${errorMessages.join('<br>')}<br>Please correct and try again.`;
         } else {
-          settlementError.innerHTML = `? Mismatch detected! Count properly and try again.`;
+          settlementError.innerHTML = `❌ Mismatch detected! Count properly and try again.`;
         }
         settlementError.style.display = 'block';
       }
@@ -4989,11 +4989,11 @@ function updateCategoryDropdown() {
       productDetailsVisible = !productDetailsVisible;
       if (productDetailsVisible) {
         productDetailsContainer.style.display = 'block';
-        toggleBtn.innerText = '?? Hide Product Details';
+        toggleBtn.innerText = '📦 Hide Product Details';
         if (lastProductData) renderProductDetails(lastProductData);
       } else {
         productDetailsContainer.style.display = 'none';
-        toggleBtn.innerText = '?? Show Product Details';
+        toggleBtn.innerText = '📦 Show Product Details';
       }
     });
   }
@@ -5131,18 +5131,18 @@ if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener(
   function renderCollectionTable() {
     const tbody = document.getElementById('collectionTableBody');
     if (!currentUnsettledCash.length) {
-      tbody.innerHTML = '|<td colspan="4" style="text-align: center;">No unsettled cash records found.  ';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.</td></tr>';
       return;
     }
     let html = '';
     currentUnsettledCash.forEach(rec => {
       const date = new Date(rec.timestamp).toLocaleDateString();
       html += `<tr data-id="${rec.id}">
-         <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"></td>
-         <td>${date}</td>
-         <td>${getEmployeeName(rec.employee_id)}</td>
+          <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"></td>
+          <td>${date}</td>
+          <td>${getEmployeeName(rec.employee_id)}</td>
         <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
-       </tr>`;
+        </tr>`;
     });
     tbody.innerHTML = html;
     document.querySelectorAll('.collection-checkbox').forEach(cb => {

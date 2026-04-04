@@ -1323,7 +1323,7 @@
 <button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">🌸 15ML PERFUME EDP PROMO (RM 8)</button>
 <div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">💰 Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">❌ Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead><th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>       </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option> <option value="year">This Year</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">❌ Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead><th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>       </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="settlementModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
@@ -3046,28 +3046,33 @@ renderProductGrid();
       let from = null, to = null;
       const today = new Date();
       today.setHours(0,0,0,0);
-      if (range === 'today') {
-        from = getLocalDateString(today);
-        to = from;
-      } else if (range === 'week') {
-        const start = new Date(today);
-        const dayOfWeek = today.getDay();
-        const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
-        start.setDate(today.getDate() - diffToMonday);
-        from = getLocalDateString(start);
-        const end = new Date(start);
-        end.setDate(start.getDate() + 6);
-        to = getLocalDateString(end);
-      } else if (range === 'month') {
-        const start = new Date(today.getFullYear(), today.getMonth(), 1);
-        from = getLocalDateString(start);
-        const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        to = getLocalDateString(end);
-      } else if (range === 'custom') {
-        from = document.getElementById('receiptsFromDate')?.value;
-        to = document.getElementById('receiptsToDate')?.value;
-        if (!from || !to) return;
-      }
+     if (range === 'today') {
+  from = getLocalDateString(today);
+  to = from;
+} else if (range === 'week') {
+  const start = new Date(today);
+  const dayOfWeek = today.getDay();
+  const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+  start.setDate(today.getDate() - diffToMonday);
+  from = getLocalDateString(start);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  to = getLocalDateString(end);
+} else if (range === 'month') {
+  const start = new Date(today.getFullYear(), today.getMonth(), 1);
+  from = getLocalDateString(start);
+  const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  to = getLocalDateString(end);
+} else if (range === 'year') {
+  const start = new Date(today.getFullYear(), 0, 1);
+  const end = new Date(today.getFullYear(), 11, 31);
+  from = getLocalDateString(start);
+  to = getLocalDateString(end);
+} else if (range === 'custom') {
+  from = document.getElementById('receiptsFromDate')?.value;
+  to = document.getElementById('receiptsToDate')?.value;
+  if (!from || !to) return;
+}
       let url = `${APPS_SCRIPT_URL}?action=getReceipts&store=${store}&employeeId=${employeeId}`;
       if (from) url += `&from=${encodeURIComponent(from)}`;
       if (to) url += `&to=${encodeURIComponent(to)}`;
@@ -3464,28 +3469,33 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (range === 'today') {
-      from = getLocalDateString(today);
-      to = from;
-    } else if (range === 'week') {
-      const start = new Date(today);
-      const dayOfWeek = today.getDay();
-      const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
-      start.setDate(today.getDate() - diffToMonday);
-      from = getLocalDateString(start);
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
-      to = getLocalDateString(end);
-    } else if (range === 'month') {
-      const start = new Date(today.getFullYear(), today.getMonth(), 1);
-      from = getLocalDateString(start);
-      const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      to = getLocalDateString(end);
-    } else if (range === 'custom') {
-      from = document.getElementById('adminReportFromDate').value;
-      to = document.getElementById('adminReportToDate').value;
-      if (!from || !to) return;
-    }
+   if (range === 'today') {
+  from = getLocalDateString(today);
+  to = from;
+} else if (range === 'week') {
+  const start = new Date(today);
+  const dayOfWeek = today.getDay();
+  const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+  start.setDate(today.getDate() - diffToMonday);
+  from = getLocalDateString(start);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  to = getLocalDateString(end);
+} else if (range === 'month') {
+  const start = new Date(today.getFullYear(), today.getMonth(), 1);
+  from = getLocalDateString(start);
+  const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  to = getLocalDateString(end);
+} else if (range === 'year') {
+  const start = new Date(today.getFullYear(), 0, 1);
+  const end = new Date(today.getFullYear(), 11, 31);
+  from = getLocalDateString(start);
+  to = getLocalDateString(end);
+} else if (range === 'custom') {
+  from = document.getElementById('adminReportFromDate').value;
+  to = document.getElementById('adminReportToDate').value;
+  if (!from || !to) return;
+}
 
     // Check if we have cached data matching the current filters
     if (preloadedReportCache && 
@@ -4958,27 +4968,32 @@ function updateCategoryDropdown() {
     const today = new Date();
     today.setHours(0,0,0,0);
     if (range === 'today') {
-      from = getLocalDateString(today);
-      to = from;
-    } else if (range === 'week') {
-      const start = new Date(today);
-      const dayOfWeek = today.getDay();
-      const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
-      start.setDate(today.getDate() - diffToMonday);
-      from = getLocalDateString(start);
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
-      to = getLocalDateString(end);
-    } else if (range === 'month') {
-      const start = new Date(today.getFullYear(), today.getMonth(), 1);
-      from = getLocalDateString(start);
-      const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      to = getLocalDateString(end);
-    } else if (range === 'custom') {
-      from = document.getElementById('receiptsFromDate').value;
-      to = document.getElementById('receiptsToDate').value;
-      if (!from || !to) return;
-    }
+  from = getLocalDateString(today);
+  to = from;
+} else if (range === 'week') {
+  const start = new Date(today);
+  const dayOfWeek = today.getDay();
+  const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+  start.setDate(today.getDate() - diffToMonday);
+  from = getLocalDateString(start);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  to = getLocalDateString(end);
+} else if (range === 'month') {
+  const start = new Date(today.getFullYear(), today.getMonth(), 1);
+  from = getLocalDateString(start);
+  const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  to = getLocalDateString(end);
+} else if (range === 'year') {
+  const start = new Date(today.getFullYear(), 0, 1);
+  const end = new Date(today.getFullYear(), 11, 31);
+  from = getLocalDateString(start);
+  to = getLocalDateString(end);
+} else if (range === 'custom') {
+  from = document.getElementById('receiptsFromDate')?.value;
+  to = document.getElementById('receiptsToDate')?.value;
+  if (!from || !to) return;
+}
     fetchReceipts(store, employeeId, from, to, search);
   }
 

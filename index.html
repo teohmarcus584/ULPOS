@@ -4888,7 +4888,11 @@
     await loadUnsettledCash();
     loadingMsg.style.display = 'none';
   }
-
+function showSpecialPromoModal() {
+  document.getElementById('promoMessage').style.display = 'none';
+  document.getElementById('customPromoValue').value = '';
+  document.getElementById('specialPromoModal').style.display = 'flex';
+}
   async function loadUnsettledCash() {
     const store = document.getElementById('collectionStoreSelect').value;
     showLoading('Loading unsettled cash...');

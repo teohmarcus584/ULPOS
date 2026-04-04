@@ -3459,10 +3459,10 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
     if (currentEmployee.isAdmin) {
       store = document.getElementById('adminReportStoreSelect').value;
       employeeId = document.getElementById('adminReportEmployeeSelect').value;
-    } else {
-      store = 'all';
-      employeeId = currentEmployee.id;
-    }
+   } else {
+  store = currentStore;
+  employeeId = currentEmployee.id;
+}
 
     const range = document.getElementById('adminReportDateRangeSelect').value;
     let from = null, to = null;

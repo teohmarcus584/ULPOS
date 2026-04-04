@@ -1098,7 +1098,7 @@
       <option value="gurney_paragon">Gurney Paragon</option>
     </select>
     <div class="modal-buttons" style="margin-top: 24px;">
-      <button id="confirmStoreBtn" class="modal-btn modal-btn-primary">Next →</button>
+      <button id="confirmStoreBtn" class="modal-btn modal-btn-primary">Next ?</button>
     </div>
   </div>
 </div>
@@ -1106,7 +1106,7 @@
 <div id="loginModal" class="modal-overlay" style="display: none;">
   <div class="modal-container" style="max-width: 400px;">
     <span class="close-modal" id="closeLoginModal">×</span>
-    <div class="modal-title">🔐 Enter PIN</div>
+    <div class="modal-title">?? Enter PIN</div>
     <div class="login-form">
       <input type="password" id="pinInput" class="pin-input" placeholder="****" maxlength="4" inputmode="numeric" autofocus readonly>
       <div class="pin-keypad">
@@ -1119,9 +1119,9 @@
         <button class="keypad-btn" data-digit="7">7</button>
         <button class="keypad-btn" data-digit="8">8</button>
         <button class="keypad-btn" data-digit="9">9</button>
-        <button class="keypad-btn clear" data-action="clear">⌫</button>
+        <button class="keypad-btn clear" data-action="clear">?</button>
         <button class="keypad-btn" data-digit="0">0</button>
-        <button class="keypad-btn enter" data-action="enter">↵</button>
+        <button class="keypad-btn enter" data-action="enter">?</button>
       </div>
       <div id="loginError" class="error-msg" style="color:#ef4444; font-size:0.9rem; text-align:center; margin-top:12px;"></div>
     </div>
@@ -1144,20 +1144,20 @@
     <div class="pos-header-right">
       <span class="cashier-info" id="employeeNameHeader"></span>
       <button id="logoutHeaderBtn" class="logout-header-btn">Logout</button>
-      <button id="printerIconBtn" class="printer-icon-btn">🖨️</button>
+      <button id="printerIconBtn" class="printer-icon-btn">???</button>
     </div>
   </div>
 
   <div class="pos-dashboard">
     <div class="products-panel">
       <div class="filter-bar">
-        <select id="categorySelect"><option value="all">📂 All Categories</option></select>
-        <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search product...">
-        <button id="refreshProductsPanelBtn" class="refresh-btn" title="Refresh products">🔄</button>
-        <button id="lowStockToggleBtn" class="low-stock-toggle">⚠️ Low Stock</button>
+        <select id="categorySelect"><option value="all">?? All Categories</option></select>
+        <input type="text" id="searchInput" class="search-bar" placeholder="?? Search product...">
+        <button id="refreshProductsPanelBtn" class="refresh-btn" title="Refresh products">??</button>
+        <button id="lowStockToggleBtn" class="low-stock-toggle">?? Low Stock</button>
         <div class="view-toggle">
-          <button id="gridViewBtn" class="active" title="Grid view">⊞</button>
-          <button id="listViewBtn" title="List view">≡</button>
+          <button id="gridViewBtn" class="active" title="Grid view">?</button>
+          <button id="listViewBtn" title="List view">?</button>
         </div>
       </div>
       <div id="productGrid" class="product-grid">Loading products...</div>
@@ -1165,14 +1165,14 @@
 
     <div class="cart-panel">
       <div class="cart-header">
-        <div class="cart-title" id="cartTitle">🧾 Current Sale</div>
+        <div class="cart-title" id="cartTitle">?? Current Sale</div>
         <div class="cart-header-right">
           <select id="soldBySelectCart" class="sold-by-select-cart">
             <option value="">Loading...</option>
           </select>
           <div class="cart-header-buttons">
-            <button id="customerBtn" class="cart-header-btn">👤 Customer</button>
-            <button id="clearCartBtn" class="cart-header-btn">🗑️ Clear</button>
+            <button id="customerBtn" class="cart-header-btn">?? Customer</button>
+            <button id="clearCartBtn" class="cart-header-btn">??? Clear</button>
           </div>
         </div>
       </div>
@@ -1184,37 +1184,36 @@
         <div class="cart-summary" id="cartSummary">
           <div class="summary-row"><span>Subtotal</span><span id="subtotal">RM 0.00</span></div>
           <div id="discountRow" class="summary-row discount-row" style="display: none;">
-            <span><i>🎲</i> Lucky Draw</span>
+            <span><i>??</i> Lucky Draw</span>
             <span id="discountAmount">RM 0.00</span>
           </div>
-          <!-- NEW PROMO DISCOUNT ROWS -->
-          <div id="carAromaticPromoRow" class="summary-row discount-row" style="display: none;">
-            <span><i>🚗</i> Car Aromatic Promo (RM2)</span>
-            <span id="carAromaticDiscountAmount">RM 0.00</span>
-          </div>
-          <div id="perfume15mlPromoRow" class="summary-row discount-row" style="display: none;">
-            <span><i>🌸</i> 15ml Perfume Promo (RM8)</span>
-            <span id="perfume15mlDiscountAmount">RM 0.00</span>
-          </div>
+         <div id="promoBuy2Free1Row" class="summary-row discount-row" style="display: none;">
+  <span><i>🚗</i> Car Aromatic Promo (1 item → RM 2)</span>
+  <span id="promoBuy2Free1Amount">RM 0.00</span>
+</div>
+<div id="promoBuy3Free1Row" class="summary-row discount-row" style="display: none;">
+  <span><i>🌸</i> 15ml Perfume EDP Promo (1 item → RM 8)</span>
+  <span id="promoBuy3Free1Amount">RM 0.00</span>
+</div>
           <div id="customDiscountRow" class="summary-row discount-row" style="display: none;">
-            <span><i>💰</i> Custom Discount</span>
+            <span><i>??</i> Custom Discount</span>
             <span id="customDiscountAmount">RM 0.00</span>
           </div>
           <div class="summary-row total-row"><span>TOTAL</span><span id="totalAmount">RM 0.00</span></div>
         </div>
         <div class="cart-actions" id="cartActions">
-          <button id="checkoutBtn">💳 CHECKOUT</button>
-          <button id="claimPrizeBtn">🎁 Claim Prize</button>
-          <button id="specialPromoBtn">🎁 Special Promo</button>
+          <button id="checkoutBtn">?? CHECKOUT</button>
+          <button id="claimPrizeBtn">?? Claim Prize</button>
+          <button id="specialPromoBtn">?? Special Promo</button>
         </div>
       </div>
       <!-- Stock History Panel (hidden by default) -->
       <div id="stockHistoryContainer" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div class="cart-title">📋 Stock Adjustment History</div>
+          <div class="cart-title">?? Stock Adjustment History</div>
           <div>
-            <button id="saveStockHistoryBtn" class="cart-header-btn">💾 Save History</button>
-            <button id="clearStockHistoryBtn" class="cart-header-btn">🗑️ Clear History</button>
+            <button id="saveStockHistoryBtn" class="cart-header-btn">?? Save History</button>
+            <button id="clearStockHistoryBtn" class="cart-header-btn">??? Clear History</button>
           </div>
         </div>
         <div id="stockHistoryList" style="max-height: 55vh; overflow-y: auto; margin-top: 16px;">
@@ -1230,19 +1229,19 @@
   <div id="sideMenu" class="side-menu">
     <div class="menu-header">
       <h3>Menu</h3>
-      <button class="close-menu" id="closeSideMenuBtn">✕</button>
+      <button class="close-menu" id="closeSideMenuBtn">?</button>
     </div>
     <div class="menu-buttons">
-      <button id="sideReportBtn" class="menu-btn">📊 Report</button>
-      <button id="sideSettlementBtn" class="menu-btn">💰 Settlement</button>
-      <button id="sideCollectionBtn" class="menu-btn" style="display: none;">💵 Cash Collection</button>
-      <button id="sideInventoryBtn" class="menu-btn" style="display: none;">📦 Inventory</button>
-      <button id="sideReceiptsBtn" class="menu-btn">📜 Receipts</button>
-      <button id="sideDrawerBtn" class="menu-btn">💰 Open Drawer</button>
-      <button id="sideChangePinBtn" class="menu-btn">🔑 Change PIN</button>
+      <button id="sideReportBtn" class="menu-btn">?? Report</button>
+      <button id="sideSettlementBtn" class="menu-btn">?? Settlement</button>
+      <button id="sideCollectionBtn" class="menu-btn" style="display: none;">?? Cash Collection</button>
+      <button id="sideInventoryBtn" class="menu-btn" style="display: none;">?? Inventory</button>
+      <button id="sideReceiptsBtn" class="menu-btn">?? Receipts</button>
+      <button id="sideDrawerBtn" class="menu-btn">?? Open Drawer</button>
+      <button id="sideChangePinBtn" class="menu-btn">?? Change PIN</button>
       <!-- Stock Alert and Telegram buttons are hidden via CSS (display: none) but their functionality remains -->
-      <button id="sideStockAlertBtn" class="menu-btn" >🔔 Stock Alerts: OFF</button>
-      <button id="sideTelegramBtn" class="menu-btn">📱 Telegram Alerts</button>
+      <button id="sideStockAlertBtn" class="menu-btn" >?? Stock Alerts: OFF</button>
+      <button id="sideTelegramBtn" class="menu-btn">?? Telegram Alerts</button>
     </div>
   </div>
 </div>
@@ -1251,7 +1250,7 @@
 <div id="changePinModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 400px;">
     <span class="close-modal" id="closeChangePinModal">×</span>
-    <div class="modal-title">🔐 Change PIN</div>
+    <div class="modal-title">?? Change PIN</div>
     <div id="changePinStep1">
       <div class="filter-group">
         <label>Current PIN</label>
@@ -1281,7 +1280,7 @@
 <div id="printerModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 400px;">
     <span class="close-modal" id="closePrinterModal">×</span>
-    <div class="modal-title">🖨️ Printer Settings</div>
+    <div class="modal-title">??? Printer Settings</div>
     <div class="filter-group" style="margin-bottom: 20px;">
       <label>Paper Size</label>
       <select id="paperSizeSelectModal">
@@ -1293,42 +1292,43 @@
       <button id="connectPrinterModalBtn" class="modal-btn modal-btn-primary">Connect Printer</button>
       <button id="closePrinterModalBtn" class="modal-btn modal-btn-secondary">Close</button>
     </div>
-    <div id="printerStatusModal" style="margin-top: 12px; font-size: 0.9rem; text-align: center;">⚪ Not connected</div>
+    <div id="printerStatusModal" style="margin-top: 12px; font-size: 0.9rem; text-align: center;">? Not connected</div>
   </div>
 </div>
 
 <!-- Payment Modal -->
-<div id="paymentModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closePaymentModal">×</span><div class="modal-title">💳 Select Payment Method</div><div class="payment-buttons"><button class="payment-btn" data-method="Cash">💵 Cash</button><button class="payment-btn" data-method="Card">💳 Card</button><button class="payment-btn" data-method="QR Pay">📱 QR Pay</button></div><div id="cashOptions" style="display: none;"><div class="suggestions" id="suggestionsContainer"></div><input type="number" id="customCashInput" class="custom-cash-input" placeholder="Enter amount received (RM)" step="0.01"><div class="modal-buttons"><button id="confirmCashBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelPaymentBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="otherPaymentOptions" style="display: none;"><div class="modal-buttons"><button id="confirmOtherBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelOtherBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div></div></div>
+<div id="paymentModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closePaymentModal">×</span><div class="modal-title">?? Select Payment Method</div><div class="payment-buttons"><button class="payment-btn" data-method="Cash">?? Cash</button><button class="payment-btn" data-method="Card">?? Card</button><button class="payment-btn" data-method="QR Pay">?? QR Pay</button></div><div id="cashOptions" style="display: none;"><div class="suggestions" id="suggestionsContainer"></div><input type="number" id="customCashInput" class="custom-cash-input" placeholder="Enter amount received (RM)" step="0.01"><div class="modal-buttons"><button id="confirmCashBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelPaymentBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="otherPaymentOptions" style="display: none;"><div class="modal-buttons"><button id="confirmOtherBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelOtherBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div></div></div>
 
 <!-- Lucky Draw Modal -->
-<div id="luckyDrawModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeLuckyDrawModal">×</span><div class="modal-title">🎲 Lucky Draw</div><p>Transaction ID: <strong id="luckyTxId"></strong></p><p>Click below to enter the Lucky Draw with this receipt number.</p><div class="modal-buttons"><button id="openLuckyDrawBtn" class="modal-btn modal-btn-primary">🎁 Go to Lucky Draw</button><button id="closeLuckyDrawBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="luckyDrawModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeLuckyDrawModal">×</span><div class="modal-title">?? Lucky Draw</div><p>Transaction ID: <strong id="luckyTxId"></strong></p><p>Click below to enter the Lucky Draw with this receipt number.</p><div class="modal-buttons"><button id="openLuckyDrawBtn" class="modal-btn modal-btn-primary">?? Go to Lucky Draw</button><button id="closeLuckyDrawBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="luckyDrawPrintModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 400px;">
     <span class="close-modal" id="closeLuckyDrawPrintModal">×</span>
-    <div class="modal-title">🎉 Congratulations!</div>
+    <div class="modal-title">?? Congratulations!</div>
     <div id="luckyDrawPrintContent">
       <p>You have won a Lucky Draw prize!</p>
       <p>Receipt ID: <strong id="luckyDrawReceiptNumber"></strong></p>
       <div class="modal-buttons">
-        <button id="printPrizeVoucherBtn" class="modal-btn modal-btn-primary">🖨️ Print Voucher</button>
+        <button id="printPrizeVoucherBtn" class="modal-btn modal-btn-primary">??? Print Voucher</button>
         <button id="closeLuckyDrawPrintModalBtn" class="modal-btn modal-btn-secondary">Close</button>
       </div>
     </div>
   </div>
 </div>
 
-<div id="claimPrizeModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeClaimPrizeModal">×</span><div class="modal-title">🎁 Claim Prize</div><div id="claimStep1"><p>Enter the receipt number from your Lucky Draw:</p><input type="text" id="claimReceiptInput" class="modal-input" placeholder="e.g., TXN-1234567890-123" style="width: 100%; margin: 12px 0; padding: 12px;"><div class="modal-buttons"><button id="checkReceiptBtn" class="modal-btn modal-btn-primary">Check</button><button id="cancelClaimBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimStep2" style="display: none;"><p>Receipt: <strong id="validReceiptId"></strong></p><p>Select your prize:</p><select id="prizeSelect" class="modal-input" style="width: 100%; margin: 12px 0; padding: 12px;"><option value="38">CAR AROMATIC - RM 38</option><option value="75">15ML TRAVEL PERFUME - RM 75</option><option value="109">300ML LOTION - RM 109</option><option value="75">100ML PILLOW MIST - RM 75</option></select><div class="modal-buttons"><button id="applyPrizeBtn" class="modal-btn modal-btn-primary">Apply Discount</button><button id="cancelClaimStep2Btn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimError" style="color:#ef4444; margin-top: 12px; display: none;"></div></div></div>
+<div id="claimPrizeModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeClaimPrizeModal">×</span><div class="modal-title">?? Claim Prize</div><div id="claimStep1"><p>Enter the receipt number from your Lucky Draw:</p><input type="text" id="claimReceiptInput" class="modal-input" placeholder="e.g., TXN-1234567890-123" style="width: 100%; margin: 12px 0; padding: 12px;"><div class="modal-buttons"><button id="checkReceiptBtn" class="modal-btn modal-btn-primary">Check</button><button id="cancelClaimBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimStep2" style="display: none;"><p>Receipt: <strong id="validReceiptId"></strong></p><p>Select your prize:</p><select id="prizeSelect" class="modal-input" style="width: 100%; margin: 12px 0; padding: 12px;"><option value="38">CAR AROMATIC - RM 38</option><option value="75">15ML TRAVEL PERFUME - RM 75</option><option value="109">300ML LOTION - RM 109</option><option value="75">100ML PILLOW MIST - RM 75</option></select><div class="modal-buttons"><button id="applyPrizeBtn" class="modal-btn modal-btn-primary">Apply Discount</button><button id="cancelClaimStep2Btn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="claimError" style="color:#ef4444; margin-top: 12px; display: none;"></div></div></div>
 
-<!-- MODIFIED SPECIAL PROMO MODAL: NEW BUTTONS -->
-<div id="specialPromoModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeSpecialPromoModal">×</span><div class="modal-title">🎁 Special Promo</div><div id="promoOptions"><button id="promoCarAromatic" class="modal-btn modal-btn-primary promo-option-btn">🚗 CAR AROMATIC PROMO (RM2)</button><button id="promoPerfume15ml" class="modal-btn modal-btn-primary promo-option-btn">🌸 15ML PERFUME EDP PROMO (RM8)</button><div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">💰 Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="specialPromoModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeSpecialPromoModal">×</span><div class="modal-title">?? Special Promo</div><div id="promoOptions"><button id="promoBuy2Free1Perfume" class="modal-btn modal-btn-primary promo-option-btn">🚗 CAR AROMATIC PROMO (1 item → RM 2)</button>
+<button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">🌸 15ML PERFUME EDP PROMO (1 item → RM 8)</button>
+<div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">?? Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💰 Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead>汽<th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>      </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">?? Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">?? Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">?? Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">?? Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">?? Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">?? Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">?? Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead>?<th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>      </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="settlementModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
     <span class="close-modal" id="closeSettlementModal">×</span>
-    <div class="modal-title">💰 Daily Settlement</div>
+    <div class="modal-title">?? Daily Settlement</div>
     <div class="filter-group">
       <label>Store Location</label>
       <select id="settlementStoreSelect">
@@ -1342,12 +1342,12 @@
       <input type="number" id="pettyCashFloat" class="modal-input" placeholder="Enter starting cash float" step="0.01" value="0.00">
     </div>
     <div class="settlement-stats" id="systemTotalsDisplay">
-      <p>📊 System totals for today (all employees):</p>
-      <p>💵 Cash: <strong id="sysCash">RM 0.00</strong></p>
-      <p>💳 Card: <strong id="sysCard">RM 0.00</strong></p>
-      <p>📱 QR Pay: <strong id="sysQR">RM 0.00</strong></p>
-      <p>❌ Refunds: <strong id="sysRefund">RM 0.00</strong></p>
-      <p style="font-size: 1.4rem; font-weight: 800; margin-top: 12px;">💰 Net Total: <strong id="sysNetTotal">RM 0.00</strong></p>
+      <p>?? System totals for today (all employees):</p>
+      <p>?? Cash: <strong id="sysCash">RM 0.00</strong></p>
+      <p>?? Card: <strong id="sysCard">RM 0.00</strong></p>
+      <p>?? QR Pay: <strong id="sysQR">RM 0.00</strong></p>
+      <p>? Refunds: <strong id="sysRefund">RM 0.00</strong></p>
+      <p style="font-size: 1.4rem; font-weight: 800; margin-top: 12px;">?? Net Total: <strong id="sysNetTotal">RM 0.00</strong></p>
     </div>
     <div class="filter-group">
       <label>Cash Count (Actual)</label>
@@ -1370,9 +1370,9 @@
   </div>
 </div>
 
-<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead>汽<th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody>      </table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">?? Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>?? Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead>?<th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody>      </table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="receiptsModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeReceiptsModal">×</span><div class="modal-title">📜 Receipt History</div><div class="receipts-filters"><div class="filter-group" id="receiptsStoreFilterGroup"><label>Store</label><select id="receiptsStoreSelect"><option value="all">All Stores</option></select></div><div id="receiptsEmployeeFilter" class="filter-group" style="display: none;"><label>Employee</label><select id="receiptsEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="receiptsDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="receiptsCustomDateRange" style="display: none;" class="date-range"><input type="date" id="receiptsFromDate"><input type="date" id="receiptsToDate"></div><div class="filter-group" style="flex: 2;"><label>Search (Receipt # or Product)</label><input type="text" id="receiptsSearch" placeholder="Type to filter..."></div></div><div id="receiptsList" class="receipts-list">Loading receipts...</div><div class="modal-buttons"><button id="closeReceiptsBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="receiptsModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeReceiptsModal">×</span><div class="modal-title">?? Receipt History</div><div class="receipts-filters"><div class="filter-group" id="receiptsStoreFilterGroup"><label>Store</label><select id="receiptsStoreSelect"><option value="all">All Stores</option></select></div><div id="receiptsEmployeeFilter" class="filter-group" style="display: none;"><label>Employee</label><select id="receiptsEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="receiptsDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="receiptsCustomDateRange" style="display: none;" class="date-range"><input type="date" id="receiptsFromDate"><input type="date" id="receiptsToDate"></div><div class="filter-group" style="flex: 2;"><label>Search (Receipt # or Product)</label><input type="text" id="receiptsSearch" placeholder="Type to filter..."></div></div><div id="receiptsList" class="receipts-list">Loading receipts...</div><div class="modal-buttons"><button id="closeReceiptsBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="alertModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAlertModal">×</span><div class="modal-title" id="alertModalTitle"></div><div class="modal-message" id="alertModalMessage"></div><div class="modal-buttons"><button class="modal-btn modal-btn-primary" id="alertModalOk">OK</button></div></div></div>
 
@@ -1384,7 +1384,7 @@
 <div id="customerModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
     <span class="close-modal" id="closeCustomerModal">×</span>
-    <div class="modal-title">👤 Customer Loyalty</div>
+    <div class="modal-title">?? Customer Loyalty</div>
     <!-- Step 1: Only phone + Find button -->
     <div id="customerStep1">
       <div class="filter-group">
@@ -1392,7 +1392,7 @@
         <input type="tel" id="customerPhone" class="modal-input" placeholder="+60 123456789">
       </div>
       <div class="modal-buttons">
-        <button id="findCustomerBtn" class="modal-btn modal-btn-primary">🔍 Find</button>
+        <button id="findCustomerBtn" class="modal-btn modal-btn-primary">?? Find</button>
         <button id="cancelCustomerStep1Btn" class="modal-btn modal-btn-secondary">Cancel</button>
       </div>
     </div>
@@ -1419,7 +1419,7 @@
         <input type="text" id="customerPoints" class="modal-input" readonly disabled>
       </div>
       <div class="modal-buttons">
-        <button id="saveCustomerBtn" class="modal-btn modal-btn-primary">💾 Save / Update</button>
+        <button id="saveCustomerBtn" class="modal-btn modal-btn-primary">?? Save / Update</button>
         <button id="cancelCustomerStep2Btn" class="modal-btn modal-btn-secondary">Cancel</button>
       </div>
     </div>
@@ -1431,7 +1431,7 @@
 <div id="telegramModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
     <span class="close-modal" id="closeTelegramModal">×</span>
-    <div class="modal-title">📱 Telegram Out‑of‑Stock Alerts</div>
+    <div class="modal-title">?? Telegram Out?of?Stock Alerts</div>
     <div class="filter-group">
   <label>Telegram Accounts (token,chatId)</label>
  <textarea id="telegramAccounts" rows="4" class="modal-input" placeholder="e.g.,
@@ -1452,7 +1452,7 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxUSABSlgJWK24ZSv24GQTL6h2TnsrB5F-YVZ4-aG457G_8i_wOadGc3eGujKl5vugFBw/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyFsoYo58RLaPvgrCA-h6f4ZNRlERTjBx8p1n3icOBivFggrhVotDGOoAbFCtUkvpFE/exec"; // REPLACE WITH YOUR URL
 
   // ==================== GLOBAL VARIABLES ====================
   let products = [];
@@ -1468,8 +1468,8 @@
   let searchTimeout = null;
   let initialDataPromise = null;
   let discountAmount = 0;
-  let carAromaticDiscount = 0;      // NEW: discount for car aromatic promo (RM2)
-  let perfume15mlDiscount = 0;      // NEW: discount for 15ml perfume promo (RM8)
+  let buy2Free1Discount = 0;
+  let buy3Free1Discount = 0;
   let customDiscount = 0;
   let claimedReceiptInfo = null;
   let pendingPrize = null;
@@ -1481,14 +1481,13 @@
   let preloadedDataMap = {};
   let preloadedStores = [];
   let selectedCustomer = null;
-  let lowStockFilterActive = false;
-  // Preloaded report and settlement data
-  let preloadedSettlementTotals = null;
-  let preloadedReportCache = null;
-  let cachedEmployees = [];
-  let employeesLastFetched = 0;
-  const EMPLOYEE_CACHE_TTL = 1 * 60 * 1000;
-
+let lowStockFilterActive = false;   // track filter state
+  // New variables for preloaded report and settlement data
+  let preloadedSettlementTotals = null;      // cache settlement totals for current store today
+  let preloadedReportCache = null;            // { store, employeeId, from, to, totals, productDetails, chartData }
+let cachedEmployees = [];        // { id, name, pin, isAdmin }
+let employeesLastFetched = 0;
+const EMPLOYEE_CACHE_TTL = 1 * 60 * 1000; // 1 hour
   // ==================== NOTIFICATION & TELEGRAM VARIABLES ====================
   let notificationsSupported = false;
   let notificationsEnabled = false;
@@ -1505,12 +1504,12 @@
   const totalSpan = document.getElementById('totalAmount');
   const discountRow = document.getElementById('discountRow');
   const discountAmountSpan = document.getElementById('discountAmount');
-  const carAromaticPromoRow = document.getElementById('carAromaticPromoRow');
-  const carAromaticDiscountAmountSpan = document.getElementById('carAromaticDiscountAmount');
-  const perfume15mlPromoRow = document.getElementById('perfume15mlPromoRow');
-  const perfume15mlDiscountAmountSpan = document.getElementById('perfume15mlDiscountAmount');
+  const promoBuy2Free1Row = document.getElementById('promoBuy2Free1Row');
+  const promoBuy2Free1Amount = document.getElementById('promoBuy2Free1Amount');
+  const promoBuy3Free1Row = document.getElementById('promoBuy3Free1Row');
+  const promoBuy3Free1Amount = document.getElementById('promoBuy3Free1Amount');
   const customDiscountRow = document.getElementById('customDiscountRow');
-  const customDiscountAmountSpan = document.getElementById('customDiscountAmount');
+  const customDiscountAmount = document.getElementById('customDiscountAmount');
   const searchInput = document.getElementById('searchInput');
   const categorySelect = document.getElementById('categorySelect');
   const storeSelect = document.getElementById('storeSelect');
@@ -1558,17 +1557,17 @@
       closeBtn.addEventListener('click', onClose);
     });
   }
-  let lastSyncTimestamps = {};
-  try {
-    const stored = localStorage.getItem('lastSyncTimestamps');
-    if (stored) lastSyncTimestamps = JSON.parse(stored);
-  } catch(e) { console.warn(e); }
-  function toggleLowStockFilter() {
-    lowStockFilterActive = !lowStockFilterActive;
-    const btn = document.getElementById('lowStockToggleBtn');
-    if (btn) btn.classList.toggle('active', lowStockFilterActive);
-    renderProductGrid();
-  }
+let lastSyncTimestamps = {};
+try {
+  const stored = localStorage.getItem('lastSyncTimestamps');
+  if (stored) lastSyncTimestamps = JSON.parse(stored);
+} catch(e) { console.warn(e); }
+function toggleLowStockFilter() {
+  lowStockFilterActive = !lowStockFilterActive;
+  const btn = document.getElementById('lowStockToggleBtn');
+  if (btn) btn.classList.toggle('active', lowStockFilterActive);
+  renderProductGrid();   // refresh product display
+}
   function showInputModal(title, placeholder = '') {
     return new Promise((resolve) => {
       const overlay = document.getElementById('inputModal');
@@ -1665,120 +1664,129 @@
   function getEmployeeName(employeeId) {
     return employeeNameMap[employeeId] || employeeId;
   }
-  async function loadAndCacheEmployees(force = false) {
-    const now = Date.now();
-    if (!force && cachedEmployees.length > 0 && (now - employeesLastFetched) < EMPLOYEE_CACHE_TTL) {
+async function loadAndCacheEmployees(force = false) {
+  const now = Date.now();
+  if (!force && cachedEmployees.length > 0 && (now - employeesLastFetched) < EMPLOYEE_CACHE_TTL) {
+    return cachedEmployees;
+  }
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=getEmployees`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      cachedEmployees = result.employees;
+      employeesLastFetched = now;
+      // Also store in localStorage for offline use
+      localStorage.setItem('cachedEmployees', JSON.stringify({
+        timestamp: now,
+        employees: cachedEmployees
+      }));
       return cachedEmployees;
     }
-    try {
-      const url = `${APPS_SCRIPT_URL}?action=getEmployees`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) {
-        cachedEmployees = result.employees;
-        employeesLastFetched = now;
-        localStorage.setItem('cachedEmployees', JSON.stringify({
-          timestamp: now,
-          employees: cachedEmployees
-        }));
+  } catch (err) {
+    console.error('Failed to fetch employees:', err);
+    // Try to load from localStorage as fallback
+    const local = localStorage.getItem('cachedEmployees');
+    if (local) {
+      const { timestamp, employees } = JSON.parse(local);
+      if (now - timestamp < EMPLOYEE_CACHE_TTL) {
+        cachedEmployees = employees;
+        employeesLastFetched = timestamp;
         return cachedEmployees;
       }
-    } catch (err) {
-      console.error('Failed to fetch employees:', err);
-      const local = localStorage.getItem('cachedEmployees');
-      if (local) {
-        const { timestamp, employees } = JSON.parse(local);
-        if (now - timestamp < EMPLOYEE_CACHE_TTL) {
-          cachedEmployees = employees;
-          employeesLastFetched = timestamp;
-          return cachedEmployees;
-        }
-      }
     }
-    return [];
   }
-
+  return [];
+}
   // ==================== TELEGRAM FUNCTIONS ====================
-  async function sendTelegramMessage(message) {
-    if (!telegramAccounts) return false;
-    const lines = telegramAccounts.split('\n').filter(line => line.trim());
-    const results = await Promise.all(lines.map(async (line) => {
-      const [token, chatId] = line.split(',').map(s => s.trim());
-      if (!token || !chatId) return false;
-      try {
-        const url = `https://api.telegram.org/bot${token}/sendMessage`;
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text: message,
-            parse_mode: 'HTML'
-          })
-        });
-        const result = await response.json();
-        return result.ok;
-      } catch (err) {
-        console.error(`Telegram send failed for ${token}:`, err);
-        return false;
-      }
-    }));
-    return results.some(success => success);
-  }
+async function sendTelegramMessage(message) {
+  if (!telegramAccounts) return false;
+
+  // Split by newline, then by comma
+  const lines = telegramAccounts.split('\n').filter(line => line.trim());
+  const results = await Promise.all(lines.map(async (line) => {
+    const [token, chatId] = line.split(',').map(s => s.trim());
+    if (!token || !chatId) return false;
+    try {
+      const url = `https://api.telegram.org/bot${token}/sendMessage`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+      const result = await response.json();
+      return result.ok;
+    } catch (err) {
+      console.error(`Telegram send failed for ${token}:`, err);
+      return false;
+    }
+  }));
+  return results.some(success => success);
+}
 
   function showTelegramModal() {
-    document.getElementById('telegramAccounts').value = telegramAccounts;
-    document.getElementById('telegramStatus').innerHTML = '';
-    document.getElementById('telegramModal').style.display = 'flex';
+  document.getElementById('telegramAccounts').value = telegramAccounts;
+  document.getElementById('telegramStatus').innerHTML = '';
+  document.getElementById('telegramModal').style.display = 'flex';
+}
+
+async function saveTelegramSettings() {
+  const accountsRaw = document.getElementById('telegramAccounts').value.trim();
+  if (!accountsRaw) {
+    document.getElementById('telegramStatus').innerHTML = '? Please enter at least one Telegram account (token,chatId).';
+    return;
   }
 
-  async function saveTelegramSettings() {
-    const accountsRaw = document.getElementById('telegramAccounts').value.trim();
-    if (!accountsRaw) {
-      document.getElementById('telegramStatus').innerHTML = '❌ Please enter at least one Telegram account (token,chatId).';
-      return;
+  const lines = accountsRaw.split('\n').filter(line => line.trim());
+  const results = [];
+
+  document.getElementById('telegramStatus').innerHTML = '? Testing all accounts...';
+  document.getElementById('telegramStatus').style.color = '#2c7a4b';
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    const [token, chatId] = line.split(',').map(s => s.trim());
+    if (!token || !chatId) {
+      results.push(`? Line ${i+1}: Invalid format (must be token,chatId)`);
+      continue;
     }
-    const lines = accountsRaw.split('\n').filter(line => line.trim());
-    const results = [];
-    document.getElementById('telegramStatus').innerHTML = '⏳ Testing all accounts...';
-    document.getElementById('telegramStatus').style.color = '#2c7a4b';
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      const [token, chatId] = line.split(',').map(s => s.trim());
-      if (!token || !chatId) {
-        results.push(`❌ Line ${i+1}: Invalid format (must be token,chatId)`);
-        continue;
+
+    const testUrl = `https://api.telegram.org/bot${token}/sendMessage`;
+    try {
+      const response = await fetch(testUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: '? Out?of?stock alert test from POS system.' })
+      });
+      const result = await response.json();
+      if (result.ok) {
+        results.push(`? Account ${i+1}: Sent to ${chatId}`);
+      } else {
+        results.push(`? Account ${i+1}: ${result.description}`);
       }
-      const testUrl = `https://api.telegram.org/bot${token}/sendMessage`;
-      try {
-        const response = await fetch(testUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: chatId, text: '✅ Out‑of‑stock alert test from POS system.' })
-        });
-        const result = await response.json();
-        if (result.ok) {
-          results.push(`✅ Account ${i+1}: Sent to ${chatId}`);
-        } else {
-          results.push(`❌ Account ${i+1}: ${result.description}`);
-        }
-      } catch (err) {
-        results.push(`❌ Account ${i+1}: Connection failed – ${err.message}`);
-      }
-      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (err) {
+      results.push(`? Account ${i+1}: Connection failed – ${err.message}`);
     }
-    const allFailed = results.every(r => r.startsWith('❌'));
-    if (allFailed) {
-      document.getElementById('telegramStatus').innerHTML = results.join('<br>');
-      document.getElementById('telegramStatus').style.color = '#ef4444';
-      return;
-    }
-    telegramAccounts = accountsRaw;
-    localStorage.setItem('telegramAccounts', accountsRaw);
-    document.getElementById('telegramStatus').innerHTML = results.join('<br>') + '<br>✅ Settings saved.';
-    document.getElementById('telegramStatus').style.color = '#2c7a4b';
-    setTimeout(() => document.getElementById('telegramModal').style.display = 'none', 3000);
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
+
+  const allFailed = results.every(r => r.startsWith('?'));
+  if (allFailed) {
+    document.getElementById('telegramStatus').innerHTML = results.join('<br>');
+    document.getElementById('telegramStatus').style.color = '#ef4444';
+    return;
+  }
+
+  telegramAccounts = accountsRaw;
+  localStorage.setItem('telegramAccounts', accountsRaw);
+  document.getElementById('telegramStatus').innerHTML = results.join('<br>') + '<br>? Settings saved.';
+  document.getElementById('telegramStatus').style.color = '#2c7a4b';
+  setTimeout(() => document.getElementById('telegramModal').style.display = 'none', 3000);
+}
 
   // ==================== NOTIFICATION FUNCTIONS (stock alerts) ====================
   function checkNotificationSupport() {
@@ -1808,12 +1816,12 @@
         updateStockAlertButtonUI();
         await showAlertModal("Enabled", "Stock alerts are now enabled (desktop notifications).");
       } else {
-        notificationsEnabled = true;
+        notificationsEnabled = true; // fallback to in?app alerts
         updateStockAlertButtonUI();
         await showAlertModal("Permission denied", "Desktop notifications blocked. We will use in-app alerts instead.");
       }
     } else {
-      notificationsEnabled = true;
+      notificationsEnabled = true; // fallback
       updateStockAlertButtonUI();
       await showAlertModal("Permission blocked", "Desktop notifications blocked. We will use in-app alerts instead.");
     }
@@ -1825,10 +1833,12 @@
     showAlertModal("Disabled", "Stock alerts have been disabled.");
   }
 
-  function updateStockAlertButtonUI() { }
+  function updateStockAlertButtonUI() {
+    // Button is hidden, keep placeholder
+  }
 
   function showOutOfStockAlert(productName) {
-    showAlertModal("⚠️ Out of Stock", `${productName} is now out of stock. Please restock.`);
+    showAlertModal("?? Out of Stock", `${productName} is now out of stock. Please restock.`);
   }
 
   function checkAndNotifyOutOfStock(productId, productName, newStock) {
@@ -1837,20 +1847,20 @@
 
     if (newStock <= LOW_STOCK_THRESHOLD && newStock > 0 && !alertedLowStockProducts.has(productId)) {
       alertedLowStockProducts.add(productId);
-      const message = `⚠️ LOW STOCK ⚠️\nStore: ${storeName}\nProduct: ${productName}\nQuantity left: ${newStock}\nTime: ${timestamp}`;
+      const message = `?? LOW STOCK ??\nStore: ${storeName}\nProduct: ${productName}\nQuantity left: ${newStock}\nTime: ${timestamp}`;
       if (telegramAccounts) sendTelegramMessage(message);
       if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
-        new Notification(`⚠️ Low Stock`, { body: `${productName} only ${newStock} left.` });
+        new Notification(`?? Low Stock`, { body: `${productName} only ${newStock} left.` });
       } else if (notificationsEnabled) {
         showOutOfStockAlert(`${productName} only ${newStock} left.`);
       }
     }
     if (newStock === 0 && !alertedOutOfStockProducts.has(productId)) {
       alertedOutOfStockProducts.add(productId);
-      const message = `❌ OUT OF STOCK ❌\nStore: ${storeName}\nProduct: ${productName}\nTime: ${timestamp}`;
-      if (telegramAccounts) sendTelegramMessage(message);
+      const message = `? OUT OF STOCK ?\nStore: ${storeName}\nProduct: ${productName}\nTime: ${timestamp}`;
+     if (telegramAccounts) sendTelegramMessage(message);
       if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
-        new Notification(`❌ Out of Stock`, { body: `${productName} is out of stock.` });
+        new Notification(`? Out of Stock`, { body: `${productName} is out of stock.` });
       } else if (notificationsEnabled) {
         showOutOfStockAlert(`${productName} is out of stock.`);
       }
@@ -1916,8 +1926,8 @@
     if (selectedCustomer) {
       customerInfoDisplay.innerHTML = `
         <div class="customer-info">
-          <div class="customer-name">👤 ${escapeHtml(selectedCustomer.name || 'Customer')} (${escapeHtml(selectedCustomer.phone)})</div>
-          <div class="customer-points">⭐ Points: ${selectedCustomer.points || 0}</div>
+          <div class="customer-name">?? ${escapeHtml(selectedCustomer.name || 'Customer')} (${escapeHtml(selectedCustomer.phone)})</div>
+          <div class="customer-points">? Points: ${selectedCustomer.points || 0}</div>
           <button id="removeCustomerBtn">Remove</button>
         </div>
       `;
@@ -2071,7 +2081,7 @@
     for (const entry of aggregated.values()) {
       const deltaClass = entry.delta > 0 ? 'delta' : 'delta negative';
       const deltaSymbol = entry.delta > 0 ? `+${entry.delta}` : `${entry.delta}`;
-      const stockChange = `Net change: ${deltaSymbol} → Final stock: ${entry.newStock}`;
+      const stockChange = `Net change: ${deltaSymbol} ? Final stock: ${entry.newStock}`;
       html += `
         <div class="history-entry">
           <div class="delta-badge ${deltaClass}">${deltaSymbol}</div>
@@ -2164,30 +2174,32 @@
   }
 
   // ==================== INVENTORY MODE TOGGLE ====================
-  function toggleInventoryMode() {
-    inventoryMode = !inventoryMode;
-    const lowStockBtn = document.getElementById('lowStockToggleBtn');
-    if (inventoryMode) {
-      cartNormalContent.style.display = 'none';
-      stockHistoryContainerDiv.style.display = 'flex';
-      cartTitleElement.innerText = '📦 Inventory Mode';
-      if (updateStockTimeout) clearTimeout(updateStockTimeout);
-      loadStockHistoryFromSheet();
-      if (lowStockBtn) lowStockBtn.style.display = 'inline-flex';
-    } else {
-      cartNormalContent.style.display = 'block';
-      stockHistoryContainerDiv.style.display = 'none';
-      cartTitleElement.innerText = '🧾 Current Sale';
-      if (lowStockBtn) lowStockBtn.style.display = 'none';
-      if (lowStockFilterActive) {
-        lowStockFilterActive = false;
-        if (lowStockBtn) lowStockBtn.classList.remove('active');
-        renderProductGrid();
-      }
+ function toggleInventoryMode() {
+  inventoryMode = !inventoryMode;
+  const lowStockBtn = document.getElementById('lowStockToggleBtn');
+  if (inventoryMode) {
+    cartNormalContent.style.display = 'none';
+    stockHistoryContainerDiv.style.display = 'flex';
+    cartTitleElement.innerText = '?? Inventory Mode';
+    if (updateStockTimeout) clearTimeout(updateStockTimeout);
+    loadStockHistoryFromSheet();
+    // Show low stock button
+    if (lowStockBtn) lowStockBtn.style.display = 'inline-flex'; // or '' to use default display
+  } else {
+    cartNormalContent.style.display = 'block';
+    stockHistoryContainerDiv.style.display = 'none';
+    cartTitleElement.innerText = '?? Current Sale';
+    // Hide low stock button
+    if (lowStockBtn) lowStockBtn.style.display = 'none';
+    // Optionally reset the low stock filter when leaving inventory mode
+    if (lowStockFilterActive) {
+      lowStockFilterActive = false;
+      if (lowStockBtn) lowStockBtn.classList.remove('active');
+      renderProductGrid();
     }
-    renderProductGrid();
   }
-
+  renderProductGrid();
+}
   // ==================== PRELOAD ALL STORES IN BACKGROUND ====================
   async function preloadAllStoresData() {
     const stores = ["queens", "sunshine", "gurney_paragon"];
@@ -2203,7 +2215,7 @@
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const { timestamp, products: cachedProducts } = JSON.parse(cached);
-        if (now - timestamp < 60 * 1000) {
+      if (now - timestamp < 60 * 1000) {   // 1 second
           const empResponse = await fetch(`${APPS_SCRIPT_URL}?action=getEmployees`);
           const empResult = await empResponse.json();
           if (empResult.success) {
@@ -2233,92 +2245,52 @@
   }
 
   // ==================== INITIAL DATA LOAD ====================
-  async function loadInitialData() {
-    try {
-      const success = await fetchProductsFromSheet();
-      if (!success) throw new Error('Failed to load products');
-      const url = `${APPS_SCRIPT_URL}?action=getEmployees`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) {
-        employeeNameMap = {};
-        soldBySelectCart.innerHTML = '';
-        result.employees.forEach(emp => {
-          employeeNameMap[emp.id] = emp.name;
-          const option = document.createElement('option');
-          option.value = emp.id;
-          option.textContent = `${emp.name} (ID: ${emp.id})`;
-          if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
-          soldBySelectCart.appendChild(option);
-        });
-      }
-      return true;
-    } catch (err) {
-      console.error(err);
-      await showAlertModal('Error', 'Failed to load initial data. Check URL & sheet.');
-      return false;
+ async function loadInitialData() {
+  try {
+    // Directly fetch products from the sheet (uses caching internally)
+    const success = await fetchProductsFromSheet();
+    if (!success) throw new Error('Failed to load products');
+
+    // Now load employees
+    const url = `${APPS_SCRIPT_URL}?action=getEmployees`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      employeeNameMap = {};
+      soldBySelectCart.innerHTML = '';
+      result.employees.forEach(emp => {
+        employeeNameMap[emp.id] = emp.name;
+        const option = document.createElement('option');
+        option.value = emp.id;
+        option.textContent = `${emp.name} (ID: ${emp.id})`;
+        if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
+        soldBySelectCart.appendChild(option);
+      });
     }
+    return true;
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Error', 'Failed to load initial data. Check URL & sheet.');
+    return false;
   }
+}
+
+    
 
   // ==================== FETCH PRODUCTS ====================
-  async function fetchProductsFromSheet(force = false) {
-    showLoading('Fetching products...');
-    let attempt = 0;
-    const maxAttempts = force ? 1 : 2;
-    while (attempt < maxAttempts) {
-      try {
-        const store = currentStore;
-        const cacheKey = `products_${store}`;
-        const now = Date.now();
-        if (force || attempt === 1) {
-          let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
-          const response = await fetch(url);
-          const result = await response.json();
-          if (!result.success || !Array.isArray(result.products)) throw new Error('Invalid data');
-          products = result.products.map(p => ({
-            id: p.id,
-            name: p.name,
-            price: parseFloat(p.price),
-            stock: parseInt(p.stock) || 0,
-            category: p.category || "Uncategorized"
-          })).sort((a, b) => a.name.localeCompare(b.name));
-          localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
-          const nowISO = new Date().toISOString();
-          lastSyncTimestamps[store] = nowISO;
-          localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
-          updateCategoryDropdown();
-          renderProductGrid();
-          hideLoading();
-          return true;
-        }
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-          const { timestamp, products: cachedProducts } = JSON.parse(cached);
-          if (now - timestamp < 60 * 1000) {
-            products = cachedProducts;
-            updateCategoryDropdown();
-            renderProductGrid();
-            hideLoading();
-            return true;
-          }
-          const lastSync = lastSyncTimestamps[store];
-          if (lastSync) {
-            const changesUrl = `${APPS_SCRIPT_URL}?action=getProductChanges&store=${store}&since=${encodeURIComponent(lastSync)}&_=${now}`;
-            const changesResponse = await fetch(changesUrl);
-            const changes = await changesResponse.json();
-            if (changes.success && changes.products && changes.newSince) {
-              const merged = mergeProductChanges(cachedProducts, changes.products);
-              products = merged.sort((a, b) => a.name.localeCompare(b.name));
-              localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: merged }));
-              lastSyncTimestamps[store] = changes.newSince;
-              localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
-              updateCategoryDropdown();
-              renderProductGrid();
-              hideLoading();
-              return true;
-            }
-          }
-        }
+async function fetchProductsFromSheet(force = false) {
+  showLoading('Fetching products...');
+  let attempt = 0;
+  const maxAttempts = force ? 1 : 2; // if not forced, try once normally, then once forced
+
+  while (attempt < maxAttempts) {
+    try {
+      const store = currentStore;
+      const cacheKey = `products_${store}`;
+      const now = Date.now();
+
+      // 1. Forced full fetch
+      if (force || attempt === 1) {
         let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
         const response = await fetch(url);
         const result = await response.json();
@@ -2338,39 +2310,95 @@
         renderProductGrid();
         hideLoading();
         return true;
-      } catch (err) {
-        console.error(`Attempt ${attempt + 1} failed:`, err);
-        if (attempt === 0 && !force) {
-          attempt++;
-          force = true;
-          continue;
-        }
-        await showAlertModal('Error', 'Failed to load products. Check URL & sheet.');
-        hideLoading();
-        return false;
       }
-    }
-    return false;
-  }
 
-  function mergeProductChanges(existingProducts, changes) {
-    const map = new Map();
-    existingProducts.forEach(p => map.set(p.id, p));
-    for (const change of changes) {
-      if (change.deleted) {
-        map.delete(change.id);
-      } else {
-        map.set(change.id, {
-          id: change.id,
-          name: change.name,
-          price: parseFloat(change.price),
-          stock: parseInt(change.stock) || 0,
-          category: change.category || "Uncategorized"
-        });
+      // 2. Normal path (cache + incremental sync)
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const { timestamp, products: cachedProducts } = JSON.parse(cached);
+        if (now - timestamp < 60 * 1000) {   // 1 second
+          products = cachedProducts;
+          updateCategoryDropdown();
+          renderProductGrid();
+          hideLoading();
+          return true;
+        }
+
+        const lastSync = lastSyncTimestamps[store];
+        if (lastSync) {
+          const changesUrl = `${APPS_SCRIPT_URL}?action=getProductChanges&store=${store}&since=${encodeURIComponent(lastSync)}&_=${now}`;
+          const changesResponse = await fetch(changesUrl);
+          const changes = await changesResponse.json();
+          if (changes.success && changes.products && changes.newSince) {
+            const merged = mergeProductChanges(cachedProducts, changes.products);
+            products = merged.sort((a, b) => a.name.localeCompare(b.name));
+            localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: merged }));
+            lastSyncTimestamps[store] = changes.newSince;
+            localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
+            updateCategoryDropdown();
+            renderProductGrid();
+            hideLoading();
+            return true;
+          }
+        }
       }
+
+      // 3. No valid cache or incremental failed – full fetch
+      let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
+      const response = await fetch(url);
+      const result = await response.json();
+      if (!result.success || !Array.isArray(result.products)) throw new Error('Invalid data');
+      products = result.products.map(p => ({
+        id: p.id,
+        name: p.name,
+        price: parseFloat(p.price),
+        stock: parseInt(p.stock) || 0,
+        category: p.category || "Uncategorized"
+      })).sort((a, b) => a.name.localeCompare(b.name));
+      localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
+      const nowISO = new Date().toISOString();
+      lastSyncTimestamps[store] = nowISO;
+      localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
+      updateCategoryDropdown();
+      renderProductGrid();
+      hideLoading();
+      return true;
+
+    } catch (err) {
+      console.error(`Attempt ${attempt + 1} failed:`, err);
+      if (attempt === 0 && !force) {
+        // First attempt failed – retry with forced fetch
+        attempt++;
+        force = true; // force the next attempt
+        continue;
+      }
+      // Both attempts failed
+      await showAlertModal('Error', 'Failed to load products. Check URL & sheet.');
+      hideLoading();
+      return false;
     }
-    return Array.from(map.values());
   }
+  return false;
+}
+
+function mergeProductChanges(existingProducts, changes) {
+  const map = new Map();
+  existingProducts.forEach(p => map.set(p.id, p));
+  for (const change of changes) {
+    if (change.deleted) {
+      map.delete(change.id);
+    } else {
+      map.set(change.id, {
+        id: change.id,
+        name: change.name,
+        price: parseFloat(change.price),
+        stock: parseInt(change.stock) || 0,
+        category: change.category || "Uncategorized"
+      });
+    }
+  }
+  return Array.from(map.values());
+}
 
   // ==================== STOCK UPDATE ====================
   async function updateStockOnServer(productId, newStock) {
@@ -2382,6 +2410,7 @@
       formData.append("store", currentStore);
       const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
       const result = await response.json();
+
       if (!result.success) {
         console.error("Stock update failed:", result.error);
       } else {
@@ -2403,63 +2432,62 @@
       updateStockOnServer(productId, newStock);
     }, 500);
   }
-  let pendingSales = [];
+let pendingSales = [];
 
-  function loadPendingSales() {
-    const stored = localStorage.getItem('pendingSales');
-    if (stored) pendingSales = JSON.parse(stored);
+// Load pending sales from localStorage on startup
+function loadPendingSales() {
+  const stored = localStorage.getItem('pendingSales');
+  if (stored) pendingSales = JSON.parse(stored);
+}
+
+// Save a sale to the queue
+function queueSale(transaction) {
+  pendingSales.push(transaction);
+  localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
+  // Try to sync immediately (if online)
+  syncPendingSales();
+}
+
+// Attempt to send all pending sales
+async function syncPendingSales() {
+  if (!navigator.onLine) return;
+  if (pendingSales.length === 0) return;
+
+  
+  const failed = [];
+  for (const sale of pendingSales) {
+    const success = await saveTransactionToSheet(sale);
+    if (!success) failed.push(sale);
   }
-
-  function queueSale(transaction) {
-    pendingSales.push(transaction);
+  if (failed.length === 0) {
+    pendingSales = [];
+    localStorage.removeItem('pendingSales');
+   
+  } else {
+    pendingSales = failed;
     localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
-    syncPendingSales();
+    showAlertModal('Sync Partial', `${failed.length} sale(s) failed. Will retry later.`);
   }
+  hideLoading();
+}
 
-  async function syncPendingSales() {
-    if (!navigator.onLine) return;
-    if (pendingSales.length === 0) return;
-    const failed = [];
-    for (const sale of pendingSales) {
-      const success = await saveTransactionToSheet(sale);
-      if (!success) failed.push(sale);
-    }
-    if (failed.length === 0) {
-      pendingSales = [];
-      localStorage.removeItem('pendingSales');
-    } else {
-      pendingSales = failed;
-      localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
-      showAlertModal('Sync Partial', `${failed.length} sale(s) failed. Will retry later.`);
-    }
-    hideLoading();
-  }
-
-  window.addEventListener('online', syncPendingSales);
-
+// Listen for online events
+window.addEventListener('online', syncPendingSales);
   // ==================== CART FUNCTIONS ====================
-  function clearPromo() {
-    // Clear all promo discounts that are not persisted (lucky draw is separate)
-    carAromaticDiscount = 0;
-    perfume15mlDiscount = 0;
-    customDiscount = 0;
-    updateCartUI();
-  }
-
   function updateCartUI() {
     if (!cartContainer) return;
     if (cart.length === 0) {
       cartContainer.innerHTML = '<div style="color:#94a3b8; text-align:center;">Cart is empty</div>';
       subtotalSpan.innerText = `RM 0.00`;
       discountAmount = 0;
-      carAromaticDiscount = 0;
-      perfume15mlDiscount = 0;
+      buy2Free1Discount = 0;
+      buy3Free1Discount = 0;
       customDiscount = 0;
       claimedReceiptInfo = null;
       pendingPrize = null;
       discountRow.style.display = 'none';
-      carAromaticPromoRow.style.display = 'none';
-      perfume15mlPromoRow.style.display = 'none';
+      promoBuy2Free1Row.style.display = 'none';
+      promoBuy3Free1Row.style.display = 'none';
       customDiscountRow.style.display = 'none';
       totalSpan.innerText = `RM 0.00`;
       return;
@@ -2475,9 +2503,9 @@
         ? `<div class="cart-item-category">${escapeHtml(item.product.category)}</div>`
         : '';
       const freeClass = item.freeQuantity > 0 ? 'active' : '';
-      const buttonText = item.freeQuantity > 0
-        ? `🎁 ${item.freeQuantity} Free`
-        : '🎁Activate Free Gift';
+      const buttonText = item.freeQuantity > 0 
+        ? `?? ${item.freeQuantity} Free` 
+        : '??Activate Free Gift';
       html += `
         <div class="cart-item" data-index="${idx}">
           <div class="cart-item-info">
@@ -2489,12 +2517,12 @@
             <button class="free-toggle-btn ${freeClass}" data-index="${idx}">${buttonText}</button>
           </div>
           <div class="cart-item-qty">
-            <button class="qty-btn" data-index="${idx}" data-delta="-1">−</button>
+            <button class="qty-btn" data-index="${idx}" data-delta="-1">?</button>
             <span>${item.quantity}</span>
             <button class="qty-btn" data-index="${idx}" data-delta="1">+</button>
           </div>
           <div class="cart-item-total">RM ${itemTotal.toFixed(2)}</div>
-          <button class="remove-item" data-index="${idx}">✕</button>
+          <button class="remove-item" data-index="${idx}">?</button>
         </div>
       `;
     });
@@ -2502,8 +2530,8 @@
 
     subtotalSpan.innerText = `RM ${subtotal.toFixed(2)}`;
 
-    const totalPromoDiscount = discountAmount + carAromaticDiscount + perfume15mlDiscount + customDiscount;
-    const total = subtotal - totalPromoDiscount;
+    const totalPromoDiscount = buy2Free1Discount + buy3Free1Discount + customDiscount;
+    const total = subtotal - discountAmount - totalPromoDiscount;
 
     if (discountAmount > 0) {
       discountRow.style.display = 'flex';
@@ -2512,23 +2540,23 @@
       discountRow.style.display = 'none';
     }
 
-    if (carAromaticDiscount > 0) {
-      carAromaticPromoRow.style.display = 'flex';
-      carAromaticDiscountAmountSpan.innerText = `RM ${carAromaticDiscount.toFixed(2)}`;
+    if (buy2Free1Discount > 0) {
+      promoBuy2Free1Row.style.display = 'flex';
+      promoBuy2Free1Amount.innerText = `RM ${buy2Free1Discount.toFixed(2)}`;
     } else {
-      carAromaticPromoRow.style.display = 'none';
+      promoBuy2Free1Row.style.display = 'none';
     }
 
-    if (perfume15mlDiscount > 0) {
-      perfume15mlPromoRow.style.display = 'flex';
-      perfume15mlDiscountAmountSpan.innerText = `RM ${perfume15mlDiscount.toFixed(2)}`;
+    if (buy3Free1Discount > 0) {
+      promoBuy3Free1Row.style.display = 'flex';
+      promoBuy3Free1Amount.innerText = `RM ${buy3Free1Discount.toFixed(2)}`;
     } else {
-      perfume15mlPromoRow.style.display = 'none';
+      promoBuy3Free1Row.style.display = 'none';
     }
 
     if (customDiscount > 0) {
       customDiscountRow.style.display = 'flex';
-      customDiscountAmountSpan.innerText = `RM ${customDiscount.toFixed(2)}`;
+      customDiscountAmount.innerText = `RM ${customDiscount.toFixed(2)}`;
     } else {
       customDiscountRow.style.display = 'none';
     }
@@ -2575,7 +2603,7 @@
       if (item.freeQuantity > newQty) item.freeQuantity = newQty;
     }
     updateCartUI();
-    clearPromo(); // reset promo discounts because cart changed
+    clearPromo();
   }
 
   function removeCartItem(index) {
@@ -2608,13 +2636,20 @@
     if (cart.length === 0) return;
     cart = [];
     discountAmount = 0;
-    carAromaticDiscount = 0;
-    perfume15mlDiscount = 0;
+    buy2Free1Discount = 0;
+    buy3Free1Discount = 0;
     customDiscount = 0;
     claimedReceiptInfo = null;
     pendingPrize = null;
     selectedCustomer = null;
     updateCustomerDisplay();
+    updateCartUI();
+  }
+
+  function clearPromo() {
+    buy2Free1Discount = 0;
+    buy3Free1Discount = 0;
+    customDiscount = 0;
     updateCartUI();
   }
 
@@ -2626,61 +2661,6 @@
     item.freeQuantity = newFree;
     updateCartUI();
     clearPromo();
-  }
-
-  // ==================== NEW PROMO FUNCTIONS ====================
-  function applyCarAromaticPromo() {
-    // Find the first cart item whose category is exactly "CAR AROMATIC" (case-insensitive)
-    const targetItem = cart.find(item => item.product.category && item.product.category.trim().toLowerCase() === "car aromatic");
-    if (!targetItem) {
-      document.getElementById('promoMessage').innerText = "No 'CAR AROMATIC' product in cart.";
-      document.getElementById('promoMessage').style.display = 'block';
-      return;
-    }
-    // Discount = original price - RM2 (only one unit)
-    const originalPrice = targetItem.product.price;
-    const discountValue = originalPrice - 2;
-    if (discountValue <= 0) {
-      document.getElementById('promoMessage').innerText = "Price already RM2 or less, no discount applied.";
-      document.getElementById('promoMessage').style.display = 'block';
-      return;
-    }
-    carAromaticDiscount = discountValue;
-    updateCartUI();
-    document.getElementById('specialPromoModal').style.display = 'none';
-    showAlertModal("Promo Applied", `Car Aromatic promo: RM ${discountValue.toFixed(2)} discount applied.`);
-  }
-
-  function applyPerfume15mlPromo() {
-    // Find first cart item with category "15ML PERFUME EDP"
-    const targetItem = cart.find(item => item.product.category && item.product.category.trim().toLowerCase() === "15ml perfume edp");
-    if (!targetItem) {
-      document.getElementById('promoMessage').innerText = "No '15ML PERFUME EDP' product in cart.";
-      document.getElementById('promoMessage').style.display = 'block';
-      return;
-    }
-    const originalPrice = targetItem.product.price;
-    const discountValue = originalPrice - 8;
-    if (discountValue <= 0) {
-      document.getElementById('promoMessage').innerText = "Price already RM8 or less, no discount applied.";
-      document.getElementById('promoMessage').style.display = 'block';
-      return;
-    }
-    perfume15mlDiscount = discountValue;
-    updateCartUI();
-    document.getElementById('specialPromoModal').style.display = 'none';
-    showAlertModal("Promo Applied", `15ml Perfume promo: RM ${discountValue.toFixed(2)} discount applied.`);
-  }
-
-  function applyCustomDiscount() {
-    const value = parseFloat(document.getElementById('customPromoValue').value);
-    if (isNaN(value) || value < 0) {
-      showAlertModal('Invalid Discount', 'Please enter a valid discount amount.');
-      return;
-    }
-    customDiscount = value;
-    updateCartUI();
-    document.getElementById('specialPromoModal').style.display = 'none';
   }
 
   // ==================== CLAIM PRIZE FUNCTIONS ====================
@@ -2739,10 +2719,12 @@
     if (!receiptData) return;
     const prizeValue = parseFloat(document.getElementById('prizeSelect').value);
     const prizeText = document.getElementById('prizeSelect').selectedOptions[0].text;
+
     pendingPrize = { receipt: receiptData.receipt, value: prizeValue, name: prizeText };
     discountAmount = prizeValue;
     claimedReceiptInfo = pendingPrize;
     updateCartUI();
+
     showAlertModal('Prize Applied', `Discount of RM ${prizeValue.toFixed(2)} has been applied to this sale.\nThe prize will be marked as claimed only after successful payment.`);
     document.getElementById('claimPrizeModal').style.display = 'none';
   }
@@ -2760,32 +2742,104 @@
     }
   }
 
+  // ==================== SPECIAL PROMO FUNCTIONS ====================
+  function showSpecialPromoModal() {
+    document.getElementById('specialPromoModal').style.display = 'flex';
+    document.getElementById('promoMessage').style.display = 'none';
+    document.getElementById('customPromoValue').value = '';
+  }
+
+  function getUnitPricesFromFilter(filterCallback) {
+    const prices = [];
+    for (let item of cart) {
+      if (filterCallback(item)) {
+        for (let i = 0; i < item.quantity; i++) prices.push(item.product.price);
+      }
+    }
+    return prices;
+  }
+
+  // NEW: Car Aromatic Promo – changes one item in category "CAR AROMATIC" to RM 2
+function applyCarAromaticPromo() {
+  const targetCategory = "CAR AROMATIC";
+  const fixedPrice = 2;
+
+  // Find the first cart item whose category matches exactly
+  const item = cart.find(i => i.product.category === targetCategory);
+  if (!item) {
+    document.getElementById('promoMessage').innerText = `No item in category "${targetCategory}" found.`;
+    document.getElementById('promoMessage').style.display = 'block';
+    return;
+  }
+
+  const discount = item.product.price - fixedPrice;
+  if (discount <= 0) {
+    document.getElementById('promoMessage').innerText = `Item already priced at RM ${fixedPrice} or lower.`;
+    document.getElementById('promoMessage').style.display = 'block';
+    return;
+  }
+
+  buy2Free1Discount = discount;   // reuse the existing discount variable
+  updateCartUI();
+  document.getElementById('specialPromoModal').style.display = 'none';
+}
+
+// NEW: 15ml Perfume EDP Promo – changes one item in category "15ML PERFUME EDP" to RM 8
+function apply15mlPerfumeEdpPromo() {
+  const targetCategory = "15ML PERFUME EDP";
+  const fixedPrice = 8;
+
+  const item = cart.find(i => i.product.category === targetCategory);
+  if (!item) {
+    document.getElementById('promoMessage').innerText = `No item in category "${targetCategory}" found.`;
+    document.getElementById('promoMessage').style.display = 'block';
+    return;
+  }
+
+  const discount = item.product.price - fixedPrice;
+  if (discount <= 0) {
+    document.getElementById('promoMessage').innerText = `Item already priced at RM ${fixedPrice} or lower.`;
+    document.getElementById('promoMessage').style.display = 'block';
+    return;
+  }
+
+  buy3Free1Discount = discount;   // reuse the existing discount variable
+  updateCartUI();
+  document.getElementById('specialPromoModal').style.display = 'none';
+}
+
   // ==================== CHECKOUT ====================
-  async function startCheckout() {
-    if (cart.length === 0) {
-      await showAlertModal('Empty Cart', 'No items to checkout.');
+ async function startCheckout() {
+  if (cart.length === 0) {
+    await showAlertModal('Empty Cart', 'No items to checkout.');
+    return;
+  }
+  // ? REMOVED: showLoading('Refreshing stock data...');
+  // ? REMOVED: const refreshed = await fetchProductsFromSheet(true);
+  // ? REMOVED: hideLoading();
+  // ? REMOVED: if (!refreshed) { ... }
+  
+  // ? Direct stock validation using current products (may be stale)
+  for (let item of cart) {
+    const originalProduct = products.find(p => p.id === item.product.id);
+    if (!originalProduct) {
+      await showAlertModal('Product Missing', `${item.product.name} no longer exists.`);
       return;
     }
-    for (let item of cart) {
-      const originalProduct = products.find(p => p.id === item.product.id);
-      if (!originalProduct) {
-        await showAlertModal('Product Missing', `${item.product.name} no longer exists.`);
-        return;
-      }
-      if (originalProduct.stock < item.quantity) {
-        await showAlertModal('Stock Changed', `${item.product.name} stock is now only ${originalProduct.stock} units.`);
-        return;
-      }
+    if (originalProduct.stock < item.quantity) {
+      await showAlertModal('Stock Changed', `${item.product.name} stock is now only ${originalProduct.stock} units.`);
+      return;
     }
-    let subtotal = 0;
-    for (let item of cart) {
-      const paidQty = item.quantity - item.freeQuantity;
-      subtotal += paidQty * item.product.price;
-    }
-    const totalAmount = subtotal - discountAmount - (carAromaticDiscount + perfume15mlDiscount + customDiscount);
-    pendingTransaction = { totalAmount };
-    showPaymentModal(totalAmount);
   }
+  let subtotal = 0;
+  for (let item of cart) {
+    const paidQty = item.quantity - item.freeQuantity;
+    subtotal += paidQty * item.product.price;
+  }
+  const totalAmount = subtotal - discountAmount - (buy2Free1Discount + buy3Free1Discount + customDiscount);
+  pendingTransaction = { totalAmount };
+  showPaymentModal(totalAmount);
+}
 
   function showPaymentModal(totalAmount) {
     const modal = document.getElementById('paymentModal');
@@ -2850,7 +2904,7 @@
     document.getElementById('closePaymentModal').onclick = () => modal.style.display = 'none';
   }
 
-  async function completeCheckout(paymentMethod, cashReceived) {
+ async function completeCheckout(paymentMethod, cashReceived) {
     document.getElementById('paymentModal').style.display = 'none';
     const totalAmount = pendingTransaction.totalAmount;
     const transactionId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -2871,16 +2925,17 @@
       cash_received: cashReceived,
       timestamp: new Date().toISOString(),
       discount: discountAmount,
-      car_aromatic_discount: carAromaticDiscount,
-      perfume_15ml_discount: perfume15mlDiscount,
+      buy2_free1_discount: buy2Free1Discount,
+      buy3_free1_discount: buy3Free1Discount,
       custom_discount: customDiscount,
       prize_claimed: claimedReceiptInfo,
       customer_id: selectedCustomer ? selectedCustomer.id : null
     };
     queueSale(transaction);
-    const success = true;
+const success = true;  // assume success, will sync later
     const customerIdForLuckyDraw = selectedCustomer ? selectedCustomer.id : null;
     if (success) {
+      // Update local stock and trigger notifications for each sold item
       for (let item of saleItems) {
         const product = products.find(p => p.id == item.id);
         if (product) {
@@ -2888,38 +2943,42 @@
           const newStock = oldStock - item.quantity;
           product.stock = newStock;
           checkAndNotifyOutOfStock(product.id, product.name, newStock);
+        //  const stockSpan = document.querySelector(`.stock-display[data-id="${product.id}"]`);
+        //  if (stockSpan) stockSpan.innerText = newStock;
         }
       }
-      localStorage.setItem(`products_${currentStore}`, JSON.stringify({
-        timestamp: Date.now(),
-        products: products
-      }));
-      renderProductGrid();
-      if (selectedCustomer && selectedCustomer.id) {
-        const POINTS_PER_RM = 1;
-        const pointsEarned = Math.floor(totalAmount * POINTS_PER_RM);
-        if (pointsEarned > 0) {
-          selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
-          updateCustomerDisplay();
-        }
-      }
+       localStorage.setItem(`products_${currentStore}`, JSON.stringify({
+    timestamp: Date.now(),
+    products: products
+  }));
+renderProductGrid();
+     if (selectedCustomer && selectedCustomer.id) {
+  const POINTS_PER_RM = 1;  // Set this to the same value as in your backend
+  const pointsEarned = Math.floor(totalAmount * POINTS_PER_RM);
+  if (pointsEarned > 0) {
+    selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
+    updateCustomerDisplay();
+  }
+}
       if (pendingPrize) {
         await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
         pendingPrize = null;
       }
+    //  localStorage.removeItem(`products_${currentStore}`);
       if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
         const transactionWithName = { ...transaction, employee_name: currentEmployee.name };
         await window.printerAPI.printReceipt(transactionWithName);
       } else {
         await showAlertModal('Receipt', 'Sale recorded. Printer not connected, no receipt printed.');
       }
-      await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
+      await showAlertModal('? Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
       document.getElementById('luckyTxId').innerText = transactionId;
       const luckyModal = document.getElementById('luckyDrawModal');
       luckyModal.style.display = 'flex';
       document.getElementById('openLuckyDrawBtn').onclick = () => { openLuckyDraw(transactionId, customerIdForLuckyDraw); luckyModal.style.display = 'none'; };
       document.getElementById('closeLuckyDrawBtn').onclick = () => luckyModal.style.display = 'none';
       document.getElementById('closeLuckyDrawModal').onclick = () => luckyModal.style.display = 'none';
+     // await fetchProductsFromSheet();
       clearCart();
     } else {
       await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
@@ -2927,6 +2986,7 @@
   }
 
   async function saveTransactionToSheet(transaction) {
+    
     try {
       const selectedEmployeeId = soldBySelectCart.value;
       const employeeIdForRecord = selectedEmployeeId || currentEmployee.id;
@@ -2941,8 +3001,8 @@
       formData.append("store", currentStore);
       formData.append("employee_id", employeeIdForRecord);
       formData.append("discount", transaction.discount || 0);
-      formData.append("car_aromatic_discount", transaction.car_aromatic_discount || 0);
-      formData.append("perfume_15ml_discount", transaction.perfume_15ml_discount || 0);
+      formData.append("buy2_free1_discount", transaction.buy2_free1_discount || 0);
+      formData.append("buy3_free1_discount", transaction.buy3_free1_discount || 0);
       formData.append("custom_discount", transaction.custom_discount || 0);
       formData.append("prize_claimed", transaction.prize_claimed ? JSON.stringify(transaction.prize_claimed) : '');
       if (transaction.customer_id) formData.append("customer_id", transaction.customer_id);
@@ -2957,7 +3017,7 @@
     }
   }
 
-  // ==================== RECEIPTS ====================
+  // ==================== RECEIPTS (polling, etc.) ====================
   let cachedReceipts = null;
   let receiptPollingInterval = null;
 
@@ -3050,104 +3110,128 @@
     }
   }
 
-  function renderReceiptsList(receipts) {
-    const container = document.getElementById('receiptsList');
-    if (!receipts.length) {
-      container.innerHTML = '<div style="text-align:center; padding:30px;">No receipts found.</div>';
-      return;
-    }
-    let html = '';
-    receipts.forEach(rec => {
-      const date = new Date(rec.timestamp).toLocaleString();
-      const employeeName = getEmployeeName(rec.employee_id);
-      const isRefund = rec.total < 0;
-      const isRefundedOriginal = rec.refunded === true && !isRefund;
-      const refundClass = isRefund ? 'refund-receipt' : '';
-      const receiptIdHtml = isRefund
-        ? `<span class="receipt-id">[REFUND] ${rec.transaction_id}</span>`
-        : `<span class="receipt-id">${rec.transaction_id}</span>`;
-      let itemsHtml = '<div class="receipt-items-list">';
-      let subtotal = 0;
-      for (const item of rec.items) {
-        const paidQty = item.quantity - (item.free_quantity || 0);
-        const itemTotal = paidQty * item.price;
-        subtotal += itemTotal;
-        itemsHtml += `
-          <div class="receipt-item-row">
-            <span class="receipt-item-name">${escapeHtml(item.name)}</span>
-            <span class="receipt-item-detail">${paidQty} x RM ${item.price.toFixed(2)}</span>
-            <span class="receipt-item-detail">RM ${itemTotal.toFixed(2)}</span>
-          </div>
-        `;
-        if (item.free_quantity > 0) {
-          itemsHtml += `
-            <div class="receipt-item-row" style="color:#10b981; font-style:italic;">
-              <span class="receipt-item-name">🎁 FREE GIFT</span>
-              <span class="receipt-item-detail">${item.free_quantity} x ${escapeHtml(item.name)}</span>
-              <span class="receipt-item-detail">RM 0.00</span>
-            </div>
-          `;
-        }
-      }
-      itemsHtml += '</div>';
-      let discountsHtml = '';
-      if (rec.discount && rec.discount > 0) discountsHtml += `<div class="receipt-discount-row"><span>🎲 Lucky Draw Discount</span><span>-RM ${rec.discount.toFixed(2)}</span></div>`;
-      if (rec.car_aromatic_discount && rec.car_aromatic_discount > 0) discountsHtml += `<div class="receipt-discount-row"><span>🚗 Car Aromatic Promo (RM2)</span><span>-RM ${rec.car_aromatic_discount.toFixed(2)}</span></div>`;
-      if (rec.perfume_15ml_discount && rec.perfume_15ml_discount > 0) discountsHtml += `<div class="receipt-discount-row"><span>🌸 15ml Perfume Promo (RM8)</span><span>-RM ${rec.perfume_15ml_discount.toFixed(2)}</span></div>`;
-      if (rec.custom_discount && rec.custom_discount > 0) discountsHtml += `<div class="receipt-discount-row"><span>💰 Custom Discount</span><span>-RM ${rec.custom_discount.toFixed(2)}</span></div>`;
-      const total = rec.total;
-      const actionsHtml = `
-        <div class="receipt-actions">
-          <button class="reprint-btn" data-txid="${rec.transaction_id}">🖨️ Reprint</button>
-          ${!isRefund && !isRefundedOriginal ? `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">💰 Refund</button>` : ''}
-        </div>
-      `;
-      html += `
-        <div class="receipt-item ${refundClass}" data-txid="${rec.transaction_id}">
-          <div class="receipt-header">
-            ${receiptIdHtml}
-            <span class="receipt-date">${date}</span>
-            <span class="receipt-total">RM ${total.toFixed(2)}</span>
-          </div>
-          <div class="receipt-details">
-            <div>Store: ${rec.store} | Payment: ${rec.payment_method} | Employee: ${employeeName}</div>
-          </div>
-          ${itemsHtml}
-          ${discountsHtml ? `<div class="receipt-items-list" style="margin-top:4px;">${discountsHtml}</div>` : ''}
-          <div class="receipt-item-row total-row" style="margin-top:8px; padding-top:6px; border-top:1px dashed #cbd5e1;">
-            <strong>TOTAL</strong>
-            <strong>RM ${total.toFixed(2)}</strong>
-          </div>
-          ${actionsHtml}
-        </div>
-      `;
-    });
-    container.innerHTML = html;
-    document.querySelectorAll('.reprint-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const txId = btn.dataset.txid;
-        const receipt = cachedReceipts.find(r => r.transaction_id === txId);
-        if (receipt) {
-          reprintReceipt(receipt);
-        } else {
-          showAlertModal('Error', 'Receipt data not found. Please refresh.');
-        }
-        e.stopPropagation();
-      });
-    });
-    document.querySelectorAll('.refund-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const transactionId = btn.dataset.txid;
-        const store = btn.dataset.store;
-        e.stopPropagation();
-        const confirm = await showConfirmModal('Refund Transaction', `Are you sure you want to refund transaction ${transactionId}? This will reverse the sale and restore stock.`);
-        if (confirm) {
-          await processRefund(transactionId, store);
-        }
-      });
-    });
+  // ========== UPDATED RECEIPT RENDERING WITH DETAILED ITEMS, DISCOUNTS, FREE GIFTS ==========
+ function renderReceiptsList(receipts) {
+  const container = document.getElementById('receiptsList');
+  if (!receipts.length) {
+    container.innerHTML = '<div style="text-align:center; padding:30px;">No receipts found.</div>';
+    return;
   }
 
+  let html = '';
+  receipts.forEach(rec => {
+    const date = new Date(rec.timestamp).toLocaleString();
+    const employeeName = getEmployeeName(rec.employee_id);
+    const isRefund = rec.total < 0;
+    const isRefundedOriginal = rec.refunded === true && !isRefund;
+    const refundClass = isRefund ? 'refund-receipt' : '';
+    const receiptIdHtml = isRefund
+      ? `<span class="receipt-id">[REFUND] ${rec.transaction_id}</span>`
+      : `<span class="receipt-id">${rec.transaction_id}</span>`;
+
+    // Build detailed items list (cart?like)
+    let itemsHtml = '<div class="receipt-items-list">';
+    let subtotal = 0;
+    for (const item of rec.items) {
+      const paidQty = item.quantity - (item.free_quantity || 0);
+      const itemTotal = paidQty * item.price;
+      subtotal += itemTotal;
+
+      // Main paid line
+      itemsHtml += `
+        <div class="receipt-item-row">
+          <span class="receipt-item-name">${escapeHtml(item.name)}</span>
+          <span class="receipt-item-detail">${paidQty} x RM ${item.price.toFixed(2)}</span>
+          <span class="receipt-item-detail">RM ${itemTotal.toFixed(2)}</span>
+        </div>
+      `;
+      // Free gift line
+      if (item.free_quantity > 0) {
+        itemsHtml += `
+          <div class="receipt-item-row" style="color:#10b981; font-style:italic;">
+            <span class="receipt-item-name">?? FREE GIFT</span>
+            <span class="receipt-item-detail">${item.free_quantity} x ${escapeHtml(item.name)}</span>
+            <span class="receipt-item-detail">RM 0.00</span>
+          </div>
+        `;
+      }
+    }
+    itemsHtml += '</div>';
+
+    // Discounts (if any)
+    let discountsHtml = '';
+    if (rec.discount && rec.discount > 0) {
+      discountsHtml += `<div class="receipt-discount-row"><span>?? Lucky Draw Discount</span><span>-RM ${rec.discount.toFixed(2)}</span></div>`;
+    }
+   if (rec.buy2_free1_discount && rec.buy2_free1_discount > 0) {
+  discountsHtml += `<div class="receipt-discount-row"><span>🚗 Car Aromatic Promo</span><span>-RM ${rec.buy2_free1_discount.toFixed(2)}</span></div>`;
+}
+if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
+  discountsHtml += `<div class="receipt-discount-row"><span>🌸 15ml Perfume EDP Promo</span><span>-RM ${rec.buy3_free1_discount.toFixed(2)}</span></div>`;
+}
+    if (rec.custom_discount && rec.custom_discount > 0) {
+      discountsHtml += `<div class="receipt-discount-row"><span>?? Custom Discount</span><span>-RM ${rec.custom_discount.toFixed(2)}</span></div>`;
+    }
+
+    const total = rec.total;
+
+    // Actions: reprint (store only transaction_id) and refund
+    const actionsHtml = `
+      <div class="receipt-actions">
+        <button class="reprint-btn" data-txid="${rec.transaction_id}">??? Reprint</button>
+        ${!isRefund && !isRefundedOriginal ? `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">?? Refund</button>` : ''}
+      </div>
+    `;
+
+    html += `
+      <div class="receipt-item ${refundClass}" data-txid="${rec.transaction_id}">
+        <div class="receipt-header">
+          ${receiptIdHtml}
+          <span class="receipt-date">${date}</span>
+          <span class="receipt-total">RM ${total.toFixed(2)}</span>
+        </div>
+        <div class="receipt-details">
+          <div>Store: ${rec.store} | Payment: ${rec.payment_method} | Employee: ${employeeName}</div>
+        </div>
+        ${itemsHtml}
+        ${discountsHtml ? `<div class="receipt-items-list" style="margin-top:4px;">${discountsHtml}</div>` : ''}
+        <div class="receipt-item-row total-row" style="margin-top:8px; padding-top:6px; border-top:1px dashed #cbd5e1;">
+          <strong>TOTAL</strong>
+          <strong>RM ${total.toFixed(2)}</strong>
+        </div>
+        ${actionsHtml}
+      </div>
+    `;
+  });
+  container.innerHTML = html;
+
+  // Attach event listeners for reprint and refund
+  document.querySelectorAll('.reprint-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const txId = btn.dataset.txid;
+      // Find receipt in the current cached receipts
+      const receipt = cachedReceipts.find(r => r.transaction_id === txId);
+      if (receipt) {
+        reprintReceipt(receipt);
+      } else {
+        showAlertModal('Error', 'Receipt data not found. Please refresh.');
+      }
+      e.stopPropagation();
+    });
+  });
+
+  document.querySelectorAll('.refund-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const transactionId = btn.dataset.txid;
+      const store = btn.dataset.store;
+      e.stopPropagation();
+      const confirm = await showConfirmModal('Refund Transaction', `Are you sure you want to refund transaction ${transactionId}? This will reverse the sale and restore stock.`);
+      if (confirm) {
+        await processRefund(transactionId, store);
+      }
+    });
+  });
+}
   async function reprintReceipt(receipt) {
     if (!window.printerAPI || !window.printerAPI.isConnected) {
       await showAlertModal('Printer required', 'Connect Bluetooth printer first.');
@@ -3197,94 +3281,94 @@
 
   // ==================== REPORTS ====================
   async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, silent = false) {
-    if (!silent) showLoading('Loading report...');
-    try {
-      let url = `${APPS_SCRIPT_URL}?action=getSalesReport&store=${store}&employeeId=${employeeId}`;
-      if (from) url += `&from=${encodeURIComponent(from)}`;
-      if (to) url += `&to=${encodeURIComponent(to)}`;
-      if (unsettledOnly) url += `&unsettledOnly=true`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) {
-        document.getElementById('adminReportTotalSales').innerText = `RM ${result.totalSales.toFixed(2)}`;
-        document.getElementById('adminReportCashTotal').innerText = `RM ${result.cashTotal.toFixed(2)}`;
-        document.getElementById('adminReportCardTotal').innerText = `RM ${result.cardTotal.toFixed(2)}`;
-        document.getElementById('adminReportOtherTotal').innerText = `RM ${result.otherTotal.toFixed(2)}`;
-        document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(result.refundTotal).toFixed(2)}`;
-        document.getElementById('adminReportRefundedBills').innerText = result.refundedTransactionCount;
-        document.getElementById('adminReportTransactionCount').innerText = result.transactionCount;
-        document.getElementById('adminReportTotalItems').innerText = result.totalItems;
-        return result;
-      } else throw new Error('Report data error');
-    } catch (err) {
-      console.error(err);
-      if (!silent) await showAlertModal('Error', 'Failed to load report.');
-      return null;
-    } finally {
-      if (!silent) hideLoading();
-    }
+  if (!silent) showLoading('Loading report...');
+  try {
+    let url = `${APPS_SCRIPT_URL}?action=getSalesReport&store=${store}&employeeId=${employeeId}`;
+    if (from) url += `&from=${encodeURIComponent(from)}`;
+    if (to) url += `&to=${encodeURIComponent(to)}`;
+    if (unsettledOnly) url += `&unsettledOnly=true`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      document.getElementById('adminReportTotalSales').innerText = `RM ${result.totalSales.toFixed(2)}`;
+      document.getElementById('adminReportCashTotal').innerText = `RM ${result.cashTotal.toFixed(2)}`;
+      document.getElementById('adminReportCardTotal').innerText = `RM ${result.cardTotal.toFixed(2)}`;
+      document.getElementById('adminReportOtherTotal').innerText = `RM ${result.otherTotal.toFixed(2)}`;
+      document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(result.refundTotal).toFixed(2)}`;
+      document.getElementById('adminReportRefundedBills').innerText = result.refundedTransactionCount;
+      document.getElementById('adminReportTransactionCount').innerText = result.transactionCount;
+      document.getElementById('adminReportTotalItems').innerText = result.totalItems;
+      return result;
+    } else throw new Error('Report data error');
+  } catch (err) {
+    console.error(err);
+    if (!silent) await showAlertModal('Error', 'Failed to load report.');
+    return null;
+  } finally {
+    if (!silent) hideLoading();
   }
-
-  async function fetchSalesChartData(store, employeeId, from, to) {
-    try {
-      let url = `${APPS_SCRIPT_URL}?action=getSalesChartData&store=${store}&employeeId=${employeeId}`;
-      if (from) url += `&from=${encodeURIComponent(from)}`;
-      if (to) url += `&to=${encodeURIComponent(to)}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-        if (currentEmployee && currentEmployee.isAdmin && result.salesByStore) {
-          const storeCanvas = document.getElementById('storeChart');
-          if (storeCanvas) {
-            if (window.storeChart && typeof window.storeChart.destroy === 'function') window.storeChart.destroy();
-            const storeLabels = result.salesByStore.labels || [];
-            const storeData = result.salesByStore.data || [];
-            if (storeLabels.length > 0) {
-              storeCanvas.style.display = 'block';
-              const ctx = storeCanvas.getContext('2d');
-              window.storeChart = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: storeLabels, datasets: [{ label: 'Sales (RM)', data: storeData, backgroundColor: 'rgba(54,162,235,0.6)', borderColor: 'rgba(54,162,235,1)', borderWidth: 1 }] },
-                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
-              });
-            } else {
-              storeCanvas.style.display = 'none';
-            }
-          }
-        }
-        const dayCanvas = document.getElementById('dayChart');
-        if (dayCanvas) {
-          if (window.dayChart && typeof window.dayChart.destroy === 'function') window.dayChart.destroy();
-          let labels, data, chartTitle;
-          if (result.type === 'hourly') {
-            labels = result.hourly.labels;
-            data = result.hourly.data;
-            chartTitle = 'Hourly Sales (RM)';
-          } else {
-            labels = result.salesByDay?.labels || [];
-            data = result.salesByDay?.data || [];
-            chartTitle = 'Sales by Day (RM)';
-          }
-          if (labels.length > 0) {
-            dayCanvas.style.display = 'block';
-            const ctx = dayCanvas.getContext('2d');
-            window.dayChart = new Chart(ctx, {
+}
+ async function fetchSalesChartData(store, employeeId, from, to) {
+  try {
+    let url = `${APPS_SCRIPT_URL}?action=getSalesChartData&store=${store}&employeeId=${employeeId}`;
+    if (from) url += `&from=${encodeURIComponent(from)}`;
+    if (to) url += `&to=${encodeURIComponent(to)}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      // ? Guard: only try to render store chart if currentEmployee exists and is admin
+      if (currentEmployee && currentEmployee.isAdmin && result.salesByStore) {
+        const storeCanvas = document.getElementById('storeChart');
+        if (storeCanvas) {
+          if (window.storeChart && typeof window.storeChart.destroy === 'function') window.storeChart.destroy();
+          const storeLabels = result.salesByStore.labels || [];
+          const storeData = result.salesByStore.data || [];
+          if (storeLabels.length > 0) {
+            storeCanvas.style.display = 'block';
+            const ctx = storeCanvas.getContext('2d');
+            window.storeChart = new Chart(ctx, {
               type: 'bar',
-              data: { labels: labels, datasets: [{ label: chartTitle, data: data, backgroundColor: 'rgba(75,192,192,0.6)', borderColor: 'rgba(75,192,192,1)', borderWidth: 1 }] },
+              data: { labels: storeLabels, datasets: [{ label: 'Sales (RM)', data: storeData, backgroundColor: 'rgba(54,162,235,0.6)', borderColor: 'rgba(54,162,235,1)', borderWidth: 1 }] },
               options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
             });
           } else {
-            dayCanvas.style.display = 'none';
+            storeCanvas.style.display = 'none';
           }
         }
-      } else {
-        console.error('Chart data error:', result);
       }
-    } catch (err) {
-      console.error('fetchSalesChartData error:', err);
+      const dayCanvas = document.getElementById('dayChart');
+      if (dayCanvas) {
+        if (window.dayChart && typeof window.dayChart.destroy === 'function') window.dayChart.destroy();
+        let labels, data, chartTitle;
+        if (result.type === 'hourly') {
+          labels = result.hourly.labels;
+          data = result.hourly.data;
+          chartTitle = 'Hourly Sales (RM)';
+        } else {
+          labels = result.salesByDay?.labels || [];
+          data = result.salesByDay?.data || [];
+          chartTitle = 'Sales by Day (RM)';
+        }
+        if (labels.length > 0) {
+          dayCanvas.style.display = 'block';
+          const ctx = dayCanvas.getContext('2d');
+          window.dayChart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ label: chartTitle, data: data, backgroundColor: 'rgba(75,192,192,0.6)', borderColor: 'rgba(75,192,192,1)', borderWidth: 1 }] },
+            options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
+          });
+        } else {
+          dayCanvas.style.display = 'none';
+        }
+      }
+    } else {
+      console.error('Chart data error:', result);
     }
+  } catch (err) {
+    console.error('fetchSalesChartData error:', err);
   }
+}
 
   async function fetchEmployeeSalesData(store, from, to) {
     try {
@@ -3311,14 +3395,11 @@
         } else {
           employeeCanvas.style.display = 'none';
         }
-        return { labels, data };
       } else {
         console.error('Employee sales data error:', result);
-        return null;
       }
     } catch (err) {
       console.error('fetchEmployeeSalesData error:', err);
-      return null;
     }
   }
 
@@ -3349,12 +3430,12 @@
     }
     let html = '';
     productsData.forEach(p => {
-      html += `汽
-          <td>${escapeHtml(p.name)}</td>
-          <td>${escapeHtml(p.category)}</td>
+      html += `?
+         <td>${escapeHtml(p.name)}</td>
+         <td>${escapeHtml(p.category)}</td>
         <td style="text-align: right;">${p.quantity}</td>
         <td style="text-align: right;">RM ${p.total.toFixed(2)}</td>
-      `;
+       `;
     });
     tbody.innerHTML = html;
   }
@@ -3368,10 +3449,12 @@
       store = 'all';
       employeeId = currentEmployee.id;
     }
+
     const range = document.getElementById('adminReportDateRangeSelect').value;
     let from = null, to = null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
     if (range === 'today') {
       from = getLocalDateString(today);
       to = from;
@@ -3394,11 +3477,14 @@
       to = document.getElementById('adminReportToDate').value;
       if (!from || !to) return;
     }
-    if (preloadedReportCache &&
-        preloadedReportCache.store === store &&
+
+    // Check if we have cached data matching the current filters
+    if (preloadedReportCache && 
+        preloadedReportCache.store === store && 
         preloadedReportCache.employeeId === employeeId &&
         preloadedReportCache.from === from &&
         preloadedReportCache.to === to) {
+      // Use cached data
       const cached = preloadedReportCache;
       document.getElementById('adminReportTotalSales').innerText = `RM ${cached.totals.totalSales.toFixed(2)}`;
       document.getElementById('adminReportCashTotal').innerText = `RM ${cached.totals.cashTotal.toFixed(2)}`;
@@ -3410,11 +3496,13 @@
       document.getElementById('adminReportTotalItems').innerText = cached.totals.totalItems;
       lastProductData = cached.productDetails;
       if (productDetailsVisible) renderProductDetails(lastProductData);
+      // Render charts from cached data (we need to simulate the chart rendering)
       if (cached.chartData) {
         await new Promise(resolve => setTimeout(resolve, 200));
-        if (cached.chartData.salesByStore && currentEmployee.isAdmin) {
+        // Re?render charts if needed (simplified, we can trust that they are already rendered in preload)
+        if (cached.chartData.salesByStore) {
           const storeCanvas = document.getElementById('storeChart');
-          if (storeCanvas) {
+          if (storeCanvas && currentEmployee.isAdmin) {
             if (window.storeChart && typeof window.storeChart.destroy === 'function') window.storeChart.destroy();
             const storeLabels = cached.chartData.salesByStore.labels || [];
             const storeData = cached.chartData.salesByStore.data || [];
@@ -3480,6 +3568,8 @@
       }
       return;
     }
+
+    // Otherwise fetch fresh
     const promises = [
       fetchSalesReport(store, employeeId, from, to),
       fetchSalesChartData(store, employeeId, from, to),
@@ -3488,12 +3578,15 @@
     if (currentEmployee.isAdmin) {
       promises.push(fetchEmployeeSalesData(store, from, to));
     }
+
     const results = await Promise.all(promises);
     const totals = results[0];
     const chartData = results[1];
     const productData = results[2];
     const employeeSalesData = results[3] ? { labels: results[3].labels, data: results[3].data } : null;
+
     if (totals) {
+      // Cache the fresh data
       preloadedReportCache = {
         store,
         employeeId,
@@ -3513,10 +3606,12 @@
         chartData: { ...chartData, employeeSales: employeeSalesData }
       };
     }
+
     if (productData) {
       lastProductData = productData;
       if (productDetailsVisible) renderProductDetails(lastProductData);
     }
+
     const loadingMsg = document.getElementById('adminReportLoadingMsg');
     if (loadingMsg) loadingMsg.style.display = 'none';
   }
@@ -3525,6 +3620,7 @@
   async function openSettlementModal() {
     const modal = document.getElementById('settlementModal');
     modal.style.display = 'flex';
+
     document.getElementById('recordSettlementBtn').style.display = 'none';
     document.getElementById('checkSettlementBtn').style.display = 'block';
     document.getElementById('settlementError').style.display = 'none';
@@ -3536,6 +3632,7 @@
     document.getElementById('actualCash').classList.remove('error-field');
     document.getElementById('actualCard').classList.remove('error-field');
     document.getElementById('actualQR').classList.remove('error-field');
+
     const fieldsToDisable = ['actualCash', 'actualCard', 'actualQR'];
     fieldsToDisable.forEach(id => {
       const el = document.getElementById(id);
@@ -3543,8 +3640,10 @@
     });
     const checkBtn = document.getElementById('checkSettlementBtn');
     if (checkBtn) checkBtn.disabled = true;
+
     const totalsContainer = document.getElementById('systemTotalsDisplay');
     if (totalsContainer) totalsContainer.style.display = 'none';
+
     let loadingMsg = document.getElementById('settlementLoadingMsg');
     if (!loadingMsg) {
       loadingMsg = document.createElement('div');
@@ -3561,6 +3660,7 @@
       if (totalsContainer) totalsContainer.insertAdjacentElement('afterend', loadingMsg);
     }
     loadingMsg.style.display = 'block';
+
     try {
       let store;
       if (!currentEmployee.isAdmin) {
@@ -3571,8 +3671,10 @@
         store = document.getElementById('settlementStoreSelect').value;
         document.getElementById('settlementStoreSelect').disabled = false;
       }
+
       const todayStr = getLocalDateString(new Date());
       const alreadySettled = await checkSettlementStatus(store, todayStr);
+
       if (alreadySettled) {
         loadingMsg.style.display = 'none';
         if (totalsContainer) totalsContainer.style.display = 'block';
@@ -3580,6 +3682,7 @@
         modal.style.display = 'none';
         return;
       }
+
       await refreshSettlementTotals(store);
       loadingMsg.style.display = 'none';
       if (totalsContainer) totalsContainer.style.display = 'block';
@@ -3604,9 +3707,9 @@
     }
   }
 
-  async function refreshSettlementTotals(store, silent = false) {
-    const todayStr = getLocalDateString(new Date());
-    const report = await fetchSalesReport(store, 'all', todayStr, todayStr, true, silent);
+ async function refreshSettlementTotals(store, silent = false) {
+  const todayStr = getLocalDateString(new Date());
+  const report = await fetchSalesReport(store, 'all', todayStr, todayStr, true, silent);
     if (report) {
       currentSettlementTotals = {
         cash: report.cashTotal,
@@ -3618,11 +3721,13 @@
       document.getElementById('sysCard').innerText = `RM ${currentSettlementTotals.card.toFixed(2)}`;
       document.getElementById('sysQR').innerText = `RM ${currentSettlementTotals.qr.toFixed(2)}`;
       document.getElementById('sysRefund').innerText = `RM ${Math.abs(currentSettlementTotals.refund).toFixed(2)}`;
+
       const netTotal = currentSettlementTotals.cash + currentSettlementTotals.card + currentSettlementTotals.qr;
       document.getElementById('sysNetTotal').innerText = `RM ${netTotal.toFixed(2)}`;
+
       const alreadySettled = await checkSettlementStatus(store, todayStr);
       if (alreadySettled) {
-        document.getElementById('settlementError').innerHTML = '⚠️ Settlement has already been recorded for today. No further settlement allowed.';
+        document.getElementById('settlementError').innerHTML = '?? Settlement has already been recorded for today. No further settlement allowed.';
         document.getElementById('settlementError').style.display = 'block';
         document.getElementById('checkSettlementBtn').disabled = true;
         document.getElementById('recordSettlementBtn').style.display = 'none';
@@ -3676,10 +3781,10 @@
 
     function updatePrinterStatusUI() {
       if (isConnected) {
-        printerStatusModal.innerText = '✅ Printer connected';
+        printerStatusModal.innerText = '? Printer connected';
         printerStatusModal.style.color = '#2c7a4b';
       } else {
-        printerStatusModal.innerText = '⚪ Not connected';
+        printerStatusModal.innerText = '? Not connected';
         printerStatusModal.style.color = '#64748b';
       }
     }
@@ -3719,103 +3824,128 @@
     }
 
     async function printReceipt(transaction) {
-      if (!isConnected || !printerCharacteristic) {
-        await showAlertModal('Printer required', 'Connect Bluetooth printer first.');
-        return false;
+  if (!isConnected || !printerCharacteristic) {
+    await showAlertModal('Printer required', 'Connect Bluetooth printer first.');
+    return false;
+  }
+  try {
+    const openDrawer = (transaction.payment_method === 'Cash');
+    const paperSize = paperSizeSelectModal.value;
+    localStorage.setItem('printerPaperSize', paperSize);
+    const encoder = new TextEncoder();
+    const employeeName = transaction.employee_name || getEmployeeName(transaction.employee_id) || 'N/A';
+    const storeLocation = transaction.store ? transaction.store.charAt(0).toUpperCase() + transaction.store.slice(1) : 'Queens';
+    const maxChars = paperSize === '58' ? 32 : 48;
+
+    // Format a product: name line (no price), then qty+price+total line (total bold)
+    function formatProductLine(name, price, qty, total) {
+      // Name line: just the name – let printer wrap if needed
+      const nameLine = name;
+      // Second line: quantity x price (left) and total (right, bold)
+      const qtyStr = `${qty} x RM ${price.toFixed(2)}`;
+      const totalStr = `RM ${total.toFixed(2)}`;
+      let spaceNeeded = maxChars - totalStr.length;
+      let qtyLine = qtyStr;
+      if (qtyLine.length > spaceNeeded) {
+        qtyLine = qtyLine.substring(0, spaceNeeded - 3) + '...';
+      } else {
+        qtyLine = qtyLine.padEnd(spaceNeeded);
       }
-      try {
-        const openDrawer = (transaction.payment_method === 'Cash');
-        const paperSize = paperSizeSelectModal.value;
-        localStorage.setItem('printerPaperSize', paperSize);
-        const encoder = new TextEncoder();
-        const employeeName = transaction.employee_name || getEmployeeName(transaction.employee_id) || 'N/A';
-        const storeLocation = transaction.store ? transaction.store.charAt(0).toUpperCase() + transaction.store.slice(1) : 'Queens';
-        const maxChars = paperSize === '58' ? 32 : 48;
-        function formatProductLine(name, price, qty, total) {
-          const nameLine = name;
-          const qtyStr = `${qty} x RM ${price.toFixed(2)}`;
-          const totalStr = `RM ${total.toFixed(2)}`;
-          let spaceNeeded = maxChars - totalStr.length;
-          let qtyLine = qtyStr;
-          if (qtyLine.length > spaceNeeded) {
-            qtyLine = qtyLine.substring(0, spaceNeeded - 3) + '...';
-          } else {
-            qtyLine = qtyLine.padEnd(spaceNeeded);
-          }
-          qtyLine += `\x1B\x45\x01${totalStr}\x1B\x45\x00`;
-          return [nameLine, qtyLine];
+      // Add bold around the total
+      qtyLine += `\x1B\x45\x01${totalStr}\x1B\x45\x00`;
+      return [nameLine, qtyLine];
+    }
+
+    const lines = [];
+    const separator = '-'.repeat(maxChars);
+
+    lines.push('', '    UL PERFUMERY', separator);
+    lines.push(`STORE LOCATION : ${storeLocation}`);
+    lines.push(`EMPLOYEE : ${employeeName}`);
+    lines.push(separator);
+
+    // Group items by category
+    const grouped = {};
+    for (const item of transaction.items) {
+      const cat = item.category || 'Uncategorized';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(item);
+    }
+
+    for (const [category, items] of Object.entries(grouped)) {
+      let categoryTotal = 0;
+      for (const item of items) {
+        const paidQty = item.quantity - (item.free_quantity || 0);
+        categoryTotal += paidQty * item.price;
+      }
+      lines.push(category, `${'-'.repeat(category.length)}`);
+      for (const item of items) {
+        const paidQty = item.quantity - (item.free_quantity || 0);
+        if (paidQty > 0) {
+          const itemTotal = paidQty * item.price;
+          const [nameLine, qtyLine] = formatProductLine(item.name, item.price, paidQty, itemTotal);
+          lines.push(nameLine);
+          lines.push(qtyLine);
         }
-        const lines = [];
-        const separator = '-'.repeat(maxChars);
-        lines.push('', '    UL PERFUMERY', separator);
-        lines.push(`STORE LOCATION : ${storeLocation}`);
-        lines.push(`EMPLOYEE : ${employeeName}`);
-        lines.push(separator);
-        const grouped = {};
-        for (const item of transaction.items) {
-          const cat = item.category || 'Uncategorized';
-          if (!grouped[cat]) grouped[cat] = [];
-          grouped[cat].push(item);
-        }
-        for (const [category, items] of Object.entries(grouped)) {
-          let categoryTotal = 0;
-          for (const item of items) {
-            const paidQty = item.quantity - (item.free_quantity || 0);
-            categoryTotal += paidQty * item.price;
-          }
-          lines.push(category, `${'-'.repeat(category.length)}`);
-          for (const item of items) {
-            const paidQty = item.quantity - (item.free_quantity || 0);
-            if (paidQty > 0) {
-              const itemTotal = paidQty * item.price;
-              const [nameLine, qtyLine] = formatProductLine(item.name, item.price, paidQty, itemTotal);
-              lines.push(nameLine);
-              lines.push(qtyLine);
-            }
-          }
-        }
-        lines.push(separator);
-        if (transaction.discount > 0) lines.push(`Lucky Draw Discount : -RM ${transaction.discount.toFixed(2)}`);
-        if (transaction.car_aromatic_discount > 0) lines.push(`Car Aromatic Promo : -RM ${transaction.car_aromatic_discount.toFixed(2)}`);
-        if (transaction.perfume_15ml_discount > 0) lines.push(`15ml Perfume Promo  : -RM ${transaction.perfume_15ml_discount.toFixed(2)}`);
-        if (transaction.custom_discount > 0) lines.push(`Custom Discount     : -RM ${transaction.custom_discount.toFixed(2)}`);
-        const totalAmount = transaction.total;
-        lines.push(`\x1B\x45\x01TOTAL : RM ${totalAmount.toFixed(2)}\x1B\x45\x00`);
-        lines.push(`PAYMENT METHOD : ${transaction.payment_method}`);
-        if (transaction.cash_received && transaction.payment_method === 'Cash') {
-          const change = transaction.cash_received - totalAmount;
-          lines.push(`CHANGE : RM ${change.toFixed(2)}`);
-        }
-        lines.push(separator);
-        lines.push('THANK YOU FOR YOUR PURCHASE');
-        lines.push('ANY ENQUIRY PLEASE CONTACT');
-        lines.push('+60134665831 ( MARCUS )');
-        lines.push('GOODS SOLD ARE NOT REFUNDABLE');
-        lines.push(separator);
-        const date = new Date(transaction.timestamp);
-        const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-        lines.push(`TXN   : ${transaction.transaction_id}`);
-        lines.push(`DATE  : ${formattedDate}`);
-        lines.push('');
-        const text = lines.join('\n');
-        let commands = [];
-        commands.push(0x1B, 0x40);
-        commands.push(0x1B, 0x61, 0x00);
-        commands.push(...encoder.encode(text));
-        commands.push(0x1B, 0x64, 0x03);
-        commands.push(0x1D, 0x56, 0x41, 0x00);
-        if (openDrawer) {
-          const drawerCommand = [0x1B, 0x70, 0x00, 0x19, 0xFA];
-          commands = commands.slice(0, -4).concat(drawerCommand, commands.slice(-4));
-        }
-        await sendChunkedData(new Uint8Array(commands), 500);
-        return true;
-      } catch (err) {
-        console.error(err);
-        return false;
       }
     }
 
+    lines.push(separator);
+
+    // Discounts (if any)
+    if (transaction.discount > 0) {
+      lines.push(`Lucky Draw Discount : -RM ${transaction.discount.toFixed(2)}`);
+    }
+   if (transaction.buy2_free1_discount > 0) {
+  lines.push(`Car Aromatic Promo : -RM ${transaction.buy2_free1_discount.toFixed(2)}`);
+}
+if (transaction.buy3_free1_discount > 0) {
+  lines.push(`15ml Perfume EDP Promo : -RM ${transaction.buy3_free1_discount.toFixed(2)}`);
+}
+    if (transaction.custom_discount > 0) {
+      lines.push(`Custom Discount     : -RM ${transaction.custom_discount.toFixed(2)}`);
+    }
+
+    const totalAmount = transaction.total;
+    // Total line in bold
+    lines.push(`\x1B\x45\x01TOTAL : RM ${totalAmount.toFixed(2)}\x1B\x45\x00`);
+    lines.push(`PAYMENT METHOD : ${transaction.payment_method}`);
+    if (transaction.cash_received && transaction.payment_method === 'Cash') {
+      const change = transaction.cash_received - totalAmount;
+      lines.push(`CHANGE : RM ${change.toFixed(2)}`);
+    }
+    lines.push(separator);
+    lines.push('THANK YOU FOR YOUR PURCHASE');
+    lines.push('ANY ENQUIRY PLEASE CONTACT');
+    lines.push('+60134665831 ( MARCUS )');
+    lines.push('GOODS SOLD ARE NOT REFUNDABLE');
+    lines.push(separator);
+
+    const date = new Date(transaction.timestamp);
+    const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    lines.push(`TXN   : ${transaction.transaction_id}`);
+    lines.push(`DATE  : ${formattedDate}`);
+    lines.push('');
+
+    const text = lines.join('\n');
+
+    let commands = [];
+    commands.push(0x1B, 0x40); // Initialize
+    commands.push(0x1B, 0x61, 0x00); // Left align
+    commands.push(...encoder.encode(text));
+    commands.push(0x1B, 0x64, 0x03); // Feed 3 lines
+    commands.push(0x1D, 0x56, 0x41, 0x00); // Cut
+    if (openDrawer) {
+      const drawerCommand = [0x1B, 0x70, 0x00, 0x19, 0xFA];
+      commands = commands.slice(0, -4).concat(drawerCommand, commands.slice(-4));
+    }
+    await sendChunkedData(new Uint8Array(commands), 500);
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
     async function printPrizeVoucher(prizeLabel, receiptNumber, spinDate = new Date()) {
       if (!isConnected || !printerCharacteristic) {
         await showAlertModal('Printer not connected', 'Please connect a printer first.');
@@ -3849,17 +3979,18 @@
         ];
         const text = lines.join('\n');
         const commands = [];
-        commands.push(0x1B, 0x40);
-        commands.push(0x1B, 0x52, 0x00);
-        commands.push(0x1B, 0x21, 0x00);
-        commands.push(0x1B, 0x61, 0x01);
+        commands.push(0x1B, 0x40); // init
+        commands.push(0x1B, 0x52, 0x00); // international character set
+        commands.push(0x1B, 0x21, 0x00); // font normal
+        commands.push(0x1B, 0x61, 0x01); // center alignment
         for (let i = 0; i < text.length; i++) {
           commands.push(text.charCodeAt(i));
         }
-        commands.push(0x0A);
-        commands.push(0x1D, 0x68, 0x32);
-        commands.push(0x1D, 0x77, 0x01);
-        commands.push(0x1B, 0x61, 0x01);
+        commands.push(0x0A); // newline
+
+        commands.push(0x1D, 0x68, 0x32); // barcode height = 50 dots
+        commands.push(0x1D, 0x77, 0x01); // barcode width = 1
+        commands.push(0x1B, 0x61, 0x01); // center barcode
         const barcodeData = encoder.encode(receiptNumber);
         const len = barcodeData.length;
         commands.push(0x1D, 0x6B, 0x49, len);
@@ -3867,6 +3998,7 @@
         commands.push(0x0A, 0x0A);
         commands.push(0x1B, 0x64, 0x03);
         commands.push(0x1D, 0x56, 0x41, 0x00);
+
         await sendChunkedData(new Uint8Array(commands), 500);
         return true;
       } catch (err) {
@@ -3878,7 +4010,7 @@
     async function connectPrinter() {
       try {
         connectBtnModal.disabled = true;
-        printerStatusModal.innerText = '🔍 Scanning...';
+        printerStatusModal.innerText = '?? Scanning...';
         const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] });
         gattServer = await device.gatt.connect();
         const services = await gattServer.getPrimaryServices();
@@ -3900,7 +4032,7 @@
         updatePrinterStatusUI();
         await showAlertModal('Printer Connected', 'Bluetooth printer is ready.');
       } catch (err) {
-        printerStatusModal.innerText = `❌ ${err.message}`;
+        printerStatusModal.innerText = `? ${err.message}`;
         console.error(err);
       } finally {
         connectBtnModal.disabled = false;
@@ -3927,122 +4059,144 @@
     closePrinterModalBtn.addEventListener('click', closeModal);
     const savedSize = localStorage.getItem('printerPaperSize') || '80';
     paperSizeSelectModal.value = savedSize;
+
     window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer, printPrizeVoucher: printPrizeVoucher };
   })();
 
   // ==================== RENDER PRODUCT GRID ====================
-  function renderProductGrid() {
-    const searchTerm = searchInput.value.toLowerCase();
-    const selectedCategory = categorySelect.value;
-    let filtered = products.slice();
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(p => p.category === selectedCategory);
-    }
-    if (searchTerm) {
-      filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm));
-    }
-    if (lowStockFilterActive) {
-      filtered = filtered.filter(p => p.stock < LOW_STOCK_THRESHOLD);
-    }
-    if (products.length === 0) {
-      productGridEl.innerHTML = `
-        <div style="text-align:center; padding:20px;">
-          ⏳ Loading products...<br>
-          <button id="retryLoadProductsBtn" style="margin-top:10px; padding:8px 16px; border-radius:40px; background:#3b82f6; color:white; border:none; cursor:pointer;">Retry</button>
-        </div>
-      `;
-      const retryBtn = document.getElementById('retryLoadProductsBtn');
-      if (retryBtn) {
-        retryBtn.addEventListener('click', async () => {
-          await fetchProductsFromSheet(true);
-        });
-      }
-      return;
-    }
-    if (filtered.length === 0) {
-      productGridEl.innerHTML = '<div style="text-align:center; padding:20px;">No products match your filters.</div>';
-      return;
-    }
-    let html = '';
-    filtered.forEach(prod => {
-      const isLowStock = prod.stock < LOW_STOCK_THRESHOLD;
-      const lowStockClass = (inventoryMode && isLowStock) ? 'low-stock-card' : '';
-      if (inventoryMode) {
-        html += `<div class="product-card ${lowStockClass}">
-          <div class="product-name">${escapeHtml(prod.name)}</div>
-          <div class="product-category">${escapeHtml(prod.category)}</div>
-          <div class="product-price">RM ${prod.price.toFixed(2)}</div>
-          <div class="inventory-controls">
-            <button class="inventory-btn dec-stock" data-id="${prod.id}" data-current="${prod.stock}">−</button>
-            <span class="stock-display" data-id="${prod.id}">${prod.stock}</span>
-            <button class="inventory-btn inc-stock" data-id="${prod.id}" data-current="${prod.stock}">+</button>
-          </div>
-        </div>`;
-      } else {
-        const stockStatus = prod.stock > 0 ? `📦 Stock: ${prod.stock}` : '❌ Out of stock';
-        html += `<div class="product-card ${lowStockClass}">
-          <div class="product-name">${escapeHtml(prod.name)}</div>
-          <div class="product-category">${escapeHtml(prod.category)}</div>
-          <div class="product-price">RM ${prod.price.toFixed(2)}</div>
-          <div class="product-stock">${stockStatus}</div>
-          <button class="add-btn" data-id="${prod.id}" ${prod.stock <= 0 ? 'disabled' : ''}>+ Add to cart</button>
-        </div>`;
-      }
-    });
-    productGridEl.innerHTML = html;
-    productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
-    if (inventoryMode) {
-      document.querySelectorAll('.dec-stock').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const id = btn.dataset.id;
-          const product = products.find(p => p.id == id);
-          if (product && product.stock > 0) {
-            const oldStock = product.stock;
-            const newStock = product.stock - 1;
-            product.stock = newStock;
-            const displaySpan = document.querySelector(`.stock-display[data-id="${id}"]`);
-            if (displaySpan) displaySpan.innerText = newStock;
-            scheduleStockUpdate(id, newStock);
-            logStockChange(product.id, product.name, product.category, oldStock, newStock, -1);
-            checkAndNotifyOutOfStock(product.id, product.name, newStock);
-            btn.dataset.current = newStock;
-            const incBtn = document.querySelector(`.inc-stock[data-id="${id}"]`);
-            if (incBtn) incBtn.dataset.current = newStock;
-          }
-          e.stopPropagation();
-        });
-      });
-      document.querySelectorAll('.inc-stock').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const id = btn.dataset.id;
-          const product = products.find(p => p.id == id);
-          if (product) {
-            const oldStock = product.stock;
-            const newStock = product.stock + 1;
-            product.stock = newStock;
-            const displaySpan = document.querySelector(`.stock-display[data-id="${id}"]`);
-            if (displaySpan) displaySpan.innerText = newStock;
-            scheduleStockUpdate(id, newStock);
-            logStockChange(product.id, product.name, product.category, oldStock, newStock, 1);
-            checkAndNotifyOutOfStock(product.id, product.name, newStock);
-            btn.dataset.current = newStock;
-            const decBtn = document.querySelector(`.dec-stock[data-id="${id}"]`);
-            if (decBtn) decBtn.dataset.current = newStock;
-          }
-          e.stopPropagation();
-        });
-      });
-    } else {
-      document.querySelectorAll('.add-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const product = products.find(p => p.id == btn.dataset.id);
-          if (product && product.stock > 0) addToCart(product);
-          e.stopPropagation();
-        });
-      });
-    }
+ function renderProductGrid() {
+  // 1. Get filter values
+  const searchTerm = searchInput.value.toLowerCase();
+  const selectedCategory = categorySelect.value;
+
+  // 2. Start with all products
+  let filtered = products.slice();
+
+  // 3. Filter by category
+  if (selectedCategory !== 'all') {
+    filtered = filtered.filter(p => p.category === selectedCategory);
   }
 
+  // 4. Filter by search term
+  if (searchTerm) {
+    filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm));
+  }
+
+  // 5. Apply low?stock filter if toggle is active
+  if (lowStockFilterActive) {
+    filtered = filtered.filter(p => p.stock < LOW_STOCK_THRESHOLD);
+  }
+
+  // 6. NEW: If products array is empty (no data at all)
+  if (products.length === 0) {
+    productGridEl.innerHTML = `
+      <div style="text-align:center; padding:20px;">
+        ? Loading products...<br>
+        <button id="retryLoadProductsBtn" style="margin-top:10px; padding:8px 16px; border-radius:40px; background:#3b82f6; color:white; border:none; cursor:pointer;">Retry</button>
+      </div>
+    `;
+    const retryBtn = document.getElementById('retryLoadProductsBtn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', async () => {
+        await fetchProductsFromSheet(true);
+      });
+    }
+    return;
+  }
+
+  // 7. If nothing matches the current filters (but products exist)
+  if (filtered.length === 0) {
+    productGridEl.innerHTML = '<div style="text-align:center; padding:20px;">No products match your filters.</div>';
+    return;
+  }
+
+  // 8. Build HTML based on view mode and inventory mode
+  let html = '';
+  filtered.forEach(prod => {
+    const isLowStock = prod.stock < LOW_STOCK_THRESHOLD;
+    const lowStockClass = (inventoryMode && isLowStock) ? 'low-stock-card' : '';
+
+    if (inventoryMode) {
+      // Inventory mode: show stock adjustment controls
+      html += `<div class="product-card ${lowStockClass}">
+        <div class="product-name">${escapeHtml(prod.name)}</div>
+        <div class="product-category">${escapeHtml(prod.category)}</div>
+        <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+        <div class="inventory-controls">
+          <button class="inventory-btn dec-stock" data-id="${prod.id}" data-current="${prod.stock}">?</button>
+          <span class="stock-display" data-id="${prod.id}">${prod.stock}</span>
+          <button class="inventory-btn inc-stock" data-id="${prod.id}" data-current="${prod.stock}">+</button>
+        </div>
+      </div>`;
+    } else {
+      // Normal mode: show add-to-cart button
+      const stockStatus = prod.stock > 0 ? `?? Stock: ${prod.stock}` : '? Out of stock';
+      html += `<div class="product-card ${lowStockClass}">
+        <div class="product-name">${escapeHtml(prod.name)}</div>
+        <div class="product-category">${escapeHtml(prod.category)}</div>
+        <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+        <div class="product-stock">${stockStatus}</div>
+        <button class="add-btn" data-id="${prod.id}" ${prod.stock <= 0 ? 'disabled' : ''}>+ Add to cart</button>
+      </div>`;
+    }
+  });
+
+  // 9. Insert into the DOM and set correct view mode class
+  productGridEl.innerHTML = html;
+  productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
+
+  // 10. Attach event listeners for inventory or add?to?cart buttons
+  if (inventoryMode) {
+    document.querySelectorAll('.dec-stock').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = btn.dataset.id;
+        const product = products.find(p => p.id == id);
+        if (product && product.stock > 0) {
+          const oldStock = product.stock;
+          const newStock = product.stock - 1;
+          product.stock = newStock;
+          const displaySpan = document.querySelector(`.stock-display[data-id="${id}"]`);
+          if (displaySpan) displaySpan.innerText = newStock;
+          scheduleStockUpdate(id, newStock);
+          logStockChange(product.id, product.name, product.category, oldStock, newStock, -1);
+          checkAndNotifyOutOfStock(product.id, product.name, newStock);
+          btn.dataset.current = newStock;
+          const incBtn = document.querySelector(`.inc-stock[data-id="${id}"]`);
+          if (incBtn) incBtn.dataset.current = newStock;
+        }
+        e.stopPropagation();
+      });
+    });
+    document.querySelectorAll('.inc-stock').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = btn.dataset.id;
+        const product = products.find(p => p.id == id);
+        if (product) {
+          const oldStock = product.stock;
+          const newStock = product.stock + 1;
+          product.stock = newStock;
+          const displaySpan = document.querySelector(`.stock-display[data-id="${id}"]`);
+          if (displaySpan) displaySpan.innerText = newStock;
+          scheduleStockUpdate(id, newStock);
+          logStockChange(product.id, product.name, product.category, oldStock, newStock, 1);
+          checkAndNotifyOutOfStock(product.id, product.name, newStock);
+          btn.dataset.current = newStock;
+          const decBtn = document.querySelector(`.dec-stock[data-id="${id}"]`);
+          if (decBtn) decBtn.dataset.current = newStock;
+        }
+        e.stopPropagation();
+      });
+    });
+  } else {
+    document.querySelectorAll('.add-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const product = products.find(p => p.id == btn.dataset.id);
+        if (product && product.stock > 0) addToCart(product);
+        e.stopPropagation();
+      });
+    });
+  }
+}
   // ==================== VIEW TOGGLE ====================
   function setViewMode(mode) {
     viewMode = mode;
@@ -4052,66 +4206,67 @@
   }
 
   // ==================== PRELOAD SETTLEMENT AND REPORT AFTER LOGIN ====================
-  async function preloadSettlement() {
-    try {
-      const store = currentStore;
-      const todayStr = getLocalDateString(new Date());
-      const alreadySettled = await checkSettlementStatus(store, todayStr);
-      if (!alreadySettled) {
-        await refreshSettlementTotals(store, true);
-      }
-    } catch (err) {
-      console.error('Preload settlement failed:', err);
+ async function preloadSettlement() {
+  try {
+    const store = currentStore;
+    const todayStr = getLocalDateString(new Date());
+    const alreadySettled = await checkSettlementStatus(store, todayStr);
+    if (!alreadySettled) {
+      await refreshSettlementTotals(store, true);   // ? silent preload
     }
+  } catch (err) {
+    console.error('Preload settlement failed:', err);
   }
-
+}
   async function preloadReport() {
-    if (!currentEmployee) return;
-    try {
-      const todayStr = getLocalDateString(new Date());
-      let store, employeeId;
-      if (currentEmployee.isAdmin) {
-        store = 'all';
-        employeeId = 'all';
-      } else {
-        store = currentStore;
-        employeeId = currentEmployee.id;
-      }
-      const totals = await fetchSalesReport(store, employeeId, todayStr, todayStr, false, true);
-      if (!totals) return;
-      const chartData = await fetchSalesChartData(store, employeeId, todayStr, todayStr);
-      const productData = await fetchProductSalesReport(store, employeeId, todayStr, todayStr);
-      let employeeSalesData = null;
-      if (currentEmployee.isAdmin) {
-        const empData = await fetchEmployeeSalesData(store, todayStr, todayStr);
-        if (empData) employeeSalesData = empData;
-      }
-      preloadedReportCache = {
-        store,
-        employeeId,
-        from: todayStr,
-        to: todayStr,
-        totals: {
-          totalSales: totals.totalSales,
-          cashTotal: totals.cashTotal,
-          cardTotal: totals.cardTotal,
-          otherTotal: totals.otherTotal,
-          refundTotal: totals.refundTotal,
-          refundedTransactionCount: totals.refundedTransactionCount,
-          transactionCount: totals.transactionCount,
-          totalItems: totals.totalItems
-        },
-        productDetails: productData,
-        chartData: { ...chartData, employeeSales: employeeSalesData }
-      };
-      lastProductData = productData;
-    } catch (err) {
-      console.error('Preload report failed:', err);
+  if (!currentEmployee) return;   // safety guard
+  try {
+    // Default filters: today, current store, employee 'all' (if admin) or current employee
+    const todayStr = getLocalDateString(new Date());
+    let store, employeeId;
+    if (currentEmployee.isAdmin) {
+      store = 'all';
+      employeeId = 'all';
+    } else {
+      store = currentStore;
+      employeeId = currentEmployee.id;
     }
+    // ? Fetch sales report silently (no loading overlay)
+    const totals = await fetchSalesReport(store, employeeId, todayStr, todayStr, false, true);
+    if (!totals) return;
+    const chartData = await fetchSalesChartData(store, employeeId, todayStr, todayStr);
+    const productData = await fetchProductSalesReport(store, employeeId, todayStr, todayStr);
+    let employeeSalesData = null;
+    if (currentEmployee.isAdmin) {
+      const empData = await fetchEmployeeSalesData(store, todayStr, todayStr);
+      if (empData) employeeSalesData = empData;
+    }
+    // Cache the preloaded data
+    preloadedReportCache = {
+      store,
+      employeeId,
+      from: todayStr,
+      to: todayStr,
+      totals: {
+        totalSales: totals.totalSales,
+        cashTotal: totals.cashTotal,
+        cardTotal: totals.cardTotal,
+        otherTotal: totals.otherTotal,
+        refundTotal: totals.refundTotal,
+        refundedTransactionCount: totals.refundedTransactionCount,
+        transactionCount: totals.transactionCount,
+        totalItems: totals.totalItems
+      },
+      productDetails: productData,
+      chartData: { ...chartData, employeeSales: employeeSalesData }
+    };
+    lastProductData = productData;
+  } catch (err) {
+    console.error('Preload report failed:', err);
   }
-
+}
   // ==================== EVENT LISTENERS ====================
-  document.getElementById('confirmStoreBtn').addEventListener('click', async () => {
+ document.getElementById('confirmStoreBtn').addEventListener('click', async () => {
     initialStore = document.getElementById('initialStoreSelect').value;
     currentStore = initialStore;
     storeSelect.value = initialStore;
@@ -4121,7 +4276,7 @@
     if (preloaded && preloaded.products && preloaded.products.length > 0) {
       products = preloaded.products;
       const categories = [...new Set(products.map(p => p.category))].sort();
-      categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
+      categorySelect.innerHTML = '<option value="all">?? All Categories</option>';
       categories.forEach(cat => {
         const option = document.createElement('option');
         option.value = cat;
@@ -4129,6 +4284,7 @@
         categorySelect.appendChild(option);
       });
       renderProductGrid();
+
       if (preloaded.employees && preloaded.employees.length > 0) {
         employeeNameMap = {};
         soldBySelectCart.innerHTML = '';
@@ -4141,18 +4297,20 @@
           soldBySelectCart.appendChild(option);
         });
       } else {
-        const employees = await loadAndCacheEmployees();
-        employeeNameMap = {};
-        soldBySelectCart.innerHTML = '';
-        employees.forEach(emp => {
-          employeeNameMap[emp.id] = emp.name;
-          const option = document.createElement('option');
-          option.value = emp.id;
-          option.textContent = `${emp.name} (ID: ${emp.id})`;
-          if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
-          soldBySelectCart.appendChild(option);
+        fetchEmployees().then(employees => {
+          employeeNameMap = {};
+          soldBySelectCart.innerHTML = '';
+          employees.forEach(emp => {
+            employeeNameMap[emp.id] = emp.name;
+            const option = document.createElement('option');
+            option.value = emp.id;
+            option.textContent = `${emp.name} (ID: ${emp.id})`;
+            if (currentEmployee && emp.id == currentEmployee.id) option.selected = true;
+            soldBySelectCart.appendChild(option);
+          });
         });
       }
+
       initialDataPromise = Promise.resolve(true);
       document.getElementById('loginModal').style.display = 'flex';
       document.getElementById('pinInput').focus();
@@ -4161,57 +4319,60 @@
       document.getElementById('loginModal').style.display = 'flex';
       document.getElementById('pinInput').focus();
     }
-  });
+});
+ async function verifyEmployeeByPin(pin) {
+  // 1. Try cache first
+  const cachedEmp = cachedEmployees.find(emp => emp.pin == pin);
+  if (cachedEmp) {
+    currentEmployee = cachedEmp;
+    document.getElementById('employeeNameHeader').innerText = `?? ${currentEmployee.name}`;
+    document.getElementById('loginModal').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    // Proceed with rest of login setup (load products, etc.)
+    await finishLoginAfterVerification();
+    return true;
+  }
 
-  async function verifyEmployeeByPin(pin) {
-    const cachedEmp = cachedEmployees.find(emp => emp.pin == pin);
-    if (cachedEmp) {
-      currentEmployee = cachedEmp;
-      document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
+  // 2. Cache miss – fallback to server
+  showLoading('Verifying...');
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=verifyByPin&pin=${encodeURIComponent(pin)}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      currentEmployee = result.employee;
+      // Add this employee to cache for next time
+      if (!cachedEmployees.find(e => e.id == currentEmployee.id)) {
+        cachedEmployees.push(currentEmployee);
+        localStorage.setItem('cachedEmployees', JSON.stringify({
+          timestamp: Date.now(),
+          employees: cachedEmployees
+        }));
+      }
+      document.getElementById('employeeNameHeader').innerText = `?? ${currentEmployee.name}`;
       document.getElementById('loginModal').style.display = 'none';
       document.getElementById('mainContent').style.display = 'block';
       await finishLoginAfterVerification();
       return true;
-    }
-    showLoading('Verifying...');
-    try {
-      const url = `${APPS_SCRIPT_URL}?action=verifyByPin&pin=${encodeURIComponent(pin)}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) {
-        currentEmployee = result.employee;
-        if (!cachedEmployees.find(e => e.id == currentEmployee.id)) {
-          cachedEmployees.push(currentEmployee);
-          localStorage.setItem('cachedEmployees', JSON.stringify({
-            timestamp: Date.now(),
-            employees: cachedEmployees
-          }));
-        }
-        document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
-        document.getElementById('loginModal').style.display = 'none';
-        document.getElementById('mainContent').style.display = 'block';
-        await finishLoginAfterVerification();
-        return true;
-      } else {
-        document.getElementById('loginError').innerText = result.error || 'Invalid PIN';
-        return false;
-      }
-    } catch (err) {
-      console.error(err);
-      document.getElementById('loginError').innerText = 'Connection error';
+    } else {
+      document.getElementById('loginError').innerText = result.error || 'Invalid PIN';
       return false;
-    } finally {
-      hideLoading();
     }
+  } catch (err) {
+    console.error(err);
+    document.getElementById('loginError').innerText = 'Connection error';
+    return false;
+  } finally {
+    hideLoading();
   }
-
+}
   const gridBtn = document.getElementById('gridViewBtn');
   const listBtn = document.getElementById('listViewBtn');
   if (gridBtn && listBtn) {
     gridBtn.addEventListener('click', () => setViewMode('grid'));
     listBtn.addEventListener('click', () => setViewMode('list'));
   }
-  document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLowStockFilter);
+document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLowStockFilter);
   document.getElementById('clearStockHistoryBtn')?.addEventListener('click', clearStockHistory);
   document.getElementById('saveStockHistoryBtn')?.addEventListener('click', saveStockHistoryToSheet);
 
@@ -4221,6 +4382,7 @@
       btn.addEventListener('click', () => {
         const digit = btn.dataset.digit;
         const action = btn.dataset.action;
+
         if (digit && pinInputEl.value.length < 4) {
           pinInputEl.value += digit;
           if (pinInputEl.value.length === 4) {
@@ -4250,18 +4412,21 @@
   const sideMenuOverlay = document.getElementById('sideMenuOverlay');
   const sideMenuDiv = document.getElementById('sideMenu');
   const closeSideMenuBtn = document.getElementById('closeSideMenuBtn');
+
   function openSideMenu() {
     sideMenuOverlay.style.display = 'flex';
     setTimeout(() => {
       sideMenuDiv.classList.add('open');
     }, 10);
   }
+
   function closeSideMenu() {
     sideMenuDiv.classList.remove('open');
     setTimeout(() => {
       sideMenuOverlay.style.display = 'none';
     }, 300);
   }
+
   if (logo) logo.addEventListener('click', openSideMenu);
   if (closeSideMenuBtn) closeSideMenuBtn.addEventListener('click', closeSideMenu);
   if (sideMenuOverlay) sideMenuOverlay.addEventListener('click', (e) => { if (e.target === sideMenuOverlay) closeSideMenu(); });
@@ -4287,88 +4452,109 @@
   if (sideTelegramBtn) {
     sideTelegramBtn.addEventListener('click', showTelegramModal);
   }
+
   document.getElementById('saveTelegramSettingsBtn')?.addEventListener('click', saveTelegramSettings);
   document.getElementById('closeTelegramModal')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
   document.getElementById('closeTelegramModalBtn')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
+async function finishLoginAfterVerification() {
+  // Clear any existing auto-sync interval to avoid duplicates
+  if (window.autoSyncInterval) clearInterval(window.autoSyncInterval);
 
-  async function finishLoginAfterVerification() {
-    if (window.autoSyncInterval) clearInterval(window.autoSyncInterval);
-    if (initialDataPromise) await initialDataPromise;
-    else await loadInitialData();
-    soldBySelectCart.value = currentEmployee.id;
-    const sideInventory = document.getElementById('sideInventoryBtn');
-    const sideCollection = document.getElementById('sideCollectionBtn');
-    if (currentEmployee.isAdmin) {
-      if (sideInventory) sideInventory.style.display = 'flex';
-      if (sideCollection) sideCollection.style.display = 'flex';
-      storeSelect.disabled = false;
-    } else {
-      if (sideInventory) sideInventory.style.display = 'none';
-      if (sideCollection) sideCollection.style.display = 'none';
-      storeSelect.disabled = true;
-    }
-    const systemTotalsDiv = document.getElementById('systemTotalsDisplay');
-    if (systemTotalsDiv) {
-      if (!currentEmployee.isAdmin) {
-        systemTotalsDiv.style.display = 'block';
-        const breakdownIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund'];
-        breakdownIds.forEach(id => {
-          const el = document.getElementById(id);
-          if (el && el.parentElement) el.parentElement.style.display = 'none';
-        });
-        const netTotalParent = document.getElementById('sysNetTotal')?.parentElement;
-        if (netTotalParent) netTotalParent.style.display = 'block';
-      } else {
-        systemTotalsDiv.style.display = 'block';
-        const allIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund', 'sysNetTotal'];
-        allIds.forEach(id => {
-          const el = document.getElementById(id);
-          if (el && el.parentElement) el.parentElement.style.display = 'block';
-        });
-      }
-    }
-    const reportStoreFilter = document.getElementById('reportStoreFilterGroup');
-    const employeeFilterGroup = document.getElementById('employeeFilterGroup');
-    const storeChartContainer = document.getElementById('storeChartContainer');
-    const employeeChartContainer = document.getElementById('employeeChartContainer');
-    if (currentEmployee.isAdmin) {
-      if (reportStoreFilter) reportStoreFilter.style.display = 'flex';
-      if (employeeFilterGroup) employeeFilterGroup.style.display = 'flex';
-      if (storeChartContainer) storeChartContainer.style.display = 'block';
-      if (employeeChartContainer) employeeChartContainer.style.display = 'block';
-    } else {
-      if (reportStoreFilter) reportStoreFilter.style.display = 'none';
-      if (employeeFilterGroup) employeeFilterGroup.style.display = 'none';
-      if (storeChartContainer) storeChartContainer.style.display = 'none';
-      if (employeeChartContainer) employeeChartContainer.style.display = 'none';
-    }
-    const settlementStoreSelect = document.getElementById('settlementStoreSelect');
-    if (!currentEmployee.isAdmin) {
-      if (settlementStoreSelect) {
-        settlementStoreSelect.value = initialStore;
-        settlementStoreSelect.disabled = true;
-      }
-    } else {
-      if (settlementStoreSelect) settlementStoreSelect.disabled = false;
-    }
-    startReceiptPolling();
-    updateCartUI();
-    checkNotificationSupport();
-    updateStockAlertButtonUI();
-    loadPendingSales();
-    syncPendingSales();
-    preloadSettlement();
-    preloadReport();
-    window.autoSyncInterval = setInterval(async () => {
-      if (currentEmployee && document.getElementById('mainContent').style.display === 'block') {
-        await fetchProductsFromSheet(false);
-      }
-    }, 5000);
+  // Load initial data (products and employees) if not already loaded
+  if (initialDataPromise) await initialDataPromise;
+  else await loadInitialData();
+
+  // Set the sold-by select to current employee
+  soldBySelectCart.value = currentEmployee.id;
+
+  // Show/hide admin-only buttons and controls
+  const sideInventory = document.getElementById('sideInventoryBtn');
+  const sideCollection = document.getElementById('sideCollectionBtn');
+  if (currentEmployee.isAdmin) {
+    if (sideInventory) sideInventory.style.display = 'flex';
+    if (sideCollection) sideCollection.style.display = 'flex';
+    storeSelect.disabled = false;
+  } else {
+    if (sideInventory) sideInventory.style.display = 'none';
+    if (sideCollection) sideCollection.style.display = 'none';
+    storeSelect.disabled = true;
   }
 
+  // Configure settlement totals display based on admin role
+  const systemTotalsDiv = document.getElementById('systemTotalsDisplay');
+  if (systemTotalsDiv) {
+    if (!currentEmployee.isAdmin) {
+      systemTotalsDiv.style.display = 'block';
+      const breakdownIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund'];
+      breakdownIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.parentElement) el.parentElement.style.display = 'none';
+      });
+      const netTotalParent = document.getElementById('sysNetTotal')?.parentElement;
+      if (netTotalParent) netTotalParent.style.display = 'block';
+    } else {
+      systemTotalsDiv.style.display = 'block';
+      const allIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund', 'sysNetTotal'];
+      allIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.parentElement) el.parentElement.style.display = 'block';
+      });
+    }
+  }
+
+  // Show/hide report filters and charts based on admin role
+  const reportStoreFilter = document.getElementById('reportStoreFilterGroup');
+  const employeeFilterGroup = document.getElementById('employeeFilterGroup');
+  const storeChartContainer = document.getElementById('storeChartContainer');
+  const employeeChartContainer = document.getElementById('employeeChartContainer');
+  if (currentEmployee.isAdmin) {
+    if (reportStoreFilter) reportStoreFilter.style.display = 'flex';
+    if (employeeFilterGroup) employeeFilterGroup.style.display = 'flex';
+    if (storeChartContainer) storeChartContainer.style.display = 'block';
+    if (employeeChartContainer) employeeChartContainer.style.display = 'block';
+  } else {
+    if (reportStoreFilter) reportStoreFilter.style.display = 'none';
+    if (employeeFilterGroup) employeeFilterGroup.style.display = 'none';
+    if (storeChartContainer) storeChartContainer.style.display = 'none';
+    if (employeeChartContainer) employeeChartContainer.style.display = 'none';
+  }
+
+  // Set settlement store select (disabled for non?admin)
+  const settlementStoreSelect = document.getElementById('settlementStoreSelect');
+  if (!currentEmployee.isAdmin) {
+    if (settlementStoreSelect) {
+      settlementStoreSelect.value = initialStore;
+      settlementStoreSelect.disabled = true;
+    }
+  } else {
+    if (settlementStoreSelect) settlementStoreSelect.disabled = false;
+  }
+
+  // Start background polling for receipts and other tasks
+  startReceiptPolling();
+  updateCartUI();
+  checkNotificationSupport();
+  updateStockAlertButtonUI();
+
+  // Load any pending sales from previous sessions and try to sync them
+  loadPendingSales();
+  syncPendingSales();
+
+  // Preload settlement and report data in background (silent)
+  preloadSettlement();
+  preloadReport();
+
+  // ========== AUTO-SYNC PRODUCTS EVERY 5 SECONDS ==========
+  window.autoSyncInterval = setInterval(async () => {
+    // Only sync if the main dashboard is visible and user is logged in
+    if (currentEmployee && document.getElementById('mainContent').style.display === 'block') {
+      await fetchProductsFromSheet(false); // silent background sync
+    }
+  }, 5000); // 5 seconds – adjust as needed
+}
   async function openReportsModal() {
     if (currentEmployee?.isAdmin) {
-      const employees = await loadAndCacheEmployees();
+      const employees = await fetchEmployees();
       const adminReportEmpSelect = document.getElementById('adminReportEmployeeSelect');
       const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
       if (adminReportEmpSelect && receiptsEmpSelect) {
@@ -4398,6 +4584,7 @@
       if (receiptsStore) receiptsStore.value = currentStore;
     }
     populateStoreSelects();
+
     const modal = document.getElementById('adminReportModal');
     if (modal) {
       modal.style.display = 'flex';
@@ -4443,8 +4630,9 @@
       }
       loadingMsg.style.display = 'block';
     }
+
     if (currentEmployee?.isAdmin) {
-      const employees = await loadAndCacheEmployees();
+      const employees = await fetchEmployees();
       const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
       if (receiptsEmpSelect) {
         receiptsEmpSelect.innerHTML = '<option value="all">All Employees</option>';
@@ -4467,12 +4655,15 @@
       const receiptsStore = document.getElementById('receiptsStoreSelect');
       if (receiptsStore) receiptsStore.value = currentStore;
     }
+
     populateStoreSelects();
+
     if (cachedReceipts) {
       renderReceiptsList(cachedReceipts);
       const msg = document.getElementById('receiptsLoadingMsg');
       if (msg) msg.style.display = 'none';
     }
+
     updateReceipts();
     closeSideMenu();
   });
@@ -4535,15 +4726,18 @@
       }
       return;
     }
+
     const cashOk = Math.abs(actualCash - currentSettlementTotals.cash) < 0.01;
     const cardOk = Math.abs(actualCard - currentSettlementTotals.card) < 0.01;
     const qrOk = Math.abs(actualQR - currentSettlementTotals.qr) < 0.01;
+
     const actualCashEl = document.getElementById('actualCash');
     const actualCardEl = document.getElementById('actualCard');
     const actualQREl = document.getElementById('actualQR');
     if (actualCashEl) actualCashEl.classList.toggle('error-field', !cashOk);
     if (actualCardEl) actualCardEl.classList.toggle('error-field', !cardOk);
     if (actualQREl) actualQREl.classList.toggle('error-field', !qrOk);
+
     if (cashOk && cardOk && qrOk) {
       const settlementError = document.getElementById('settlementError');
       if (settlementError) settlementError.style.display = 'none';
@@ -4563,9 +4757,9 @@
           if (!cashOk) errorMessages.push(`Cash (System: RM ${currentSettlementTotals.cash.toFixed(2)}, Entered: RM ${actualCash.toFixed(2)})`);
           if (!cardOk) errorMessages.push(`Card (System: RM ${currentSettlementTotals.card.toFixed(2)}, Entered: RM ${actualCard.toFixed(2)})`);
           if (!qrOk) errorMessages.push(`QR (System: RM ${currentSettlementTotals.qr.toFixed(2)}, Entered: RM ${actualQR.toFixed(2)})`);
-          settlementError.innerHTML = `❌ Mismatch in:<br>${errorMessages.join('<br>')}<br>Please correct and try again.`;
+          settlementError.innerHTML = `? Mismatch in:<br>${errorMessages.join('<br>')}<br>Please correct and try again.`;
         } else {
-          settlementError.innerHTML = `❌ Mismatch detected! Count properly and try again.`;
+          settlementError.innerHTML = `? Mismatch detected! Count properly and try again.`;
         }
         settlementError.style.display = 'block';
       }
@@ -4689,21 +4883,19 @@
     renderProductGrid();
   });
   document.getElementById('closeLoginModal')?.addEventListener('click', () => {});
-
-  function updateCategoryDropdown() {
-    const categories = [...new Set(products.map(p => p.category))].sort();
-    categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
-    categories.forEach(cat => {
-      const option = document.createElement('option');
-      option.value = cat;
-      option.textContent = cat;
-      categorySelect.appendChild(option);
-    });
-    const currentCategory = categorySelect.value;
-    if (categories.includes(currentCategory)) categorySelect.value = currentCategory;
-    else categorySelect.value = 'all';
-  }
-
+function updateCategoryDropdown() {
+  const categories = [...new Set(products.map(p => p.category))].sort();
+  categorySelect.innerHTML = '<option value="all">?? All Categories</option>';
+  categories.forEach(cat => {
+    const option = document.createElement('option');
+    option.value = cat;
+    option.textContent = cat;
+    categorySelect.appendChild(option);
+  });
+  const currentCategory = categorySelect.value;
+  if (categories.includes(currentCategory)) categorySelect.value = currentCategory;
+  else categorySelect.value = 'all';
+}
   async function fetchEmployees() {
     try {
       const response = await fetch(`${APPS_SCRIPT_URL}?action=getEmployees`);
@@ -4780,11 +4972,11 @@
       productDetailsVisible = !productDetailsVisible;
       if (productDetailsVisible) {
         productDetailsContainer.style.display = 'block';
-        toggleBtn.innerText = '📦 Hide Product Details';
+        toggleBtn.innerText = '?? Hide Product Details';
         if (lastProductData) renderProductDetails(lastProductData);
       } else {
         productDetailsContainer.style.display = 'none';
-        toggleBtn.innerText = '📦 Show Product Details';
+        toggleBtn.innerText = '?? Show Product Details';
       }
     });
   }
@@ -4804,21 +4996,23 @@
   if (closeSpecialPromoModal) closeSpecialPromoModal.addEventListener('click', () => document.getElementById('specialPromoModal').style.display = 'none');
   const closeSpecialPromoModalBtn = document.getElementById('closeSpecialPromoModalBtn');
   if (closeSpecialPromoModalBtn) closeSpecialPromoModalBtn.addEventListener('click', () => document.getElementById('specialPromoModal').style.display = 'none');
-  const promoCarAromatic = document.getElementById('promoCarAromatic');
-  if (promoCarAromatic) promoCarAromatic.addEventListener('click', applyCarAromaticPromo);
-  const promoPerfume15ml = document.getElementById('promoPerfume15ml');
-  if (promoPerfume15ml) promoPerfume15ml.addEventListener('click', applyPerfume15mlPromo);
+  const promoBuy2Free1Perfume = document.getElementById('promoBuy2Free1Perfume');
+  if (promoBuy2Free1Perfume) promoBuy2Free1Perfume.addEventListener('click', applyBuy2Free1Perfume);
+  const promoBuy3Free1ExcludePerfume = document.getElementById('promoBuy3Free1ExcludePerfume');
+  if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener('click', applyBuy3Free1ExcludePerfume);
   const applyCustomPromoBtn = document.getElementById('applyCustomPromoBtn');
   if (applyCustomPromoBtn) applyCustomPromoBtn.addEventListener('click', applyCustomDiscount);
 
   const closeLuckyDrawPrintModal = document.getElementById('closeLuckyDrawPrintModal');
   const closeLuckyDrawPrintModalBtn = document.getElementById('closeLuckyDrawPrintModalBtn');
   const printPrizeVoucherBtn = document.getElementById('printPrizeVoucherBtn');
+
   function closeLuckyDrawPrintModalFunc() {
     document.getElementById('luckyDrawPrintModal').style.display = 'none';
   }
   if (closeLuckyDrawPrintModal) closeLuckyDrawPrintModal.addEventListener('click', closeLuckyDrawPrintModalFunc);
   if (closeLuckyDrawPrintModalBtn) closeLuckyDrawPrintModalBtn.addEventListener('click', closeLuckyDrawPrintModalFunc);
+
   if (printPrizeVoucherBtn) {
     printPrizeVoucherBtn.addEventListener('click', async () => {
       const receiptNumber = document.getElementById('luckyDrawReceiptNumber').innerText;
@@ -4868,6 +5062,7 @@
   async function openCollectionModal() {
     const modal = document.getElementById('collectionModal');
     modal.style.display = 'flex';
+
     let loadingMsg = document.getElementById('collectionLoadingMsg');
     if (!loadingMsg) {
       loadingMsg = document.createElement('div');
@@ -4885,14 +5080,11 @@
       }
     }
     loadingMsg.style.display = 'block';
+
     await loadUnsettledCash();
     loadingMsg.style.display = 'none';
   }
-function showSpecialPromoModal() {
-  document.getElementById('promoMessage').style.display = 'none';
-  document.getElementById('customPromoValue').value = '';
-  document.getElementById('specialPromoModal').style.display = 'flex';
-}
+
   async function loadUnsettledCash() {
     const store = document.getElementById('collectionStoreSelect').value;
     showLoading('Loading unsettled cash...');
@@ -4928,13 +5120,11 @@ function showSpecialPromoModal() {
     currentUnsettledCash.forEach(rec => {
       const date = new Date(rec.timestamp).toLocaleDateString();
       html += `<tr data-id="${rec.id}">
-          <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"></td>
-          <td>${date}</td>
-          <td>${getEmployeeName(rec.employee_id)}</td>
+         <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"></td>
+         <td>${date}</td>
+         <td>${getEmployeeName(rec.employee_id)}</td>
         <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
-                <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
-        </tr>
-      `;
+       </tr>`;
     });
     tbody.innerHTML = html;
     document.querySelectorAll('.collection-checkbox').forEach(cb => {
@@ -4952,9 +5142,8 @@ function showSpecialPromoModal() {
     document.getElementById('collectSelectedBtn').disabled = !anyChecked;
   }
 
-  // Initialize employee selects after login
   (async function initEmployeeSelects() {
-    const employees = await loadAndCacheEmployees();
+    const employees = await fetchEmployees();
     const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
     if (receiptsEmpSelect && employees.length) {
       receiptsEmpSelect.innerHTML = '<option value="all">All Employees</option>';
@@ -4967,9 +5156,7 @@ function showSpecialPromoModal() {
     }
   })();
 
-  // Preload all stores data in background
-  preloadAllStoresData();
-
+  
 </script>
 </body>
 </html>

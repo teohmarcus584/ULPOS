@@ -4884,17 +4884,25 @@ async function finishLoginAfterVerification() {
   });
   document.getElementById('closeLoginModal')?.addEventListener('click', () => {});
 function updateCategoryDropdown() {
+  // 1. Remember the currently selected value BEFORE modifying the dropdown
+  const previousSelected = categorySelect.value;
+
+  // 2. Rebuild the dropdown with fresh categories
   const categories = [...new Set(products.map(p => p.category))].sort();
-  categorySelect.innerHTML = '<option value="all">?? All Categories</option>';
+  categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
   categories.forEach(cat => {
     const option = document.createElement('option');
     option.value = cat;
     option.textContent = cat;
     categorySelect.appendChild(option);
   });
-  const currentCategory = categorySelect.value;
-  if (categories.includes(currentCategory)) categorySelect.value = currentCategory;
-  else categorySelect.value = 'all';
+
+  // 3. Restore the previous selection if it still exists, otherwise fallback to 'all'
+  if (previousSelected !== 'all' && categories.includes(previousSelected)) {
+    categorySelect.value = previousSelected;
+  } else {
+    categorySelect.value = 'all';
+  }
 }
   async function fetchEmployees() {
     try {

@@ -2807,7 +2807,16 @@ function apply15mlPerfumeEdpPromo() {
   updateCartUI();
   document.getElementById('specialPromoModal').style.display = 'none';
 }
-
+function applyCustomDiscount() {
+  const value = parseFloat(document.getElementById('customPromoValue').value);
+  if (isNaN(value) || value < 0) {
+    showAlertModal('Invalid Discount', 'Please enter a valid discount amount.');
+    return;
+  }
+  customDiscount = value;
+  updateCartUI();
+  document.getElementById('specialPromoModal').style.display = 'none';
+}
   // ==================== CHECKOUT ====================
  async function startCheckout() {
   if (cart.length === 0) {

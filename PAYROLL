@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Hours Dashboard | Live from Google Sheets</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f0f4f9;
+            padding: 24px 20px;
+            color: #1e2a3e;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header {
+            background: white;
+            border-radius: 28px;
+            padding: 20px 28px;
+            margin-bottom: 28px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        h1 { font-size: 1.8rem; font-weight: 700; background: linear-gradient(135deg, #1f5e7e, #2c7da0); background-clip: text; -webkit-background-clip: text; color: transparent; }
+        .badge { background: #eef2ff; padding: 6px 14px; border-radius: 40px; font-size: 0.8rem; font-weight: 500; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 24px;
+            padding: 18px 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .stat-title { font-size: 0.7rem; text-transform: uppercase; font-weight: 600; color: #5b6e8c; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .stat-value { font-size: 2rem; font-weight: 800; color: #0f3b4c; }
+        .stat-sub { font-size: 0.7rem; color: #5e7b9c; margin-top: 6px; }
+        .filters-panel {
+            background: white;
+            border-radius: 24px;
+            padding: 20px 24px;
+            margin-bottom: 28px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            align-items: flex-end;
+            border: 1px solid #e2edf5;
+        }
+        .filter-group { flex: 1; min-width: 150px; }
+        .filter-group label { display: block; font-size: 0.7rem; font-weight: 600; margin-bottom: 6px; color: #2c5f7a; }
+        select, input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 16px;
+            border: 1px solid #cbdde9;
+            font-family: inherit;
+            background: white;
+        }
+        button {
+            background: #f1f5f9;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 40px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-primary { background: #1f5e7e; color: white; border: none; }
+        .btn-primary:hover { background: #144c66; }
+        .btn-outline { background: white; border: 1px solid #cbdde9; }
+        .btn-outline:hover { background: #f8fafc; }
+        .table-wrapper {
+            background: white;
+            border-radius: 24px;
+            overflow-x: auto;
+            border: 1px solid #eef2f8;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { text-align: left; padding: 14px 12px; background: #fafcff; border-bottom: 1px solid #e2edf5; font-weight: 600; }
+        td { padding: 12px; border-bottom: 1px solid #edf2f7; }
+        .duration-badge { background: #e0f2fe; padding: 4px 10px; border-radius: 30px; font-size: 0.75rem; font-weight: 500; display: inline-block; }
+        .loading { text-align: center; padding: 48px; color: #5e7b9c; }
+        .error-message { background: #fee2e2; color: #b91c1c; padding: 12px; border-radius: 20px; margin-bottom: 20px; }
+        .refresh-btn { margin-left: 12px; }
+        @media (max-width: 640px) { th, td { font-size: 0.7rem; padding: 8px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div><h1><i class="fas fa-chart-line" style="color:#2c7da0;"></i> Employee Hours Hub</h1>
+        <p style="font-size:0.8rem; margin-top:6px;">Live from Google Sheets – automatic hours calculation</p></div>
+        <div class="badge"><i class="fas fa-sync-alt"></i> Real data</div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-title"><i class="fas fa-users"></i> Employees</div><div class="stat-value" id="totalEmployees">—</div></div>
+        <div class="stat-card"><div class="stat-title"><i class="fas fa-calendar-check"></i> Total shifts</div><div class="stat-value" id="totalShifts">—</div></div>
+        <div class="stat-card"><div class="stat-title"><i class="fas fa-hourglass-half"></i> Total hours</div><div class="stat-value" id="totalHours">—</div><div class="stat-sub">(filtered period)</div></div>
+        <div class="stat-card"><div class="stat-title"><i class="fas fa-trophy"></i> Top performer</div><div class="stat-value" id="topEmployee">—</div><div class="stat-sub" id="topHoursDetail"></div></div>
+    </div>
+
+    <div class="filters-panel">
+        <div class="filter-group"><label><i class="fas fa-user"></i> Employee</label><select id="employeeFilter"><option value="ALL">All employees</option></select></div>
+        <div class="filter-group"><label><i class="fas fa-calendar-alt"></i> From date</label><input type="date" id="dateFrom"></div>
+        <div class="filter-group"><label><i class="fas fa-calendar-alt"></i> To date</label><input type="date" id="dateTo"></div>
+        <div class="filter-group"><button id="resetFiltersBtn" class="btn-outline"><i class="fas fa-undo-alt"></i> Reset</button></div>
+        <div class="filter-group"><button id="refreshDataBtn" class="btn-primary"><i class="fas fa-database"></i> Refresh data</button></div>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead><tr><th>Employee</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Duration</th><th>Location</th></tr></thead>
+            <tbody id="tableBody"><tr><td colspan="6" class="loading"><i class="fas fa-spinner fa-pulse"></i> Loading attendance data...</td></tr></tbody>
+        </table>
+    </div>
+    <div class="footer-note" style="margin-top:20px; text-align:center; font-size:0.7rem; color:#6883a0;">Hours are calculated automatically (supports overnight shifts). Data fetched directly from your Google Sheet.</div>
+</div>
+
+<script>
+    // ========== CONFIGURATION ==========
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwsSNg-PxerzAMD2-owmtoNP0mtzyMU-uUN1wrrU_qnHU89NEiyIyDk0DemBdCvGP8C/exec";  // <-- PASTE YOUR DEPLOYED URL
+    // Example: "https://script.google.com/macros/s/AKfycbxxxxxxxx/exec"
+
+    let masterAttendance = [];   // { employee, date, timeIn, timeOut, location }
+    let currentFiltered = [];
+
+    // Helper: parse "HH:MM" to minutes
+    function timeToMinutes(t) {
+        if (!t || typeof t !== 'string') return null;
+        const parts = t.trim().split(':');
+        if (parts.length < 2) return null;
+        let h = parseInt(parts[0],10), m = parseInt(parts[1],10);
+        if (isNaN(h) || isNaN(m)) return null;
+        return h*60 + m;
+    }
+
+    // duration in decimal hours, handles overnight (e.g., 22:00 → 06:30)
+    function computeDurationHours(timeIn, timeOut) {
+        const inMin = timeToMinutes(timeIn);
+        const outMin = timeToMinutes(timeOut);
+        if (inMin === null || outMin === null) return null;
+        let diff = outMin - inMin;
+        if (diff < 0) diff += 24*60;
+        return parseFloat((diff / 60).toFixed(2));
+    }
+
+    function formatDuration(hrs) {
+        if (hrs === null || isNaN(hrs)) return '—';
+        const h = Math.floor(hrs);
+        const m = Math.round((hrs - h)*60);
+        if (h === 0) return `${m}min`;
+        if (m === 0) return `${h}h`;
+        return `${h}h ${m}min`;
+    }
+
+    // Fetch data from Apps Script
+    async function fetchAttendance() {
+        const url = `${SCRIPT_URL}?action=getAllAttendance`;
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const json = await response.json();
+            if (json.status === 'success' && Array.isArray(json.data)) {
+                masterAttendance = json.data;
+                rebuildEmployeeFilter();
+                applyFiltersAndRender();
+            } else {
+                throw new Error('Invalid response structure');
+            }
+        } catch (err) {
+            console.error(err);
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="6" class="loading" style="color:#b91c1c;">⚠️ Failed to load data. Check CORS or script URL. Make sure you added the getAllAttendance endpoint and redeployed.</td></tr>`;
+        }
+    }
+
+    function rebuildEmployeeFilter() {
+        const select = document.getElementById('employeeFilter');
+        const employees = [...new Set(masterAttendance.map(r => r.employee))].sort();
+        let html = '<option value="ALL">👥 All employees</option>';
+        employees.forEach(emp => { html += `<option value="${escapeHtml(emp)}">${escapeHtml(emp)}</option>`; });
+        select.innerHTML = html;
+    }
+
+    function escapeHtml(str) { return String(str).replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+    function applyFiltersAndRender() {
+        let filtered = [...masterAttendance];
+        const emp = document.getElementById('employeeFilter').value;
+        if (emp !== 'ALL') filtered = filtered.filter(r => r.employee === emp);
+        const from = document.getElementById('dateFrom').value ? new Date(document.getElementById('dateFrom').value + 'T00:00:00') : null;
+        const to = document.getElementById('dateTo').value ? new Date(document.getElementById('dateTo').value + 'T23:59:59') : null;
+        if (from || to) {
+            filtered = filtered.filter(r => {
+                const d = new Date(r.date + 'T00:00:00');
+                if (from && d < from) return false;
+                if (to && d > to) return false;
+                return true;
+            });
+        }
+        currentFiltered = filtered;
+        renderStatsAndTable();
+    }
+
+    function renderStatsAndTable() {
+        // stats
+        const uniqueEmps = new Set(currentFiltered.map(r => r.employee));
+        document.getElementById('totalEmployees').innerText = uniqueEmps.size;
+        document.getElementById('totalShifts').innerText = currentFiltered.length;
+        let totalHours = 0;
+        const empHours = new Map();
+        for (let rec of currentFiltered) {
+            const hrs = computeDurationHours(rec.timeIn, rec.timeOut);
+            if (hrs !== null) {
+                totalHours += hrs;
+                empHours.set(rec.employee, (empHours.get(rec.employee)||0) + hrs);
+            }
+        }
+        document.getElementById('totalHours').innerHTML = `${totalHours.toFixed(1)} <span style="font-size:0.8rem;">hrs</span>`;
+        let topName = '—', topHrs = 0;
+        for (let [name, hrs] of empHours.entries()) {
+            if (hrs > topHrs) { topHrs = hrs; topName = name; }
+        }
+        document.getElementById('topEmployee').innerText = topName;
+        document.getElementById('topHoursDetail').innerHTML = topHrs > 0 ? `${topHrs.toFixed(1)} hrs worked` : '—';
+
+        // table
+        const tbody = document.getElementById('tableBody');
+        if (currentFiltered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="loading">📭 No records match the filters.</td></tr>';
+            return;
+        }
+        const sorted = [...currentFiltered].sort((a,b) => new Date(b.date) - new Date(a.date));
+        let rows = '';
+        for (let r of sorted) {
+            const hrsDecimal = computeDurationHours(r.timeIn, r.timeOut);
+            const durationDisplay = hrsDecimal !== null ? formatDuration(hrsDecimal) : '⚠️';
+            const title = hrsDecimal !== null ? `${hrsDecimal.toFixed(2)} hrs` : '';
+            rows += `<tr>
+                        <td><i class="fas fa-user-circle"></i> ${escapeHtml(r.employee)}</td>
+                        <td>${formatDateYMD(r.date)}</td>
+                        <td>${escapeHtml(r.timeIn)}</td>
+                        <td>${escapeHtml(r.timeOut)}</td>
+                        <td><span class="duration-badge" title="${title}">${durationDisplay}</span></td>
+                        <td>${escapeHtml(r.location)}</td>
+                     </tr>`;
+        }
+        tbody.innerHTML = rows;
+    }
+
+    function formatDateYMD(isoDate) {
+        if (!isoDate) return '—';
+        const parts = isoDate.split('-');
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return isoDate;
+    }
+
+    function resetFilters() {
+        document.getElementById('employeeFilter').value = 'ALL';
+        document.getElementById('dateFrom').value = '';
+        document.getElementById('dateTo').value = '';
+        applyFiltersAndRender();
+    }
+
+    // event listeners
+    document.getElementById('employeeFilter').addEventListener('change', applyFiltersAndRender);
+    document.getElementById('dateFrom').addEventListener('change', applyFiltersAndRender);
+    document.getElementById('dateTo').addEventListener('change', applyFiltersAndRender);
+    document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
+    document.getElementById('refreshDataBtn').addEventListener('click', () => { fetchAttendance(); });
+
+    // initial load
+    fetchAttendance();
+</script>
+</body>
+</html>

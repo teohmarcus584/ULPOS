@@ -54,7 +54,7 @@
 <div class="dashboard-container">
   <div class="header">
     <div class="header-left">
-      <div><h1><i class="fas fa-chart-line"></i> Staff Performance Hub</h1><p style="font-size:0.8rem;">Hours + Sales + Payroll (EPF/EIS/SOCSO)</p></div>
+      <div><h1><i class="fas fa-chart-line"></i> Staff Performance Hub</h1><p style="font-size:0.8rem;">Hours + Sales + Payroll (EPF/EIS/SOCSO + Commission)</p></div>
       <div class="badge"><i class="fas fa-sync-alt"></i> Live from Google Sheets</div>
     </div>
     <div class="header-right">
@@ -82,24 +82,16 @@
   <div class="section-title"><i class="fas fa-clock"></i> Attendance & Hours</div>
   <div class="table-wrapper">
     <table id="attendanceTable">
-      <thead>
-        <tr><th>Employee</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Duration</th><th>Location</th></tr>
-      </thead>
-      <tbody id="attendanceBody">
-        <tr><td colspan="6" class="loading">Loading attendance...</td></tr>
-      </tbody>
+      <thead><tr><th>Employee</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Duration</th><th>Location</th></tr></thead>
+      <tbody id="attendanceBody"><tr><td colspan="6" class="loading">Loading attendance...</td></tr></tbody>
     </table>
   </div>
 
   <div class="section-title"><i class="fas fa-chart-line"></i> Sales & Payroll Performance</div>
   <div class="table-wrapper">
     <table id="salesTable">
-      <thead>
-        <tr><th>Employee</th><th>Total Hours</th><th>Total Sales (RM)</th><th>Target (RM)</th><th>Achieved (%)</th><th>Bonus (RM)</th><th>Total Payable (RM)</th></tr>
-      </thead>
-      <tbody id="salesBody">
-        <tr><td colspan="7" class="loading">Select filters to load data...</td></tr>
-      </tbody>
+      <thead><tr><th>Employee</th><th>Total Hours</th><th>Total Sales (RM)</th><th>Target (RM)</th><th>Achieved (%)</th><th>Commission (RM)</th><th>Total Payable (RM)</th></tr></thead>
+      <tbody id="salesBody"><tr><td colspan="7" class="loading">Select filters to load data...</td></tr></tbody>
     </table>
   </div>
 
@@ -110,7 +102,7 @@
     <div class="payroll-row"><span>EPF Employee Contribution:</span><span id="epfEmployeeAmount">RM 0.00</span></div>
     <div class="payroll-row"><span>EPF Employer Contribution:</span><span id="epfEmployerAmount">RM 0.00</span></div>
     <div class="payroll-row"><span>EIS / SOCSO:</span><span id="eisAmount">RM 0.00</span></div>
-    <div class="payroll-row"><span>Sales Bonus:</span><span id="bonusAmount">RM 0.00</span></div>
+    <div class="payroll-row"><span>Sales Commission:</span><span id="bonusAmount">RM 0.00</span></div>
     <div class="payroll-row payroll-total"><span>Net Payable:</span><span id="netPayableAmount">RM 0.00</span></div>
   </div>
 </div>
@@ -138,8 +130,10 @@
     <input type="number" id="eisRate" class="modal-input" step="0.01" placeholder="e.g., 0.5">
     <label>Sales Target (RM)</label>
     <input type="number" id="salesTarget" class="modal-input" step="0.01" placeholder="e.g., 5000">
-    <label>Commission Rate (%) for excess</label>
-    <input type="number" id="commissionRate" class="modal-input" step="0.01" placeholder="e.g., 5">
+    <label>Commission Rate - Below Target (% of total sales)</label>
+    <input type="number" id="commissionBelowRate" class="modal-input" step="0.01" placeholder="e.g., 1">
+    <label>Commission Rate - Above Target (% of excess)</label>
+    <input type="number" id="commissionAboveRate" class="modal-input" step="0.01" placeholder="e.g., 5">
     <div class="modal-buttons">
       <button id="saveProfileBtn" class="btn-primary">Save</button>
       <button id="cancelProfileBtn">Cancel</button>
@@ -149,7 +143,7 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbxjruGss9CCTFCC9Ma_bqJtydfoxVy0k0OsOve7SrQI2v2ObwDYXxVHh5zxBTojaL0F/exec";
+  const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbw1siNS1nxViVb3o7YaPXi9gQDdwvZIYBG0Ao6XzbLMCFtXrIpkkmtCz1iyjBh-PRco/exec";
   const SALES_API_URL = "https://script.google.com/macros/s/AKfycbxUSABSlgJWK24ZSv24GQTL6h2TnsrB5F-YVZ4-aG457G_8i_wOadGc3eGujKl5vugFBw/exec";
 
   let masterAttendance = [];
@@ -165,10 +159,10 @@
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if (json.success && json.profile) return json.profile;
-      return { hourlyRate: 0, epfEnabled: false, epfNumber: '', eisRate: 0, epfEmployeeRate: 11, epfEmployerRate: 13, salesTarget: 0, commissionRate: 0 };
+      return { hourlyRate: 0, epfEnabled: false, epfNumber: '', eisRate: 0, epfEmployeeRate: 11, epfEmployerRate: 13, salesTarget: 0, commissionAboveRate: 0, commissionBelowRate: 0 };
     } catch(err) {
       console.error("loadProfile error", err);
-      return { hourlyRate: 0, epfEnabled: false, epfNumber: '', eisRate: 0, epfEmployeeRate: 11, epfEmployerRate: 13, salesTarget: 0, commissionRate: 0 };
+      return { hourlyRate: 0, epfEnabled: false, epfNumber: '', eisRate: 0, epfEmployeeRate: 11, epfEmployerRate: 13, salesTarget: 0, commissionAboveRate: 0, commissionBelowRate: 0 };
     }
   }
 
@@ -184,14 +178,15 @@
       formData.append('epfEmployeeRate', profile.epfEmployeeRate);
       formData.append('epfEmployerRate', profile.epfEmployerRate);
       formData.append('salesTarget', profile.salesTarget);
-      formData.append('commissionRate', profile.commissionRate);
+      formData.append('commissionAboveRate', profile.commissionAboveRate);
+      formData.append('commissionBelowRate', profile.commissionBelowRate);
       const res = await fetch(ATTENDANCE_API_URL, { method: 'POST', body: formData });
       const json = await res.json();
       return json.success;
     } catch(err) { console.error("saveProfile error", err); return false; }
   }
 
-  // ==================== PAYROLL + BONUS ====================
+  // ==================== PAYROLL + COMMISSION ====================
   async function calculatePayroll(employeeName, totalHours, totalSales) {
     const profile = await loadEmployeeProfile(employeeName);
     const grossSalary = totalHours * (profile.hourlyRate || 0);
@@ -206,16 +201,22 @@
     const eisRatePercent = profile.eisRate || 0;
     const eisDeduction = grossSalary * (eisRatePercent / 100);
     
-    let bonus = 0;
+    // Commission logic
+    let commission = 0;
     const target = profile.salesTarget || 0;
-    if (target > 0 && totalSales > target) {
-      const excess = totalSales - target;
-      const commissionRate = (profile.commissionRate || 0) / 100;
-      bonus = excess * commissionRate;
+    if (target > 0) {
+      if (totalSales >= target) {
+        const excess = totalSales - target;
+        const aboveRate = (profile.commissionAboveRate || 0) / 100;
+        commission = excess * aboveRate;
+      } else {
+        const belowRate = (profile.commissionBelowRate || 0) / 100;
+        commission = totalSales * belowRate;
+      }
     }
     
-    const netPayable = grossSalary - epfDeduction - eisDeduction + bonus;
-    return { grossSalary, epfDeduction, epfEmployerContribution, eisDeduction, eisRatePercent, bonus, netPayable };
+    const netPayable = grossSalary - epfDeduction - eisDeduction + commission;
+    return { grossSalary, epfDeduction, epfEmployerContribution, eisDeduction, eisRatePercent, commission, netPayable };
   }
 
   // ==================== LOCALSTORAGE PERSISTENCE ====================
@@ -411,26 +412,28 @@
       const sales = salesMap.get(emp) || 0;
       totalSalesSum += sales;
       if (sales > topSalesVal) { topSalesVal = sales; topSalesEmp = emp; }
-      const salesPerHour = hours > 0 ? (sales / hours).toFixed(2) : '—';
       
       const profile = await loadEmployeeProfile(emp);
       const target = profile.salesTarget || 0;
       let achievementPercent = 0;
-      let bonus = 0;
+      let commission = 0;
       if (target > 0) {
         achievementPercent = (sales / target) * 100;
-        if (sales > target) {
+        if (sales >= target) {
           const excess = sales - target;
-          const commissionRate = (profile.commissionRate || 0) / 100;
-          bonus = excess * commissionRate;
+          const aboveRate = (profile.commissionAboveRate || 0) / 100;
+          commission = excess * aboveRate;
+        } else {
+          const belowRate = (profile.commissionBelowRate || 0) / 100;
+          commission = sales * belowRate;
         }
       }
       const achievementDisplay = target > 0 ? `${achievementPercent.toFixed(1)}%` : '—';
+      const commissionDisplay = commission > 0 ? `RM ${commission.toFixed(2)}` : (target > 0 && sales < target ? `RM ${commission.toFixed(2)}` : '—');
+      const targetDisplay = target > 0 ? `RM ${target.toFixed(2)}` : '—';
       
       const { netPayable, epfDeduction, epfEmployerContribution, eisDeduction, eisRatePercent, grossSalary } = await calculatePayroll(emp, hours, sales);
       const payableDisplay = hours > 0 ? `RM ${netPayable.toFixed(2)}` : '—';
-      const bonusDisplay = bonus > 0 ? `RM ${bonus.toFixed(2)}` : '—';
-      const targetDisplay = target > 0 ? `RM ${target.toFixed(2)}` : '—';
 
       html += `<tr>
         <td>${escapeHtml(emp)}</td>
@@ -438,12 +441,12 @@
         <td>RM ${sales.toFixed(2)}</td>
         <td>${targetDisplay}</td>
         <td>${achievementDisplay}</td>
-        <td>${bonusDisplay}</td>
+        <td>${commissionDisplay}</td>
         <td><strong>${payableDisplay}</strong></td>
       </tr>`;
 
       if (empFilter !== 'ALL' && emp === empFilter) {
-        selectedEmployeePayroll = { grossSalary, epfDeduction, epfEmployerContribution, eisDeduction, eisRatePercent, bonus, netPayable };
+        selectedEmployeePayroll = { grossSalary, epfDeduction, epfEmployerContribution, eisDeduction, eisRatePercent, commission, netPayable };
       }
     }
 
@@ -457,7 +460,7 @@
       document.getElementById('epfEmployeeAmount').innerHTML = `RM ${selectedEmployeePayroll.epfDeduction.toFixed(2)} <span style="font-size:0.7rem;">(employee)</span>`;
       document.getElementById('epfEmployerAmount').innerHTML = `RM ${selectedEmployeePayroll.epfEmployerContribution.toFixed(2)} <span style="font-size:0.7rem;">(employer)</span>`;
       document.getElementById('eisAmount').innerHTML = `RM ${selectedEmployeePayroll.eisDeduction.toFixed(2)} <span style="font-size:0.7rem;">(${selectedEmployeePayroll.eisRatePercent}%)</span>`;
-      document.getElementById('bonusAmount').innerText = `RM ${selectedEmployeePayroll.bonus.toFixed(2)}`;
+      document.getElementById('bonusAmount').innerText = `RM ${selectedEmployeePayroll.commission.toFixed(2)}`;
       document.getElementById('netPayableAmount').innerText = `RM ${selectedEmployeePayroll.netPayable.toFixed(2)}`;
     } else {
       document.getElementById('payrollBreakdown').style.display = 'none';
@@ -483,7 +486,8 @@
     document.getElementById('epfEmployerRate').value = profile.epfEmployerRate || 13;
     document.getElementById('eisRate').value = profile.eisRate || '';
     document.getElementById('salesTarget').value = profile.salesTarget || '';
-    document.getElementById('commissionRate').value = profile.commissionRate || '';
+    document.getElementById('commissionBelowRate').value = profile.commissionBelowRate || '';
+    document.getElementById('commissionAboveRate').value = profile.commissionAboveRate || '';
     const epfDetailsDiv = document.getElementById('epfDetailsDiv');
     if (epfDetailsDiv) epfDetailsDiv.style.display = profile.epfEnabled ? 'block' : 'none';
     document.getElementById('profileModal').style.display = 'flex';
@@ -502,8 +506,9 @@
     const epfEmployerRate = parseFloat(document.getElementById('epfEmployerRate').value) || 13;
     const eisRate = parseFloat(document.getElementById('eisRate').value) || 0;
     const salesTarget = parseFloat(document.getElementById('salesTarget').value) || 0;
-    const commissionRate = parseFloat(document.getElementById('commissionRate').value) || 0;
-    const success = await saveEmployeeProfile(employeeName, { hourlyRate, epfEnabled, epfNumber, eisRate, epfEmployeeRate, epfEmployerRate, salesTarget, commissionRate });
+    const commissionBelowRate = parseFloat(document.getElementById('commissionBelowRate').value) || 0;
+    const commissionAboveRate = parseFloat(document.getElementById('commissionAboveRate').value) || 0;
+    const success = await saveEmployeeProfile(employeeName, { hourlyRate, epfEnabled, epfNumber, eisRate, epfEmployeeRate, epfEmployerRate, salesTarget, commissionBelowRate, commissionAboveRate });
     if (success) {
       closeProfileModal();
       await renderSalesTable();
@@ -561,12 +566,22 @@
   async function init() {
     const savedEmployee = loadFilters();
     await fetchAttendance();
+    // After attendance loads and dropdown is rebuilt, restore saved employee
     if (savedEmployee && savedEmployee !== 'ALL') {
       const empSelect = document.getElementById('employeeFilter');
-      if ([...empSelect.options].some(opt => opt.value === savedEmployee)) empSelect.value = savedEmployee;
-      else empSelect.value = 'ALL';
-    } else if (savedEmployee === 'ALL') document.getElementById('employeeFilter').value = 'ALL';
-    await applyFiltersAndRender();
+      // Wait a tick for options to be fully populated
+      setTimeout(() => {
+        if ([...empSelect.options].some(opt => opt.value === savedEmployee)) {
+          empSelect.value = savedEmployee;
+        } else {
+          empSelect.value = 'ALL';
+        }
+        applyFiltersAndRender(); // re-render with restored employee
+      }, 100);
+    } else if (savedEmployee === 'ALL') {
+      document.getElementById('employeeFilter').value = 'ALL';
+      await applyFiltersAndRender();
+    }
   }
   init();
 </script>

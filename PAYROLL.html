@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Staff Performance Dashboard | Hours + Sales</title>
+  <title>Staff Performance | Hours + Sales + Payroll</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
   <style>
@@ -11,8 +11,12 @@
     body { font-family: 'Inter', sans-serif; background: #f4f7fc; color: #1e293b; padding: 24px 20px; }
     .dashboard-container { max-width: 1400px; margin: 0 auto; }
     .header { background: white; border-radius: 28px; padding: 20px 28px; margin-bottom: 28px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+    .header-left { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
     h1 { font-size: 1.8rem; font-weight: 700; background: linear-gradient(135deg, #1f5e7e, #2c7da0); background-clip: text; -webkit-background-clip: text; color: transparent; }
     .badge { background: #eef2ff; padding: 6px 14px; border-radius: 40px; font-size: 0.8rem; font-weight: 500; }
+    .profile-header-btn { background: #1f5e7e; color: white; border: none; border-radius: 40px; padding: 6px 16px; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+    .profile-header-btn:hover { background: #144c66; }
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin-bottom: 28px; }
     .stat-card { background: white; border-radius: 24px; padding: 18px 20px; border: 1px solid #e2e8f0; }
     .stat-title { font-size: 0.7rem; text-transform: uppercase; font-weight: 600; color: #5b6e8c; margin-bottom: 8px; }
@@ -32,17 +36,30 @@
     td { padding: 12px; border-bottom: 1px solid #edf2f7; }
     .duration-badge { background: #e0f2fe; padding: 4px 10px; border-radius: 30px; font-size: 0.75rem; font-weight: 500; display: inline-block; }
     .loading { text-align: center; padding: 48px; color: #5e7b9c; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; }
+    .modal-container { background: white; max-width: 500px; width: 90%; border-radius: 28px; padding: 24px; box-shadow: 0 20px 35px rgba(0,0,0,0.2); position: relative; }
+    .close-modal { position: absolute; top: 16px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; color: #64748b; }
+    .modal-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 20px; }
+    .modal-input { width: 100%; padding: 12px; border-radius: 16px; border: 1px solid #cbdde9; margin-bottom: 16px; }
+    .modal-checkbox { margin: 12px 0; display: flex; align-items: center; gap: 10px; }
+    .modal-checkbox input { width: auto; }
+    .modal-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; }
     @media (max-width: 640px) { th, td { font-size: 0.7rem; padding: 8px; } .stat-value { font-size: 1.5rem; } }
   </style>
 </head>
 <body>
 <div class="dashboard-container">
   <div class="header">
-    <div><h1><i class="fas fa-chart-line"></i> Staff Performance Hub</h1><p style="font-size:0.8rem;">Hours from attendance + Sales from POS (all‑time if no date)</p></div>
-    <div class="badge"><i class="fas fa-sync-alt"></i> Live from Google Sheets</div>
+    <div class="header-left">
+      <div><h1><i class="fas fa-chart-line"></i> Staff Performance Hub</h1><p style="font-size:0.8rem;">Hours + Sales + Payroll (EPF/EIS/SOCSO)</p></div>
+      <div class="badge"><i class="fas fa-sync-alt"></i> Live from Google Sheets</div>
+    </div>
+    <div class="header-right">
+      <button id="profileHeaderBtn" class="profile-header-btn"><i class="fas fa-user-circle"></i> Employee Profile</button>
+    </div>
   </div>
 
-  <div class="stats-grid" id="statsGrid">
+  <div class="stats-grid">
     <div class="stat-card"><div class="stat-title">Employees</div><div class="stat-value" id="totalEmployees">—</div></div>
     <div class="stat-card"><div class="stat-title">Total shifts</div><div class="stat-value" id="totalShifts">—</div></div>
     <div class="stat-card"><div class="stat-title">Total hours</div><div class="stat-value" id="totalHours">—</div><div class="stat-sub">(filtered)</div></div>
@@ -60,21 +77,134 @@
   </div>
 
   <div class="section-title"><i class="fas fa-clock"></i> Attendance & Hours</div>
-  <div class="table-wrapper"><table id="attendanceTable"><thead><tr><th>Employee</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Duration</th><th>Location</th></tr></thead><tbody id="attendanceBody"><tr><td colspan="6" class="loading">Loading attendance...</td></tr></tbody></table></div>
+  <div class="table-wrapper">
+    <table id="attendanceTable">
+      <thead>
+        <tr><th>Employee</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Duration</th><th>Location</th></tr>
+      </thead>
+      <tbody id="attendanceBody">
+        <tr><td colspan="6" class="loading">Loading attendance...</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-  <div class="section-title"><i class="fas fa-chart-line"></i> Sales Performance (RM)</div>
-  <div class="table-wrapper"><table id="salesTable"><thead><tr><th>Employee</th><th>Total Hours</th><th>Total Sales (RM)</th><th>Sales / Hour (RM)</th></tr></thead><tbody id="salesBody"><tr><td colspan="4" class="loading">Select filters to load sales data...</td></tr></tbody></table></div>
+  <div class="section-title"><i class="fas fa-chart-line"></i> Sales & Payroll (selected employee)</div>
+  <div class="table-wrapper">
+    <table id="salesTable">
+      <thead>
+        <tr><th>Employee</th><th>Total Hours</th><th>Total Sales (RM)</th><th>Sales / Hour (RM)</th><th>Total Payable (RM)</th></tr>
+      </thead>
+      <tbody id="salesBody">
+        <tr><td colspan="5" class="loading">Select filters to load data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Employee Profile Modal -->
+<div id="profileModal" class="modal-overlay">
+  <div class="modal-container">
+    <span class="close-modal" id="closeProfileModal">&times;</span>
+    <div class="modal-title" id="profileModalTitle">Employee Profile</div>
+    <input type="hidden" id="profileEmployeeName">
+    <label>Hourly Rate (RM)</label>
+    <input type="number" id="hourlyRate" class="modal-input" step="0.01" placeholder="e.g., 10.00">
+    <div class="modal-checkbox">
+      <input type="checkbox" id="epfEnabled"> <label>EPF Contribution?</label>
+    </div>
+    <div id="epfDetailsDiv" style="display: none;">
+      <label>EPF Number</label>
+      <input type="text" id="epfNumber" class="modal-input" placeholder="EPF account number">
+      <label>EPF Employee Rate (%)</label>
+      <input type="number" id="epfEmployeeRate" class="modal-input" step="0.01" placeholder="e.g., 11">
+      <label>EPF Employer Rate (%)</label>
+      <input type="number" id="epfEmployerRate" class="modal-input" step="0.01" placeholder="e.g., 13">
+    </div>
+    <label>EIS / SOCSO Rate (%)</label>
+    <input type="number" id="eisRate" class="modal-input" step="0.01" placeholder="e.g., 0.5">
+    <div class="modal-buttons">
+      <button id="saveProfileBtn" class="btn-primary">Save</button>
+      <button id="cancelProfileBtn">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <script>
   // ==================== CONFIGURATION ====================
-  const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbzBgHxL6HJEgWnNK-wTZu59IveWamdbvQWdArfB0FbVN_im5Pk7UMzZl05R2zJlLxOU/exec";
+  const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbynrFQ78FEQ7KObV_PTgonR1iiOt7gUvAqF-gNJziva7TQwNACynxf-GlkAKZRuQUwJ/exec";
   const SALES_API_URL = "https://script.google.com/macros/s/AKfycbxUSABSlgJWK24ZSv24GQTL6h2TnsrB5F-YVZ4-aG457G_8i_wOadGc3eGujKl5vugFBw/exec";
 
   let masterAttendance = [];
   let currentFiltered = [];
-  let allSalesData = null;      // raw sales data from API { labels, data }
-  let filteredSales = null;     // sales data after employee filter (client‑side)
+  let allSalesData = null;
+  let filteredSales = null;
+
+  // ==================== EMPLOYEE PROFILE (Google Sheet) ====================
+  async function loadEmployeeProfile(employeeName) {
+    try {
+      const url = `${ATTENDANCE_API_URL}?action=getEmployeeProfile&employeeName=${encodeURIComponent(employeeName)}`;
+      const res = await fetch(url);
+      const json = await res.json();
+      if (json.success && json.profile) return json.profile;
+      return { hourlyRate: 0, epfEnabled: false, epfNumber: '', eisRate: 0, epfEmployeeRate: 11, epfEmployerRate: 13 };
+    } catch(err) { console.error("loadProfile error", err); return { hourlyRate: 0, epfEnabled: false, epfNumber: '', eisRate: 0, epfEmployeeRate: 11, epfEmployerRate: 13 }; }
+  }
+
+  async function saveEmployeeProfile(employeeName, profile) {
+    try {
+      const formData = new URLSearchParams();
+      formData.append('action', 'saveEmployeeProfile');
+      formData.append('employeeName', employeeName);
+      formData.append('hourlyRate', profile.hourlyRate);
+      formData.append('epfEnabled', profile.epfEnabled);
+      formData.append('epfNumber', profile.epfNumber);
+      formData.append('eisRate', profile.eisRate);
+      formData.append('epfEmployeeRate', profile.epfEmployeeRate);
+      formData.append('epfEmployerRate', profile.epfEmployerRate);
+      const res = await fetch(ATTENDANCE_API_URL, { method: 'POST', body: formData });
+      const json = await res.json();
+      return json.success;
+    } catch(err) { console.error("saveProfile error", err); return false; }
+  }
+
+  // ==================== PAYROLL ====================
+  async function calculatePayroll(employeeName, totalHours) {
+    const profile = await loadEmployeeProfile(employeeName);
+    const grossSalary = totalHours * (profile.hourlyRate || 0);
+    let epfDeduction = 0;
+    if (profile.epfEnabled && profile.epfNumber) {
+      const employeeRate = (profile.epfEmployeeRate || 11) / 100;
+      epfDeduction = grossSalary * employeeRate;
+    }
+    const eisDeduction = grossSalary * ((profile.eisRate || 0) / 100);
+    const netPayable = grossSalary - epfDeduction - eisDeduction;
+    return { grossSalary, epfDeduction, eisDeduction, netPayable };
+  }
+
+  // ==================== LOCALSTORAGE PERSISTENCE ====================
+  function saveFilters() {
+    const filters = {
+      employee: document.getElementById('employeeFilter').value,
+      dateFrom: document.getElementById('dateFrom').value,
+      dateTo: document.getElementById('dateTo').value,
+      store: document.getElementById('storeSelect').value
+    };
+    localStorage.setItem('dashboardFilters', JSON.stringify(filters));
+  }
+
+  function loadFilters() {
+    const saved = localStorage.getItem('dashboardFilters');
+    if (saved) {
+      try {
+        const filters = JSON.parse(saved);
+        if (filters.dateFrom) document.getElementById('dateFrom').value = filters.dateFrom;
+        if (filters.dateTo) document.getElementById('dateTo').value = filters.dateTo;
+        if (filters.store) document.getElementById('storeSelect').value = filters.store;
+        return filters.employee;
+      } catch(e) { console.warn(e); }
+    }
+    return null;
+  }
 
   // ==================== HELPERS ====================
   function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
@@ -83,7 +213,7 @@
   function formatDuration(hrs) { if(hrs===null||isNaN(hrs)) return '—'; const h=Math.floor(hrs), m=Math.round((hrs-h)*60); if(h===0) return `${m}min`; if(m===0) return `${h}h`; return `${h}h ${m}min`; }
   function formatDateDMY(isoDate) { if(!isoDate) return '—'; const parts=isoDate.split('-'); if(parts.length===3) return `${parts[2]}/${parts[1]}/${parts[0]}`; return isoDate; }
 
-  // ==================== FETCH ATTENDANCE ====================
+  // ==================== FETCH DATA ====================
   async function fetchAttendance() {
     const url = `${ATTENDANCE_API_URL}?action=getAllAttendance`;
     try {
@@ -100,7 +230,6 @@
     }
   }
 
-  // ==================== FETCH SALES (raw, no employee filter) ====================
   async function fetchRawSalesData(store, fromDate, toDate) {
     let url = `${SALES_API_URL}?action=getEmployeeSalesData&store=${encodeURIComponent(store)}`;
     if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
@@ -108,14 +237,12 @@
     try {
       const res = await fetch(url);
       const json = await res.json();
-      if (json.success && Array.isArray(json.labels)) {
-        return { labels: json.labels, data: json.data };
-      }
+      if (json.success && Array.isArray(json.labels)) return { labels: json.labels, data: json.data };
       return null;
     } catch(err) { console.error("Sales fetch error:", err); return null; }
   }
 
-  // ==================== REBUILD EMPLOYEE DROPDOWN ====================
+  // ==================== UI UPDATE ====================
   function rebuildEmployeeFilter() {
     const employees = [...new Set(masterAttendance.map(r => r.employee))].sort();
     const select = document.getElementById('employeeFilter');
@@ -124,9 +251,7 @@
     select.innerHTML = html;
   }
 
-  // ==================== MAIN FILTER & RENDER ====================
   async function applyFiltersAndRender() {
-    // 1. Filter attendance (hours)
     let filtered = [...masterAttendance];
     const empFilter = document.getElementById('employeeFilter').value;
     if (empFilter !== 'ALL') filtered = filtered.filter(r => r.employee === empFilter);
@@ -144,50 +269,31 @@
     renderAttendanceTable();
     updateAttendanceStats();
 
-    // 2. Fetch raw sales data (based on store and optional dates)
     const store = document.getElementById('storeSelect').value;
     const fromDate = document.getElementById('dateFrom').value;
     const toDate = document.getElementById('dateTo').value;
     allSalesData = await fetchRawSalesData(store, fromDate, toDate);
-
-    // 3. Apply employee filter to sales data (client‑side)
-    applySalesEmployeeFilter();
+    await applySalesEmployeeFilter();
+    saveFilters();
   }
 
-  // Apply employee filter to the raw sales data, ensuring the selected employee always appears (with 0 if missing)
-  function applySalesEmployeeFilter() {
+  async function applySalesEmployeeFilter() {
     const empFilter = document.getElementById('employeeFilter').value;
-
     if (empFilter === 'ALL') {
-      // Show all employees from the attendance data (union with sales)
-      if (!allSalesData) {
-        filteredSales = null;
-      } else {
-        filteredSales = { labels: allSalesData.labels, data: allSalesData.data };
-      }
+      filteredSales = allSalesData ? { labels: allSalesData.labels, data: allSalesData.data } : null;
     } else {
-      // Specific employee: we must always show that employee, even if not in sales data
       if (!allSalesData || !allSalesData.labels) {
-        // No sales data at all, but we still need to show the selected employee with 0 sales
         filteredSales = { labels: [empFilter], data: [0] };
       } else {
         const index = allSalesData.labels.findIndex(name => name.toLowerCase() === empFilter.toLowerCase());
-        if (index !== -1) {
-          filteredSales = {
-            labels: [allSalesData.labels[index]],
-            data: [allSalesData.data[index]]
-          };
-        } else {
-          // Employee not found in sales data → show with 0 sales
-          filteredSales = { labels: [empFilter], data: [0] };
-        }
+        if (index !== -1) filteredSales = { labels: [allSalesData.labels[index]], data: [allSalesData.data[index]] };
+        else filteredSales = { labels: [empFilter], data: [0] };
       }
     }
-    renderSalesTable();
+    await renderSalesTable();
     updateSalesStats();
   }
 
-  // ==================== ATTENDANCE TABLE & STATS ====================
   function renderAttendanceTable() {
     const tbody = document.getElementById('attendanceBody');
     if (currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="loading">📭 No attendance records.</td></tr>'; return; }
@@ -224,43 +330,35 @@
     document.getElementById('topEmployeeHours').innerText = topEmp !== '—' ? topEmp : '—';
   }
 
-  // ==================== SALES TABLE & STATS (using filteredSales) ====================
-  function renderSalesTable() {
+  async function renderSalesTable() {
     const tbody = document.getElementById('salesBody');
-    // Determine which employees to display based on current filter
     const empFilter = document.getElementById('employeeFilter').value;
     let employeesToShow = [];
 
     if (empFilter === 'ALL') {
-      // All employees: take union of attendance employees and sales labels
       const attendanceEmployees = new Set(currentFiltered.map(r => r.employee));
       if (filteredSales && filteredSales.labels) {
         filteredSales.labels.forEach(label => attendanceEmployees.add(label));
       }
       employeesToShow = Array.from(attendanceEmployees).sort();
     } else {
-      // Specific employee: only that employee
       employeesToShow = [empFilter];
     }
 
     if (employeesToShow.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="loading">No employees to display.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="loading">No employees to display.</td></tr>';
       return;
     }
 
-    // Build hours map from attendance (already filtered by employee/date)
     const hoursMap = new Map();
     for (let r of currentFiltered) {
       const hrs = computeDurationHours(r.timeIn, r.timeOut);
       if (hrs !== null) hoursMap.set(r.employee, (hoursMap.get(r.employee)||0) + hrs);
     }
 
-    // Build sales map from filteredSales (if exists)
     const salesMap = new Map();
     if (filteredSales && filteredSales.labels) {
-      for (let i=0; i<filteredSales.labels.length; i++) {
-        salesMap.set(filteredSales.labels[i], filteredSales.data[i]);
-      }
+      for (let i=0; i<filteredSales.labels.length; i++) salesMap.set(filteredSales.labels[i], filteredSales.data[i]);
     }
 
     let totalSalesSum = 0;
@@ -274,25 +372,69 @@
       totalSalesSum += sales;
       if (sales > topSalesVal) { topSalesVal = sales; topSalesEmp = emp; }
       const salesPerHour = hours > 0 ? (sales / hours).toFixed(2) : '—';
+      const { netPayable } = await calculatePayroll(emp, hours);
+      const payableDisplay = hours > 0 ? `RM ${netPayable.toFixed(2)}` : '—';
+
       html += `<tr>
         <td>${escapeHtml(emp)}</td>
         <td>${hours.toFixed(1)} hrs</td>
         <td>RM ${sales.toFixed(2)}</td>
         <td>${salesPerHour === '—' ? '—' : 'RM ' + salesPerHour}</td>
+        <td><strong>${payableDisplay}</strong></td>
       </tr>`;
     }
 
     tbody.innerHTML = html;
-    // Update KPIs
     document.getElementById('totalSales').innerHTML = `RM ${totalSalesSum.toFixed(2)}`;
     document.getElementById('topEmployeeSales').innerText = topSalesEmp !== '—' ? topSalesEmp : '—';
   }
 
-  function updateSalesStats() { /* already inside renderSalesTable */ }
+  function updateSalesStats() {}
+
+  // ==================== PROFILE MODAL ====================
+  async function openProfileModal() {
+    const selectedEmployee = document.getElementById('employeeFilter').value;
+    if (selectedEmployee === 'ALL') {
+      alert('Please select a specific employee first.');
+      return;
+    }
+    const profile = await loadEmployeeProfile(selectedEmployee);
+    document.getElementById('profileEmployeeName').value = selectedEmployee;
+    document.getElementById('profileModalTitle').innerText = `Profile - ${selectedEmployee}`;
+    document.getElementById('hourlyRate').value = profile.hourlyRate || '';
+    document.getElementById('epfEnabled').checked = profile.epfEnabled || false;
+    document.getElementById('epfNumber').value = profile.epfNumber || '';
+    document.getElementById('epfEmployeeRate').value = profile.epfEmployeeRate || 11;
+    document.getElementById('epfEmployerRate').value = profile.epfEmployerRate || 13;
+    document.getElementById('eisRate').value = profile.eisRate || '';
+    const epfDetailsDiv = document.getElementById('epfDetailsDiv');
+    if (epfDetailsDiv) epfDetailsDiv.style.display = profile.epfEnabled ? 'block' : 'none';
+    document.getElementById('profileModal').style.display = 'flex';
+  }
+
+  function closeProfileModal() {
+    document.getElementById('profileModal').style.display = 'none';
+  }
+
+  async function saveProfile() {
+    const employeeName = document.getElementById('profileEmployeeName').value;
+    const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+    const epfEnabled = document.getElementById('epfEnabled').checked;
+    const epfNumber = document.getElementById('epfNumber').value.trim();
+    const epfEmployeeRate = parseFloat(document.getElementById('epfEmployeeRate').value) || 11;
+    const epfEmployerRate = parseFloat(document.getElementById('epfEmployerRate').value) || 13;
+    const eisRate = parseFloat(document.getElementById('eisRate').value) || 0;
+    const success = await saveEmployeeProfile(employeeName, { hourlyRate, epfEnabled, epfNumber, eisRate, epfEmployeeRate, epfEmployerRate });
+    if (success) {
+      closeProfileModal();
+      await renderSalesTable();
+    } else {
+      alert('Failed to save profile. Check console.');
+    }
+  }
 
   // ==================== EVENT LISTENERS ====================
-  document.getElementById('employeeFilter').addEventListener('change', () => {
-    // Re‑filter attendance based on new employee selection
+  document.getElementById('employeeFilter').addEventListener('change', async () => {
     let filtered = [...masterAttendance];
     const empFilter = document.getElementById('employeeFilter').value;
     if (empFilter !== 'ALL') filtered = filtered.filter(r => r.employee === empFilter);
@@ -309,9 +451,8 @@
     currentFiltered = filtered;
     renderAttendanceTable();
     updateAttendanceStats();
-
-    // Re‑apply sales employee filter (without refetching sales)
-    applySalesEmployeeFilter();
+    await applySalesEmployeeFilter();
+    saveFilters();
   });
 
   document.getElementById('dateFrom').addEventListener('change', () => applyFiltersAndRender());
@@ -319,7 +460,36 @@
   document.getElementById('storeSelect').addEventListener('change', () => applyFiltersAndRender());
   document.getElementById('refreshBtn').addEventListener('click', () => fetchAttendance());
 
-  fetchAttendance();
+  const profileHeaderBtn = document.getElementById('profileHeaderBtn');
+  if (profileHeaderBtn) profileHeaderBtn.addEventListener('click', openProfileModal);
+
+  const closeModalBtn = document.getElementById('closeProfileModal');
+  if (closeModalBtn) closeModalBtn.addEventListener('click', closeProfileModal);
+  const cancelBtn = document.getElementById('cancelProfileBtn');
+  if (cancelBtn) cancelBtn.addEventListener('click', closeProfileModal);
+  const saveBtn = document.getElementById('saveProfileBtn');
+  if (saveBtn) saveBtn.addEventListener('click', saveProfile);
+
+  const epfCheckbox = document.getElementById('epfEnabled');
+  if (epfCheckbox) {
+    epfCheckbox.addEventListener('change', (e) => {
+      const epfDiv = document.getElementById('epfDetailsDiv');
+      if (epfDiv) epfDiv.style.display = e.target.checked ? 'block' : 'none';
+    });
+  }
+
+  // ==================== INIT ====================
+  async function init() {
+    const savedEmployee = loadFilters();
+    await fetchAttendance();
+    if (savedEmployee && savedEmployee !== 'ALL') {
+      const empSelect = document.getElementById('employeeFilter');
+      if ([...empSelect.options].some(opt => opt.value === savedEmployee)) empSelect.value = savedEmployee;
+      else empSelect.value = 'ALL';
+    } else if (savedEmployee === 'ALL') document.getElementById('employeeFilter').value = 'ALL';
+    await applyFiltersAndRender();
+  }
+  init();
 </script>
 </body>
 </html>

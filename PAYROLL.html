@@ -8,74 +8,25 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #f4f7fc;
-      color: #1e293b;
-      padding: 24px 20px;
-    }
+    body { font-family: 'Inter', sans-serif; background: #f4f7fc; color: #1e293b; padding: 24px 20px; }
     .dashboard-container { max-width: 1400px; margin: 0 auto; }
-    .header {
-      background: white;
-      border-radius: 28px;
-      padding: 20px 28px;
-      margin-bottom: 28px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-      border: 1px solid #e2e8f0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+    .header { background: white; border-radius: 28px; padding: 20px 28px; margin-bottom: 28px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
     h1 { font-size: 1.8rem; font-weight: 700; background: linear-gradient(135deg, #1f5e7e, #2c7da0); background-clip: text; -webkit-background-clip: text; color: transparent; }
     .badge { background: #eef2ff; padding: 6px 14px; border-radius: 40px; font-size: 0.8rem; font-weight: 500; }
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 18px;
-      margin-bottom: 28px;
-    }
-    .stat-card {
-      background: white;
-      border-radius: 24px;
-      padding: 18px 20px;
-      border: 1px solid #e2e8f0;
-    }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin-bottom: 28px; }
+    .stat-card { background: white; border-radius: 24px; padding: 18px 20px; border: 1px solid #e2e8f0; }
     .stat-title { font-size: 0.7rem; text-transform: uppercase; font-weight: 600; color: #5b6e8c; margin-bottom: 8px; }
     .stat-value { font-size: 2rem; font-weight: 800; color: #0f3b4c; }
     .stat-sub { font-size: 0.7rem; color: #5e7b9c; margin-top: 6px; }
-    .filters-panel {
-      background: white;
-      border-radius: 24px;
-      padding: 20px 24px;
-      margin-bottom: 28px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 18px;
-      align-items: flex-end;
-      border: 1px solid #e2edf5;
-    }
+    .filters-panel { background: white; border-radius: 24px; padding: 20px 24px; margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; border: 1px solid #e2edf5; }
     .filter-group { flex: 1; min-width: 150px; }
     .filter-group label { display: block; font-size: 0.7rem; font-weight: 600; margin-bottom: 6px; color: #2c5f7a; }
-    select, input, button {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 16px;
-      border: 1px solid #cbdde9;
-      font-family: inherit;
-      background: white;
-    }
+    select, input, button { width: 100%; padding: 10px 12px; border-radius: 16px; border: 1px solid #cbdde9; font-family: inherit; background: white; }
     button { background: #f1f5f9; cursor: pointer; transition: 0.2s; font-weight: 500; }
     .btn-primary { background: #1f5e7e; color: white; border: none; }
     .btn-primary:hover { background: #144c66; }
     .section-title { font-size: 1.2rem; font-weight: 600; margin: 24px 0 12px 0; display: flex; align-items: center; gap: 10px; }
-    .table-wrapper {
-      background: white;
-      border-radius: 24px;
-      overflow-x: auto;
-      border: 1px solid #eef2f8;
-      margin-bottom: 30px;
-    }
+    .table-wrapper { background: white; border-radius: 24px; overflow-x: auto; border: 1px solid #eef2f8; margin-bottom: 30px; }
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     th { text-align: left; padding: 14px 12px; background: #fafcff; border-bottom: 1px solid #e2edf5; font-weight: 600; }
     td { padding: 12px; border-bottom: 1px solid #edf2f7; }
@@ -87,151 +38,81 @@
 <body>
 <div class="dashboard-container">
   <div class="header">
-    <div>
-      <h1><i class="fas fa-chart-line" style="color:#2c7da0;"></i> Staff Performance Hub</h1>
-      <p style="font-size:0.8rem; margin-top:6px;">Hours from attendance API + Sales from POS API</p>
-    </div>
-    <div class="badge"><i class="fas fa-sync-alt"></i> Two‑source live data</div>
+    <div><h1><i class="fas fa-chart-line"></i> Staff Performance Hub</h1><p style="font-size:0.8rem;">Hours from attendance + Sales from POS (all‑time if no date)</p></div>
+    <div class="badge"><i class="fas fa-sync-alt"></i> Live from Google Sheets</div>
   </div>
 
-  <!-- KPI Cards -->
   <div class="stats-grid" id="statsGrid">
-    <div class="stat-card"><div class="stat-title"><i class="fas fa-users"></i> Employees</div><div class="stat-value" id="totalEmployees">—</div></div>
-    <div class="stat-card"><div class="stat-title"><i class="fas fa-calendar-check"></i> Total shifts</div><div class="stat-value" id="totalShifts">—</div></div>
-    <div class="stat-card"><div class="stat-title"><i class="fas fa-hourglass-half"></i> Total hours</div><div class="stat-value" id="totalHours">—</div><div class="stat-sub">(filtered)</div></div>
-    <div class="stat-card"><div class="stat-title"><i class="fas fa-trophy"></i> Top by hours</div><div class="stat-value" id="topEmployeeHours">—</div></div>
-    <div class="stat-card"><div class="stat-title"><i class="fas fa-chart-simple"></i> Total sales (RM)</div><div class="stat-value" id="totalSales">—</div></div>
-    <div class="stat-card"><div class="stat-title"><i class="fas fa-crown"></i> Top by sales</div><div class="stat-value" id="topEmployeeSales">—</div></div>
+    <div class="stat-card"><div class="stat-title">Employees</div><div class="stat-value" id="totalEmployees">—</div></div>
+    <div class="stat-card"><div class="stat-title">Total shifts</div><div class="stat-value" id="totalShifts">—</div></div>
+    <div class="stat-card"><div class="stat-title">Total hours</div><div class="stat-value" id="totalHours">—</div><div class="stat-sub">(filtered)</div></div>
+    <div class="stat-card"><div class="stat-title">Top by hours</div><div class="stat-value" id="topEmployeeHours">—</div></div>
+    <div class="stat-card"><div class="stat-title">Total sales (RM)</div><div class="stat-value" id="totalSales">—</div></div>
+    <div class="stat-card"><div class="stat-title">Top by sales</div><div class="stat-value" id="topEmployeeSales">—</div></div>
   </div>
 
-  <!-- Filters -->
   <div class="filters-panel">
-    <div class="filter-group">
-      <label><i class="fas fa-user"></i> Employee</label>
-      <select id="employeeFilter"><option value="ALL">All employees</option></select>
-    </div>
-    <div class="filter-group">
-      <label><i class="fas fa-calendar-alt"></i> From date</label>
-      <input type="date" id="dateFrom">
-    </div>
-    <div class="filter-group">
-      <label><i class="fas fa-calendar-alt"></i> To date</label>
-      <input type="date" id="dateTo">
-    </div>
-    <div class="filter-group">
-      <label><i class="fas fa-store"></i> Store (Sales)</label>
-      <select id="storeSelect">
-        <option value="queens">Queens Store</option>
-        <option value="SUNSHINE CENTRAL">Sunshine Central</option>
-        <!-- Add your store names here -->
-      </select>
-    </div>
-    <div class="filter-group">
-      <button id="refreshBtn" class="btn-primary"><i class="fas fa-database"></i> Refresh data</button>
-    </div>
+    <div class="filter-group"><label>Employee</label><select id="employeeFilter"><option value="ALL">All employees</option></select></div>
+    <div class="filter-group"><label>From date (optional)</label><input type="date" id="dateFrom"></div>
+    <div class="filter-group"><label>To date (optional)</label><input type="date" id="dateTo"></div>
+    <div class="filter-group"><label>Store (Sales)</label><select id="storeSelect"><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div>
+    <div class="filter-group"><button id="refreshBtn" class="btn-primary">Refresh data</button></div>
   </div>
 
-  <!-- Attendance Table -->
   <div class="section-title"><i class="fas fa-clock"></i> Attendance & Hours</div>
-  <div class="table-wrapper">
-    <table id="attendanceTable">
-      <thead><tr><th>Employee</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Duration</th><th>Location</th></tr></thead>
-      <tbody id="attendanceBody"><tr><td colspan="6" class="loading">Loading attendance data...</td></tr></tbody>
-    </table>
-  </div>
+  <div class="table-wrapper"><table id="attendanceTable"><thead><tr><th>Employee</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Duration</th><th>Location</th></tr></thead><tbody id="attendanceBody"><tr><td colspan="6" class="loading">Loading attendance...</td></tr></tbody></table></div>
 
-  <!-- Sales Performance Table -->
   <div class="section-title"><i class="fas fa-chart-line"></i> Sales Performance (RM)</div>
-  <div class="table-wrapper">
-    <table id="salesTable">
-      <thead><tr><th>Employee</th><th>Total Hours</th><th>Total Sales (RM)</th><th>Sales / Hour (RM)</th></tr></thead>
-      <tbody id="salesBody"><tr><td colspan="4" class="loading">Select date range & store to see sales data...</td></tr></tbody>
-    </table>
-  </div>
-
-  <div class="footer-note" style="margin-top:20px; text-align:center; font-size:0.7rem; color:#6883a0;">
-    <i class="fas fa-info-circle"></i> Hours from attendance API, sales from POS API. Employee names must match exactly.
-  </div>
+  <div class="table-wrapper"><table id="salesTable"><thead><tr><th>Employee</th><th>Total Hours</th><th>Total Sales (RM)</th><th>Sales / Hour (RM)</th></tr></thead><tbody id="salesBody"><tr><td colspan="4" class="loading">Select filters to load sales data...</td></tr></tbody></table></div>
 </div>
 
 <script>
   // ==================== CONFIGURATION ====================
-  // Replace with your two Apps Script web app URLs
   const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbzBgHxL6HJEgWnNK-wTZu59IveWamdbvQWdArfB0FbVN_im5Pk7UMzZl05R2zJlLxOU/exec";
   const SALES_API_URL = "https://script.google.com/macros/s/AKfycbxUSABSlgJWK24ZSv24GQTL6h2TnsrB5F-YVZ4-aG457G_8i_wOadGc3eGujKl5vugFBw/exec";
 
-  // ==================== GLOBAL STATE ====================
   let masterAttendance = [];
   let currentFiltered = [];
-  let currentSalesData = null;
+  let allSalesData = null;      // raw sales data from API { labels, data }
+  let filteredSales = null;     // sales data after employee filter (client‑side)
 
-  // ==================== HELPER FUNCTIONS ====================
+  // ==================== HELPERS ====================
   function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
-  function timeToMinutes(t) {
-    if (!t || typeof t !== 'string') return null;
-    const parts = t.trim().split(':');
-    if (parts.length < 2) return null;
-    let h = parseInt(parts[0],10), m = parseInt(parts[1],10);
-    if (isNaN(h)||isNaN(m)) return null;
-    return h*60+m;
-  }
-  function computeDurationHours(timeIn, timeOut) {
-    const inMin = timeToMinutes(timeIn), outMin = timeToMinutes(timeOut);
-    if (inMin===null || outMin===null) return null;
-    let diff = outMin - inMin;
-    if (diff < 0) diff += 24*60;
-    return parseFloat((diff/60).toFixed(2));
-  }
-  function formatDuration(hrs) {
-    if (hrs===null||isNaN(hrs)) return '—';
-    const h = Math.floor(hrs), m = Math.round((hrs-h)*60);
-    if (h===0) return `${m}min`;
-    if (m===0) return `${h}h`;
-    return `${h}h ${m}min`;
-  }
-  function formatDateDMY(isoDate) {
-    if (!isoDate) return '—';
-    const parts = isoDate.split('-');
-    if (parts.length===3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    return isoDate;
-  }
+  function timeToMinutes(t) { if (!t || typeof t !== 'string') return null; const parts = t.trim().split(':'); if (parts.length<2) return null; let h=parseInt(parts[0],10), m=parseInt(parts[1],10); if(isNaN(h)||isNaN(m)) return null; return h*60+m; }
+  function computeDurationHours(timeIn, timeOut) { const inMin=timeToMinutes(timeIn), outMin=timeToMinutes(timeOut); if(inMin===null||outMin===null) return null; let diff=outMin-inMin; if(diff<0) diff+=24*60; return parseFloat((diff/60).toFixed(2)); }
+  function formatDuration(hrs) { if(hrs===null||isNaN(hrs)) return '—'; const h=Math.floor(hrs), m=Math.round((hrs-h)*60); if(h===0) return `${m}min`; if(m===0) return `${h}h`; return `${h}h ${m}min`; }
+  function formatDateDMY(isoDate) { if(!isoDate) return '—'; const parts=isoDate.split('-'); if(parts.length===3) return `${parts[2]}/${parts[1]}/${parts[0]}`; return isoDate; }
 
-  // ==================== FETCH ATTENDANCE (from attendance API) ====================
+  // ==================== FETCH ATTENDANCE ====================
   async function fetchAttendance() {
     const url = `${ATTENDANCE_API_URL}?action=getAllAttendance`;
     try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const json = await response.json();
+      const res = await fetch(url);
+      const json = await res.json();
       if (json.status === 'success' && Array.isArray(json.data)) {
         masterAttendance = json.data;
         rebuildEmployeeFilter();
-        applyFiltersAndRender();
-      } else {
-        throw new Error('Invalid attendance response');
-      }
-    } catch (err) {
+        await applyFiltersAndRender();
+      } else throw new Error('Invalid attendance response');
+    } catch(err) {
       console.error(err);
-      document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="6" class="loading" style="color:#b91c1c;">⚠️ Failed to load attendance data. Check CORS or script URL.</td></tr>`;
+      document.getElementById('attendanceBody').innerHTML = '<tr><td colspan="6" class="loading" style="color:#b91c1c;">⚠️ Failed to load attendance.</td></tr>';
     }
   }
 
-  // ==================== FETCH SALES (from sales API) ====================
-  async function fetchSalesData(store, fromDate, toDate) {
-    if (!fromDate || !toDate) return null;
-    // Note: The sales API expects parameters: store, from, to, action=getEmployeeSalesData
-    const url = `${SALES_API_URL}?action=getEmployeeSalesData&store=${encodeURIComponent(store)}&from=${fromDate}&to=${toDate}`;
+  // ==================== FETCH SALES (raw, no employee filter) ====================
+  async function fetchRawSalesData(store, fromDate, toDate) {
+    let url = `${SALES_API_URL}?action=getEmployeeSalesData&store=${encodeURIComponent(store)}`;
+    if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
+    if (toDate) url += `&to=${encodeURIComponent(toDate)}`;
     try {
-      const response = await fetch(url);
-      const json = await response.json();
+      const res = await fetch(url);
+      const json = await res.json();
       if (json.success && Array.isArray(json.labels)) {
         return { labels: json.labels, data: json.data };
       }
       return null;
-    } catch (err) {
-      console.error("Sales fetch error:", err);
-      return null;
-    }
+    } catch(err) { console.error("Sales fetch error:", err); return null; }
   }
 
   // ==================== REBUILD EMPLOYEE DROPDOWN ====================
@@ -239,13 +120,13 @@
     const employees = [...new Set(masterAttendance.map(r => r.employee))].sort();
     const select = document.getElementById('employeeFilter');
     let html = '<option value="ALL">👥 All employees</option>';
-    employees.forEach(emp => { html += `<option value="${escapeHtml(emp)}">${escapeHtml(emp)}</option>`; });
+    employees.forEach(emp => html += `<option value="${escapeHtml(emp)}">${escapeHtml(emp)}</option>`);
     select.innerHTML = html;
   }
 
-  // ==================== FILTER ATTENDANCE & RENDER ====================
+  // ==================== MAIN FILTER & RENDER ====================
   async function applyFiltersAndRender() {
-    // Filter attendance
+    // 1. Filter attendance (hours)
     let filtered = [...masterAttendance];
     const empFilter = document.getElementById('employeeFilter').value;
     if (empFilter !== 'ALL') filtered = filtered.filter(r => r.employee === empFilter);
@@ -263,29 +144,53 @@
     renderAttendanceTable();
     updateAttendanceStats();
 
-    // Fetch sales data for the same date range
+    // 2. Fetch raw sales data (based on store and optional dates)
     const store = document.getElementById('storeSelect').value;
     const fromDate = document.getElementById('dateFrom').value;
     const toDate = document.getElementById('dateTo').value;
-    if (fromDate && toDate) {
-      currentSalesData = await fetchSalesData(store, fromDate, toDate);
-      renderSalesTable();
-      updateSalesStats();
+    allSalesData = await fetchRawSalesData(store, fromDate, toDate);
+
+    // 3. Apply employee filter to sales data (client‑side)
+    applySalesEmployeeFilter();
+  }
+
+  // Apply employee filter to the raw sales data, ensuring the selected employee always appears (with 0 if missing)
+  function applySalesEmployeeFilter() {
+    const empFilter = document.getElementById('employeeFilter').value;
+
+    if (empFilter === 'ALL') {
+      // Show all employees from the attendance data (union with sales)
+      if (!allSalesData) {
+        filteredSales = null;
+      } else {
+        filteredSales = { labels: allSalesData.labels, data: allSalesData.data };
+      }
     } else {
-      currentSalesData = null;
-      document.getElementById('salesBody').innerHTML = '<tr><td colspan="4" class="loading">Select date range to see sales data...</td></tr>';
-      document.getElementById('totalSales').innerText = '—';
-      document.getElementById('topEmployeeSales').innerText = '—';
+      // Specific employee: we must always show that employee, even if not in sales data
+      if (!allSalesData || !allSalesData.labels) {
+        // No sales data at all, but we still need to show the selected employee with 0 sales
+        filteredSales = { labels: [empFilter], data: [0] };
+      } else {
+        const index = allSalesData.labels.findIndex(name => name.toLowerCase() === empFilter.toLowerCase());
+        if (index !== -1) {
+          filteredSales = {
+            labels: [allSalesData.labels[index]],
+            data: [allSalesData.data[index]]
+          };
+        } else {
+          // Employee not found in sales data → show with 0 sales
+          filteredSales = { labels: [empFilter], data: [0] };
+        }
+      }
     }
+    renderSalesTable();
+    updateSalesStats();
   }
 
   // ==================== ATTENDANCE TABLE & STATS ====================
   function renderAttendanceTable() {
     const tbody = document.getElementById('attendanceBody');
-    if (currentFiltered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="loading">📭 No attendance records for this period.</td></tr>';
-      return;
-    }
+    if (currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="loading">📭 No attendance records.</td></tr>'; return; }
     const sorted = [...currentFiltered].sort((a,b) => new Date(b.date) - new Date(a.date));
     let html = '';
     for (let r of sorted) {
@@ -311,40 +216,59 @@
     const empHours = new Map();
     for (let r of currentFiltered) {
       const hrs = computeDurationHours(r.timeIn, r.timeOut);
-      if (hrs !== null) {
-        totalHours += hrs;
-        empHours.set(r.employee, (empHours.get(r.employee) || 0) + hrs);
-      }
+      if (hrs !== null) { totalHours += hrs; empHours.set(r.employee, (empHours.get(r.employee)||0) + hrs); }
     }
     document.getElementById('totalHours').innerHTML = `${totalHours.toFixed(1)} <span style="font-size:0.8rem;">hrs</span>`;
-    let topEmp = '—', topHrs = 0;
-    for (let [name, hrs] of empHours.entries()) {
-      if (hrs > topHrs) { topHrs = hrs; topEmp = name; }
-    }
+    let topEmp='—', topHrs=0;
+    for (let [name, hrs] of empHours) if (hrs > topHrs) { topHrs=hrs; topEmp=name; }
     document.getElementById('topEmployeeHours').innerText = topEmp !== '—' ? topEmp : '—';
   }
 
-  // ==================== SALES TABLE & STATS ====================
+  // ==================== SALES TABLE & STATS (using filteredSales) ====================
   function renderSalesTable() {
     const tbody = document.getElementById('salesBody');
-    if (!currentSalesData || !currentSalesData.labels || currentSalesData.labels.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="loading">No sales data for this period and store.</td></tr>';
+    // Determine which employees to display based on current filter
+    const empFilter = document.getElementById('employeeFilter').value;
+    let employeesToShow = [];
+
+    if (empFilter === 'ALL') {
+      // All employees: take union of attendance employees and sales labels
+      const attendanceEmployees = new Set(currentFiltered.map(r => r.employee));
+      if (filteredSales && filteredSales.labels) {
+        filteredSales.labels.forEach(label => attendanceEmployees.add(label));
+      }
+      employeesToShow = Array.from(attendanceEmployees).sort();
+    } else {
+      // Specific employee: only that employee
+      employeesToShow = [empFilter];
+    }
+
+    if (employeesToShow.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="loading">No employees to display.</td></tr>';
       return;
     }
+
+    // Build hours map from attendance (already filtered by employee/date)
     const hoursMap = new Map();
     for (let r of currentFiltered) {
       const hrs = computeDurationHours(r.timeIn, r.timeOut);
-      if (hrs !== null) hoursMap.set(r.employee, (hoursMap.get(r.employee) || 0) + hrs);
+      if (hrs !== null) hoursMap.set(r.employee, (hoursMap.get(r.employee)||0) + hrs);
     }
+
+    // Build sales map from filteredSales (if exists)
     const salesMap = new Map();
-    for (let i = 0; i < currentSalesData.labels.length; i++) {
-      salesMap.set(currentSalesData.labels[i], currentSalesData.data[i]);
+    if (filteredSales && filteredSales.labels) {
+      for (let i=0; i<filteredSales.labels.length; i++) {
+        salesMap.set(filteredSales.labels[i], filteredSales.data[i]);
+      }
     }
-    const allEmployees = new Set([...hoursMap.keys(), ...salesMap.keys()]);
+
     let totalSalesSum = 0;
-    let topSalesEmp = '—', topSalesVal = 0;
+    let topSalesEmp = '—';
+    let topSalesVal = 0;
     let html = '';
-    for (let emp of allEmployees) {
+
+    for (let emp of employeesToShow) {
       const hours = hoursMap.get(emp) || 0;
       const sales = salesMap.get(emp) || 0;
       totalSalesSum += sales;
@@ -357,23 +281,44 @@
         <td>${salesPerHour === '—' ? '—' : 'RM ' + salesPerHour}</td>
       </tr>`;
     }
+
     tbody.innerHTML = html;
+    // Update KPIs
     document.getElementById('totalSales').innerHTML = `RM ${totalSalesSum.toFixed(2)}`;
     document.getElementById('topEmployeeSales').innerText = topSalesEmp !== '—' ? topSalesEmp : '—';
   }
 
-  function updateSalesStats() {
-    // Already handled in renderSalesTable
-  }
+  function updateSalesStats() { /* already inside renderSalesTable */ }
 
-  // ==================== EVENT LISTENERS & INIT ====================
-  document.getElementById('employeeFilter').addEventListener('change', applyFiltersAndRender);
-  document.getElementById('dateFrom').addEventListener('change', applyFiltersAndRender);
-  document.getElementById('dateTo').addEventListener('change', applyFiltersAndRender);
-  document.getElementById('storeSelect').addEventListener('change', applyFiltersAndRender);
+  // ==================== EVENT LISTENERS ====================
+  document.getElementById('employeeFilter').addEventListener('change', () => {
+    // Re‑filter attendance based on new employee selection
+    let filtered = [...masterAttendance];
+    const empFilter = document.getElementById('employeeFilter').value;
+    if (empFilter !== 'ALL') filtered = filtered.filter(r => r.employee === empFilter);
+    const from = document.getElementById('dateFrom').value ? new Date(document.getElementById('dateFrom').value + 'T00:00:00') : null;
+    const to = document.getElementById('dateTo').value ? new Date(document.getElementById('dateTo').value + 'T23:59:59') : null;
+    if (from || to) {
+      filtered = filtered.filter(r => {
+        const d = new Date(r.date + 'T00:00:00');
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+        return true;
+      });
+    }
+    currentFiltered = filtered;
+    renderAttendanceTable();
+    updateAttendanceStats();
+
+    // Re‑apply sales employee filter (without refetching sales)
+    applySalesEmployeeFilter();
+  });
+
+  document.getElementById('dateFrom').addEventListener('change', () => applyFiltersAndRender());
+  document.getElementById('dateTo').addEventListener('change', () => applyFiltersAndRender());
+  document.getElementById('storeSelect').addEventListener('change', () => applyFiltersAndRender());
   document.getElementById('refreshBtn').addEventListener('click', () => fetchAttendance());
 
-  // Start
   fetchAttendance();
 </script>
 </body>

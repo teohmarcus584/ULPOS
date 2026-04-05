@@ -37,13 +37,16 @@
     .duration-badge { background: #e0f2fe; padding: 4px 10px; border-radius: 30px; font-size: 0.75rem; font-weight: 500; display: inline-block; }
     .loading { text-align: center; padding: 48px; color: #5e7b9c; }
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; }
-    .modal-container { background: white; max-width: 500px; width: 90%; border-radius: 28px; padding: 24px; box-shadow: 0 20px 35px rgba(0,0,0,0.2); position: relative; }
+    .modal-container { background: white; max-width: 550px; width: 90%; border-radius: 28px; padding: 24px; box-shadow: 0 20px 35px rgba(0,0,0,0.2); position: relative; }
     .close-modal { position: absolute; top: 16px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; color: #64748b; }
     .modal-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 20px; }
     .modal-input { width: 100%; padding: 12px; border-radius: 16px; border: 1px solid #cbdde9; margin-bottom: 16px; }
     .modal-checkbox { margin: 12px 0; display: flex; align-items: center; gap: 10px; }
     .modal-checkbox input { width: auto; }
     .modal-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; }
+    .payroll-breakdown { background: #f0f9ff; border-radius: 20px; padding: 16px; margin-top: 16px; border-left: 4px solid #1f5e7e; display: none; }
+    .payroll-row { display: flex; justify-content: space-between; margin: 8px 0; font-size: 0.9rem; }
+    .payroll-total { font-weight: 800; font-size: 1.1rem; color: #0f3b4c; border-top: 1px solid #cbd5e1; padding-top: 8px; margin-top: 8px; }
     @media (max-width: 640px) { th, td { font-size: 0.7rem; padding: 8px; } .stat-value { font-size: 1.5rem; } }
   </style>
 </head>
@@ -88,16 +91,27 @@
     </table>
   </div>
 
-  <div class="section-title"><i class="fas fa-chart-line"></i> Sales & Payroll (selected employee)</div>
+  <div class="section-title"><i class="fas fa-chart-line"></i> Sales & Payroll Performance</div>
   <div class="table-wrapper">
     <table id="salesTable">
       <thead>
-        <tr><th>Employee</th><th>Total Hours</th><th>Total Sales (RM)</th><th>Sales / Hour (RM)</th><th>Total Payable (RM)</th></tr>
+        <tr><th>Employee</th><th>Total Hours</th><th>Total Sales (RM)</th><th>Target (RM)</th><th>Achieved (%)</th><th>Bonus (RM)</th><th>Total Payable (RM)</th></tr>
       </thead>
       <tbody id="salesBody">
-        <tr><td colspan="5" class="loading">Select filters to load data...</td></tr>
+        <tr><td colspan="7" class="loading">Select filters to load data...</td></tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- Payroll Breakdown Panel -->
+  <div id="payrollBreakdown" class="payroll-breakdown">
+    <div style="font-weight: 600; margin-bottom: 12px;">📊 Payroll Details</div>
+    <div class="payroll-row"><span>Gross Salary (Hours × Hourly Rate):</span><span id="grossAmount">RM 0.00</span></div>
+    <div class="payroll-row"><span>EPF Employee Contribution:</span><span id="epfEmployeeAmount">RM 0.00</span></div>
+    <div class="payroll-row"><span>EPF Employer Contribution:</span><span id="epfEmployerAmount">RM 0.00</span></div>
+    <div class="payroll-row"><span>EIS / SOCSO:</span><span id="eisAmount">RM 0.00</span></div>
+    <div class="payroll-row"><span>Sales Bonus:</span><span id="bonusAmount">RM 0.00</span></div>
+    <div class="payroll-row payroll-total"><span>Net Payable:</span><span id="netPayableAmount">RM 0.00</span></div>
   </div>
 </div>
 
@@ -122,6 +136,10 @@
     </div>
     <label>EIS / SOCSO Rate (%)</label>
     <input type="number" id="eisRate" class="modal-input" step="0.01" placeholder="e.g., 0.5">
+    <label>Sales Target (RM)</label>
+    <input type="number" id="salesTarget" class="modal-input" step="0.01" placeholder="e.g., 5000">
+    <label>Commission Rate (%) for excess</label>
+    <input type="number" id="commissionRate" class="modal-input" step="0.01" placeholder="e.g., 5">
     <div class="modal-buttons">
       <button id="saveProfileBtn" class="btn-primary">Save</button>
       <button id="cancelProfileBtn">Cancel</button>
@@ -131,7 +149,7 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbwFoVkuSQlHHMgpFwTVCYlK1ro4FkjeQSDwgBryGbuxs5Kn6YJptxhsEp-wYoAjlnwY/exec";
+  const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbxjruGss9CCTFCC9Ma_bqJtydfoxVy0k0OsOve7SrQI2v2ObwDYXxVHh5zxBTojaL0F/exec";
   const SALES_API_URL = "https://script.google.com/macros/s/AKfycbxUSABSlgJWK24ZSv24GQTL6h2TnsrB5F-YVZ4-aG457G_8i_wOadGc3eGujKl5vugFBw/exec";
 
   let masterAttendance = [];
@@ -144,10 +162,14 @@
     try {
       const url = `${ATTENDANCE_API_URL}?action=getEmployeeProfile&employeeName=${encodeURIComponent(employeeName)}`;
       const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if (json.success && json.profile) return json.profile;
-      return { hourlyRate: 0, epfEnabled: false, epfNumber: '', eisRate: 0, epfEmployeeRate: 11, epfEmployerRate: 13 };
-    } catch(err) { console.error("loadProfile error", err); return { hourlyRate: 0, epfEnabled: false, epfNumber: '', eisRate: 0, epfEmployeeRate: 11, epfEmployerRate: 13 }; }
+      return { hourlyRate: 0, epfEnabled: false, epfNumber: '', eisRate: 0, epfEmployeeRate: 11, epfEmployerRate: 13, salesTarget: 0, commissionRate: 0 };
+    } catch(err) {
+      console.error("loadProfile error", err);
+      return { hourlyRate: 0, epfEnabled: false, epfNumber: '', eisRate: 0, epfEmployeeRate: 11, epfEmployerRate: 13, salesTarget: 0, commissionRate: 0 };
+    }
   }
 
   async function saveEmployeeProfile(employeeName, profile) {
@@ -161,24 +183,39 @@
       formData.append('eisRate', profile.eisRate);
       formData.append('epfEmployeeRate', profile.epfEmployeeRate);
       formData.append('epfEmployerRate', profile.epfEmployerRate);
+      formData.append('salesTarget', profile.salesTarget);
+      formData.append('commissionRate', profile.commissionRate);
       const res = await fetch(ATTENDANCE_API_URL, { method: 'POST', body: formData });
       const json = await res.json();
       return json.success;
     } catch(err) { console.error("saveProfile error", err); return false; }
   }
 
-  // ==================== PAYROLL ====================
-  async function calculatePayroll(employeeName, totalHours) {
+  // ==================== PAYROLL + BONUS ====================
+  async function calculatePayroll(employeeName, totalHours, totalSales) {
     const profile = await loadEmployeeProfile(employeeName);
     const grossSalary = totalHours * (profile.hourlyRate || 0);
     let epfDeduction = 0;
+    let epfEmployerContribution = 0;
     if (profile.epfEnabled && profile.epfNumber) {
       const employeeRate = (profile.epfEmployeeRate || 11) / 100;
+      const employerRate = (profile.epfEmployerRate || 13) / 100;
       epfDeduction = grossSalary * employeeRate;
+      epfEmployerContribution = grossSalary * employerRate;
     }
-    const eisDeduction = grossSalary * ((profile.eisRate || 0) / 100);
-    const netPayable = grossSalary - epfDeduction - eisDeduction;
-    return { grossSalary, epfDeduction, eisDeduction, netPayable };
+    const eisRatePercent = profile.eisRate || 0;
+    const eisDeduction = grossSalary * (eisRatePercent / 100);
+    
+    let bonus = 0;
+    const target = profile.salesTarget || 0;
+    if (target > 0 && totalSales > target) {
+      const excess = totalSales - target;
+      const commissionRate = (profile.commissionRate || 0) / 100;
+      bonus = excess * commissionRate;
+    }
+    
+    const netPayable = grossSalary - epfDeduction - eisDeduction + bonus;
+    return { grossSalary, epfDeduction, epfEmployerContribution, eisDeduction, eisRatePercent, bonus, netPayable };
   }
 
   // ==================== LOCALSTORAGE PERSISTENCE ====================
@@ -218,6 +255,7 @@
     const url = `${ATTENDANCE_API_URL}?action=getAllAttendance`;
     try {
       const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if (json.status === 'success' && Array.isArray(json.data)) {
         masterAttendance = json.data;
@@ -226,7 +264,7 @@
       } else throw new Error('Invalid attendance response');
     } catch(err) {
       console.error(err);
-      document.getElementById('attendanceBody').innerHTML = '<tr><td colspan="6" class="loading" style="color:#b91c1c;">⚠️ Failed to load attendance.</td></tr>';
+      document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="6" class="loading" style="color:#b91c1c;">⚠️ Failed to load attendance: ${err.message}</td></tr>`;
     }
   }
 
@@ -346,7 +384,8 @@
     }
 
     if (employeesToShow.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="loading">No employees to display.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="loading">No employees to display.</td></tr>';
+      document.getElementById('payrollBreakdown').style.display = 'none';
       return;
     }
 
@@ -365,6 +404,7 @@
     let topSalesEmp = '—';
     let topSalesVal = 0;
     let html = '';
+    let selectedEmployeePayroll = null;
 
     for (let emp of employeesToShow) {
       const hours = hoursMap.get(emp) || 0;
@@ -372,21 +412,56 @@
       totalSalesSum += sales;
       if (sales > topSalesVal) { topSalesVal = sales; topSalesEmp = emp; }
       const salesPerHour = hours > 0 ? (sales / hours).toFixed(2) : '—';
-      const { netPayable } = await calculatePayroll(emp, hours);
+      
+      const profile = await loadEmployeeProfile(emp);
+      const target = profile.salesTarget || 0;
+      let achievementPercent = 0;
+      let bonus = 0;
+      if (target > 0) {
+        achievementPercent = (sales / target) * 100;
+        if (sales > target) {
+          const excess = sales - target;
+          const commissionRate = (profile.commissionRate || 0) / 100;
+          bonus = excess * commissionRate;
+        }
+      }
+      const achievementDisplay = target > 0 ? `${achievementPercent.toFixed(1)}%` : '—';
+      
+      const { netPayable, epfDeduction, epfEmployerContribution, eisDeduction, eisRatePercent, grossSalary } = await calculatePayroll(emp, hours, sales);
       const payableDisplay = hours > 0 ? `RM ${netPayable.toFixed(2)}` : '—';
+      const bonusDisplay = bonus > 0 ? `RM ${bonus.toFixed(2)}` : '—';
+      const targetDisplay = target > 0 ? `RM ${target.toFixed(2)}` : '—';
 
       html += `<tr>
         <td>${escapeHtml(emp)}</td>
         <td>${hours.toFixed(1)} hrs</td>
         <td>RM ${sales.toFixed(2)}</td>
-        <td>${salesPerHour === '—' ? '—' : 'RM ' + salesPerHour}</td>
+        <td>${targetDisplay}</td>
+        <td>${achievementDisplay}</td>
+        <td>${bonusDisplay}</td>
         <td><strong>${payableDisplay}</strong></td>
       </tr>`;
+
+      if (empFilter !== 'ALL' && emp === empFilter) {
+        selectedEmployeePayroll = { grossSalary, epfDeduction, epfEmployerContribution, eisDeduction, eisRatePercent, bonus, netPayable };
+      }
     }
 
     tbody.innerHTML = html;
     document.getElementById('totalSales').innerHTML = `RM ${totalSalesSum.toFixed(2)}`;
     document.getElementById('topEmployeeSales').innerText = topSalesEmp !== '—' ? topSalesEmp : '—';
+
+    if (empFilter !== 'ALL' && selectedEmployeePayroll) {
+      document.getElementById('payrollBreakdown').style.display = 'block';
+      document.getElementById('grossAmount').innerText = `RM ${selectedEmployeePayroll.grossSalary.toFixed(2)}`;
+      document.getElementById('epfEmployeeAmount').innerHTML = `RM ${selectedEmployeePayroll.epfDeduction.toFixed(2)} <span style="font-size:0.7rem;">(employee)</span>`;
+      document.getElementById('epfEmployerAmount').innerHTML = `RM ${selectedEmployeePayroll.epfEmployerContribution.toFixed(2)} <span style="font-size:0.7rem;">(employer)</span>`;
+      document.getElementById('eisAmount').innerHTML = `RM ${selectedEmployeePayroll.eisDeduction.toFixed(2)} <span style="font-size:0.7rem;">(${selectedEmployeePayroll.eisRatePercent}%)</span>`;
+      document.getElementById('bonusAmount').innerText = `RM ${selectedEmployeePayroll.bonus.toFixed(2)}`;
+      document.getElementById('netPayableAmount').innerText = `RM ${selectedEmployeePayroll.netPayable.toFixed(2)}`;
+    } else {
+      document.getElementById('payrollBreakdown').style.display = 'none';
+    }
   }
 
   function updateSalesStats() {}
@@ -407,6 +482,8 @@
     document.getElementById('epfEmployeeRate').value = profile.epfEmployeeRate || 11;
     document.getElementById('epfEmployerRate').value = profile.epfEmployerRate || 13;
     document.getElementById('eisRate').value = profile.eisRate || '';
+    document.getElementById('salesTarget').value = profile.salesTarget || '';
+    document.getElementById('commissionRate').value = profile.commissionRate || '';
     const epfDetailsDiv = document.getElementById('epfDetailsDiv');
     if (epfDetailsDiv) epfDetailsDiv.style.display = profile.epfEnabled ? 'block' : 'none';
     document.getElementById('profileModal').style.display = 'flex';
@@ -424,7 +501,9 @@
     const epfEmployeeRate = parseFloat(document.getElementById('epfEmployeeRate').value) || 11;
     const epfEmployerRate = parseFloat(document.getElementById('epfEmployerRate').value) || 13;
     const eisRate = parseFloat(document.getElementById('eisRate').value) || 0;
-    const success = await saveEmployeeProfile(employeeName, { hourlyRate, epfEnabled, epfNumber, eisRate, epfEmployeeRate, epfEmployerRate });
+    const salesTarget = parseFloat(document.getElementById('salesTarget').value) || 0;
+    const commissionRate = parseFloat(document.getElementById('commissionRate').value) || 0;
+    const success = await saveEmployeeProfile(employeeName, { hourlyRate, epfEnabled, epfNumber, eisRate, epfEmployeeRate, epfEmployerRate, salesTarget, commissionRate });
     if (success) {
       closeProfileModal();
       await renderSalesTable();

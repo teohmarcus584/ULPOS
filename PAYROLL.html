@@ -187,15 +187,15 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbzl5WqqlTBBNuEN4Eu7rYMVBsc9f70xqo3m_ZN02-WwBmRGKPkOjQmjajlzJUU3aki5/exec";
-  const SALES_API_URL = "https://script.google.com/macros/s/AKfycbxUSABSlgJWK24ZSv24GQTL6h2TnsrB5F-YVZ4-aG457G_8i_wOadGc3eGujKl5vugFBw/exec";
+  const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbyz7WKSvcxvPuDc0c2bI5SzgThNnzU9Mb7G6k7TYkI1UDDKLKPOkyfNMAbkjknAO-0a/exec"; // REPLACE WITH YOUR ATTENDANCE API URL
+  const SALES_API_URL = "https://script.google.com/macros/s/AKfycbxUSABSlgJWK24ZSv24GQTL6h2TnsrB5F-YVZ4-aG457G_8i_wOadGc3eGujKl5vugFBw/exec";           // REPLACE WITH YOUR SALES API URL
 
   let masterAttendance = [];
   let currentFiltered = [];
   let allSalesData = null;
   let filteredSales = null;
 
-  // ==================== EMPLOYEE PROFILE (with bank fields) ====================
+  // ==================== EMPLOYEE PROFILE ====================
   async function loadEmployeeProfile(employeeName) {
     try {
       const url = `${ATTENDANCE_API_URL}?action=getEmployeeProfile&employeeName=${encodeURIComponent(employeeName)}`;
@@ -401,7 +401,7 @@
         <td>${escapeHtml(r.timeOut)}</td>
         <td><span class="duration-badge">${durationDisplay}</span></td>
         <td>${escapeHtml(r.location)}</td>
-      </tr>`;
+       </tr>`;
     }
     tbody.innerHTML = html;
   }
@@ -438,7 +438,7 @@
     }
 
     if (employeesToShow.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="loading">No employees to display.</td></tr>';
+      tbody.innerHTML = '<td><td colspan="7" class="loading">No employees to display.</td></tr>';
       document.getElementById('payrollBreakdown').style.display = 'none';
       return;
     }
@@ -496,7 +496,7 @@
         <td>${achievementDisplay}</td>
         <td>${commissionDisplay}</td>
         <td><strong>${payableDisplay}</strong></td>
-      </tr>`;
+       </tr>`;
 
       if (empFilter !== 'ALL' && emp === empFilter) {
         selectedEmployeePayroll = { grossSalary, epfDeduction, epfEmployerContribution, eisDeduction, eisRatePercent, commission, netPayable };
@@ -607,10 +607,27 @@
     }
   }
 
-  // ==================== PAYMENT MODAL ====================
+  // ==================== PAYMENT MODAL with duplicate check ====================
   async function openPaymentModal() {
     const emp = window.currentPayrollEmployee;
     if (!emp) { alert('No employee selected or payroll data not loaded.'); return; }
+    const fromDate = document.getElementById('dateFrom').value;
+    const toDate = document.getElementById('dateTo').value;
+    // Check if already paid for this period
+    const checkUrl = `${ATTENDANCE_API_URL}?action=checkPaymentExists&employeeName=${encodeURIComponent(emp)}&fromDate=${encodeURIComponent(fromDate)}&toDate=${encodeURIComponent(toDate)}`;
+    try {
+      const checkRes = await fetch(checkUrl);
+      const checkData = await checkRes.json();
+      if (checkData.exists) {
+        alert(`❌ Payment already recorded for ${emp} in the period ${fromDate || 'start'} to ${toDate || 'end'} on ${new Date(checkData.paymentDate).toLocaleDateString()}. Cannot pay again.`);
+        return;
+      }
+    } catch (err) {
+      console.error("Payment check failed", err);
+      alert("Unable to verify payment status. Please try again.");
+      return;
+    }
+    
     const profile = await loadEmployeeProfile(emp);
     if (!profile.bankName || !profile.bankAccount) {
       alert('Bank details missing. Please update employee profile first.');
@@ -635,7 +652,7 @@
     const profile = await loadEmployeeProfile(emp);
     const success = await recordPayment(emp, payroll, profile.bankName, profile.bankAccount);
     if (success) {
-      alert(`Payment recorded for ${emp}.`);
+      alert(`✅ Payment recorded for ${emp}.`);
       document.getElementById('paymentModal').style.display = 'none';
       await renderSalesTable(); // refresh to reflect possible changes
     } else {

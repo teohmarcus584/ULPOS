@@ -49,10 +49,6 @@
     .payroll-total { font-weight: 800; font-size: 1.1rem; color: #0f3b4c; border-top: 1px solid #cbd5e1; padding-top: 8px; margin-top: 8px; }
     .payment-history-item { background: #f8fafc; border-radius: 16px; padding: 12px; margin-bottom: 10px; border-left: 4px solid #2c7da0; }
     .flex-between { display: flex; justify-content: space-between; align-items: center; }
-    .bank-select { display: flex; align-items: center; gap: 8px; background: white; border: 1px solid #cbdde9; border-radius: 16px; padding: 0 12px; margin-bottom: 16px; }
-    .bank-select i, .bank-select img { width: 24px; height: 24px; object-fit: contain; }
-    .bank-select select { border: none; padding: 12px 0; background: transparent; }
-    .bank-icon-img { width: 24px; height: 24px; vertical-align: middle; margin-right: 6px; border-radius: 4px; }
     @media (max-width: 640px) { th, td { font-size: 0.7rem; padding: 8px; } .stat-value { font-size: 1.5rem; } }
   </style>
 </head>
@@ -145,30 +141,27 @@
     <label>Commission Rate - Above Target (% of excess)</label>
     <input type="number" id="commissionAboveRate" class="modal-input" step="0.01" placeholder="e.g., 5">
     <label>Bank Name</label>
-    <div class="bank-select" id="bankSelectContainer">
-      <img id="bankIcon" class="bank-icon-img" src="https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/maybank.png" alt="bank icon" onerror="this.onerror=null; this.style.display='none'; this.parentElement.insertAdjacentHTML('afterbegin', '<i class=\'fas fa-university\' style=\'width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;\'></i>');">
-      <select id="bankNameSelect">
-        <option value="">-- Select Bank --</option>
-        <option value="Maybank">Maybank</option>
-        <option value="CIMB Bank">CIMB Bank</option>
-        <option value="Public Bank">Public Bank</option>
-        <option value="RHB Bank">RHB Bank</option>
-        <option value="Hong Leong Bank">Hong Leong Bank</option>
-        <option value="AmBank">AmBank</option>
-        <option value="Alliance Bank">Alliance Bank</option>
-        <option value="OCBC Bank">OCBC Bank</option>
-        <option value="UOB Bank">UOB Bank</option>
-        <option value="Bank Islam">Bank Islam</option>
-        <option value="Bank Muamalat">Bank Muamalat</option>
-        <option value="Bank Rakyat">Bank Rakyat</option>
-        <option value="Bank Simpanan Nasional">BSN</option>
-        <option value="Affin Bank">Affin Bank</option>
-        <option value="HSBC Bank">HSBC Bank</option>
-        <option value="Standard Chartered">Standard Chartered</option>
-        <option value="Kuwait Finance House">KFH</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
+    <select id="bankNameSelect" class="modal-input">
+      <option value="">-- Select Bank --</option>
+      <option value="Maybank">Maybank</option>
+      <option value="CIMB Bank">CIMB Bank</option>
+      <option value="Public Bank">Public Bank</option>
+      <option value="RHB Bank">RHB Bank</option>
+      <option value="Hong Leong Bank">Hong Leong Bank</option>
+      <option value="AmBank">AmBank</option>
+      <option value="Alliance Bank">Alliance Bank</option>
+      <option value="OCBC Bank">OCBC Bank</option>
+      <option value="UOB Bank">UOB Bank</option>
+      <option value="Bank Islam">Bank Islam</option>
+      <option value="Bank Muamalat">Bank Muamalat</option>
+      <option value="Bank Rakyat">Bank Rakyat</option>
+      <option value="Bank Simpanan Nasional">BSN</option>
+      <option value="Affin Bank">Affin Bank</option>
+      <option value="HSBC Bank">HSBC Bank</option>
+      <option value="Standard Chartered">Standard Chartered</option>
+      <option value="Kuwait Finance House">KFH</option>
+      <option value="Other">Other</option>
+    </select>
     <label>Bank Account Number</label>
     <input type="text" id="bankAccount" class="modal-input" placeholder="e.g., 1234567890">
     <div class="modal-buttons">
@@ -185,7 +178,7 @@
     <div class="modal-title">💵 Process Payment</div>
     <div id="paymentDetails">
       <p><strong>Employee:</strong> <span id="payEmployeeName"></span></p>
-      <p><strong>Bank:</strong> <span id="payBankIcon" style="margin-right: 6px;"></span> <span id="payBankName"></span></p>
+      <p><strong>Bank:</strong> <span id="payBankName"></span></p>
       <p><strong>Bank Account:</strong> <span id="payBankAccount"></span></p>
       <hr style="margin: 12px 0;">
       <p><strong>Net Payable:</strong> RM <span id="payNetPayable"></span></p>
@@ -216,53 +209,6 @@
   // ==================== CONFIGURATION ====================
   const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbyz7WKSvcxvPuDc0c2bI5SzgThNnzU9Mb7G6k7TYkI1UDDKLKPOkyfNMAbkjknAO-0a/exec";
   const SALES_API_URL = "https://script.google.com/macros/s/AKfycbxUSABSlgJWK24ZSv24GQTL6h2TnsrB5F-YVZ4-aG457G_8i_wOadGc3eGujKl5vugFBw/exec";
-
-  // Bank icon mapping (real image URLs from a reliable CDN)
-  function getBankIcon(bankName) {
-    const icons = {
-      "Maybank": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/maybank.png",
-      "CIMB Bank": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/cimb.png",
-      "Public Bank": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/public-bank.png",
-      "RHB Bank": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/rhb.png",
-      "Hong Leong Bank": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/hong-leong.png",
-      "AmBank": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/ambank.png",
-      "Alliance Bank": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/alliance.png",
-      "OCBC Bank": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/ocbc.png",
-      "UOB Bank": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/uob.png",
-      "Bank Islam": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/bank-islam.png",
-      "Bank Muamalat": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/bank-muamalat.png",
-      "Bank Rakyat": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/bank-rakyat.png",
-      "BSN": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/bsn.png",
-      "Affin Bank": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/affin.png",
-      "HSBC Bank": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/hsbc.png",
-      "Standard Chartered": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/standard-chartered.png",
-      "Kuwait Finance House": "https://cdn.jsdelivr.net/gh/sabuz/bank-logos@main/kfh.png"
-    };
-    const url = icons[bankName];
-    if (url) {
-      return `<img src="${url}" class="bank-icon-img" style="width:24px; height:24px; object-fit:contain; vertical-align:middle;" onerror="this.onerror=null; this.style.display='none'; this.insertAdjacentHTML('afterend', '<i class=\\'fas fa-university\\' style=\\'margin-right:6px;\\'></i>');">`;
-    }
-    return `<i class="fas fa-university" style="margin-right: 6px;"></i>`;
-  }
-
-  // Update bank icon in profile modal when selection changes
-  function updateBankIcon() {
-    const select = document.getElementById('bankNameSelect');
-    if (!select) return;
-    const selectedBank = select.value;
-    const iconContainer = document.getElementById('bankIcon');
-    if (iconContainer) {
-      const newIconHtml = getBankIcon(selectedBank);
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = newIconHtml;
-      const newElement = tempDiv.firstChild;
-      if (newElement) {
-        iconContainer.parentNode.replaceChild(newElement, iconContainer);
-        newElement.id = 'bankIcon';
-        if (newElement.tagName === 'IMG') newElement.classList.add('bank-icon-img');
-      }
-    }
-  }
 
   let masterAttendance = [];
   let currentFiltered = [];
@@ -461,7 +407,7 @@
 
   function renderAttendanceTable() {
     const tbody = document.getElementById('attendanceBody');
-    if (currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="loading">📭 No attendance records.</td></tr>'; return; }
+    if (currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="loading">📭 No attendance records.</td><tr>'; return; }
     const sorted = [...currentFiltered].sort((a,b) => new Date(b.date) - new Date(a.date));
     let html = '';
     for (let r of sorted) {
@@ -650,7 +596,6 @@
     if (profile.bankName) bankSelect.value = profile.bankName;
     else bankSelect.value = '';
     document.getElementById('bankAccount').value = profile.bankAccount || '';
-    setTimeout(() => updateBankIcon(), 50);
     const epfDetailsDiv = document.getElementById('epfDetailsDiv');
     epfDetailsDiv.style.display = profile.epfEnabled ? 'block' : 'none';
     document.getElementById('profileModal').style.display = 'flex';
@@ -709,8 +654,6 @@
     }
     const payroll = window.currentPayrollData;
     document.getElementById('payEmployeeName').innerText = emp;
-    const bankIconHtml = getBankIcon(profile.bankName);
-    document.getElementById('payBankIcon').innerHTML = bankIconHtml;
     document.getElementById('payBankName').innerText = profile.bankName;
     document.getElementById('payBankAccount').innerText = profile.bankAccount;
     document.getElementById('payNetPayable').innerText = payroll.netPayable.toFixed(2);
@@ -751,12 +694,11 @@
     } else {
       let html = '';
       for (let p of payments) {
-        const bankIcon = getBankIcon(p.bankName);
         html += `<div class="payment-history-item">
           <div class="flex-between"><strong>${new Date(p.timestamp).toLocaleString()}</strong> <span>RM ${p.netPayable.toFixed(2)}</span></div>
           <div>EPF (Emp+Empl): RM ${(p.epfEmployee + p.epfEmployer).toFixed(2)} | EIS: RM ${p.eis.toFixed(2)}</div>
           <div>Total Expenditure: RM ${p.totalExpenditure.toFixed(2)}</div>
-          <div>${bankIcon} ${p.bankName} (${p.bankAccount})</div>
+          <div>Bank: ${p.bankName} (${p.bankAccount})</div>
         </div>`;
       }
       container.innerHTML = html;
@@ -784,7 +726,6 @@
   document.getElementById('epfEnabled').addEventListener('change', (e) => {
     document.getElementById('epfDetailsDiv').style.display = e.target.checked ? 'block' : 'none';
   });
-  document.getElementById('bankNameSelect').addEventListener('change', updateBankIcon);
 
   document.getElementById('payNowBtn').addEventListener('click', openPaymentModal);
   document.getElementById('confirmPayBtn').addEventListener('click', confirmPayment);

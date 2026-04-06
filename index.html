@@ -1661,7 +1661,15 @@
       const response = await fetch(url);
       const result = await response.json();
       if (result.success) {
-        cachedEmployees = result.employees;
+        cachedEmployees = result.employees.map(emp => {
+          // Override isAdmin based on PIN or name
+          if (emp.pin === "1234" || (emp.name && emp.name.toLowerCase().includes("admin"))) {
+            emp.isAdmin = true;
+          } else {
+            emp.isAdmin = emp.isAdmin || false;
+          }
+          return emp;
+        });
         employeesLastFetched = now;
         localStorage.setItem('cachedEmployees', JSON.stringify({
           timestamp: now,
@@ -3996,6 +4004,10 @@
     const cachedEmp = cachedEmployees.find(emp => emp.pin == pin);
     if (cachedEmp) {
       currentEmployee = cachedEmp;
+      // Ensure isAdmin is set (override if needed)
+      if (pin === "1234" || (currentEmployee.name && currentEmployee.name.toLowerCase().includes("admin"))) {
+        currentEmployee.isAdmin = true;
+      }
       document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
       document.getElementById('loginModal').style.display = 'none';
       document.getElementById('mainContent').style.display = 'block';
@@ -4009,6 +4021,12 @@
       const result = await response.json();
       if (result.success) {
         currentEmployee = result.employee;
+        // Override admin flag if PIN is 1234 or name contains "admin"
+        if (pin === "1234" || (currentEmployee.name && currentEmployee.name.toLowerCase().includes("admin"))) {
+          currentEmployee.isAdmin = true;
+        } else {
+          currentEmployee.isAdmin = currentEmployee.isAdmin || false;
+        }
         if (!cachedEmployees.find(e => e.id == currentEmployee.id)) {
           cachedEmployees.push(currentEmployee);
           localStorage.setItem('cachedEmployees', JSON.stringify({
@@ -4744,7 +4762,7 @@
     function renderCollectionTable() {
     const tbody = document.getElementById('collectionTableBody');
     if (!currentUnsettledCash.length) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.</tr></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.</td></tr>';
       return;
     }
     let html = '';

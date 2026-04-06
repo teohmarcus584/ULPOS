@@ -4343,23 +4343,8 @@ if (transaction.buy3_free1_discount > 0) {
       document.getElementById('pinInput').focus();
     }
 });
- async function verifyEmployeeByPin(pin) {
-  // 1. Try cache first
-  const cachedEmp = cachedEmployees.find(emp => emp.pin == pin);
-  if (cachedEmp) {
-    currentEmployee = cachedEmp;
-    // ✅ Force admin if PIN is "1234" or name contains "admin"
-    if (pin === "1234" || (currentEmployee.name && currentEmployee.name.toLowerCase().includes("admin"))) {
-      currentEmployee.isAdmin = true;
-    }
-    document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
-    document.getElementById('loginModal').style.display = 'none';
-    document.getElementById('mainContent').style.display = 'block';
-    await finishLoginAfterVerification();
-    return true;
-  }
-
-  // 2. Cache miss – fallback to server
+async function verifyEmployeeByPin(pin) {
+  // ✅ No cache – always fetch fresh from server
   showLoading('Verifying...');
   try {
     const url = `${APPS_SCRIPT_URL}?action=verifyByPin&pin=${encodeURIComponent(pin)}`;
@@ -4367,13 +4352,8 @@ if (transaction.buy3_free1_discount > 0) {
     const result = await response.json();
     if (result.success) {
       currentEmployee = result.employee;
-      // ✅ Force admin if PIN is "1234" or name contains "admin"
-      if (pin === "1234" || (currentEmployee.name && currentEmployee.name.toLowerCase().includes("admin"))) {
-        currentEmployee.isAdmin = true;
-      } else {
-        currentEmployee.isAdmin = currentEmployee.isAdmin || false;
-      }
-      // Add to cache
+      // (Optional) You may still update the cache if you want, but PIN verification will ignore it.
+      // We'll keep the cache for other uses (like dropdowns) but not for login.
       if (!cachedEmployees.find(e => e.id == currentEmployee.id)) {
         cachedEmployees.push(currentEmployee);
         localStorage.setItem('cachedEmployees', JSON.stringify({

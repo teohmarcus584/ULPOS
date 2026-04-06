@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes, viewport-fit=cover">
   <title>POS System | PIN Login</title>
   <style>
-    /* ========== ALL EXISTING STYLES (keep exactly as you have them) ========== */
+    /* ========== ALL EXISTING STYLES (kept intact) ========== */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -4563,12 +4563,13 @@ async function finishLoginAfterVerification() {
   preloadSettlement();
   preloadReport();
 
-  // ========== AUTO-SYNC PRODUCTS EVERY 5 SECONDS - REMOVED ==========
-  // No automatic background product fetching.
-  // Products will only be fetched on:
-  // 1. Initial store selection (above)
-  // 2. Manual refresh button click
-  // 3. After successful checkout (inside completeCheckout)
+  // ========== AUTO-SYNC PRODUCTS EVERY 5 SECONDS ==========
+  window.autoSyncInterval = setInterval(async () => {
+    // Only sync if the main dashboard is visible and user is logged in
+    if (currentEmployee && document.getElementById('mainContent').style.display === 'block') {
+      await fetchProductsFromSheet(false); // silent background sync
+    }
+  }, 5000); // 5 seconds – adjust as needed
 }
   async function openReportsModal() {
     if (currentEmployee?.isAdmin) {
@@ -5188,8 +5189,6 @@ if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener(
     }
   })();
 
-  // Start preloading all stores data in background (optional, but helps first load)
-  preloadAllStoresData().catch(console.warn);
   
 </script>
 </body>

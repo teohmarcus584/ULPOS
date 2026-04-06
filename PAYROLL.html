@@ -219,7 +219,7 @@
   // Bank icon mapping
   function getBankIcon(bankName) {
     const icons = {
-      "Maybank": "fab fa-maybank",  // Using custom class? We'll use fa-university for most, but some have specific icons
+      "Maybank": "fab fa-maybank",
       "CIMB Bank": "fas fa-credit-card",
       "Public Bank": "fas fa-building",
       "RHB Bank": "fas fa-landmark",
@@ -238,24 +238,19 @@
       "Kuwait Finance House": "fas fa-coins",
       "Other": "fas fa-university"
     };
-    const iconClass = icons[bankName] || "fas fa-university";
-    return `<i class="${iconClass}" style="margin-right: 8px;"></i>`;
+    return icons[bankName] || "fas fa-university";
   }
 
   // Update bank icon in profile modal when selection changes
   function updateBankIcon() {
     const select = document.getElementById('bankNameSelect');
+    if (!select) return;
     const selectedBank = select.value;
-    const iconSpan = document.getElementById('bankIcon');
-    if (iconSpan) {
-      const iconClass = getBankIcon(selectedBank);
-      iconSpan.outerHTML = iconSpan.outerHTML.replace(/<i.*?>/, iconClass);
-      // Actually replace the inner HTML directly
-      const newIcon = document.createElement('i');
-      newIcon.className = iconClass.replace(/<i class="|"><\/i>/g, '').trim();
-      iconSpan.parentNode.replaceChild(newIcon, iconSpan);
-      // Reassign id
-      newIcon.id = 'bankIcon';
+    const iconElement = document.getElementById('bankIcon');
+    if (iconElement) {
+      const newIconClass = getBankIcon(selectedBank);
+      // Remove all existing icon classes and add the new one
+      iconElement.className = newIconClass;
     }
   }
 
@@ -645,7 +640,8 @@
     if (profile.bankName) bankSelect.value = profile.bankName;
     else bankSelect.value = '';
     document.getElementById('bankAccount').value = profile.bankAccount || '';
-    updateBankIcon(); // update icon based on selected bank
+    // Delay to ensure the select element is fully rendered
+    setTimeout(() => updateBankIcon(), 50);
     const epfDetailsDiv = document.getElementById('epfDetailsDiv');
     epfDetailsDiv.style.display = profile.epfEnabled ? 'block' : 'none';
     document.getElementById('profileModal').style.display = 'flex';

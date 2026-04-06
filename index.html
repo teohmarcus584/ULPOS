@@ -4557,13 +4557,13 @@ async function finishLoginAfterVerification() {
   preloadReport();
 
   // ========== AUTO-SYNC PRODUCTS EVERY 5 SECONDS ==========
-  window.autoSyncInterval = setInterval(async () => {
+  //window.autoSyncInterval = setInterval(async () => {
     // Only sync if the main dashboard is visible and user is logged in
-    if (currentEmployee && document.getElementById('mainContent').style.display === 'block') {
-      await fetchProductsFromSheet(false); // silent background sync
-    }
-  }, 600000); // 5 seconds – adjust as needed
-}
+  //  if (currentEmployee && document.getElementById('mainContent').style.display === 'block') {
+ //     await fetchProductsFromSheet(false); // silent background sync
+//}
+ // }, 600000); // 5 seconds – adjust as needed
+//}
   async function openReportsModal() {
     if (currentEmployee?.isAdmin) {
       const employees = await fetchEmployees();

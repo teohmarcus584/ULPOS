@@ -2761,7 +2761,7 @@
     document.getElementById('openLuckyDrawBtn').onclick = () => { openLuckyDraw(transactionId, customerIdForLuckyDraw); luckyModal.style.display = 'none'; };
     document.getElementById('closeLuckyDrawBtn').onclick = () => luckyModal.style.display = 'none';
     document.getElementById('closeLuckyDrawModal').onclick = () => luckyModal.style.display = 'none';
-    // ✅ REFRESH PRODUCTS AFTER SUCCESSFUL CHECKOUT
+    // ✅ REFRESH PRODUCTS AFTER SUCCESSFUL CHECKOUT (scenario 3)
     await fetchProductsFromSheet(true);
     clearCart();
   }
@@ -3974,32 +3974,20 @@
     currentStore = initialStore;
     storeSelect.value = initialStore;
     document.getElementById('storeSelectModal').style.display = 'none';
-    loadAndCacheEmployees().catch(console.warn);
+    await loadAndCacheEmployees(); // load employees
     // initial product load (scenario 1)
     await fetchProductsFromSheet(true);
-    const preloaded = preloadedDataMap[initialStore];
-    if (preloaded && preloaded.employees && preloaded.employees.length > 0) {
-      employeeNameMap = {};
-      soldBySelectCart.innerHTML = '';
-      preloaded.employees.forEach(emp => {
-        employeeNameMap[emp.id] = emp.name;
-        const option = document.createElement('option');
-        option.value = emp.id;
-        option.textContent = `${emp.name} (ID: ${emp.id})`;
-        soldBySelectCart.appendChild(option);
-      });
-    } else {
-      const employees = await fetchEmployees();
-      employeeNameMap = {};
-      soldBySelectCart.innerHTML = '';
-      employees.forEach(emp => {
-        employeeNameMap[emp.id] = emp.name;
-        const option = document.createElement('option');
-        option.value = emp.id;
-        option.textContent = `${emp.name} (ID: ${emp.id})`;
-        soldBySelectCart.appendChild(option);
-      });
-    }
+    // fetch employees again to populate dropdown (always fresh)
+    const employees = await fetchEmployees();
+    employeeNameMap = {};
+    soldBySelectCart.innerHTML = '';
+    employees.forEach(emp => {
+      employeeNameMap[emp.id] = emp.name;
+      const option = document.createElement('option');
+      option.value = emp.id;
+      option.textContent = `${emp.name} (ID: ${emp.id})`;
+      soldBySelectCart.appendChild(option);
+    });
     document.getElementById('loginModal').style.display = 'flex';
     document.getElementById('pinInput').focus();
   });
@@ -4756,7 +4744,7 @@
     function renderCollectionTable() {
     const tbody = document.getElementById('collectionTableBody');
     if (!currentUnsettledCash.length) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.</tr></tr>';
       return;
     }
     let html = '';

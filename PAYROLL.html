@@ -37,16 +37,18 @@
     .duration-badge { background: #e0f2fe; padding: 4px 10px; border-radius: 30px; font-size: 0.75rem; font-weight: 500; display: inline-block; }
     .loading { text-align: center; padding: 48px; color: #5e7b9c; }
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; }
-    .modal-container { background: white; max-width: 550px; width: 90%; border-radius: 28px; padding: 24px; box-shadow: 0 20px 35px rgba(0,0,0,0.2); position: relative; }
+    .modal-container { background: white; max-width: 550px; width: 90%; border-radius: 28px; padding: 24px; box-shadow: 0 20px 35px rgba(0,0,0,0.2); position: relative; max-height: 85vh; overflow-y: auto; }
     .close-modal { position: absolute; top: 16px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; color: #64748b; }
     .modal-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 20px; }
     .modal-input { width: 100%; padding: 12px; border-radius: 16px; border: 1px solid #cbdde9; margin-bottom: 16px; }
     .modal-checkbox { margin: 12px 0; display: flex; align-items: center; gap: 10px; }
     .modal-checkbox input { width: auto; }
     .modal-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; }
-    .payroll-breakdown { background: #f0f9ff; border-radius: 20px; padding: 16px; margin-top: 16px; border-left: 4px solid #1f5e7e; display: none; }
+    .payroll-breakdown { background: #f0f9ff; border-radius: 20px; padding: 16px; margin-top: 16px; border-left: 4px solid #1f5e7e; }
     .payroll-row { display: flex; justify-content: space-between; margin: 8px 0; font-size: 0.9rem; }
     .payroll-total { font-weight: 800; font-size: 1.1rem; color: #0f3b4c; border-top: 1px solid #cbd5e1; padding-top: 8px; margin-top: 8px; }
+    .payment-history-item { background: #f8fafc; border-radius: 16px; padding: 12px; margin-bottom: 10px; border-left: 4px solid #2c7da0; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
     @media (max-width: 640px) { th, td { font-size: 0.7rem; padding: 8px; } .stat-value { font-size: 1.5rem; } }
   </style>
 </head>
@@ -72,10 +74,10 @@
   </div>
 
   <div class="filters-panel">
-    <div class="filter-group"><label>Employee</label><select id="employeeFilter"><option value="ALL">All employees</option></select></div>
+    <div class="filter-group"><label>Employee</label><select id="employeeFilter"><option value="ALL">👥 All employees</option></select></div>
     <div class="filter-group"><label>From date (optional)</label><input type="date" id="dateFrom"></div>
     <div class="filter-group"><label>To date (optional)</label><input type="date" id="dateTo"></div>
-    <div class="filter-group"><label>Store (Sales)</label><select id="storeSelect"><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div>
+    <div class="filter-group"><label>Store (Sales)</label><select id="storeSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div>
     <div class="filter-group"><button id="refreshBtn" class="btn-primary">Refresh data</button></div>
   </div>
 
@@ -104,6 +106,10 @@
     <div class="payroll-row"><span>EIS / SOCSO:</span><span id="eisAmount">RM 0.00</span></div>
     <div class="payroll-row"><span>Sales Commission:</span><span id="bonusAmount">RM 0.00</span></div>
     <div class="payroll-row payroll-total"><span>Net Payable:</span><span id="netPayableAmount">RM 0.00</span></div>
+    <div style="margin-top: 16px; display: flex; gap: 12px;">
+      <button id="payNowBtn" class="btn-primary" style="flex:1"><i class="fas fa-credit-card"></i> Process Payment</button>
+      <button id="viewHistoryBtn" class="btn-primary" style="background:#2c7da0;"><i class="fas fa-history"></i> Payment History</button>
+    </div>
   </div>
 </div>
 
@@ -134,6 +140,10 @@
     <input type="number" id="commissionBelowRate" class="modal-input" step="0.01" placeholder="e.g., 1">
     <label>Commission Rate - Above Target (% of excess)</label>
     <input type="number" id="commissionAboveRate" class="modal-input" step="0.01" placeholder="e.g., 5">
+    <label>Bank Name</label>
+    <input type="text" id="bankName" class="modal-input" placeholder="e.g., Maybank">
+    <label>Bank Account Number</label>
+    <input type="text" id="bankAccount" class="modal-input" placeholder="e.g., 1234567890">
     <div class="modal-buttons">
       <button id="saveProfileBtn" class="btn-primary">Save</button>
       <button id="cancelProfileBtn">Cancel</button>
@@ -141,9 +151,43 @@
   </div>
 </div>
 
+<!-- Payment Modal -->
+<div id="paymentModal" class="modal-overlay">
+  <div class="modal-container">
+    <span class="close-modal" id="closePaymentModal">&times;</span>
+    <div class="modal-title">💵 Process Payment</div>
+    <div id="paymentDetails">
+      <p><strong>Employee:</strong> <span id="payEmployeeName"></span></p>
+      <p><strong>Bank Name:</strong> <span id="payBankName"></span></p>
+      <p><strong>Bank Account:</strong> <span id="payBankAccount"></span></p>
+      <hr style="margin: 12px 0;">
+      <p><strong>Net Payable:</strong> RM <span id="payNetPayable"></span></p>
+      <p><strong>EPF (Employee+Employer):</strong> RM <span id="payEpfTotal"></span></p>
+      <p><strong>EIS/SOCSO:</strong> RM <span id="payEis"></span></p>
+      <p style="font-weight: 800; margin-top: 12px;"><strong>Total Expenditure:</strong> RM <span id="payTotalExpenditure"></span></p>
+    </div>
+    <div class="modal-buttons">
+      <button id="confirmPayBtn" class="btn-primary">✅ Confirm Payment</button>
+      <button id="cancelPayBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Payment History Modal -->
+<div id="historyModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 600px;">
+    <span class="close-modal" id="closeHistoryModal">&times;</span>
+    <div class="modal-title">📜 Payment History</div>
+    <div id="historyList" style="max-height: 60vh; overflow-y: auto;"></div>
+    <div class="modal-buttons">
+      <button id="closeHistoryBtn">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // ==================== CONFIGURATION ====================
-  const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbw1siNS1nxViVb3o7YaPXi9gQDdwvZIYBG0Ao6XzbLMCFtXrIpkkmtCz1iyjBh-PRco/exec";
+  const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbzl5WqqlTBBNuEN4Eu7rYMVBsc9f70xqo3m_ZN02-WwBmRGKPkOjQmjajlzJUU3aki5/exec";
   const SALES_API_URL = "https://script.google.com/macros/s/AKfycbxUSABSlgJWK24ZSv24GQTL6h2TnsrB5F-YVZ4-aG457G_8i_wOadGc3eGujKl5vugFBw/exec";
 
   let masterAttendance = [];
@@ -151,7 +195,7 @@
   let allSalesData = null;
   let filteredSales = null;
 
-  // ==================== EMPLOYEE PROFILE (Google Sheet) ====================
+  // ==================== EMPLOYEE PROFILE (with bank fields) ====================
   async function loadEmployeeProfile(employeeName) {
     try {
       const url = `${ATTENDANCE_API_URL}?action=getEmployeeProfile&employeeName=${encodeURIComponent(employeeName)}`;
@@ -159,10 +203,10 @@
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if (json.success && json.profile) return json.profile;
-      return { hourlyRate: 0, epfEnabled: false, epfNumber: '', eisRate: 0, epfEmployeeRate: 11, epfEmployerRate: 13, salesTarget: 0, commissionAboveRate: 0, commissionBelowRate: 0 };
+      return { hourlyRate: 0, epfEnabled: false, epfNumber: '', eisRate: 0, epfEmployeeRate: 11, epfEmployerRate: 13, salesTarget: 0, commissionAboveRate: 0, commissionBelowRate: 0, bankName: '', bankAccount: '' };
     } catch(err) {
       console.error("loadProfile error", err);
-      return { hourlyRate: 0, epfEnabled: false, epfNumber: '', eisRate: 0, epfEmployeeRate: 11, epfEmployerRate: 13, salesTarget: 0, commissionAboveRate: 0, commissionBelowRate: 0 };
+      return { hourlyRate: 0, epfEnabled: false, epfNumber: '', eisRate: 0, epfEmployeeRate: 11, epfEmployerRate: 13, salesTarget: 0, commissionAboveRate: 0, commissionBelowRate: 0, bankName: '', bankAccount: '' };
     }
   }
 
@@ -180,6 +224,8 @@
       formData.append('salesTarget', profile.salesTarget);
       formData.append('commissionAboveRate', profile.commissionAboveRate);
       formData.append('commissionBelowRate', profile.commissionBelowRate);
+      formData.append('bankName', profile.bankName || '');
+      formData.append('bankAccount', profile.bankAccount || '');
       const res = await fetch(ATTENDANCE_API_URL, { method: 'POST', body: formData });
       const json = await res.json();
       return json.success;
@@ -201,7 +247,6 @@
     const eisRatePercent = profile.eisRate || 0;
     const eisDeduction = grossSalary * (eisRatePercent / 100);
     
-    // Commission logic
     let commission = 0;
     const target = profile.salesTarget || 0;
     if (target > 0) {
@@ -265,7 +310,7 @@
       } else throw new Error('Invalid attendance response');
     } catch(err) {
       console.error(err);
-      document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="6" class="loading" style="color:#b91c1c;">⚠️ Failed to load attendance: ${err.message}</td></tr>`;
+      document.getElementById('attendanceBody').innerHTML = `<td><td colspan="6" class="loading" style="color:#b91c1c;">⚠️ Failed to load attendance: ${err.message}</td></tr>`;
     }
   }
 
@@ -308,7 +353,15 @@
     renderAttendanceTable();
     updateAttendanceStats();
 
-    const store = document.getElementById('storeSelect').value;
+    // Force store to "all" when a specific employee is selected
+    const storeSelect = document.getElementById('storeSelect');
+    if (empFilter !== 'ALL') {
+      storeSelect.value = "all";
+      storeSelect.disabled = true;
+    } else {
+      storeSelect.disabled = false;
+    }
+    const store = storeSelect.value;
     const fromDate = document.getElementById('dateFrom').value;
     const toDate = document.getElementById('dateTo').value;
     allSalesData = await fetchRawSalesData(store, fromDate, toDate);
@@ -462,12 +515,45 @@
       document.getElementById('eisAmount').innerHTML = `RM ${selectedEmployeePayroll.eisDeduction.toFixed(2)} <span style="font-size:0.7rem;">(${selectedEmployeePayroll.eisRatePercent}%)</span>`;
       document.getElementById('bonusAmount').innerText = `RM ${selectedEmployeePayroll.commission.toFixed(2)}`;
       document.getElementById('netPayableAmount').innerText = `RM ${selectedEmployeePayroll.netPayable.toFixed(2)}`;
+      // Store current payroll data for payment modal
+      window.currentPayrollData = selectedEmployeePayroll;
+      window.currentPayrollEmployee = empFilter;
     } else {
       document.getElementById('payrollBreakdown').style.display = 'none';
     }
   }
 
   function updateSalesStats() {}
+
+  // ==================== PAYMENT FUNCTIONS ====================
+  async function recordPayment(employeeName, payrollData, bankName, bankAccount) {
+    const paymentData = {
+      action: 'savePayment',
+      employeeName: employeeName,
+      timestamp: new Date().toISOString(),
+      netPayable: payrollData.netPayable,
+      epfEmployee: payrollData.epfDeduction,
+      epfEmployer: payrollData.epfEmployerContribution,
+      eis: payrollData.eisDeduction,
+      totalExpenditure: payrollData.netPayable + payrollData.epfEmployerContribution + payrollData.eisDeduction,
+      bankName: bankName,
+      bankAccount: bankAccount,
+      status: 'paid'
+    };
+    const formData = new URLSearchParams();
+    for (let key in paymentData) formData.append(key, paymentData[key]);
+    const res = await fetch(ATTENDANCE_API_URL, { method: 'POST', body: formData });
+    const json = await res.json();
+    return json.success;
+  }
+
+  async function getPaymentHistory(employeeName) {
+    const url = `${ATTENDANCE_API_URL}?action=getPaymentHistory&employeeName=${encodeURIComponent(employeeName)}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json.success) return json.payments;
+    return [];
+  }
 
   // ==================== PROFILE MODAL ====================
   async function openProfileModal() {
@@ -488,8 +574,10 @@
     document.getElementById('salesTarget').value = profile.salesTarget || '';
     document.getElementById('commissionBelowRate').value = profile.commissionBelowRate || '';
     document.getElementById('commissionAboveRate').value = profile.commissionAboveRate || '';
+    document.getElementById('bankName').value = profile.bankName || '';
+    document.getElementById('bankAccount').value = profile.bankAccount || '';
     const epfDetailsDiv = document.getElementById('epfDetailsDiv');
-    if (epfDetailsDiv) epfDetailsDiv.style.display = profile.epfEnabled ? 'block' : 'none';
+    epfDetailsDiv.style.display = profile.epfEnabled ? 'block' : 'none';
     document.getElementById('profileModal').style.display = 'flex';
   }
 
@@ -508,7 +596,9 @@
     const salesTarget = parseFloat(document.getElementById('salesTarget').value) || 0;
     const commissionBelowRate = parseFloat(document.getElementById('commissionBelowRate').value) || 0;
     const commissionAboveRate = parseFloat(document.getElementById('commissionAboveRate').value) || 0;
-    const success = await saveEmployeeProfile(employeeName, { hourlyRate, epfEnabled, epfNumber, eisRate, epfEmployeeRate, epfEmployerRate, salesTarget, commissionBelowRate, commissionAboveRate });
+    const bankName = document.getElementById('bankName').value.trim();
+    const bankAccount = document.getElementById('bankAccount').value.trim();
+    const success = await saveEmployeeProfile(employeeName, { hourlyRate, epfEnabled, epfNumber, eisRate, epfEmployeeRate, epfEmployerRate, salesTarget, commissionBelowRate, commissionAboveRate, bankName, bankAccount });
     if (success) {
       closeProfileModal();
       await renderSalesTable();
@@ -517,66 +607,111 @@
     }
   }
 
+  // ==================== PAYMENT MODAL ====================
+  async function openPaymentModal() {
+    const emp = window.currentPayrollEmployee;
+    if (!emp) { alert('No employee selected or payroll data not loaded.'); return; }
+    const profile = await loadEmployeeProfile(emp);
+    if (!profile.bankName || !profile.bankAccount) {
+      alert('Bank details missing. Please update employee profile first.');
+      return;
+    }
+    const payroll = window.currentPayrollData;
+    document.getElementById('payEmployeeName').innerText = emp;
+    document.getElementById('payBankName').innerText = profile.bankName;
+    document.getElementById('payBankAccount').innerText = profile.bankAccount;
+    document.getElementById('payNetPayable').innerText = payroll.netPayable.toFixed(2);
+    const epfTotal = payroll.epfDeduction + payroll.epfEmployerContribution;
+    document.getElementById('payEpfTotal').innerText = epfTotal.toFixed(2);
+    document.getElementById('payEis').innerText = payroll.eisDeduction.toFixed(2);
+    const totalExp = payroll.netPayable + payroll.epfEmployerContribution + payroll.eisDeduction;
+    document.getElementById('payTotalExpenditure').innerText = totalExp.toFixed(2);
+    document.getElementById('paymentModal').style.display = 'flex';
+  }
+
+  async function confirmPayment() {
+    const emp = window.currentPayrollEmployee;
+    const payroll = window.currentPayrollData;
+    const profile = await loadEmployeeProfile(emp);
+    const success = await recordPayment(emp, payroll, profile.bankName, profile.bankAccount);
+    if (success) {
+      alert(`Payment recorded for ${emp}.`);
+      document.getElementById('paymentModal').style.display = 'none';
+      await renderSalesTable(); // refresh to reflect possible changes
+    } else {
+      alert('Payment failed. Check console.');
+    }
+  }
+
+  function closePaymentModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+  }
+
+  // ==================== PAYMENT HISTORY MODAL ====================
+  async function openHistoryModal() {
+    const emp = window.currentPayrollEmployee;
+    if (!emp) { alert('Select an employee first.'); return; }
+    const payments = await getPaymentHistory(emp);
+    const container = document.getElementById('historyList');
+    if (payments.length === 0) {
+      container.innerHTML = '<div class="loading">No payment records found.</div>';
+    } else {
+      let html = '';
+      for (let p of payments) {
+        html += `<div class="payment-history-item">
+          <div class="flex-between"><strong>${new Date(p.timestamp).toLocaleString()}</strong> <span>RM ${p.netPayable.toFixed(2)}</span></div>
+          <div>EPF (Emp+Empl): RM ${(p.epfEmployee + p.epfEmployer).toFixed(2)} | EIS: RM ${p.eis.toFixed(2)}</div>
+          <div>Total Expenditure: RM ${p.totalExpenditure.toFixed(2)}</div>
+          <div>Bank: ${p.bankName} (${p.bankAccount})</div>
+        </div>`;
+      }
+      container.innerHTML = html;
+    }
+    document.getElementById('historyModal').style.display = 'flex';
+  }
+
+  function closeHistoryModal() {
+    document.getElementById('historyModal').style.display = 'none';
+  }
+
   // ==================== EVENT LISTENERS ====================
   document.getElementById('employeeFilter').addEventListener('change', async () => {
-    let filtered = [...masterAttendance];
-    const empFilter = document.getElementById('employeeFilter').value;
-    if (empFilter !== 'ALL') filtered = filtered.filter(r => r.employee === empFilter);
-    const from = document.getElementById('dateFrom').value ? new Date(document.getElementById('dateFrom').value + 'T00:00:00') : null;
-    const to = document.getElementById('dateTo').value ? new Date(document.getElementById('dateTo').value + 'T23:59:59') : null;
-    if (from || to) {
-      filtered = filtered.filter(r => {
-        const d = new Date(r.date + 'T00:00:00');
-        if (from && d < from) return false;
-        if (to && d > to) return false;
-        return true;
-      });
-    }
-    currentFiltered = filtered;
-    renderAttendanceTable();
-    updateAttendanceStats();
-    await applySalesEmployeeFilter();
-    saveFilters();
+    await applyFiltersAndRender();
   });
-
   document.getElementById('dateFrom').addEventListener('change', () => applyFiltersAndRender());
   document.getElementById('dateTo').addEventListener('change', () => applyFiltersAndRender());
   document.getElementById('storeSelect').addEventListener('change', () => applyFiltersAndRender());
   document.getElementById('refreshBtn').addEventListener('click', () => fetchAttendance());
 
-  const profileHeaderBtn = document.getElementById('profileHeaderBtn');
-  if (profileHeaderBtn) profileHeaderBtn.addEventListener('click', openProfileModal);
+  document.getElementById('profileHeaderBtn').addEventListener('click', openProfileModal);
+  document.getElementById('closeProfileModal').addEventListener('click', closeProfileModal);
+  document.getElementById('cancelProfileBtn').addEventListener('click', closeProfileModal);
+  document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
+  document.getElementById('epfEnabled').addEventListener('change', (e) => {
+    document.getElementById('epfDetailsDiv').style.display = e.target.checked ? 'block' : 'none';
+  });
 
-  const closeModalBtn = document.getElementById('closeProfileModal');
-  if (closeModalBtn) closeModalBtn.addEventListener('click', closeProfileModal);
-  const cancelBtn = document.getElementById('cancelProfileBtn');
-  if (cancelBtn) cancelBtn.addEventListener('click', closeProfileModal);
-  const saveBtn = document.getElementById('saveProfileBtn');
-  if (saveBtn) saveBtn.addEventListener('click', saveProfile);
-
-  const epfCheckbox = document.getElementById('epfEnabled');
-  if (epfCheckbox) {
-    epfCheckbox.addEventListener('change', (e) => {
-      const epfDiv = document.getElementById('epfDetailsDiv');
-      if (epfDiv) epfDiv.style.display = e.target.checked ? 'block' : 'none';
-    });
-  }
+  document.getElementById('payNowBtn').addEventListener('click', openPaymentModal);
+  document.getElementById('confirmPayBtn').addEventListener('click', confirmPayment);
+  document.getElementById('cancelPayBtn').addEventListener('click', closePaymentModal);
+  document.getElementById('closePaymentModal').addEventListener('click', closePaymentModal);
+  document.getElementById('viewHistoryBtn').addEventListener('click', openHistoryModal);
+  document.getElementById('closeHistoryModal').addEventListener('click', closeHistoryModal);
+  document.getElementById('closeHistoryBtn').addEventListener('click', closeHistoryModal);
 
   // ==================== INIT ====================
   async function init() {
     const savedEmployee = loadFilters();
     await fetchAttendance();
-    // After attendance loads and dropdown is rebuilt, restore saved employee
     if (savedEmployee && savedEmployee !== 'ALL') {
       const empSelect = document.getElementById('employeeFilter');
-      // Wait a tick for options to be fully populated
       setTimeout(() => {
         if ([...empSelect.options].some(opt => opt.value === savedEmployee)) {
           empSelect.value = savedEmployee;
         } else {
           empSelect.value = 'ALL';
         }
-        applyFiltersAndRender(); // re-render with restored employee
+        applyFiltersAndRender();
       }, 100);
     } else if (savedEmployee === 'ALL') {
       document.getElementById('employeeFilter').value = 'ALL';

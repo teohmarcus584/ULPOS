@@ -50,8 +50,9 @@
     .payment-history-item { background: #f8fafc; border-radius: 16px; padding: 12px; margin-bottom: 10px; border-left: 4px solid #2c7da0; }
     .flex-between { display: flex; justify-content: space-between; align-items: center; }
     .bank-select { display: flex; align-items: center; gap: 8px; background: white; border: 1px solid #cbdde9; border-radius: 16px; padding: 0 12px; margin-bottom: 16px; }
-    .bank-select i { font-size: 1.2rem; color: #1f5e7e; width: 24px; }
+    .bank-select i, .bank-select img { width: 24px; height: 24px; object-fit: contain; }
     .bank-select select { border: none; padding: 12px 0; background: transparent; }
+    .bank-icon-img { width: 24px; height: 24px; vertical-align: middle; margin-right: 6px; border-radius: 4px; }
     @media (max-width: 640px) { th, td { font-size: 0.7rem; padding: 8px; } .stat-value { font-size: 1.5rem; } }
   </style>
 </head>
@@ -145,26 +146,26 @@
     <input type="number" id="commissionAboveRate" class="modal-input" step="0.01" placeholder="e.g., 5">
     <label>Bank Name</label>
     <div class="bank-select" id="bankSelectContainer">
-      <i id="bankIcon" class="fas fa-university"></i>
+      <img id="bankIcon" class="bank-icon-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Maybank_logo.svg/200px-Maybank_logo.svg.png" alt="bank icon">
       <select id="bankNameSelect">
         <option value="">-- Select Bank --</option>
-        <option value="Affin Bank">Affin Bank</option>
-        <option value="Alliance Bank">Alliance Bank</option>
+        <option value="Maybank">Maybank</option>
+        <option value="CIMB Bank">CIMB Bank</option>
+        <option value="Public Bank">Public Bank</option>
+        <option value="RHB Bank">RHB Bank</option>
+        <option value="Hong Leong Bank">Hong Leong Bank</option>
         <option value="AmBank">AmBank</option>
+        <option value="Alliance Bank">Alliance Bank</option>
+        <option value="OCBC Bank">OCBC Bank</option>
+        <option value="UOB Bank">UOB Bank</option>
         <option value="Bank Islam">Bank Islam</option>
         <option value="Bank Muamalat">Bank Muamalat</option>
         <option value="Bank Rakyat">Bank Rakyat</option>
         <option value="Bank Simpanan Nasional">BSN</option>
-        <option value="CIMB Bank">CIMB Bank</option>
-        <option value="Hong Leong Bank">Hong Leong Bank</option>
+        <option value="Affin Bank">Affin Bank</option>
         <option value="HSBC Bank">HSBC Bank</option>
-        <option value="Kuwait Finance House">KFH</option>
-        <option value="Maybank">Maybank</option>
-        <option value="OCBC Bank">OCBC Bank</option>
-        <option value="Public Bank">Public Bank</option>
-        <option value="RHB Bank">RHB Bank</option>
         <option value="Standard Chartered">Standard Chartered</option>
-        <option value="UOB Bank">UOB Bank</option>
+        <option value="Kuwait Finance House">KFH</option>
         <option value="Other">Other</option>
       </select>
     </div>
@@ -213,32 +214,33 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbyz7WKSvcxvPuDc0c2bI5SzgThNnzU9Mb7G6k7TYkI1UDDKLKPOkyfNMAbkjknAO-0a/exec"; // REPLACE WITH YOUR ATTENDANCE API URL
-  const SALES_API_URL = "https://script.google.com/macros/s/AKfycbxUSABSlgJWK24ZSv24GQTL6h2TnsrB5F-YVZ4-aG457G_8i_wOadGc3eGujKl5vugFBw/exec";           // REPLACE WITH YOUR SALES API URL
+  const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbyz7WKSvcxvPuDc0c2bI5SzgThNnzU9Mb7G6k7TYkI1UDDKLKPOkyfNMAbkjknAO-0a/exec";
+  const SALES_API_URL = "https://script.google.com/macros/s/AKfycbxUSABSlgJWK24ZSv24GQTL6h2TnsrB5F-YVZ4-aG457G_8i_wOadGc3eGujKl5vugFBw/exec";
 
-  // Bank icon mapping
+  // Bank icon mapping (real image URLs from Wikimedia Commons)
   function getBankIcon(bankName) {
     const icons = {
-      "Maybank": "fab fa-maybank",
-      "CIMB Bank": "fas fa-credit-card",
-      "Public Bank": "fas fa-building",
-      "RHB Bank": "fas fa-landmark",
-      "Hong Leong Bank": "fas fa-chart-line",
-      "AmBank": "fas fa-chart-simple",
-      "Alliance Bank": "fas fa-handshake",
-      "OCBC Bank": "fas fa-globe",
-      "UOB Bank": "fas fa-globe-asia",
-      "Bank Islam": "fas fa-mosque",
-      "Bank Muamalat": "fas fa-hand-holding-usd",
-      "Bank Rakyat": "fas fa-users",
-      "BSN": "fas fa-savings",
-      "Affin Bank": "fas fa-chart-pie",
-      "HSBC Bank": "fas fa-globe",
-      "Standard Chartered": "fas fa-chart-line",
-      "Kuwait Finance House": "fas fa-coins",
-      "Other": "fas fa-university"
+      "Maybank": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Maybank_logo.svg/200px-Maybank_logo.svg.png",
+      "CIMB Bank": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/CIMB_Group_logo.svg/200px-CIMB_Group_logo.svg.png",
+      "Public Bank": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Public_Bank_Berhad_logo.svg/200px-Public_Bank_Berhad_logo.svg.png",
+      "RHB Bank": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/RHB_Bank_logo.svg/200px-RHB_Bank_logo.svg.png",
+      "Hong Leong Bank": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Hong_Leong_Bank_logo.svg/200px-Hong_Leong_Bank_logo.svg.png",
+      "AmBank": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/AmBank_logo.svg/200px-AmBank_logo.svg.png",
+      "Alliance Bank": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Alliance_Bank_Malaysia_logo.svg/200px-Alliance_Bank_Malaysia_logo.svg.png",
+      "OCBC Bank": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/OCBC_Bank_logo.svg/200px-OCBC_Bank_logo.svg.png",
+      "UOB Bank": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/United_Overseas_Bank_logo.svg/200px-United_Overseas_Bank_logo.svg.png",
+      "Bank Islam": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Bank_Islam_logo.svg/200px-Bank_Islam_logo.svg.png",
+      "Bank Muamalat": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Bank_Muamalat_logo.svg/200px-Bank_Muamalat_logo.svg.png",
+      "Bank Rakyat": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Bank_Rakyat_logo.svg/200px-Bank_Rakyat_logo.svg.png",
+      "BSN": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Bank_Simpanan_Nasional_logo.svg/200px-Bank_Simpanan_Nasional_logo.svg.png",
+      "Affin Bank": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Affin_Bank_logo.svg/200px-Affin_Bank_logo.svg.png",
+      "HSBC Bank": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/HSBC_logo_%282018%29.svg/200px-HSBC_logo_%282018%29.svg.png",
+      "Standard Chartered": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Standard_Chartered_logo_%282021%29.svg/200px-Standard_Chartered_logo_%282021%29.svg.png",
+      "Kuwait Finance House": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Kuwait_Finance_House_logo.svg/200px-Kuwait_Finance_House_logo.svg.png"
     };
-    return icons[bankName] || "fas fa-university";
+    const url = icons[bankName];
+    if (url) return `<img src="${url}" class="bank-icon-img" style="width:24px; height:24px; object-fit:contain; vertical-align:middle;">`;
+    return `<i class="fas fa-university" style="margin-right: 6px;"></i>`;
   }
 
   // Update bank icon in profile modal when selection changes
@@ -246,11 +248,18 @@
     const select = document.getElementById('bankNameSelect');
     if (!select) return;
     const selectedBank = select.value;
-    const iconElement = document.getElementById('bankIcon');
-    if (iconElement) {
-      const newIconClass = getBankIcon(selectedBank);
-      // Remove all existing icon classes and add the new one
-      iconElement.className = newIconClass;
+    const iconContainer = document.getElementById('bankIcon');
+    if (iconContainer) {
+      const newIconHtml = getBankIcon(selectedBank);
+      // Replace the element with new image or icon
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = newIconHtml;
+      const newElement = tempDiv.firstChild;
+      if (newElement) {
+        iconContainer.parentNode.replaceChild(newElement, iconContainer);
+        newElement.id = 'bankIcon';
+        newElement.classList.add('bank-icon-img');
+      }
     }
   }
 
@@ -640,7 +649,6 @@
     if (profile.bankName) bankSelect.value = profile.bankName;
     else bankSelect.value = '';
     document.getElementById('bankAccount').value = profile.bankAccount || '';
-    // Delay to ensure the select element is fully rendered
     setTimeout(() => updateBankIcon(), 50);
     const epfDetailsDiv = document.getElementById('epfDetailsDiv');
     epfDetailsDiv.style.display = profile.epfEnabled ? 'block' : 'none';

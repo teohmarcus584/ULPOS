@@ -4562,7 +4562,7 @@ async function finishLoginAfterVerification() {
     if (currentEmployee && document.getElementById('mainContent').style.display === 'block') {
       await fetchProductsFromSheet(false); // silent background sync
     }
-  }, 5000); // 5 seconds – adjust as needed
+  }, 600000); // 5 seconds – adjust as needed
 }
   async function openReportsModal() {
     if (currentEmployee?.isAdmin) {

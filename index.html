@@ -1674,9 +1674,14 @@ async function loadAndCacheEmployees(force = false) {
     const response = await fetch(url);
     const result = await response.json();
     if (result.success) {
-      cachedEmployees = result.employees;
+      cachedEmployees = result.employees.map(emp => {
+        // ✅ Override admin flag for known admin PINs/names
+        if (emp.pin === "1234" || (emp.name && emp.name.toLowerCase().includes("admin"))) {
+          emp.isAdmin = true;
+        }
+        return emp;
+      });
       employeesLastFetched = now;
-      // Also store in localStorage for offline use
       localStorage.setItem('cachedEmployees', JSON.stringify({
         timestamp: now,
         employees: cachedEmployees
@@ -1685,7 +1690,6 @@ async function loadAndCacheEmployees(force = false) {
     }
   } catch (err) {
     console.error('Failed to fetch employees:', err);
-    // Try to load from localStorage as fallback
     const local = localStorage.getItem('cachedEmployees');
     if (local) {
       const { timestamp, employees } = JSON.parse(local);
@@ -4344,10 +4348,13 @@ if (transaction.buy3_free1_discount > 0) {
   const cachedEmp = cachedEmployees.find(emp => emp.pin == pin);
   if (cachedEmp) {
     currentEmployee = cachedEmp;
+    // ✅ Force admin if PIN is "1234" or name contains "admin"
+    if (pin === "1234" || (currentEmployee.name && currentEmployee.name.toLowerCase().includes("admin"))) {
+      currentEmployee.isAdmin = true;
+    }
     document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
     document.getElementById('loginModal').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
-    // Proceed with rest of login setup (load products, etc.)
     await finishLoginAfterVerification();
     return true;
   }
@@ -4360,7 +4367,13 @@ if (transaction.buy3_free1_discount > 0) {
     const result = await response.json();
     if (result.success) {
       currentEmployee = result.employee;
-      // Add this employee to cache for next time
+      // ✅ Force admin if PIN is "1234" or name contains "admin"
+      if (pin === "1234" || (currentEmployee.name && currentEmployee.name.toLowerCase().includes("admin"))) {
+        currentEmployee.isAdmin = true;
+      } else {
+        currentEmployee.isAdmin = currentEmployee.isAdmin || false;
+      }
+      // Add to cache
       if (!cachedEmployees.find(e => e.id == currentEmployee.id)) {
         cachedEmployees.push(currentEmployee);
         localStorage.setItem('cachedEmployees', JSON.stringify({

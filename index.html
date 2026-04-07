@@ -45,16 +45,7 @@
       border-radius: 40px;
       font-size: 0.9rem;
     }
-    .logout-header-btn {
-      background: #ef4444;
-      border: none;
-      border-radius: 40px;
-      padding: 8px 16px;
-      color: white;
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+    
     .logout-header-btn:hover {
       background: #dc2626;
     }
@@ -1143,6 +1134,7 @@
     </div>
     <div class="pos-header-right">
       <span class="cashier-info" id="employeeNameHeader"></span>
+       <span id="barcodeStatus" class="cashier-info" style="background:#e8f5e9; color:#2c7a4b;">📷 Barcode ready</span>
       <button id="logoutHeaderBtn" class="logout-header-btn">Logout</button>
       <button id="printerIconBtn" class="printer-icon-btn">🖨️</button>
     </div>
@@ -3638,7 +3630,89 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
     const loadingMsg = document.getElementById('adminReportLoadingMsg');
     if (loadingMsg) loadingMsg.style.display = 'none';
   }
+// ==================== BARCODE SCANNER ====================
+let barcodeBuffer = '';
+let barcodeTimer = null;
+let scannerActive = false; // will be enabled after login
 
+function resetBarcodeBuffer() {
+  barcodeBuffer = '';
+  if (barcodeTimer) clearTimeout(barcodeTimer);
+  barcodeTimer = null;
+}
+
+function processBarcode() {
+  if (!scannerActive) return;
+  const code = barcodeBuffer.trim();
+  if (code === '') return;
+  
+  // Find product by ID (barcode)
+  const product = products.find(p => String(p.id) === code);
+  if (product) {
+    addToCart(product);
+    // Optional: flash the barcode status briefly
+    const statusSpan = document.getElementById('barcodeStatus');
+    if (statusSpan) {
+      statusSpan.style.background = '#c8e6c9';
+      statusSpan.style.transition = '0.2s';
+      setTimeout(() => { statusSpan.style.background = '#e8f5e9'; }, 200);
+    }
+  } else {
+    showAlertModal('Barcode not found', `Product with ID ${code} does not exist.`);
+  }
+  resetBarcodeBuffer();
+}
+
+// Global key listener for barcode scanner
+document.addEventListener('keydown', (e) => {
+  // Only activate after login and when main content is visible
+  if (!scannerActive) return;
+  // Ignore if user is typing in an input/textarea/select
+  const activeTag = document.activeElement.tagName;
+  if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
+  
+  // Detect Enter key (scanner sends Enter after barcode)
+  if (e.key === 'Enter') {
+    e.preventDefault(); // prevent any default form submit
+    processBarcode();
+    return;
+  }
+  
+  // For character keys, add to buffer (only if it's a digit, letter, or hyphen)
+  // Most barcodes are numeric, but we allow alphanumeric.
+  if (e.key.length === 1 && /[a-zA-Z0-9-]/.test(e.key)) {
+    // Reset timer on each key
+    if (barcodeTimer) clearTimeout(barcodeTimer);
+    barcodeBuffer += e.key;
+    // Set timeout to auto‑reset buffer after 100ms of no key (in case of manual typing)
+    barcodeTimer = setTimeout(() => {
+      resetBarcodeBuffer();
+    }, 100);
+  }
+});
+
+// Enable scanner when user logs in, disable on logout
+function enableBarcodeScanner() {
+  scannerActive = true;
+  const statusSpan = document.getElementById('barcodeStatus');
+  if (statusSpan) {
+    statusSpan.innerText = '📷 Barcode ready';
+    statusSpan.style.background = '#e8f5e9';
+  }
+}
+
+function disableBarcodeScanner() {
+  scannerActive = false;
+  resetBarcodeBuffer();
+  const statusSpan = document.getElementById('barcodeStatus');
+  if (statusSpan) {
+    statusSpan.innerText = '⏸ Barcode off';
+    statusSpan.style.background = '#f5f5f5';
+  }
+}
+
+// Call enableBarcodeScanner() inside finishLoginAfterVerification()
+// and disableBarcodeScanner() inside logout handler.
   // ==================== SETTLEMENT & COLLECTION ====================
   async function openSettlementModal() {
     const modal = document.getElementById('settlementModal');
@@ -4555,6 +4629,7 @@ async function finishLoginAfterVerification() {
   // Preload settlement and report data in background (silent)
   preloadSettlement();
   preloadReport();
+    enableBarcodeScanner();
 
   // ========== AUTO-SYNC PRODUCTS EVERY 5 SECONDS ==========
   //window.autoSyncInterval = setInterval(async () => {
@@ -4884,6 +4959,7 @@ async function finishLoginAfterVerification() {
     if (typeof stopReceiptPolling === 'function') stopReceiptPolling();
     cachedReceipts = null;
     currentEmployee = null;
+    disableBarcodeScanner();
     document.getElementById('mainContent').style.display = 'none';
     document.getElementById('loginModal').style.display = 'flex';
     document.getElementById('pinInput').value = '';

@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Staff Performance | Hours + Sales + Payroll</title>
+  <title>Staff Performance | Hours + Sales + Payroll (Rounding Toggle)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', sans-serif; background: #f4f7fc; color: #1e293b; padding: 24px 20px; }
@@ -23,27 +23,34 @@
     .stat-value { font-size: 2rem; font-weight: 800; color: #0f3b4c; }
     .stat-sub { font-size: 0.7rem; color: #5e7b9c; margin-top: 6px; }
     .filters-panel { background: white; border-radius: 24px; padding: 20px 24px; margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; border: 1px solid #e2edf5; }
-    .filter-group { flex: 1; min-width: 150px; }
+    .filter-group { flex: 1; min-width: 140px; }
     .filter-group label { display: block; font-size: 0.7rem; font-weight: 600; margin-bottom: 6px; color: #2c5f7a; }
     select, input, button { width: 100%; padding: 10px 12px; border-radius: 16px; border: 1px solid #cbdde9; font-family: inherit; background: white; }
     button { background: #f1f5f9; cursor: pointer; transition: 0.2s; font-weight: 500; }
     .btn-primary { background: #1f5e7e; color: white; border: none; }
     .btn-primary:hover { background: #144c66; }
+    .toggle-group { display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 6px 16px; border-radius: 40px; border: 1px solid #cbdde9; }
+    .toggle-group label { margin-bottom: 0; cursor: pointer; font-weight: 500; }
+    .switch { position: relative; display: inline-block; width: 48px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: 0.2s; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: 0.2s; border-radius: 50%; }
+    input:checked + .slider { background-color: #1f5e7e; }
+    input:checked + .slider:before { transform: translateX(24px); }
     .section-title { font-size: 1.2rem; font-weight: 600; margin: 24px 0 12px 0; display: flex; align-items: center; gap: 10px; }
     .table-wrapper { background: white; border-radius: 24px; overflow-x: auto; border: 1px solid #eef2f8; margin-bottom: 30px; }
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     th { text-align: left; padding: 14px 12px; background: #fafcff; border-bottom: 1px solid #e2edf5; font-weight: 600; }
     td { padding: 12px; border-bottom: 1px solid #edf2f7; }
     .duration-badge { background: #e0f2fe; padding: 4px 10px; border-radius: 30px; font-size: 0.75rem; font-weight: 500; display: inline-block; }
+    .adjusted-badge { background: #fef9e3; color: #b45309; font-size: 0.7rem; border-radius: 20px; padding: 2px 8px; margin-left: 6px; white-space: nowrap; }
     .loading { text-align: center; padding: 48px; color: #5e7b9c; }
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; }
     .modal-container { background: white; max-width: 550px; width: 90%; border-radius: 28px; padding: 24px; box-shadow: 0 20px 35px rgba(0,0,0,0.2); position: relative; max-height: 85vh; overflow-y: auto; }
     .close-modal { position: absolute; top: 16px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; color: #64748b; }
     .modal-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 20px; }
     .modal-input { width: 100%; padding: 12px; border-radius: 16px; border: 1px solid #cbdde9; margin-bottom: 16px; }
-    .modal-checkbox { margin: 12px 0; display: flex; align-items: center; gap: 10px; }
-    .modal-checkbox input { width: auto; }
-    .modal-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; }
+    .modal-checkbox { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
     .payroll-breakdown { background: #f0f9ff; border-radius: 20px; padding: 16px; margin-top: 16px; border-left: 4px solid #1f5e7e; }
     .payroll-row { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; font-size: 0.9rem; gap: 12px; flex-wrap: wrap; }
     .payroll-grid { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; margin: 8px 0; flex-wrap: wrap; }
@@ -53,29 +60,8 @@
     .payment-history-item { background: #f8fafc; border-radius: 16px; padding: 12px; margin-bottom: 10px; border-left: 4px solid #2c7da0; }
     .flex-between { display: flex; justify-content: space-between; align-items: center; }
     .calc-note { font-size: 0.7rem; color: #5e7b9c; margin-top: 4px; }
-    /* Loading overlay */
-    .loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      flex-direction: column;
-      backdrop-filter: blur(3px);
-    }
-    .loading-spinner {
-      width: 50px;
-      height: 50px;
-      border: 4px solid #e2e8f0;
-      border-top-color: #1f5e7e;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
+    .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; backdrop-filter: blur(3px); }
+    .loading-spinner { width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top-color: #1f5e7e; border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .loading-text { color: white; margin-top: 12px; font-weight: 500; }
     @media (max-width: 640px) { th, td { font-size: 0.7rem; padding: 8px; } .stat-value { font-size: 1.5rem; } }
@@ -83,7 +69,6 @@
 </head>
 <body>
 
-<!-- Loading Overlay -->
 <div id="loadingOverlay" class="loading-overlay" style="display: none;">
   <div class="loading-spinner"></div>
   <div class="loading-text">Loading data...</div>
@@ -92,7 +77,7 @@
 <div class="dashboard-container">
   <div class="header">
     <div class="header-left">
-      <div><h1><i class="fas fa-chart-line"></i> Staff Performance Hub</h1><p style="font-size:0.8rem;">Hours + Sales + Payroll (EPF/EIS/SOCSO + Commission)</p></div>
+      <div><h1><i class="fas fa-chart-line"></i> Staff Performance Hub</h1><p style="font-size:0.8rem;">Rounding toggle • EPF/EIS/SOCSO + Commission</p></div>
       <div class="badge"><i class="fas fa-sync-alt"></i> Live from Google Sheets</div>
     </div>
     <div class="header-right">
@@ -103,7 +88,7 @@
   <div class="stats-grid">
     <div class="stat-card"><div class="stat-title">Employees</div><div class="stat-value" id="totalEmployees">—</div></div>
     <div class="stat-card"><div class="stat-title">Total shifts</div><div class="stat-value" id="totalShifts">—</div></div>
-    <div class="stat-card"><div class="stat-title">Total hours</div><div class="stat-value" id="totalHours">—</div><div class="stat-sub">(filtered)</div></div>
+    <div class="stat-card"><div class="stat-title">Total hours</div><div class="stat-value" id="totalHours">—</div><div class="stat-sub" id="hoursNote">(rounding enabled)</div></div>
     <div class="stat-card"><div class="stat-title">Top by hours</div><div class="stat-value" id="topEmployeeHours">—</div></div>
     <div class="stat-card"><div class="stat-title">Total sales (RM)</div><div class="stat-value" id="totalSales">—</div></div>
     <div class="stat-card"><div class="stat-title">Top by sales</div><div class="stat-value" id="topEmployeeSales">—</div></div>
@@ -111,17 +96,24 @@
 
   <div class="filters-panel">
     <div class="filter-group"><label>Employee</label><select id="employeeFilter"><option value="ALL">👥 All employees</option></select></div>
-    <div class="filter-group"><label>From date</label><input type="date" id="dateFrom"></div>
-    <div class="filter-group"><label>To date</label><input type="date" id="dateTo"></div>
-    <div class="filter-group"><label>Store (Sales)</label><select id="storeSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div>
+    <div class="filter-group"><label>From date</label><input type="date" id="dateFrom" max=""></div>
+    <div class="filter-group"><label>To date</label><input type="date" id="dateTo" max=""></div>
+    <div class="filter-group"><label>Store (Sales)</label><select id="storeSelect"><option value="all">All Stores</option><option value="queens">Queensbay</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div>
+    <div class="filter-group toggle-group">
+      <label><i class="fas fa-magic"></i> Auto‑adjust time</label>
+      <label class="switch">
+        <input type="checkbox" id="roundingToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
     <div class="filter-group"><button id="refreshBtn" class="btn-primary">Refresh data</button></div>
   </div>
 
   <div class="section-title"><i class="fas fa-clock"></i> Attendance & Hours</div>
   <div class="table-wrapper">
     <table id="attendanceTable">
-      <thead><tr><th>Employee</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Duration</th><th>Location</th></tr></thead>
-      <tbody id="attendanceBody"><tr><td colspan="6" class="loading">Loading attendance...</td></tr></tbody>
+      <thead><tr><th>Employee</th><th>Date</th><th>Original In</th><th>Adjusted In</th><th>Original Out</th><th>Adjusted Out</th><th>Duration</th><th>Location</th></tr></thead>
+      <tbody id="attendanceBody"><tr><td colspan="8" class="loading">Loading attendance...</td></tr></tbody>
     </table>
   </div>
 
@@ -139,35 +131,14 @@
     <div class="payroll-row"><span>Gross Salary (Hours × Hourly Rate):</span><span id="grossAmount">RM 0.00</span></div>
     <div class="payroll-row"><span>EPF Employee Contribution:</span><span id="epfEmployeeAmount">RM 0.00</span></div>
     <div class="payroll-row"><span>EPF Employer Contribution:</span><span id="epfEmployerAmount">RM 0.00</span></div>
-
     <div style="margin-top: 12px;"><strong>EIS (Employment Insurance)</strong></div>
-    <div class="payroll-grid">
-      <div class="payroll-grid-item">
-        <div class="label">EIS Employee (0.2% of capped wage)</div>
-        <div class="value" id="eisEmployeeAmount">RM 0.00</div>
-      </div>
-      <div class="payroll-grid-item">
-        <div class="label">EIS Employer (0.2% of capped wage)</div>
-        <div class="value" id="eisEmployerAmount">RM 0.00</div>
-      </div>
-    </div>
-
+    <div class="payroll-grid"><div class="payroll-grid-item"><div class="label">EIS Employee (0.2% of capped wage)</div><div class="value" id="eisEmployeeAmount">RM 0.00</div></div><div class="payroll-grid-item"><div class="label">EIS Employer (0.2% of capped wage)</div><div class="value" id="eisEmployerAmount">RM 0.00</div></div></div>
     <div style="margin-top: 12px;"><strong>SOCSO (Social Security)</strong></div>
-    <div class="payroll-grid">
-      <div class="payroll-grid-item">
-        <div class="label">SOCSO Employee (0.5% of capped wage)</div>
-        <div class="value" id="socsoEmployeeAmount">RM 0.00</div>
-      </div>
-      <div class="payroll-grid-item">
-        <div class="label">SOCSO Employer (1.75% of capped wage)</div>
-        <div class="value" id="socsoEmployerAmount">RM 0.00</div>
-      </div>
-    </div>
-
+    <div class="payroll-grid"><div class="payroll-grid-item"><div class="label">SOCSO Employee (0.5% of capped wage)</div><div class="value" id="socsoEmployeeAmount">RM 0.00</div></div><div class="payroll-grid-item"><div class="label">SOCSO Employer (1.75% of capped wage)</div><div class="value" id="socsoEmployerAmount">RM 0.00</div></div></div>
     <div class="payroll-row"><span>Sales Commission:</span><span id="bonusAmount">RM 0.00</span></div>
     <div class="payroll-row payroll-total"><span>Net Payable (to Employee):</span><span id="netPayableAmount">RM 0.00</span></div>
     <div class="payroll-row"><span>Total Employer Expenditure:</span><span id="totalEmployerExpenditure">RM 0.00</span></div>
-    <div class="calc-note">* EIS & SOCSO are calculated on gross salary capped at RM 6,000 per month (statutory ceiling).</div>
+    <div class="calc-note" id="roundingNote">* Rounding rules: Clock‑in forward (e.g., 10:15→10:30, 15:35→16:00); Clock‑out backward (e.g., 16:15→16:00). Toggle above to disable.</div>
     <div style="margin-top: 16px; display: flex; gap: 12px;">
       <button id="payNowBtn" class="btn-primary" style="flex:1"><i class="fas fa-credit-card"></i> Process Payment</button>
       <button id="viewHistoryBtn" class="btn-primary" style="background:#2c7da0;"><i class="fas fa-history"></i> Payment History</button>
@@ -176,168 +147,82 @@
 </div>
 
 <!-- Employee Profile Modal -->
-<div id="profileModal" class="modal-overlay">
-  <div class="modal-container">
-    <span class="close-modal" id="closeProfileModal">&times;</span>
-    <div class="modal-title" id="profileModalTitle">Employee Profile</div>
-    <input type="hidden" id="profileEmployeeName">
-    <label>Hourly Rate (RM)</label>
-    <input type="number" id="hourlyRate" class="modal-input" step="0.01" placeholder="e.g., 10.00">
-    <div class="modal-checkbox">
-      <input type="checkbox" id="epfEnabled"> <label>EPF Contribution?</label>
-    </div>
-    <div id="epfDetailsDiv" style="display: none;">
-      <label>EPF Number</label>
-      <input type="text" id="epfNumber" class="modal-input" placeholder="EPF account number">
-      <label>EPF Employee Rate (%)</label>
-      <input type="number" id="epfEmployeeRate" class="modal-input" step="0.01" placeholder="e.g., 11">
-      <label>EPF Employer Rate (%)</label>
-      <input type="number" id="epfEmployerRate" class="modal-input" step="0.01" placeholder="e.g., 13">
-    </div>
-    <label>EIS Rate (%) (Employee & Employer, 0.2% up to RM6k)</label>
-    <input type="number" id="eisRate" class="modal-input" step="0.01" placeholder="0.2" value="0.2">
-    <label>SOCSO Employee Rate (%) (0.5% up to RM6k)</label>
-    <input type="number" id="socsoEmployeeRate" class="modal-input" step="0.01" placeholder="0.5" value="0.5">
-    <label>SOCSO Employer Rate (%) (1.75% up to RM6k)</label>
-    <input type="number" id="socsoEmployerRate" class="modal-input" step="0.01" placeholder="1.75" value="1.75">
-    <label>Sales Target (RM)</label>
-    <input type="number" id="salesTarget" class="modal-input" step="0.01" placeholder="e.g., 5000">
-    <label>Commission Rate - Below Target (% of total sales)</label>
-    <input type="number" id="commissionBelowRate" class="modal-input" step="0.01" placeholder="e.g., 1">
-    <label>Commission Rate - Above Target (% of excess)</label>
-    <input type="number" id="commissionAboveRate" class="modal-input" step="0.01" placeholder="e.g., 5">
-    <label>Bank Name</label>
-    <select id="bankNameSelect" class="modal-input">
-      <option value="">-- Select Bank --</option>
-      <option value="Maybank">Maybank</option>
-      <option value="CIMB Bank">CIMB Bank</option>
-      <option value="Public Bank">Public Bank</option>
-      <option value="RHB Bank">RHB Bank</option>
-      <option value="Hong Leong Bank">Hong Leong Bank</option>
-      <option value="AmBank">AmBank</option>
-      <option value="Alliance Bank">Alliance Bank</option>
-      <option value="OCBC Bank">OCBC Bank</option>
-      <option value="UOB Bank">UOB Bank</option>
-      <option value="Bank Islam">Bank Islam</option>
-      <option value="Bank Muamalat">Bank Muamalat</option>
-      <option value="Bank Rakyat">Bank Rakyat</option>
-      <option value="Bank Simpanan Nasional">BSN</option>
-      <option value="Affin Bank">Affin Bank</option>
-      <option value="HSBC Bank">HSBC Bank</option>
-      <option value="Standard Chartered">Standard Chartered</option>
-      <option value="Kuwait Finance House">KFH</option>
-      <option value="Other">Other</option>
-    </select>
-    <label>Bank Account Number</label>
-    <input type="text" id="bankAccount" class="modal-input" placeholder="e.g., 1234567890">
-    <div class="modal-buttons">
-      <button id="saveProfileBtn" class="btn-primary">Save</button>
-      <button id="cancelProfileBtn">Cancel</button>
-    </div>
-  </div>
-</div>
+<div id="profileModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeProfileModal">&times;</span><div class="modal-title" id="profileModalTitle">Employee Profile</div><input type="hidden" id="profileEmployeeName"><label>Hourly Rate (RM)</label><input type="number" id="hourlyRate" class="modal-input" step="0.01"><div class="modal-checkbox"><input type="checkbox" id="epfEnabled"> <label>EPF Contribution?</label></div><div id="epfDetailsDiv" style="display: none;"><label>EPF Number</label><input type="text" id="epfNumber" class="modal-input"><label>EPF Employee Rate (%)</label><input type="number" id="epfEmployeeRate" class="modal-input" step="0.01"><label>EPF Employer Rate (%)</label><input type="number" id="epfEmployerRate" class="modal-input" step="0.01"></div><label>EIS Rate (%) (Employee & Employer, 0.2% up to RM6k)</label><input type="number" id="eisRate" class="modal-input" step="0.01" value="0.2"><label>SOCSO Employee Rate (%) (0.5% up to RM6k)</label><input type="number" id="socsoEmployeeRate" class="modal-input" step="0.01" value="0.5"><label>SOCSO Employer Rate (%) (1.75% up to RM6k)</label><input type="number" id="socsoEmployerRate" class="modal-input" step="0.01" value="1.75"><label>Sales Target (RM)</label><input type="number" id="salesTarget" class="modal-input" step="0.01"><label>Commission Rate - Below Target (% of total sales)</label><input type="number" id="commissionBelowRate" class="modal-input" step="0.01"><label>Commission Rate - Above Target (% of excess)</label><input type="number" id="commissionAboveRate" class="modal-input" step="0.01"><label>Bank Name</label><select id="bankNameSelect" class="modal-input"><option value="">-- Select Bank --</option><option>Maybank</option><option>CIMB Bank</option><option>Public Bank</option><option>RHB Bank</option><option>Hong Leong Bank</option><option>AmBank</option><option>Alliance Bank</option><option>OCBC Bank</option><option>UOB Bank</option><option>Bank Islam</option><option>Bank Muamalat</option><option>Bank Rakyat</option><option>BSN</option><option>Affin Bank</option><option>HSBC Bank</option><option>Standard Chartered</option><option>KFH</option><option>Other</option></select><label>Bank Account Number</label><input type="text" id="bankAccount" class="modal-input"><div class="modal-buttons"><button id="saveProfileBtn" class="btn-primary">Save</button><button id="cancelProfileBtn">Cancel</button></div></div></div>
 
-<!-- Payment Modal -->
-<div id="paymentModal" class="modal-overlay">
-  <div class="modal-container">
-    <span class="close-modal" id="closePaymentModal">&times;</span>
-    <div class="modal-title">💵 Process Payment</div>
-    <div id="paymentDetails">
-      <p><strong>Employee:</strong> <span id="payEmployeeName"></span></p>
-      <p><strong>Bank:</strong> <span id="payBankName"></span></p>
-      <p><strong>Bank Account:</strong> <span id="payBankAccount"></span></p>
-      <hr style="margin: 12px 0;">
-      <p><strong>Net Payable (Employee):</strong> RM <span id="payNetPayable"></span></p>
-      <p><strong>EPF (Employee+Employer):</strong> RM <span id="payEpfTotal"></span></p>
-      <p><strong>EIS (Employee+Employer):</strong> RM <span id="payEisTotal"></span></p>
-      <p><strong>SOCSO (Employee+Employer):</strong> RM <span id="paySocsoTotal"></span></p>
-      <p style="font-weight: 800; margin-top: 12px;"><strong>Total Employer Expenditure:</strong> RM <span id="payTotalExpenditure"></span></p>
-    </div>
-    <div class="modal-buttons">
-      <button id="confirmPayBtn" class="btn-primary">✅ Confirm Payment</button>
-      <button id="cancelPayBtn">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- Payment History Modal -->
-<div id="historyModal" class="modal-overlay">
-  <div class="modal-container" style="max-width: 600px;">
-    <span class="close-modal" id="closeHistoryModal">&times;</span>
-    <div class="modal-title">📜 Payment History</div>
-    <div id="historyList" style="max-height: 60vh; overflow-y: auto;"></div>
-    <div class="modal-buttons">
-      <button id="closeHistoryBtn">Close</button>
-    </div>
-  </div>
-</div>
+<!-- Payment Modal & History Modal -->
+<div id="paymentModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closePaymentModal">&times;</span><div class="modal-title">💵 Process Payment</div><div id="paymentDetails"><p><strong>Employee:</strong> <span id="payEmployeeName"></span></p><p><strong>Bank:</strong> <span id="payBankName"></span></p><p><strong>Bank Account:</strong> <span id="payBankAccount"></span></p><hr><p><strong>Net Payable (Employee):</strong> RM <span id="payNetPayable"></span></p><p><strong>EPF (Employee+Employer):</strong> RM <span id="payEpfTotal"></span></p><p><strong>EIS (Employee+Employer):</strong> RM <span id="payEisTotal"></span></p><p><strong>SOCSO (Employee+Employer):</strong> RM <span id="paySocsoTotal"></span></p><p style="font-weight: 800;"><strong>Total Employer Expenditure:</strong> RM <span id="payTotalExpenditure"></span></p></div><div class="modal-buttons"><button id="confirmPayBtn" class="btn-primary">✅ Confirm Payment</button><button id="cancelPayBtn">Cancel</button></div></div></div>
+<div id="historyModal" class="modal-overlay"><div class="modal-container" style="max-width: 600px;"><span class="close-modal" id="closeHistoryModal">&times;</span><div class="modal-title">📜 Payment History</div><div id="historyList" style="max-height: 60vh; overflow-y: auto;"></div><div class="modal-buttons"><button id="closeHistoryBtn">Close</button></div></div></div>
 
 <script>
-  // ==================== CONFIGURATION ====================
   const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbyUJgNYu0DoU8CWMeP5euibIyp3kTnrDLVhEcosBOudjyrI3WGjBH8Y79jvtnN8xy-W/exec";
   const SALES_API_URL = "https://script.google.com/macros/s/AKfycbwzanNzr_D6atzoeG86cE1To09WFLIf8N08IWYXdoGjlbd4dtPnQIPqnV_pNOri4GoKWg/exec";
-
-  // Cache keys and expiry (1 hour)
   const CACHE_ATTENDANCE_KEY = 'attendanceCache';
   const CACHE_SALES_KEY = 'salesCache';
-  const CACHE_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
+  const CACHE_EXPIRY_MS = 60 * 60 * 1000;
+  let masterAttendance = [], currentFiltered = [], allSalesData = null, filteredSales = null, isLoading = false;
+  let autoAdjustEnabled = true;  // toggle state
 
-  let masterAttendance = [];
-  let currentFiltered = [];
-  let allSalesData = null;
-  let filteredSales = null;
-  let isLoading = false;
+  function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
+  function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+  function cacheAttendanceData(data) { localStorage.setItem(CACHE_ATTENDANCE_KEY, JSON.stringify({ timestamp: Date.now(), data })); }
+  function cacheSalesData(data) { localStorage.setItem(CACHE_SALES_KEY, JSON.stringify({ timestamp: Date.now(), data })); }
+  function getCachedAttendance() { const c = localStorage.getItem(CACHE_ATTENDANCE_KEY); if(!c) return null; try { const {timestamp, data} = JSON.parse(c); if(Date.now()-timestamp > CACHE_EXPIRY_MS) return null; return data; } catch(e){ return null; } }
+  function getCachedSales() { const c = localStorage.getItem(CACHE_SALES_KEY); if(!c) return null; try { const {timestamp, data}=JSON.parse(c); if(Date.now()-timestamp > CACHE_EXPIRY_MS) return null; return data; } catch(e){ return null; } }
 
-  // Loading overlay helpers
-  function showLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.style.display = 'flex';
+  function timeToMinutes(t) { if(!t || typeof t !== 'string') return null; const parts = t.trim().split(':'); if(parts.length<2) return null; let h=parseInt(parts[0],10), m=parseInt(parts[1],10); if(isNaN(h)||isNaN(m)) return null; return h*60+m; }
+  function minutesToTime(min) { let h = Math.floor(min/60); let m = min % 60; return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`; }
+
+  // Rounding functions (only applied if autoAdjustEnabled)
+  function getAdjustedClockInMinutes(timeStr) {
+    if(!autoAdjustEnabled) return timeToMinutes(timeStr);
+    let mins = timeToMinutes(timeStr);
+    if(mins === null) return null;
+    if(mins < 600) return 600;                     // before 10:00 -> 10:00
+    if(mins >= 615 && mins < 630) return 630;      // 10:15-10:29 -> 10:30
+    if(mins >= 935 && mins < 960) return 960;      // 15:35-15:59 -> 16:00
+    if(mins >= 975 && mins < 990) return 990;      // 16:15-16:29 -> 16:30
+    if(mins >= 1000 && mins < 1020) return 1020;   // 16:40-16:59 -> 17:00
+    if(mins >= 1050 && mins < 1080) return 1080;   // 17:30-17:59 -> 18:00
+    if(mins >= 1110 && mins < 1140) return 1140;   // 18:30-18:59 -> 19:00
+    return mins;
   }
-  function hideLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.style.display = 'none';
+  function getAdjustedClockOutMinutes(timeStr) {
+    if(!autoAdjustEnabled) return timeToMinutes(timeStr);
+    let mins = timeToMinutes(timeStr);
+    if(mins === null) return null;
+    let remainder = mins % 30;
+    if(remainder !== 0) mins = mins - remainder;
+    return mins;
+  }
+  function getAdjustedTimeString(timeStr, isClockIn) {
+    const adjMin = isClockIn ? getAdjustedClockInMinutes(timeStr) : getAdjustedClockOutMinutes(timeStr);
+    if(adjMin === null) return null;
+    const origMin = timeToMinutes(timeStr);
+    if(origMin === adjMin) return null;
+    return minutesToTime(adjMin);
+  }
+  function computeDurationHours(timeIn, timeOut) {
+    const inMin = autoAdjustEnabled ? getAdjustedClockInMinutes(timeIn) : timeToMinutes(timeIn);
+    const outMin = autoAdjustEnabled ? getAdjustedClockOutMinutes(timeOut) : timeToMinutes(timeOut);
+    if(inMin === null || outMin === null) return null;
+    let diff = outMin - inMin;
+    if(diff < 0) diff += 24*60;
+    return parseFloat((diff/60).toFixed(2));
   }
 
-  // ==================== CACHE HELPERS ====================
-  function cacheAttendanceData(data) {
-    const cache = { timestamp: Date.now(), data: data };
-    localStorage.setItem(CACHE_ATTENDANCE_KEY, JSON.stringify(cache));
-  }
-  function cacheSalesData(data) {
-    const cache = { timestamp: Date.now(), data: data };
-    localStorage.setItem(CACHE_SALES_KEY, JSON.stringify(cache));
-  }
-  function getCachedAttendance() {
-    const cached = localStorage.getItem(CACHE_ATTENDANCE_KEY);
-    if (!cached) return null;
-    try {
-      const { timestamp, data } = JSON.parse(cached);
-      if (Date.now() - timestamp > CACHE_EXPIRY_MS) return null;
-      return data;
-    } catch(e) { return null; }
-  }
-  function getCachedSales() {
-    const cached = localStorage.getItem(CACHE_SALES_KEY);
-    if (!cached) return null;
-    try {
-      const { timestamp, data } = JSON.parse(cached);
-      if (Date.now() - timestamp > CACHE_EXPIRY_MS) return null;
-      return data;
-    } catch(e) { return null; }
-  }
+  function formatDuration(hrs) { if(hrs===null||isNaN(hrs)) return '—'; const h=Math.floor(hrs), m=Math.round((hrs-h)*60); if(h===0) return `${m}min`; if(m===0) return `${h}h`; return `${h}h ${m}min`; }
+  function formatDateDMY(isoDate) { if(!isoDate) return '—'; const parts=isoDate.split('-'); if(parts.length===3) return `${parts[2]}/${parts[1]}/${parts[0]}`; return isoDate; }
+  function getDateString(date) { return date.toISOString().split('T')[0]; }
 
-  // ==================== API FETCH (with date filters) ====================
   async function fetchAttendanceWithDates(fromDate, toDate) {
     let url = `${ATTENDANCE_API_URL}?action=getAllAttendance`;
     if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
     if (toDate) url += `&to=${encodeURIComponent(toDate)}`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     if (json.status === 'success' && Array.isArray(json.data)) return json.data;
-    throw new Error('Invalid attendance response');
+    throw new Error('Invalid attendance');
   }
-
   async function fetchRawSalesDataWithDates(store, fromDate, toDate) {
     let url = `${SALES_API_URL}?action=getEmployeeSalesData&store=${encodeURIComponent(store)}`;
     if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
@@ -348,186 +233,26 @@
     return null;
   }
 
-  // ==================== LOAD DATA (with cache and loading overlay) ====================
   async function loadAllData(forceRefresh = false) {
-    if (isLoading) return;
-    isLoading = true;
-    showLoading();
+    if(isLoading) return;
+    isLoading = true; showLoading();
     try {
       let attendanceData, salesData;
       const fromDate = document.getElementById('dateFrom').value;
       const toDate = document.getElementById('dateTo').value;
       const store = document.getElementById('storeSelect').value;
-
-      if (!forceRefresh) {
-        attendanceData = getCachedAttendance();
-        salesData = getCachedSales();
+      if(!forceRefresh) { attendanceData = getCachedAttendance(); salesData = getCachedSales(); }
+      if(!attendanceData || !salesData) {
+        [attendanceData, salesData] = await Promise.all([fetchAttendanceWithDates(fromDate, toDate), fetchRawSalesDataWithDates(store, fromDate, toDate)]);
+        cacheAttendanceData(attendanceData); cacheSalesData(salesData);
       }
-
-      if (!attendanceData || !salesData) {
-        // Fetch fresh from APIs in parallel
-        [attendanceData, salesData] = await Promise.all([
-          fetchAttendanceWithDates(fromDate, toDate),
-          fetchRawSalesDataWithDates(store, fromDate, toDate)
-        ]);
-        // Cache the fresh data
-        cacheAttendanceData(attendanceData);
-        cacheSalesData(salesData);
-      }
-
-      masterAttendance = attendanceData;
-      allSalesData = salesData;
-
+      masterAttendance = attendanceData; allSalesData = salesData;
       rebuildEmployeeFilter();
       await applyFiltersAndRender();
-    } catch (err) {
-      console.error("loadAllData error:", err);
-      document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="6" class="loading" style="color:#b91c1c;">⚠️ Failed to load data: ${err.message}</td></tr>`;
-      document.getElementById('salesBody').innerHTML = `<tr><td colspan="7" class="loading" style="color:#b91c1c;">⚠️ Failed to load data</td></tr>`;
-    } finally {
-      hideLoading();
-      isLoading = false;
-    }
+    } catch(err) { console.error(err); document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="8" class="loading">⚠️ Failed to load</td></tr>`; }
+    finally { hideLoading(); isLoading = false; }
   }
 
-  // ==================== EMPLOYEE PROFILE & PAYROLL ====================
-  async function loadEmployeeProfile(employeeName) {
-    try {
-      const url = `${ATTENDANCE_API_URL}?action=getEmployeeProfile&employeeName=${encodeURIComponent(employeeName)}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      if (json.success && json.profile) return json.profile;
-      return { 
-        hourlyRate: 0, epfEnabled: false, epfNumber: '', 
-        eisRate: 0.2, socsoEmployeeRate: 0.5, socsoEmployerRate: 1.75,
-        epfEmployeeRate: 11, epfEmployerRate: 13, 
-        salesTarget: 0, commissionAboveRate: 0, commissionBelowRate: 0, 
-        bankName: '', bankAccount: '' 
-      };
-    } catch(err) {
-      console.error("loadProfile error", err);
-      return { 
-        hourlyRate: 0, epfEnabled: false, epfNumber: '', 
-        eisRate: 0.2, socsoEmployeeRate: 0.5, socsoEmployerRate: 1.75,
-        epfEmployeeRate: 11, epfEmployerRate: 13, 
-        salesTarget: 0, commissionAboveRate: 0, commissionBelowRate: 0, 
-        bankName: '', bankAccount: '' 
-      };
-    }
-  }
-
-  async function saveEmployeeProfile(employeeName, profile) {
-    try {
-      const formData = new URLSearchParams();
-      formData.append('action', 'saveEmployeeProfile');
-      formData.append('employeeName', employeeName);
-      formData.append('hourlyRate', profile.hourlyRate);
-      formData.append('epfEnabled', profile.epfEnabled);
-      formData.append('epfNumber', profile.epfNumber);
-      formData.append('eisRate', profile.eisRate);
-      formData.append('socsoEmployeeRate', profile.socsoEmployeeRate);
-      formData.append('socsoEmployerRate', profile.socsoEmployerRate);
-      formData.append('epfEmployeeRate', profile.epfEmployeeRate);
-      formData.append('epfEmployerRate', profile.epfEmployerRate);
-      formData.append('salesTarget', profile.salesTarget);
-      formData.append('commissionAboveRate', profile.commissionAboveRate);
-      formData.append('commissionBelowRate', profile.commissionBelowRate);
-      formData.append('bankName', profile.bankName || '');
-      formData.append('bankAccount', profile.bankAccount || '');
-      const res = await fetch(ATTENDANCE_API_URL, { method: 'POST', body: formData });
-      const json = await res.json();
-      return json.success;
-    } catch(err) { console.error("saveProfile error", err); return false; }
-  }
-
-  async function calculatePayroll(employeeName, totalHours, totalSales) {
-    const profile = await loadEmployeeProfile(employeeName);
-    const hourlyRate = profile.hourlyRate || 0;
-    const grossSalary = totalHours * hourlyRate;
-    let epfDeduction = 0, epfEmployerContribution = 0;
-    if (profile.epfEnabled && profile.epfNumber) {
-      const employeeRate = (profile.epfEmployeeRate || 11) / 100;
-      const employerRate = (profile.epfEmployerRate || 13) / 100;
-      epfDeduction = grossSalary * employeeRate;
-      epfEmployerContribution = grossSalary * employerRate;
-    }
-    const WAGE_CEILING = 6000;
-    const cappedWage = Math.min(grossSalary, WAGE_CEILING);
-    const eisRate = (profile.eisRate ?? 0.2) / 100;
-    const eisEmployee = cappedWage * eisRate;
-    const eisEmployer = cappedWage * eisRate;
-    const socsoEmployeeRate = (profile.socsoEmployeeRate ?? 0.5) / 100;
-    const socsoEmployerRate = (profile.socsoEmployerRate ?? 1.75) / 100;
-    const socsoEmployee = cappedWage * socsoEmployeeRate;
-    const socsoEmployer = cappedWage * socsoEmployerRate;
-    let commission = 0;
-    const target = profile.salesTarget || 0;
-    if (target > 0) {
-      if (totalSales >= target) {
-        const excess = totalSales - target;
-        const aboveRate = (profile.commissionAboveRate || 0) / 100;
-        commission = excess * aboveRate;
-      } else {
-        const belowRate = (profile.commissionBelowRate || 0) / 100;
-        commission = totalSales * belowRate;
-      }
-    }
-    const netPayable = grossSalary - epfDeduction - eisEmployee - socsoEmployee + commission;
-    const totalEmployerExpenditure = netPayable + epfEmployerContribution + eisEmployer + socsoEmployer;
-    return { 
-      grossSalary, hourlyRate, totalHours,
-      cappedWage, WAGE_CEILING,
-      epfDeduction, epfEmployerContribution,
-      eisEmployee, eisEmployer,
-      socsoEmployee, socsoEmployer,
-      commission, netPayable, totalEmployerExpenditure
-    };
-  }
-
-  // ==================== LOCALSTORAGE PERSISTENCE (filters) ====================
-  function saveFilters() {
-    const filters = {
-      employee: document.getElementById('employeeFilter').value,
-      dateFrom: document.getElementById('dateFrom').value,
-      dateTo: document.getElementById('dateTo').value,
-      store: document.getElementById('storeSelect').value
-    };
-    localStorage.setItem('dashboardFilters', JSON.stringify(filters));
-  }
-
-  function loadFilters() {
-    const saved = localStorage.getItem('dashboardFilters');
-    if (saved) {
-      try {
-        const filters = JSON.parse(saved);
-        if (filters.dateFrom) document.getElementById('dateFrom').value = filters.dateFrom;
-        if (filters.dateTo) document.getElementById('dateTo').value = filters.dateTo;
-        if (filters.store) document.getElementById('storeSelect').value = filters.store;
-        return filters.employee;
-      } catch(e) { console.warn(e); }
-    }
-    return null;
-  }
-
-  // ==================== HELPERS ====================
-  function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
-  function timeToMinutes(t) { if (!t || typeof t !== 'string') return null; const parts = t.trim().split(':'); if (parts.length<2) return null; let h=parseInt(parts[0],10), m=parseInt(parts[1],10); if(isNaN(h)||isNaN(m)) return null; return h*60+m; }
-  function computeDurationHours(timeIn, timeOut) { const inMin=timeToMinutes(timeIn), outMin=timeToMinutes(timeOut); if(inMin===null||outMin===null) return null; let diff=outMin-inMin; if(diff<0) diff+=24*60; return parseFloat((diff/60).toFixed(2)); }
-  function formatDuration(hrs) { if(hrs===null||isNaN(hrs)) return '—'; const h=Math.floor(hrs), m=Math.round((hrs-h)*60); if(h===0) return `${m}min`; if(m===0) return `${h}h`; return `${h}h ${m}min`; }
-  function formatDateDMY(isoDate) { if(!isoDate) return '—'; const parts=isoDate.split('-'); if(parts.length===3) return `${parts[2]}/${parts[1]}/${parts[0]}`; return isoDate; }
-  function getDateString(date) { return date.toISOString().split('T')[0]; }
-  function setDefaultDateRange() {
-    const today = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(today.getDate() - 30);
-    const fromInput = document.getElementById('dateFrom');
-    const toInput = document.getElementById('dateTo');
-    if (!fromInput.value) fromInput.value = getDateString(thirtyDaysAgo);
-    if (!toInput.value) toInput.value = getDateString(today);
-  }
-
-  // ==================== UI UPDATE ====================
   function rebuildEmployeeFilter() {
     const employees = [...new Set(masterAttendance.map(r => r.employee))].sort();
     const select = document.getElementById('employeeFilter');
@@ -539,61 +264,52 @@
   async function applyFiltersAndRender() {
     let filtered = [...masterAttendance];
     const empFilter = document.getElementById('employeeFilter').value;
-    if (empFilter !== 'ALL') filtered = filtered.filter(r => r.employee === empFilter);
-    const from = document.getElementById('dateFrom').value ? new Date(document.getElementById('dateFrom').value + 'T00:00:00') : null;
-    const to = document.getElementById('dateTo').value ? new Date(document.getElementById('dateTo').value + 'T23:59:59') : null;
-    if (from || to) {
-      filtered = filtered.filter(r => {
-        const d = new Date(r.date + 'T00:00:00');
-        if (from && d < from) return false;
-        if (to && d > to) return false;
-        return true;
-      });
-    }
+    if(empFilter !== 'ALL') filtered = filtered.filter(r => r.employee === empFilter);
+    const from = document.getElementById('dateFrom').value ? new Date(document.getElementById('dateFrom').value+'T00:00:00') : null;
+    const to = document.getElementById('dateTo').value ? new Date(document.getElementById('dateTo').value+'T23:59:59') : null;
+    if(from || to) filtered = filtered.filter(r => { const d = new Date(r.date+'T00:00:00'); if(from && d<from) return false; if(to && d>to) return false; return true; });
     currentFiltered = filtered;
     renderAttendanceTable();
     updateAttendanceStats();
-
     const storeSelect = document.getElementById('storeSelect');
-    if (empFilter !== 'ALL') {
-      storeSelect.value = "all";
-      storeSelect.disabled = true;
-    } else {
-      storeSelect.disabled = false;
-    }
+    if(empFilter !== 'ALL') { storeSelect.value = "all"; storeSelect.disabled = true; } else storeSelect.disabled = false;
     await applySalesEmployeeFilter();
     saveFilters();
+    // update note text
+    document.getElementById('roundingNote').innerHTML = autoAdjustEnabled ? 
+      '* Rounding rules active: Clock‑in forward (e.g., 10:15→10:30, 15:35→16:00); Clock‑out backward (e.g., 16:15→16:00). Toggle to disable.' :
+      '* Rounding is OFF – original clock times used for hours and payroll.';
+    document.getElementById('hoursNote').innerText = autoAdjustEnabled ? '(rounding enabled)' : '(original hours)';
   }
 
   async function applySalesEmployeeFilter() {
     const empFilter = document.getElementById('employeeFilter').value;
-    if (empFilter === 'ALL') {
-      filteredSales = allSalesData ? { labels: allSalesData.labels, data: allSalesData.data } : null;
-    } else {
-      if (!allSalesData || !allSalesData.labels) {
-        filteredSales = { labels: [empFilter], data: [0] };
-      } else {
-        const index = allSalesData.labels.findIndex(name => name.toLowerCase() === empFilter.toLowerCase());
-        if (index !== -1) filteredSales = { labels: [allSalesData.labels[index]], data: [allSalesData.data[index]] };
-        else filteredSales = { labels: [empFilter], data: [0] };
-      }
+    if(empFilter === 'ALL') filteredSales = allSalesData ? { labels: allSalesData.labels, data: allSalesData.data } : null;
+    else {
+      if(!allSalesData || !allSalesData.labels) filteredSales = { labels: [empFilter], data: [0] };
+      else { const idx = allSalesData.labels.findIndex(name => name.toLowerCase() === empFilter.toLowerCase()); filteredSales = idx !== -1 ? { labels: [allSalesData.labels[idx]], data: [allSalesData.data[idx]] } : { labels: [empFilter], data: [0] }; }
     }
     await renderSalesTable();
   }
 
   function renderAttendanceTable() {
     const tbody = document.getElementById('attendanceBody');
-    if (currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="loading">📭 No attendance records.</td></tr>'; return; }
-    const sorted = [...currentFiltered].sort((a,b) => new Date(b.date) - new Date(a.date));
+    if(currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="loading">📭 No records</td></tr>'; return; }
+    const sorted = [...currentFiltered].sort((a,b)=>new Date(b.date)-new Date(a.date));
     let html = '';
-    for (let r of sorted) {
+    for(let r of sorted) {
+      const adjInStr = getAdjustedTimeString(r.timeIn, true);
+      const adjOutStr = getAdjustedTimeString(r.timeOut, false);
       const hrs = computeDurationHours(r.timeIn, r.timeOut);
       const durationDisplay = hrs !== null ? formatDuration(hrs) : '⚠️';
+      const showAdjusted = autoAdjustEnabled;
       html += `<tr>
         <td><i class="fas fa-user-circle"></i> ${escapeHtml(r.employee)}</td>
         <td>${formatDateDMY(r.date)}</td>
         <td>${escapeHtml(r.timeIn)}</td>
+        <td>${showAdjusted && adjInStr ? `<span class="adjusted-badge">${adjInStr}</span>` : (showAdjusted ? '—' : escapeHtml(r.timeIn))}</td>
         <td>${escapeHtml(r.timeOut)}</td>
+        <td>${showAdjusted && adjOutStr ? `<span class="adjusted-badge">${adjOutStr}</span>` : (showAdjusted ? '—' : escapeHtml(r.timeOut))}</td>
         <td><span class="duration-badge">${durationDisplay}</span></td>
         <td>${escapeHtml(r.location)}</td>
       </tr>`;
@@ -607,297 +323,142 @@
     document.getElementById('totalShifts').innerText = currentFiltered.length;
     let totalHours = 0;
     const empHours = new Map();
-    for (let r of currentFiltered) {
+    for(let r of currentFiltered) {
       const hrs = computeDurationHours(r.timeIn, r.timeOut);
-      if (hrs !== null) { totalHours += hrs; empHours.set(r.employee, (empHours.get(r.employee)||0) + hrs); }
+      if(hrs !== null) { totalHours += hrs; empHours.set(r.employee, (empHours.get(r.employee)||0)+hrs); }
     }
     document.getElementById('totalHours').innerHTML = `${totalHours.toFixed(1)} <span style="font-size:0.8rem;">hrs</span>`;
     let topEmp='—', topHrs=0;
-    for (let [name, hrs] of empHours) if (hrs > topHrs) { topHrs=hrs; topEmp=name; }
-    document.getElementById('topEmployeeHours').innerText = topEmp !== '—' ? topEmp : '—';
+    for(let [name, hrs] of empHours) if(hrs>topHrs) { topHrs=hrs; topEmp=name; }
+    document.getElementById('topEmployeeHours').innerText = topEmp;
+  }
+
+  async function loadEmployeeProfile(employeeName) {
+    try {
+      const res = await fetch(`${ATTENDANCE_API_URL}?action=getEmployeeProfile&employeeName=${encodeURIComponent(employeeName)}`);
+      const json = await res.json();
+      if(json.success && json.profile) return json.profile;
+    } catch(e) {}
+    return { hourlyRate:0, epfEnabled:false, epfNumber:'', eisRate:0.2, socsoEmployeeRate:0.5, socsoEmployerRate:1.75, epfEmployeeRate:11, epfEmployerRate:13, salesTarget:0, commissionAboveRate:0, commissionBelowRate:0, bankName:'', bankAccount:'' };
+  }
+
+  async function calculatePayroll(employeeName, totalHours, totalSales) {
+    const profile = await loadEmployeeProfile(employeeName);
+    const hourlyRate = profile.hourlyRate || 0;
+    const grossSalary = totalHours * hourlyRate;
+    let epfDeduction=0, epfEmployerContribution=0;
+    if(profile.epfEnabled && profile.epfNumber) {
+      const empRate = (profile.epfEmployeeRate||11)/100, emplRate = (profile.epfEmployerRate||13)/100;
+      epfDeduction = grossSalary * empRate; epfEmployerContribution = grossSalary * emplRate;
+    }
+    const WAGE_CEILING=6000;
+    const cappedWage = Math.min(grossSalary, WAGE_CEILING);
+    const eisRate = (profile.eisRate??0.2)/100;
+    const eisEmployee = cappedWage * eisRate, eisEmployer = cappedWage * eisRate;
+    const socsoERate = (profile.socsoEmployeeRate??0.5)/100, socsoEmplRate = (profile.socsoEmployerRate??1.75)/100;
+    const socsoEmployee = cappedWage * socsoERate, socsoEmployer = cappedWage * socsoEmplRate;
+    let commission=0; const target = profile.salesTarget||0;
+    if(target>0) {
+      if(totalSales>=target) commission = (totalSales - target) * ((profile.commissionAboveRate||0)/100);
+      else commission = totalSales * ((profile.commissionBelowRate||0)/100);
+    }
+    const netPayable = grossSalary - epfDeduction - eisEmployee - socsoEmployee + commission;
+    const totalEmployerExpenditure = netPayable + epfEmployerContribution + eisEmployer + socsoEmployer;
+    return { grossSalary, hourlyRate, totalHours, cappedWage, epfDeduction, epfEmployerContribution, eisEmployee, eisEmployer, socsoEmployee, socsoEmployer, commission, netPayable, totalEmployerExpenditure };
   }
 
   async function renderSalesTable() {
     const tbody = document.getElementById('salesBody');
     const empFilter = document.getElementById('employeeFilter').value;
     let employeesToShow = [];
-
-    if (empFilter === 'ALL') {
-      const attendanceEmployees = new Set(currentFiltered.map(r => r.employee));
-      if (filteredSales && filteredSales.labels) {
-        filteredSales.labels.forEach(label => attendanceEmployees.add(label));
-      }
-      employeesToShow = Array.from(attendanceEmployees).sort();
-    } else {
-      employeesToShow = [empFilter];
-    }
-
-    if (employeesToShow.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="loading">No employees to display.</td></tr>';
-      document.getElementById('payrollBreakdown').style.display = 'none';
-      return;
-    }
-
+    if(empFilter === 'ALL') {
+      const attendanceEmps = new Set(currentFiltered.map(r=>r.employee));
+      if(filteredSales && filteredSales.labels) filteredSales.labels.forEach(l=>attendanceEmps.add(l));
+      employeesToShow = Array.from(attendanceEmps).sort();
+    } else employeesToShow = [empFilter];
+    if(employeesToShow.length===0) { tbody.innerHTML='<tr><td colspan="7" class="loading">No data</td></tr>'; document.getElementById('payrollBreakdown').style.display='none'; return; }
     const hoursMap = new Map();
-    for (let r of currentFiltered) {
-      const hrs = computeDurationHours(r.timeIn, r.timeOut);
-      if (hrs !== null) hoursMap.set(r.employee, (hoursMap.get(r.employee)||0) + hrs);
-    }
-
+    for(let r of currentFiltered) { const hrs = computeDurationHours(r.timeIn, r.timeOut); if(hrs!==null) hoursMap.set(r.employee, (hoursMap.get(r.employee)||0)+hrs); }
     const salesMap = new Map();
-    if (filteredSales && filteredSales.labels) {
-      for (let i=0; i<filteredSales.labels.length; i++) salesMap.set(filteredSales.labels[i], filteredSales.data[i]);
-    }
-
-    let totalSalesSum = 0, topSalesEmp = '—', topSalesVal = 0;
-    let html = '', selectedEmployeePayroll = null;
-
-    for (let emp of employeesToShow) {
-      const hours = hoursMap.get(emp) || 0;
-      const sales = salesMap.get(emp) || 0;
-      totalSalesSum += sales;
-      if (sales > topSalesVal) { topSalesVal = sales; topSalesEmp = emp; }
+    if(filteredSales && filteredSales.labels) for(let i=0;i<filteredSales.labels.length;i++) salesMap.set(filteredSales.labels[i], filteredSales.data[i]);
+    let totalSalesSum=0, topSalesEmp='—', topSalesVal=0;
+    let html='', selectedPayroll=null;
+    for(let emp of employeesToShow) {
+      const hours = hoursMap.get(emp)||0;
+      const sales = salesMap.get(emp)||0;
+      totalSalesSum+=sales; if(sales>topSalesVal) { topSalesVal=sales; topSalesEmp=emp; }
       const profile = await loadEmployeeProfile(emp);
-      const target = profile.salesTarget || 0;
-      let achievementPercent = 0, commission = 0;
-      if (target > 0) {
-        achievementPercent = (sales / target) * 100;
-        if (sales >= target) {
-          const excess = sales - target;
-          const aboveRate = (profile.commissionAboveRate || 0) / 100;
-          commission = excess * aboveRate;
-        } else {
-          const belowRate = (profile.commissionBelowRate || 0) / 100;
-          commission = sales * belowRate;
-        }
-      }
-      const achievementDisplay = target > 0 ? `${achievementPercent.toFixed(1)}%` : '—';
-      const commissionDisplay = commission > 0 ? `RM ${commission.toFixed(2)}` : (target > 0 && sales < target ? `RM ${commission.toFixed(2)}` : '—');
-      const targetDisplay = target > 0 ? `RM ${target.toFixed(2)}` : '—';
+      const target = profile.salesTarget||0;
+      let achievement='—', commission=0;
+      if(target>0) { const percent = (sales/target)*100; achievement=`${percent.toFixed(1)}%`; if(sales>=target) commission=(sales-target)*((profile.commissionAboveRate||0)/100); else commission=sales*((profile.commissionBelowRate||0)/100); }
       const payroll = await calculatePayroll(emp, hours, sales);
-      const payableDisplay = hours > 0 ? `RM ${payroll.netPayable.toFixed(2)}` : '—';
-      html += `<tr>
-        <td>${escapeHtml(emp)}</td>
-        <td>${hours.toFixed(1)} hrs</td>
-        <td>RM ${sales.toFixed(2)}</td>
-        <td>${targetDisplay}</td>
-        <td>${achievementDisplay}</td>
-        <td>${commissionDisplay}</td>
-        <td><strong>${payableDisplay}</strong></td>
-      </tr>`;
-      if (empFilter !== 'ALL' && emp === empFilter) selectedEmployeePayroll = payroll;
+      html+=`<tr><td>${escapeHtml(emp)}</td><td>${hours.toFixed(1)} hrs</td><td>RM ${sales.toFixed(2)}</td><td>${target>0?`RM ${target.toFixed(2)}`:'—'}</td><td>${achievement}</td><td>${commission>0?`RM ${commission.toFixed(2)}`:'—'}</td><td><strong>RM ${payroll.netPayable.toFixed(2)}</strong></td></tr>`;
+      if(empFilter !== 'ALL' && emp === empFilter) selectedPayroll = payroll;
     }
-
     tbody.innerHTML = html;
     document.getElementById('totalSales').innerHTML = `RM ${totalSalesSum.toFixed(2)}`;
-    document.getElementById('topEmployeeSales').innerText = topSalesEmp !== '—' ? topSalesEmp : '—';
-
-    if (empFilter !== 'ALL' && selectedEmployeePayroll) {
+    document.getElementById('topEmployeeSales').innerText = topSalesEmp;
+    if(empFilter !== 'ALL' && selectedPayroll) {
       document.getElementById('payrollBreakdown').style.display = 'block';
-      const p = selectedEmployeePayroll;
+      const p = selectedPayroll;
       document.getElementById('grossAmount').innerHTML = `RM ${p.grossSalary.toFixed(2)} <span style="font-size:0.7rem;">(${p.totalHours} hrs × RM ${p.hourlyRate.toFixed(2)})</span>`;
       document.getElementById('epfEmployeeAmount').innerHTML = `RM ${p.epfDeduction.toFixed(2)}`;
       document.getElementById('epfEmployerAmount').innerHTML = `RM ${p.epfEmployerContribution.toFixed(2)}`;
       document.getElementById('eisEmployeeAmount').innerHTML = `RM ${p.eisEmployee.toFixed(2)} <span style="font-size:0.7rem;">(0.2% of RM ${p.cappedWage.toFixed(2)})</span>`;
-      document.getElementById('eisEmployerAmount').innerHTML = `RM ${p.eisEmployer.toFixed(2)} <span style="font-size:0.7rem;">(0.2% of RM ${p.cappedWage.toFixed(2)})</span>`;
+      document.getElementById('eisEmployerAmount').innerHTML = `RM ${p.eisEmployer.toFixed(2)}`;
       document.getElementById('socsoEmployeeAmount').innerHTML = `RM ${p.socsoEmployee.toFixed(2)} <span style="font-size:0.7rem;">(0.5% of RM ${p.cappedWage.toFixed(2)})</span>`;
-      document.getElementById('socsoEmployerAmount').innerHTML = `RM ${p.socsoEmployer.toFixed(2)} <span style="font-size:0.7rem;">(1.75% of RM ${p.cappedWage.toFixed(2)})</span>`;
+      document.getElementById('socsoEmployerAmount').innerHTML = `RM ${p.socsoEmployer.toFixed(2)}`;
       document.getElementById('bonusAmount').innerText = `RM ${p.commission.toFixed(2)}`;
       document.getElementById('netPayableAmount').innerText = `RM ${p.netPayable.toFixed(2)}`;
       document.getElementById('totalEmployerExpenditure').innerText = `RM ${p.totalEmployerExpenditure.toFixed(2)}`;
-      window.currentPayrollData = p;
-      window.currentPayrollEmployee = empFilter;
-    } else {
-      document.getElementById('payrollBreakdown').style.display = 'none';
-    }
+      window.currentPayrollData = p; window.currentPayrollEmployee = empFilter;
+    } else document.getElementById('payrollBreakdown').style.display = 'none';
   }
 
-  // ==================== PAYMENT FUNCTIONS ====================
-  async function recordPayment(employeeName, payrollData, bankName, bankAccount) {
-    const paymentData = {
-      action: 'savePayment',
-      employeeName: employeeName,
-      timestamp: new Date().toISOString(),
-      netPayable: payrollData.netPayable,
-      epfEmployee: payrollData.epfDeduction,
-      epfEmployer: payrollData.epfEmployerContribution,
-      eisEmployee: payrollData.eisEmployee,
-      eisEmployer: payrollData.eisEmployer,
-      socsoEmployee: payrollData.socsoEmployee,
-      socsoEmployer: payrollData.socsoEmployer,
-      totalExpenditure: payrollData.totalEmployerExpenditure,
-      bankName: bankName,
-      bankAccount: bankAccount,
-      status: 'paid'
-    };
-    const formData = new URLSearchParams();
-    for (let key in paymentData) formData.append(key, paymentData[key]);
-    const res = await fetch(ATTENDANCE_API_URL, { method: 'POST', body: formData });
-    const json = await res.json();
-    return json.success;
-  }
+  function restrictFutureDates() { const today=getDateString(new Date()); const from=document.getElementById('dateFrom'), to=document.getElementById('dateTo'); from.setAttribute('max',today); to.setAttribute('max',today); if(from.value && from.value>today) from.value=today; if(to.value && to.value>today) to.value=today; }
+  function saveFilters() { localStorage.setItem('dashboardFilters', JSON.stringify({ employee:document.getElementById('employeeFilter').value, dateFrom:document.getElementById('dateFrom').value, dateTo:document.getElementById('dateTo').value, store:document.getElementById('storeSelect').value })); }
+  function loadFilters() { const saved = localStorage.getItem('dashboardFilters'); if(saved) { const f=JSON.parse(saved); if(f.dateFrom) document.getElementById('dateFrom').value=f.dateFrom; if(f.dateTo) document.getElementById('dateTo').value=f.dateTo; if(f.store) document.getElementById('storeSelect').value=f.store; return f.employee; } return null; }
+  function setDefaultDateRange() { const today=new Date(); const thirtyDaysAgo=new Date(); thirtyDaysAgo.setDate(today.getDate()-30); if(!document.getElementById('dateFrom').value) document.getElementById('dateFrom').value=getDateString(thirtyDaysAgo); if(!document.getElementById('dateTo').value) document.getElementById('dateTo').value=getDateString(today); restrictFutureDates(); }
+  function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
 
-  async function getPaymentHistory(employeeName) {
-    const url = `${ATTENDANCE_API_URL}?action=getPaymentHistory&employeeName=${encodeURIComponent(employeeName)}`;
-    const res = await fetch(url);
-    const json = await res.json();
-    if (json.success) return json.payments;
-    return [];
-  }
+  // Payment functions (unchanged, but refer to global)
+  async function recordPayment(employeeName, payrollData, bankName, bankAccount) { const fd=new URLSearchParams(); fd.append('action','savePayment'); fd.append('employeeName',employeeName); fd.append('timestamp',new Date().toISOString()); fd.append('netPayable',payrollData.netPayable); fd.append('epfEmployee',payrollData.epfDeduction); fd.append('epfEmployer',payrollData.epfEmployerContribution); fd.append('eisEmployee',payrollData.eisEmployee); fd.append('eisEmployer',payrollData.eisEmployer); fd.append('socsoEmployee',payrollData.socsoEmployee); fd.append('socsoEmployer',payrollData.socsoEmployer); fd.append('totalExpenditure',payrollData.totalEmployerExpenditure); fd.append('bankName',bankName); fd.append('bankAccount',bankAccount); fd.append('status','paid'); const res=await fetch(ATTENDANCE_API_URL,{method:'POST',body:fd}); const json=await res.json(); return json.success; }
+  async function getPaymentHistory(employeeName) { const res=await fetch(`${ATTENDANCE_API_URL}?action=getPaymentHistory&employeeName=${encodeURIComponent(employeeName)}`); const json=await res.json(); return json.success?json.payments:[]; }
+  async function openPaymentModal() { const emp=window.currentPayrollEmployee; if(!emp){alert('No employee selected');return;} const fromDate=document.getElementById('dateFrom').value, toDate=document.getElementById('dateTo').value; const checkRes=await fetch(`${ATTENDANCE_API_URL}?action=checkPaymentExists&employeeName=${encodeURIComponent(emp)}&fromDate=${encodeURIComponent(fromDate)}&toDate=${encodeURIComponent(toDate)}`); const checkData=await checkRes.json(); if(checkData.exists){alert(`Payment already recorded for ${emp} in selected period.`);return;} const profile=await loadEmployeeProfile(emp); if(!profile.bankName||!profile.bankAccount){alert('Bank details missing.');return;} const payroll=window.currentPayrollData; document.getElementById('payEmployeeName').innerText=emp; document.getElementById('payBankName').innerText=profile.bankName; document.getElementById('payBankAccount').innerText=profile.bankAccount; document.getElementById('payNetPayable').innerText=payroll.netPayable.toFixed(2); document.getElementById('payEpfTotal').innerText=(payroll.epfDeduction+payroll.epfEmployerContribution).toFixed(2); document.getElementById('payEisTotal').innerText=(payroll.eisEmployee+payroll.eisEmployer).toFixed(2); document.getElementById('paySocsoTotal').innerText=(payroll.socsoEmployee+payroll.socsoEmployer).toFixed(2); document.getElementById('payTotalExpenditure').innerText=payroll.totalEmployerExpenditure.toFixed(2); document.getElementById('paymentModal').style.display='flex'; }
+  async function confirmPayment() { const success=await recordPayment(window.currentPayrollEmployee, window.currentPayrollData, (await loadEmployeeProfile(window.currentPayrollEmployee)).bankName, (await loadEmployeeProfile(window.currentPayrollEmployee)).bankAccount); if(success){ alert('Payment recorded'); document.getElementById('paymentModal').style.display='none'; await renderSalesTable(); } else alert('Payment failed'); }
+  function closePaymentModal(){document.getElementById('paymentModal').style.display='none';}
+  async function openHistoryModal() { const emp=window.currentPayrollEmployee; if(!emp){alert('Select employee');return;} const payments=await getPaymentHistory(emp); const container=document.getElementById('historyList'); if(payments.length===0) container.innerHTML='<div class="loading">No records</div>'; else { let html=''; for(let p of payments) html+=`<div class="payment-history-item"><div class="flex-between"><strong>${new Date(p.timestamp).toLocaleString()}</strong><span>RM ${p.netPayable.toFixed(2)}</span></div><div>EPF total: RM ${(p.epfEmployee+p.epfEmployer).toFixed(2)}</div><div>EIS total: RM ${(p.eisEmployee+p.eisEmployer).toFixed(2)}</div><div>SOCSO total: RM ${(p.socsoEmployee+p.socsoEmployer).toFixed(2)}</div><div>Employer Expenditure: RM ${p.totalExpenditure.toFixed(2)}</div><div>Bank: ${p.bankName} (${p.bankAccount})</div></div>`; container.innerHTML=html; } document.getElementById('historyModal').style.display='flex'; }
+  function closeHistoryModal(){document.getElementById('historyModal').style.display='none';}
+  async function saveProfile() { const emp=document.getElementById('profileEmployeeName').value; const profile={ hourlyRate:parseFloat(document.getElementById('hourlyRate').value)||0, epfEnabled:document.getElementById('epfEnabled').checked, epfNumber:document.getElementById('epfNumber').value.trim(), eisRate:parseFloat(document.getElementById('eisRate').value)||0.2, socsoEmployeeRate:parseFloat(document.getElementById('socsoEmployeeRate').value)||0.5, socsoEmployerRate:parseFloat(document.getElementById('socsoEmployerRate').value)||1.75, epfEmployeeRate:parseFloat(document.getElementById('epfEmployeeRate').value)||11, epfEmployerRate:parseFloat(document.getElementById('epfEmployerRate').value)||13, salesTarget:parseFloat(document.getElementById('salesTarget').value)||0, commissionBelowRate:parseFloat(document.getElementById('commissionBelowRate').value)||0, commissionAboveRate:parseFloat(document.getElementById('commissionAboveRate').value)||0, bankName:document.getElementById('bankNameSelect').value, bankAccount:document.getElementById('bankAccount').value.trim() }; const fd=new URLSearchParams(); fd.append('action','saveEmployeeProfile'); fd.append('employeeName',emp); for(let k in profile) fd.append(k, profile[k]); const res=await fetch(ATTENDANCE_API_URL,{method:'POST',body:fd}); const json=await res.json(); if(json.success){ document.getElementById('profileModal').style.display='none'; await renderSalesTable(); } else alert('Save failed'); }
+  function openProfileModal() { const emp=document.getElementById('employeeFilter').value; if(emp==='ALL'){alert('Select a specific employee');return;} loadEmployeeProfile(emp).then(profile=>{ document.getElementById('profileEmployeeName').value=emp; document.getElementById('profileModalTitle').innerText=`Profile - ${emp}`; document.getElementById('hourlyRate').value=profile.hourlyRate||''; document.getElementById('epfEnabled').checked=profile.epfEnabled||false; document.getElementById('epfNumber').value=profile.epfNumber||''; document.getElementById('epfEmployeeRate').value=profile.epfEmployeeRate||11; document.getElementById('epfEmployerRate').value=profile.epfEmployerRate||13; document.getElementById('eisRate').value=profile.eisRate??0.2; document.getElementById('socsoEmployeeRate').value=profile.socsoEmployeeRate??0.5; document.getElementById('socsoEmployerRate').value=profile.socsoEmployerRate??1.75; document.getElementById('salesTarget').value=profile.salesTarget||''; document.getElementById('commissionBelowRate').value=profile.commissionBelowRate||''; document.getElementById('commissionAboveRate').value=profile.commissionAboveRate||''; document.getElementById('bankNameSelect').value=profile.bankName||''; document.getElementById('bankAccount').value=profile.bankAccount||''; document.getElementById('epfDetailsDiv').style.display=profile.epfEnabled?'block':'none'; document.getElementById('profileModal').style.display='flex'; }); }
+  function closeProfileModal(){document.getElementById('profileModal').style.display='none';}
 
-  // ==================== PROFILE MODAL ====================
-  async function openProfileModal() {
-    const selectedEmployee = document.getElementById('employeeFilter').value;
-    if (selectedEmployee === 'ALL') { alert('Please select a specific employee first.'); return; }
-    const profile = await loadEmployeeProfile(selectedEmployee);
-    document.getElementById('profileEmployeeName').value = selectedEmployee;
-    document.getElementById('profileModalTitle').innerText = `Profile - ${selectedEmployee}`;
-    document.getElementById('hourlyRate').value = profile.hourlyRate || '';
-    document.getElementById('epfEnabled').checked = profile.epfEnabled || false;
-    document.getElementById('epfNumber').value = profile.epfNumber || '';
-    document.getElementById('epfEmployeeRate').value = profile.epfEmployeeRate || 11;
-    document.getElementById('epfEmployerRate').value = profile.epfEmployerRate || 13;
-    document.getElementById('eisRate').value = profile.eisRate ?? 0.2;
-    document.getElementById('socsoEmployeeRate').value = profile.socsoEmployeeRate ?? 0.5;
-    document.getElementById('socsoEmployerRate').value = profile.socsoEmployerRate ?? 1.75;
-    document.getElementById('salesTarget').value = profile.salesTarget || '';
-    document.getElementById('commissionBelowRate').value = profile.commissionBelowRate || '';
-    document.getElementById('commissionAboveRate').value = profile.commissionAboveRate || '';
-    const bankSelect = document.getElementById('bankNameSelect');
-    if (profile.bankName) bankSelect.value = profile.bankName; else bankSelect.value = '';
-    document.getElementById('bankAccount').value = profile.bankAccount || '';
-    const epfDetailsDiv = document.getElementById('epfDetailsDiv');
-    epfDetailsDiv.style.display = profile.epfEnabled ? 'block' : 'none';
-    document.getElementById('profileModal').style.display = 'flex';
-  }
-
-  function closeProfileModal() { document.getElementById('profileModal').style.display = 'none'; }
-  async function saveProfile() {
-    const employeeName = document.getElementById('profileEmployeeName').value;
-    const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
-    const epfEnabled = document.getElementById('epfEnabled').checked;
-    const epfNumber = document.getElementById('epfNumber').value.trim();
-    const epfEmployeeRate = parseFloat(document.getElementById('epfEmployeeRate').value) || 11;
-    const epfEmployerRate = parseFloat(document.getElementById('epfEmployerRate').value) || 13;
-    const eisRate = parseFloat(document.getElementById('eisRate').value) || 0.2;
-    const socsoEmployeeRate = parseFloat(document.getElementById('socsoEmployeeRate').value) || 0.5;
-    const socsoEmployerRate = parseFloat(document.getElementById('socsoEmployerRate').value) || 1.75;
-    const salesTarget = parseFloat(document.getElementById('salesTarget').value) || 0;
-    const commissionBelowRate = parseFloat(document.getElementById('commissionBelowRate').value) || 0;
-    const commissionAboveRate = parseFloat(document.getElementById('commissionAboveRate').value) || 0;
-    const bankName = document.getElementById('bankNameSelect').value;
-    const bankAccount = document.getElementById('bankAccount').value.trim();
-    const success = await saveEmployeeProfile(employeeName, { 
-      hourlyRate, epfEnabled, epfNumber, eisRate, socsoEmployeeRate, socsoEmployerRate,
-      epfEmployeeRate, epfEmployerRate, salesTarget, commissionBelowRate, commissionAboveRate, bankName, bankAccount 
-    });
-    if (success) { closeProfileModal(); await renderSalesTable(); }
-    else alert('Failed to save profile. Check console.');
-  }
-
-  // ==================== PAYMENT MODAL ====================
-  async function openPaymentModal() {
-    const emp = window.currentPayrollEmployee;
-    if (!emp) { alert('No employee selected or payroll data not loaded.'); return; }
-    const fromDate = document.getElementById('dateFrom').value;
-    const toDate = document.getElementById('dateTo').value;
-    const checkUrl = `${ATTENDANCE_API_URL}?action=checkPaymentExists&employeeName=${encodeURIComponent(emp)}&fromDate=${encodeURIComponent(fromDate)}&toDate=${encodeURIComponent(toDate)}`;
-    try {
-      const checkRes = await fetch(checkUrl);
-      const checkData = await checkRes.json();
-      if (checkData.exists) {
-        alert(`❌ Payment already recorded for ${emp} in the period ${fromDate || 'start'} to ${toDate || 'end'} on ${new Date(checkData.paymentDate).toLocaleDateString()}. Cannot pay again.`);
-        return;
-      }
-    } catch (err) { console.error("Payment check failed", err); alert("Unable to verify payment status. Please try again."); return; }
-    const profile = await loadEmployeeProfile(emp);
-    if (!profile.bankName || !profile.bankAccount) { alert('Bank details missing. Please update employee profile first.'); return; }
-    const payroll = window.currentPayrollData;
-    document.getElementById('payEmployeeName').innerText = emp;
-    document.getElementById('payBankName').innerText = profile.bankName;
-    document.getElementById('payBankAccount').innerText = profile.bankAccount;
-    document.getElementById('payNetPayable').innerText = payroll.netPayable.toFixed(2);
-    document.getElementById('payEpfTotal').innerText = (payroll.epfDeduction + payroll.epfEmployerContribution).toFixed(2);
-    document.getElementById('payEisTotal').innerText = (payroll.eisEmployee + payroll.eisEmployer).toFixed(2);
-    document.getElementById('paySocsoTotal').innerText = (payroll.socsoEmployee + payroll.socsoEmployer).toFixed(2);
-    document.getElementById('payTotalExpenditure').innerText = payroll.totalEmployerExpenditure.toFixed(2);
-    document.getElementById('paymentModal').style.display = 'flex';
-  }
-  async function confirmPayment() {
-    const emp = window.currentPayrollEmployee;
-    const payroll = window.currentPayrollData;
-    const profile = await loadEmployeeProfile(emp);
-    const success = await recordPayment(emp, payroll, profile.bankName, profile.bankAccount);
-    if (success) { alert(`✅ Payment recorded for ${emp}.`); document.getElementById('paymentModal').style.display = 'none'; await renderSalesTable(); }
-    else alert('Payment failed. Check console.');
-  }
-  function closePaymentModal() { document.getElementById('paymentModal').style.display = 'none'; }
-
-  // ==================== PAYMENT HISTORY MODAL ====================
-  async function openHistoryModal() {
-    const emp = window.currentPayrollEmployee;
-    if (!emp) { alert('Select an employee first.'); return; }
-    const payments = await getPaymentHistory(emp);
-    const container = document.getElementById('historyList');
-    if (payments.length === 0) container.innerHTML = '<div class="loading">No payment records found.</div>';
-    else {
-      let html = '';
-      for (let p of payments) {
-        html += `<div class="payment-history-item">
-          <div class="flex-between"><strong>${new Date(p.timestamp).toLocaleString()}</strong> <span>RM ${p.netPayable.toFixed(2)}</span></div>
-          <div>EPF (Emp+Empl): RM ${(p.epfEmployee + p.epfEmployer).toFixed(2)}</div>
-          <div>EIS (Emp+Empl): RM ${(p.eisEmployee + p.eisEmployer).toFixed(2)}</div>
-          <div>SOCSO (Emp+Empl): RM ${(p.socsoEmployee + p.socsoEmployer).toFixed(2)}</div>
-          <div>Total Employer Expenditure: RM ${p.totalExpenditure.toFixed(2)}</div>
-          <div>Bank: ${p.bankName} (${p.bankAccount})</div>
-        </div>`;
-      }
-      container.innerHTML = html;
-    }
-    document.getElementById('historyModal').style.display = 'flex';
-  }
-  function closeHistoryModal() { document.getElementById('historyModal').style.display = 'none'; }
-
-  // ==================== EVENT LISTENERS ====================
-  document.getElementById('employeeFilter').addEventListener('change', applyFiltersAndRender);
-  document.getElementById('dateFrom').addEventListener('change', applyFiltersAndRender);
-  document.getElementById('dateTo').addEventListener('change', applyFiltersAndRender);
-  document.getElementById('storeSelect').addEventListener('change', () => loadAllData(false));
-  document.getElementById('refreshBtn').addEventListener('click', () => loadAllData(true));
-
-  document.getElementById('profileHeaderBtn').addEventListener('click', openProfileModal);
-  document.getElementById('closeProfileModal').addEventListener('click', closeProfileModal);
-  document.getElementById('cancelProfileBtn').addEventListener('click', closeProfileModal);
-  document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
-  document.getElementById('epfEnabled').addEventListener('change', (e) => {
-    document.getElementById('epfDetailsDiv').style.display = e.target.checked ? 'block' : 'none';
+  // Toggle event
+  document.getElementById('roundingToggle').addEventListener('change', (e) => {
+    autoAdjustEnabled = e.target.checked;
+    applyFiltersAndRender();
   });
-  document.getElementById('payNowBtn').addEventListener('click', openPaymentModal);
-  document.getElementById('confirmPayBtn').addEventListener('click', confirmPayment);
-  document.getElementById('cancelPayBtn').addEventListener('click', closePaymentModal);
-  document.getElementById('closePaymentModal').addEventListener('click', closePaymentModal);
-  document.getElementById('viewHistoryBtn').addEventListener('click', openHistoryModal);
-  document.getElementById('closeHistoryModal').addEventListener('click', closeHistoryModal);
-  document.getElementById('closeHistoryBtn').addEventListener('click', closeHistoryModal);
 
-  // ==================== INIT ====================
-  async function init() {
-    setDefaultDateRange();
-    const savedEmployee = loadFilters();
-    await loadAllData(false);
-    if (savedEmployee && savedEmployee !== 'ALL') {
-      const empSelect = document.getElementById('employeeFilter');
-      setTimeout(() => {
-        if ([...empSelect.options].some(opt => opt.value === savedEmployee)) {
-          empSelect.value = savedEmployee;
-          applyFiltersAndRender();
-        } else {
-          empSelect.value = 'ALL';
-          applyFiltersAndRender();
-        }
-      }, 100);
-    }
-  }
+  // Other event listeners
+  document.getElementById('employeeFilter').addEventListener('change', applyFiltersAndRender);
+  document.getElementById('dateFrom').addEventListener('change', ()=>{ restrictFutureDates(); applyFiltersAndRender(); });
+  document.getElementById('dateTo').addEventListener('change', ()=>{ restrictFutureDates(); applyFiltersAndRender(); });
+  document.getElementById('storeSelect').addEventListener('change',()=>loadAllData(false));
+  document.getElementById('refreshBtn').addEventListener('click',()=>loadAllData(true));
+  document.getElementById('profileHeaderBtn').addEventListener('click',openProfileModal);
+  document.getElementById('closeProfileModal').addEventListener('click',closeProfileModal);
+  document.getElementById('cancelProfileBtn').addEventListener('click',closeProfileModal);
+  document.getElementById('saveProfileBtn').addEventListener('click',saveProfile);
+  document.getElementById('epfEnabled').addEventListener('change',(e)=>document.getElementById('epfDetailsDiv').style.display=e.target.checked?'block':'none');
+  document.getElementById('payNowBtn').addEventListener('click',openPaymentModal);
+  document.getElementById('confirmPayBtn').addEventListener('click',confirmPayment);
+  document.getElementById('cancelPayBtn').addEventListener('click',closePaymentModal);
+  document.getElementById('closePaymentModal').addEventListener('click',closePaymentModal);
+  document.getElementById('viewHistoryBtn').addEventListener('click',openHistoryModal);
+  document.getElementById('closeHistoryModal').addEventListener('click',closeHistoryModal);
+  document.getElementById('closeHistoryBtn').addEventListener('click',closeHistoryModal);
+
+  async function init() { setDefaultDateRange(); const savedEmp=loadFilters(); await loadAllData(false); if(savedEmp && savedEmp!=='ALL') setTimeout(()=>{ const sel=document.getElementById('employeeFilter'); if([...sel.options].some(o=>o.value===savedEmp)) sel.value=savedEmp; applyFiltersAndRender(); },100); }
   init();
 </script>
 </body>

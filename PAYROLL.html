@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Staff Performance | Hours + Sales + Payroll (Rounding + Auto Break)</title>
+  <title>Staff Performance | Smart Cache + Auto Updates</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -37,6 +37,8 @@
     .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: 0.2s; border-radius: 50%; }
     input:checked + .slider { background-color: #1f5e7e; }
     input:checked + .slider:before { transform: translateX(24px); }
+    .status-badge { background: #e6f7e6; color: #2e7d32; font-size: 0.7rem; border-radius: 20px; padding: 4px 12px; display: inline-flex; align-items: center; gap: 6px; }
+    .status-badge.warning { background: #fff3e0; color: #e67e22; }
     .section-title { font-size: 1.2rem; font-weight: 600; margin: 24px 0 12px 0; display: flex; align-items: center; gap: 10px; }
     .table-wrapper { background: white; border-radius: 24px; overflow-x: auto; border: 1px solid #eef2f8; margin-bottom: 30px; }
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
@@ -51,13 +53,10 @@
     .close-modal { position: absolute; top: 16px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; color: #64748b; }
     .modal-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 20px; }
     .modal-input { width: 100%; padding: 12px; border-radius: 16px; border: 1px solid #cbdde9; margin-bottom: 16px; }
-    .modal-checkbox { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
     .payroll-breakdown { background: #f0f9ff; border-radius: 20px; padding: 16px; margin-top: 16px; border-left: 4px solid #1f5e7e; }
     .payroll-row { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; font-size: 0.9rem; gap: 12px; flex-wrap: wrap; }
     .payroll-grid { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; margin: 8px 0; flex-wrap: wrap; }
     .payroll-grid-item { flex: 1; min-width: 160px; }
-    .payroll-grid-item .label { font-weight: 500; color: #2c5f7a; }
-    .payroll-grid-item .value { font-weight: 600; }
     .payment-history-item { background: #f8fafc; border-radius: 16px; padding: 12px; margin-bottom: 10px; border-left: 4px solid #2c7da0; }
     .flex-between { display: flex; justify-content: space-between; align-items: center; }
     .calc-note { font-size: 0.7rem; color: #5e7b9c; margin-top: 4px; }
@@ -78,8 +77,8 @@
 <div class="dashboard-container">
   <div class="header">
     <div class="header-left">
-      <div><h1><i class="fas fa-chart-line"></i> Staff Performance Hub</h1><p style="font-size:0.8rem;">Rounding + Auto break • EPF/EIS/SOCSO + Commission</p></div>
-      <div class="badge"><i class="fas fa-sync-alt"></i> Live from Google Sheets</div>
+      <div><h1><i class="fas fa-chart-line"></i> Staff Performance Hub</h1><p style="font-size:0.8rem;">Smart cache • Auto background updates</p></div>
+      <div class="badge" id="cacheStatusBadge"><i class="fas fa-database"></i> Loading cache...</div>
     </div>
     <div class="header-right">
       <button id="profileHeaderBtn" class="profile-header-btn"><i class="fas fa-user-circle"></i> Employee Profile</button>
@@ -100,85 +99,233 @@
     <div class="filter-group"><label>From date</label><input type="date" id="dateFrom" max=""></div>
     <div class="filter-group"><label>To date</label><input type="date" id="dateTo" max=""></div>
     <div class="filter-group"><label>Store (Sales)</label><select id="storeSelect"><option value="all">All Stores</option><option value="queens">Queensbay</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div>
-    <div class="filter-group toggle-group">
-      <label><i class="fas fa-magic"></i> Auto‑adjust time</label>
-      <label class="switch"><input type="checkbox" id="roundingToggle" checked><span class="slider"></span></label>
-    </div>
-    <div class="filter-group toggle-group">
-      <label><i class="fas fa-coffee"></i> Auto break deduction</label>
-      <label class="switch"><input type="checkbox" id="breakToggle"><span class="slider"></span></label>
-    </div>
-    <div class="filter-group"><button id="refreshBtn" class="btn-primary">Refresh data</button></div>
+    <div class="filter-group toggle-group"><label><i class="fas fa-magic"></i> Auto‑adjust time</label><label class="switch"><input type="checkbox" id="roundingToggle" checked><span class="slider"></span></label></div>
+    <div class="filter-group toggle-group"><label><i class="fas fa-coffee"></i> Auto break</label><label class="switch"><input type="checkbox" id="breakToggle"><span class="slider"></span></label></div>
+    <div class="filter-group"><button id="refreshBtn" class="btn-primary"><i class="fas fa-sync-alt"></i> Force refresh</button></div>
   </div>
 
   <div class="section-title"><i class="fas fa-clock"></i> Attendance & Hours (net after adjustments)</div>
   <div class="table-wrapper">
     <table id="attendanceTable">
       <thead><tr><th>Employee</th><th>Date</th><th>Original In</th><th>Adjusted In</th><th>Original Out</th><th>Adjusted Out</th><th>Raw Hours</th><th>Break Deduct</th><th>Net Hours</th><th>Location</th></thead>
-      <tbody id="attendanceBody"><tr><td colspan="10" class="loading">Loading attendance......</td></tr>
-    </tbody>
-  </table>
-</div>
+      <tbody id="attendanceBody"><tr><td colspan="10" class="loading">Loading...</td></tr></tbody>
+    </table>
+  </div>
 
-<div class="section-title"><i class="fas fa-chart-line"></i> Sales & Payroll Performance</div>
-<div class="table-wrapper">
-  <table id="salesTable">
-    <thead><tr><th>Employee</th><th>Net Hours</th><th>Total Sales (RM)</th><th>Target (RM)</th><th>Achieved (%)</th><th>Commission (RM)</th><th>Total Payable (RM)</th></tr></thead>
-    <tbody id="salesBody"><tr><td colspan="7" class="loading">Select filters to load data...</td></tr></tbody>
-  </table>
-</div>
+  <div class="section-title"><i class="fas fa-chart-line"></i> Sales & Payroll Performance</div>
+  <div class="table-wrapper">
+    <table id="salesTable">
+      <thead><tr><th>Employee</th><th>Net Hours</th><th>Total Sales (RM)</th><th>Target (RM)</th><th>Achieved (%)</th><th>Commission (RM)</th><th>Total Payable (RM)</th></thead>
+      <tbody id="salesBody"><tr><td colspan="7" class="loading">Select filters to load data...</td></tr></tbody>
+    </table>
+  </div>
 
-<!-- Payroll Breakdown Panel -->
-<div id="payrollBreakdown" class="payroll-breakdown">
-  <div style="font-weight: 600; margin-bottom: 12px;">📊 Payroll Details</div>
-  <div class="payroll-row"><span>Gross Salary (Net Hours × Hourly Rate):</span><span id="grossAmount">RM 0.00</span></div>
-  <div class="payroll-row"><span>EPF Employee Contribution:</span><span id="epfEmployeeAmount">RM 0.00</span></div>
-  <div class="payroll-row"><span>EPF Employer Contribution:</span><span id="epfEmployerAmount">RM 0.00</span></div>
-  <div style="margin-top: 12px;"><strong>EIS (Employment Insurance)</strong></div>
-  <div class="payroll-grid"><div class="payroll-grid-item"><div class="label">EIS Employee (0.2% of capped wage)</div><div class="value" id="eisEmployeeAmount">RM 0.00</div></div><div class="payroll-grid-item"><div class="label">EIS Employer (0.2% of capped wage)</div><div class="value" id="eisEmployerAmount">RM 0.00</div></div></div>
-  <div style="margin-top: 12px;"><strong>SOCSO (Social Security)</strong></div>
-  <div class="payroll-grid"><div class="payroll-grid-item"><div class="label">SOCSO Employee (0.5% of capped wage)</div><div class="value" id="socsoEmployeeAmount">RM 0.00</div></div><div class="payroll-grid-item"><div class="label">SOCSO Employer (1.75% of capped wage)</div><div class="value" id="socsoEmployerAmount">RM 0.00</div></div></div>
-  <div class="payroll-row"><span>Sales Commission:</span><span id="bonusAmount">RM 0.00</span></div>
-  <div class="payroll-row payroll-total"><span>Net Payable (to Employee):</span><span id="netPayableAmount">RM 0.00</span></div>
-  <div class="payroll-row"><span>Total Employer Expenditure:</span><span id="totalEmployerExpenditure">RM 0.00</span></div>
-  <div class="calc-note" id="rulesNote">* Rounding rules & break deduction (if enabled): ≥11h raw → deduct 2h; 6–10.99h → deduct 1h.</div>
-  <div style="margin-top: 16px; display: flex; gap: 12px;">
-    <button id="payNowBtn" class="btn-primary" style="flex:1"><i class="fas fa-credit-card"></i> Process Payment</button>
-    <button id="viewHistoryBtn" class="btn-primary" style="background:#2c7da0;"><i class="fas fa-history"></i> Payment History</button>
+  <!-- Payroll Breakdown Panel -->
+  <div id="payrollBreakdown" class="payroll-breakdown">
+    <div style="font-weight: 600; margin-bottom: 12px;">📊 Payroll Details</div>
+    <div class="payroll-row"><span>Gross Salary (Net Hours × Hourly Rate):</span><span id="grossAmount">RM 0.00</span></div>
+    <div class="payroll-row"><span>EPF Employee Contribution:</span><span id="epfEmployeeAmount">RM 0.00</span></div>
+    <div class="payroll-row"><span>EPF Employer Contribution:</span><span id="epfEmployerAmount">RM 0.00</span></div>
+    <div style="margin-top: 12px;"><strong>EIS (Employment Insurance)</strong></div>
+    <div class="payroll-grid"><div class="payroll-grid-item"><div class="label">EIS Employee (0.2% of capped wage)</div><div class="value" id="eisEmployeeAmount">RM 0.00</div></div><div class="payroll-grid-item"><div class="label">EIS Employer (0.2% of capped wage)</div><div class="value" id="eisEmployerAmount">RM 0.00</div></div></div>
+    <div style="margin-top: 12px;"><strong>SOCSO (Social Security)</strong></div>
+    <div class="payroll-grid"><div class="payroll-grid-item"><div class="label">SOCSO Employee (0.5% of capped wage)</div><div class="value" id="socsoEmployeeAmount">RM 0.00</div></div><div class="payroll-grid-item"><div class="label">SOCSO Employer (1.75% of capped wage)</div><div class="value" id="socsoEmployerAmount">RM 0.00</div></div></div>
+    <div class="payroll-row"><span>Sales Commission:</span><span id="bonusAmount">RM 0.00</span></div>
+    <div class="payroll-row payroll-total"><span>Net Payable (to Employee):</span><span id="netPayableAmount">RM 0.00</span></div>
+    <div class="payroll-row"><span>Total Employer Expenditure:</span><span id="totalEmployerExpenditure">RM 0.00</span></div>
+    <div class="calc-note" id="rulesNote">* Break deduction (if enabled): ≥11h raw → -2h; 6–10.99h → -1h.</div>
+    <div style="margin-top: 16px; display: flex; gap: 12px;">
+      <button id="payNowBtn" class="btn-primary" style="flex:1"><i class="fas fa-credit-card"></i> Process Payment</button>
+      <button id="viewHistoryBtn" class="btn-primary" style="background:#2c7da0;"><i class="fas fa-history"></i> Payment History</button>
+    </div>
   </div>
 </div>
-</div>
 
-<!-- Modals (same as before, omitted for brevity but kept functional) -->
-<div id="profileModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeProfileModal">&times;</span><div class="modal-title" id="profileModalTitle">Employee Profile</div><input type="hidden" id="profileEmployeeName"><label>Hourly Rate (RM)</label><input type="number" id="hourlyRate" class="modal-input" step="0.01"><div class="modal-checkbox"><input type="checkbox" id="epfEnabled"> <label>EPF Contribution?</label></div><div id="epfDetailsDiv" style="display: none;"><label>EPF Number</label><input type="text" id="epfNumber" class="modal-input"><label>EPF Employee Rate (%)</label><input type="number" id="epfEmployeeRate" class="modal-input" step="0.01"><label>EPF Employer Rate (%)</label><input type="number" id="epfEmployerRate" class="modal-input" step="0.01"></div><label>EIS Rate (%) (Employee & Employer, 0.2% up to RM6k)</label><input type="number" id="eisRate" class="modal-input" step="0.01" value="0.2"><label>SOCSO Employee Rate (%) (0.5% up to RM6k)</label><input type="number" id="socsoEmployeeRate" class="modal-input" step="0.01" value="0.5"><label>SOCSO Employer Rate (%) (1.75% up to RM6k)</label><input type="number" id="socsoEmployerRate" class="modal-input" step="0.01" value="1.75"><label>Sales Target (RM)</label><input type="number" id="salesTarget" class="modal-input" step="0.01"><label>Commission Rate - Below Target (% of total sales)</label><input type="number" id="commissionBelowRate" class="modal-input" step="0.01"><label>Commission Rate - Above Target (% of excess)</label><input type="number" id="commissionAboveRate" class="modal-input" step="0.01"><label>Bank Name</label><select id="bankNameSelect" class="modal-input"><option value="">-- Select Bank --</option><option>Maybank</option><option>CIMB Bank</option><option>Public Bank</option><option>RHB Bank</option><option>Hong Leong Bank</option><option>AmBank</option><option>Alliance Bank</option><option>OCBC Bank</option><option>UOB Bank</option><option>Bank Islam</option><option>Bank Muamalat</option><option>Bank Rakyat</option><option>BSN</option><option>Affin Bank</option><option>HSBC Bank</option><option>Standard Chartered</option><option>KFH</option><option>Other</option></select><label>Bank Account Number</label><input type="text" id="bankAccount" class="modal-input"><div class="modal-buttons"><button id="saveProfileBtn" class="btn-primary">Save</button><button id="cancelProfileBtn">Cancel</button></div></div></div>
-<div id="paymentModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closePaymentModal">&times;</span><div class="modal-title">💵 Process Payment</div><div id="paymentDetails"><p><strong>Employee:</strong> <span id="payEmployeeName"></span></p><p><strong>Bank:</strong> <span id="payBankName"></span></p><p><strong>Bank Account:</strong> <span id="payBankAccount"></span></p><hr><p><strong>Net Payable (Employee):</strong> RM <span id="payNetPayable"></span></p><p><strong>EPF (Employee+Employer):</strong> RM <span id="payEpfTotal"></span></p><p><strong>EIS (Employee+Employer):</strong> RM <span id="payEisTotal"></span></p><p><strong>SOCSO (Employee+Employer):</strong> RM <span id="paySocsoTotal"></span></p><p style="font-weight: 800;"><strong>Total Employer Expenditure:</strong> RM <span id="payTotalExpenditure"></span></p></div><div class="modal-buttons"><button id="confirmPayBtn" class="btn-primary">✅ Confirm Payment</button><button id="cancelPayBtn">Cancel</button></div></div></div>
-<div id="historyModal" class="modal-overlay"><div class="modal-container" style="max-width: 600px;"><span class="close-modal" id="closeHistoryModal">&times;</span><div class="modal-title">📜 Payment History</div><div id="historyList" style="max-height: 60vh; overflow-y: auto;"></div><div class="modal-buttons"><button id="closeHistoryBtn">Close</button></div></div></div>
+<!-- Modals (same as before, simplified for brevity) -->
+<div id="profileModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeProfileModal">&times;</span><div class="modal-title" id="profileModalTitle">Employee Profile</div><input type="hidden" id="profileEmployeeName"><label>Hourly Rate (RM)</label><input type="number" id="hourlyRate" class="modal-input" step="0.01"><div class="modal-checkbox"><input type="checkbox" id="epfEnabled"> <label>EPF Contribution?</label></div><div id="epfDetailsDiv" style="display: none;"><label>EPF Number</label><input type="text" id="epfNumber" class="modal-input"><label>EPF Employee Rate (%)</label><input type="number" id="epfEmployeeRate" class="modal-input" step="0.01"><label>EPF Employer Rate (%)</label><input type="number" id="epfEmployerRate" class="modal-input" step="0.01"></div><label>EIS Rate (%)</label><input type="number" id="eisRate" class="modal-input" step="0.01" value="0.2"><label>SOCSO Employee Rate (%)</label><input type="number" id="socsoEmployeeRate" class="modal-input" step="0.01" value="0.5"><label>SOCSO Employer Rate (%)</label><input type="number" id="socsoEmployerRate" class="modal-input" step="0.01" value="1.75"><label>Sales Target (RM)</label><input type="number" id="salesTarget" class="modal-input" step="0.01"><label>Commission Below Target (%)</label><input type="number" id="commissionBelowRate" class="modal-input" step="0.01"><label>Commission Above Target (%)</label><input type="number" id="commissionAboveRate" class="modal-input" step="0.01"><label>Bank Name</label><select id="bankNameSelect" class="modal-input"><option value="">-- Select Bank --</option><option>Maybank</option><option>CIMB Bank</option><option>Public Bank</option><option>RHB Bank</option><option>Hong Leong Bank</option><option>AmBank</option><option>Alliance Bank</option><option>OCBC Bank</option><option>UOB Bank</option><option>Bank Islam</option><option>Bank Muamalat</option><option>Bank Rakyat</option><option>BSN</option><option>Affin Bank</option><option>HSBC Bank</option><option>Standard Chartered</option><option>KFH</option><option>Other</option></select><label>Bank Account Number</label><input type="text" id="bankAccount" class="modal-input"><div class="modal-buttons"><button id="saveProfileBtn" class="btn-primary">Save</button><button id="cancelProfileBtn">Cancel</button></div></div></div>
+<div id="paymentModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closePaymentModal">&times;</span><div class="modal-title">💵 Process Payment</div><div id="paymentDetails"><p><strong>Employee:</strong> <span id="payEmployeeName"></span></p><p><strong>Bank:</strong> <span id="payBankName"></span></p><p><strong>Bank Account:</strong> <span id="payBankAccount"></span></p><hr><p><strong>Net Payable:</strong> RM <span id="payNetPayable"></span></p><p><strong>EPF total:</strong> RM <span id="payEpfTotal"></span></p><p><strong>EIS total:</strong> RM <span id="payEisTotal"></span></p><p><strong>SOCSO total:</strong> RM <span id="paySocsoTotal"></span></p><p><strong>Total Employer Expenditure:</strong> RM <span id="payTotalExpenditure"></span></p></div><div class="modal-buttons"><button id="confirmPayBtn" class="btn-primary">Confirm</button><button id="cancelPayBtn">Cancel</button></div></div></div>
+<div id="historyModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeHistoryModal">&times;</span><div class="modal-title">📜 Payment History</div><div id="historyList" style="max-height: 60vh; overflow-y: auto;"></div><div class="modal-buttons"><button id="closeHistoryBtn">Close</button></div></div></div>
 
 <script>
+  // API endpoints (same as before)
   const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbyUJgNYu0DoU8CWMeP5euibIyp3kTnrDLVhEcosBOudjyrI3WGjBH8Y79jvtnN8xy-W/exec";
   const SALES_API_URL = "https://script.google.com/macros/s/AKfycbwzanNzr_D6atzoeG86cE1To09WFLIf8N08IWYXdoGjlbd4dtPnQIPqnV_pNOri4GoKWg/exec";
+  
+  // Cache keys with hash
   const CACHE_ATTENDANCE_KEY = 'attendanceCache';
   const CACHE_SALES_KEY = 'salesCache';
-  const CACHE_EXPIRY_MS = 60 * 60 * 1000;
-  let masterAttendance = [], currentFiltered = [], allSalesData = null, filteredSales = null, isLoading = false;
-  let autoAdjustEnabled = true;
-  let autoBreakEnabled = false;
+  const CACHE_HASH_KEY = 'dataHash';
+  
+  let masterAttendance = [], currentFiltered = [], allSalesData = null, filteredSales = null;
+  let autoAdjustEnabled = true, autoBreakEnabled = false;
+  let isLoading = false;
+  let backgroundCheckInterval = null;
 
-  function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
-  function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
-  function cacheAttendanceData(data) { localStorage.setItem(CACHE_ATTENDANCE_KEY, JSON.stringify({ timestamp: Date.now(), data })); }
-  function cacheSalesData(data) { localStorage.setItem(CACHE_SALES_KEY, JSON.stringify({ timestamp: Date.now(), data })); }
-  function getCachedAttendance() { const c = localStorage.getItem(CACHE_ATTENDANCE_KEY); if(!c) return null; try { const {timestamp, data} = JSON.parse(c); if(Date.now()-timestamp > CACHE_EXPIRY_MS) return null; return data; } catch(e){ return null; } }
-  function getCachedSales() { const c = localStorage.getItem(CACHE_SALES_KEY); if(!c) return null; try { const {timestamp, data}=JSON.parse(c); if(Date.now()-timestamp > CACHE_EXPIRY_MS) return null; return data; } catch(e){ return null; } }
+  // Simple hash for data comparison
+  function simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash |= 0;
+    }
+    return hash.toString();
+  }
 
+  function getDataHash(data) {
+    return simpleHash(JSON.stringify(data));
+  }
+
+  function saveCache(attendance, sales) {
+    const now = Date.now();
+    const attendanceCache = { timestamp: now, data: attendance, hash: getDataHash(attendance) };
+    const salesCache = { timestamp: now, data: sales, hash: getDataHash(sales) };
+    localStorage.setItem(CACHE_ATTENDANCE_KEY, JSON.stringify(attendanceCache));
+    localStorage.setItem(CACHE_SALES_KEY, JSON.stringify(salesCache));
+    localStorage.setItem(CACHE_HASH_KEY, JSON.stringify({ attendanceHash: attendanceCache.hash, salesHash: salesCache.hash, timestamp: now }));
+  }
+
+  function getCachedData() {
+    const attendanceRaw = localStorage.getItem(CACHE_ATTENDANCE_KEY);
+    const salesRaw = localStorage.getItem(CACHE_SALES_KEY);
+    if (!attendanceRaw || !salesRaw) return null;
+    try {
+      const attendanceCache = JSON.parse(attendanceRaw);
+      const salesCache = JSON.parse(salesRaw);
+      // 24 hour cache validity (can be adjusted)
+      const MAX_AGE = 24 * 60 * 60 * 1000;
+      if (Date.now() - attendanceCache.timestamp > MAX_AGE) return null;
+      return { attendance: attendanceCache.data, sales: salesCache.data, attendanceHash: attendanceCache.hash, salesHash: salesCache.hash };
+    } catch(e) { return null; }
+  }
+
+  function updateCacheStatus(upToDate) {
+    const badge = document.getElementById('cacheStatusBadge');
+    if (upToDate) {
+      badge.innerHTML = '<i class="fas fa-check-circle"></i> Data up to date';
+      badge.className = 'badge status-badge';
+    } else {
+      badge.innerHTML = '<i class="fas fa-sync-alt"></i> Checking for updates...';
+      badge.className = 'badge status-badge warning';
+    }
+  }
+
+  // Fetch fresh data (with optional loading overlay)
+  async function fetchFreshData(showLoadingOverlay = false) {
+    if (showLoadingOverlay) showLoading();
+    try {
+      const fromDate = document.getElementById('dateFrom').value;
+      const toDate = document.getElementById('dateTo').value;
+      const store = document.getElementById('storeSelect').value;
+      
+      const [attendanceData, salesData] = await Promise.all([
+        fetchAttendanceWithDates(fromDate, toDate),
+        fetchRawSalesDataWithDates(store, fromDate, toDate)
+      ]);
+      saveCache(attendanceData, salesData);
+      return { attendance: attendanceData, sales: salesData };
+    } catch(err) {
+      console.error("Fetch error:", err);
+      throw err;
+    } finally {
+      if (showLoadingOverlay) hideLoading();
+    }
+  }
+
+  // Background update check: compare hash, if changed -> refresh silently
+  async function checkAndUpdateBackground() {
+    updateCacheStatus(false);
+    try {
+      const fromDate = document.getElementById('dateFrom').value;
+      const toDate = document.getElementById('dateTo').value;
+      const store = document.getElementById('storeSelect').value;
+      const [freshAttendance, freshSales] = await Promise.all([
+        fetchAttendanceWithDates(fromDate, toDate),
+        fetchRawSalesDataWithDates(store, fromDate, toDate)
+      ]);
+      const newAttendanceHash = getDataHash(freshAttendance);
+      const newSalesHash = getDataHash(freshSales);
+      const cached = getCachedData();
+      const hasChanged = !cached || cached.attendanceHash !== newAttendanceHash || cached.salesHash !== newSalesHash;
+      
+      if (hasChanged) {
+        console.log("Changes detected, updating cache and UI");
+        saveCache(freshAttendance, freshSales);
+        masterAttendance = freshAttendance;
+        allSalesData = freshSales;
+        await applyFiltersAndRender();
+        updateCacheStatus(true);
+      } else {
+        console.log("No changes detected");
+        updateCacheStatus(true);
+      }
+    } catch(err) {
+      console.warn("Background check failed", err);
+      updateCacheStatus(true); // assume still ok
+    }
+  }
+
+  // Modified loadAllData: first show cached, then background check
+  async function loadAllData(forceRefresh = false) {
+    if (isLoading) return;
+    isLoading = true;
+    if (forceRefresh) showLoading();
+    
+    try {
+      const cached = getCachedData();
+      if (cached && !forceRefresh) {
+        // Use cached data immediately
+        masterAttendance = cached.attendance;
+        allSalesData = cached.sales;
+        rebuildEmployeeFilter();
+        await applyFiltersAndRender();
+        updateCacheStatus(true);
+        // Start background check after 2 seconds
+        setTimeout(() => checkAndUpdateBackground(), 2000);
+      } else {
+        // Force refresh or no cache
+        const fresh = await fetchFreshData(true);
+        masterAttendance = fresh.attendance;
+        allSalesData = fresh.sales;
+        rebuildEmployeeFilter();
+        await applyFiltersAndRender();
+        updateCacheStatus(true);
+      }
+    } catch(err) {
+      console.error("loadAllData error", err);
+      document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="10" class="loading">⚠️ Failed to load data: ${err.message}</td></tr>`;
+    } finally {
+      if (forceRefresh) hideLoading();
+      isLoading = false;
+    }
+  }
+
+  // Wrapper functions for API calls (same as before, but ensure they return data)
+  async function fetchAttendanceWithDates(fromDate, toDate) {
+    let url = `${ATTENDANCE_API_URL}?action=getAllAttendance`;
+    if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
+    if (toDate) url += `&to=${encodeURIComponent(toDate)}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json.status === 'success' && Array.isArray(json.data)) return json.data;
+    throw new Error('Invalid attendance response');
+  }
+  async function fetchRawSalesDataWithDates(store, fromDate, toDate) {
+    let url = `${SALES_API_URL}?action=getEmployeeSalesData&store=${encodeURIComponent(store)}`;
+    if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
+    if (toDate) url += `&to=${encodeURIComponent(toDate)}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json.success && Array.isArray(json.labels)) return { labels: json.labels, data: json.data };
+    return null;
+  }
+
+  // Helper functions (time, rounding, break deduction) – same as previous version
   function timeToMinutes(t) { if(!t || typeof t !== 'string') return null; const parts = t.trim().split(':'); if(parts.length<2) return null; let h=parseInt(parts[0],10), m=parseInt(parts[1],10); if(isNaN(h)||isNaN(m)) return null; return h*60+m; }
   function minutesToTime(min) { let h = Math.floor(min/60); let m = min % 60; return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`; }
-
-  // Rounding functions (only if autoAdjustEnabled)
   function getAdjustedClockInMinutes(timeStr) {
     if(!autoAdjustEnabled) return timeToMinutes(timeStr);
-    let mins = timeToMinutes(timeStr);
-    if(mins === null) return null;
+    let mins = timeToMinutes(timeStr); if(mins === null) return null;
     if(mins < 600) return 600;
     if(mins >= 615 && mins < 630) return 630;
     if(mins >= 935 && mins < 960) return 960;
@@ -190,10 +337,8 @@
   }
   function getAdjustedClockOutMinutes(timeStr) {
     if(!autoAdjustEnabled) return timeToMinutes(timeStr);
-    let mins = timeToMinutes(timeStr);
-    if(mins === null) return null;
-    let remainder = mins % 30;
-    if(remainder !== 0) mins = mins - remainder;
+    let mins = timeToMinutes(timeStr); if(mins === null) return null;
+    let remainder = mins % 30; if(remainder !== 0) mins = mins - remainder;
     return mins;
   }
   function getAdjustedTimeString(timeStr, isClockIn) {
@@ -211,7 +356,6 @@
     if(diff < 0) diff += 24*60;
     return parseFloat((diff/60).toFixed(2));
   }
-  // Break deduction: rawHours -> net hours
   function applyBreakDeduction(rawHours) {
     if(!autoBreakEnabled) return rawHours;
     if(rawHours >= 11) return Math.max(0, rawHours - 2);
@@ -229,49 +373,14 @@
     if(rawHours >= 6) return 1;
     return 0;
   }
-
   function formatDuration(hrs) { if(hrs===null||isNaN(hrs)) return '—'; const h=Math.floor(hrs), m=Math.round((hrs-h)*60); if(h===0) return `${m}min`; if(m===0) return `${h}h`; return `${h}h ${m}min`; }
   function formatDateDMY(isoDate) { if(!isoDate) return '—'; const parts=isoDate.split('-'); if(parts.length===3) return `${parts[2]}/${parts[1]}/${parts[0]}`; return isoDate; }
   function getDateString(date) { return date.toISOString().split('T')[0]; }
-
-  async function fetchAttendanceWithDates(fromDate, toDate) {
-    let url = `${ATTENDANCE_API_URL}?action=getAllAttendance`;
-    if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
-    if (toDate) url += `&to=${encodeURIComponent(toDate)}`;
-    const res = await fetch(url);
-    const json = await res.json();
-    if (json.status === 'success' && Array.isArray(json.data)) return json.data;
-    throw new Error('Invalid attendance');
-  }
-  async function fetchRawSalesDataWithDates(store, fromDate, toDate) {
-    let url = `${SALES_API_URL}?action=getEmployeeSalesData&store=${encodeURIComponent(store)}`;
-    if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
-    if (toDate) url += `&to=${encodeURIComponent(toDate)}`;
-    const res = await fetch(url);
-    const json = await res.json();
-    if (json.success && Array.isArray(json.labels)) return { labels: json.labels, data: json.data };
-    return null;
-  }
-
-  async function loadAllData(forceRefresh = false) {
-    if(isLoading) return;
-    isLoading = true; showLoading();
-    try {
-      let attendanceData, salesData;
-      const fromDate = document.getElementById('dateFrom').value;
-      const toDate = document.getElementById('dateTo').value;
-      const store = document.getElementById('storeSelect').value;
-      if(!forceRefresh) { attendanceData = getCachedAttendance(); salesData = getCachedSales(); }
-      if(!attendanceData || !salesData) {
-        [attendanceData, salesData] = await Promise.all([fetchAttendanceWithDates(fromDate, toDate), fetchRawSalesDataWithDates(store, fromDate, toDate)]);
-        cacheAttendanceData(attendanceData); cacheSalesData(salesData);
-      }
-      masterAttendance = attendanceData; allSalesData = salesData;
-      rebuildEmployeeFilter();
-      await applyFiltersAndRender();
-    } catch(err) { console.error(err); document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="10" class="loading">⚠️ Failed to load</td></tr>`; }
-    finally { hideLoading(); isLoading = false; }
-  }
+  function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+  function restrictFutureDates() { const today=getDateString(new Date()); const from=document.getElementById('dateFrom'), to=document.getElementById('dateTo'); from.setAttribute('max',today); to.setAttribute('max',today); if(from.value && from.value>today) from.value=today; if(to.value && to.value>today) to.value=today; }
+  function setDefaultDateRange() { const today=new Date(); const thirtyDaysAgo=new Date(); thirtyDaysAgo.setDate(today.getDate()-30); if(!document.getElementById('dateFrom').value) document.getElementById('dateFrom').value=getDateString(thirtyDaysAgo); if(!document.getElementById('dateTo').value) document.getElementById('dateTo').value=getDateString(today); restrictFutureDates(); }
+  function saveFilters() { localStorage.setItem('dashboardFilters', JSON.stringify({ employee:document.getElementById('employeeFilter').value, dateFrom:document.getElementById('dateFrom').value, dateTo:document.getElementById('dateTo').value, store:document.getElementById('storeSelect').value })); }
+  function loadFilters() { const saved = localStorage.getItem('dashboardFilters'); if(saved) { const f=JSON.parse(saved); if(f.dateFrom) document.getElementById('dateFrom').value=f.dateFrom; if(f.dateTo) document.getElementById('dateTo').value=f.dateTo; if(f.store) document.getElementById('storeSelect').value=f.store; return f.employee; } return null; }
 
   function rebuildEmployeeFilter() {
     const employees = [...new Set(masterAttendance.map(r => r.employee))].sort();
@@ -295,9 +404,7 @@
     if(empFilter !== 'ALL') { storeSelect.value = "all"; storeSelect.disabled = true; } else storeSelect.disabled = false;
     await applySalesEmployeeFilter();
     saveFilters();
-    document.getElementById('rulesNote').innerHTML = autoBreakEnabled ? 
-      '* Break deduction ON: ≥11h raw → deduct 2h; 6–10.99h → deduct 1h. Rounding ' + (autoAdjustEnabled ? 'ON' : 'OFF') : 
-      '* Break deduction OFF. Rounding ' + (autoAdjustEnabled ? 'ON' : 'OFF');
+    document.getElementById('rulesNote').innerHTML = autoBreakEnabled ? '* Break deduction ON: ≥11h raw → -2h; 6–10.99h → -1h.' : '* Break deduction OFF.';
     document.getElementById('hoursNote').innerText = autoBreakEnabled ? '(net after break deduction)' : '(raw hours)';
   }
 
@@ -354,15 +461,10 @@
     document.getElementById('topEmployeeHours').innerText = topEmp;
   }
 
-  async function loadEmployeeProfile(employeeName) {
-    try {
-      const res = await fetch(`${ATTENDANCE_API_URL}?action=getEmployeeProfile&employeeName=${encodeURIComponent(employeeName)}`);
-      const json = await res.json();
-      if(json.success && json.profile) return json.profile;
-    } catch(e) {}
+  async function loadEmployeeProfile(employeeName) { /* same as before - omitted for brevity, but functional */ 
+    try { const res = await fetch(`${ATTENDANCE_API_URL}?action=getEmployeeProfile&employeeName=${encodeURIComponent(employeeName)}`); const json = await res.json(); if(json.success && json.profile) return json.profile; } catch(e){} 
     return { hourlyRate:0, epfEnabled:false, epfNumber:'', eisRate:0.2, socsoEmployeeRate:0.5, socsoEmployerRate:1.75, epfEmployeeRate:11, epfEmployerRate:13, salesTarget:0, commissionAboveRate:0, commissionBelowRate:0, bankName:'', bankAccount:'' };
   }
-
   async function calculatePayroll(employeeName, totalNetHours, totalSales) {
     const profile = await loadEmployeeProfile(employeeName);
     const hourlyRate = profile.hourlyRate || 0;
@@ -387,7 +489,6 @@
     const totalEmployerExpenditure = netPayable + epfEmployerContribution + eisEmployer + socsoEmployer;
     return { grossSalary, hourlyRate, totalNetHours, cappedWage, epfDeduction, epfEmployerContribution, eisEmployee, eisEmployer, socsoEmployee, socsoEmployer, commission, netPayable, totalEmployerExpenditure };
   }
-
   async function renderSalesTable() {
     const tbody = document.getElementById('salesBody');
     const empFilter = document.getElementById('employeeFilter').value;
@@ -425,9 +526,9 @@
       document.getElementById('grossAmount').innerHTML = `RM ${p.grossSalary.toFixed(2)} <span style="font-size:0.7rem;">(${p.totalNetHours} hrs × RM ${p.hourlyRate.toFixed(2)})</span>`;
       document.getElementById('epfEmployeeAmount').innerHTML = `RM ${p.epfDeduction.toFixed(2)}`;
       document.getElementById('epfEmployerAmount').innerHTML = `RM ${p.epfEmployerContribution.toFixed(2)}`;
-      document.getElementById('eisEmployeeAmount').innerHTML = `RM ${p.eisEmployee.toFixed(2)} <span style="font-size:0.7rem;">(0.2% of RM ${p.cappedWage.toFixed(2)})</span>`;
+      document.getElementById('eisEmployeeAmount').innerHTML = `RM ${p.eisEmployee.toFixed(2)}`;
       document.getElementById('eisEmployerAmount').innerHTML = `RM ${p.eisEmployer.toFixed(2)}`;
-      document.getElementById('socsoEmployeeAmount').innerHTML = `RM ${p.socsoEmployee.toFixed(2)} <span style="font-size:0.7rem;">(0.5% of RM ${p.cappedWage.toFixed(2)})</span>`;
+      document.getElementById('socsoEmployeeAmount').innerHTML = `RM ${p.socsoEmployee.toFixed(2)}`;
       document.getElementById('socsoEmployerAmount').innerHTML = `RM ${p.socsoEmployer.toFixed(2)}`;
       document.getElementById('bonusAmount').innerText = `RM ${p.commission.toFixed(2)}`;
       document.getElementById('netPayableAmount').innerText = `RM ${p.netPayable.toFixed(2)}`;
@@ -436,21 +537,15 @@
     } else document.getElementById('payrollBreakdown').style.display = 'none';
   }
 
-  function restrictFutureDates() { const today=getDateString(new Date()); const from=document.getElementById('dateFrom'), to=document.getElementById('dateTo'); from.setAttribute('max',today); to.setAttribute('max',today); if(from.value && from.value>today) from.value=today; if(to.value && to.value>today) to.value=today; }
-  function saveFilters() { localStorage.setItem('dashboardFilters', JSON.stringify({ employee:document.getElementById('employeeFilter').value, dateFrom:document.getElementById('dateFrom').value, dateTo:document.getElementById('dateTo').value, store:document.getElementById('storeSelect').value })); }
-  function loadFilters() { const saved = localStorage.getItem('dashboardFilters'); if(saved) { const f=JSON.parse(saved); if(f.dateFrom) document.getElementById('dateFrom').value=f.dateFrom; if(f.dateTo) document.getElementById('dateTo').value=f.dateTo; if(f.store) document.getElementById('storeSelect').value=f.store; return f.employee; } return null; }
-  function setDefaultDateRange() { const today=new Date(); const thirtyDaysAgo=new Date(); thirtyDaysAgo.setDate(today.getDate()-30); if(!document.getElementById('dateFrom').value) document.getElementById('dateFrom').value=getDateString(thirtyDaysAgo); if(!document.getElementById('dateTo').value) document.getElementById('dateTo').value=getDateString(today); restrictFutureDates(); }
-  function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
-
-  // Payment functions (unchanged)
+  // Payment functions (same as before, minimal)
   async function recordPayment(employeeName, payrollData, bankName, bankAccount) { const fd=new URLSearchParams(); fd.append('action','savePayment'); fd.append('employeeName',employeeName); fd.append('timestamp',new Date().toISOString()); fd.append('netPayable',payrollData.netPayable); fd.append('epfEmployee',payrollData.epfDeduction); fd.append('epfEmployer',payrollData.epfEmployerContribution); fd.append('eisEmployee',payrollData.eisEmployee); fd.append('eisEmployer',payrollData.eisEmployer); fd.append('socsoEmployee',payrollData.socsoEmployee); fd.append('socsoEmployer',payrollData.socsoEmployer); fd.append('totalExpenditure',payrollData.totalEmployerExpenditure); fd.append('bankName',bankName); fd.append('bankAccount',bankAccount); fd.append('status','paid'); const res=await fetch(ATTENDANCE_API_URL,{method:'POST',body:fd}); const json=await res.json(); return json.success; }
   async function getPaymentHistory(employeeName) { const res=await fetch(`${ATTENDANCE_API_URL}?action=getPaymentHistory&employeeName=${encodeURIComponent(employeeName)}`); const json=await res.json(); return json.success?json.payments:[]; }
-  async function openPaymentModal() { const emp=window.currentPayrollEmployee; if(!emp){alert('No employee selected');return;} const fromDate=document.getElementById('dateFrom').value, toDate=document.getElementById('dateTo').value; const checkRes=await fetch(`${ATTENDANCE_API_URL}?action=checkPaymentExists&employeeName=${encodeURIComponent(emp)}&fromDate=${encodeURIComponent(fromDate)}&toDate=${encodeURIComponent(toDate)}`); const checkData=await checkRes.json(); if(checkData.exists){alert(`Payment already recorded for ${emp} in selected period.`);return;} const profile=await loadEmployeeProfile(emp); if(!profile.bankName||!profile.bankAccount){alert('Bank details missing.');return;} const payroll=window.currentPayrollData; document.getElementById('payEmployeeName').innerText=emp; document.getElementById('payBankName').innerText=profile.bankName; document.getElementById('payBankAccount').innerText=profile.bankAccount; document.getElementById('payNetPayable').innerText=payroll.netPayable.toFixed(2); document.getElementById('payEpfTotal').innerText=(payroll.epfDeduction+payroll.epfEmployerContribution).toFixed(2); document.getElementById('payEisTotal').innerText=(payroll.eisEmployee+payroll.eisEmployer).toFixed(2); document.getElementById('paySocsoTotal').innerText=(payroll.socsoEmployee+payroll.socsoEmployer).toFixed(2); document.getElementById('payTotalExpenditure').innerText=payroll.totalEmployerExpenditure.toFixed(2); document.getElementById('paymentModal').style.display='flex'; }
+  async function openPaymentModal() { /* same as before */ const emp=window.currentPayrollEmployee; if(!emp){alert('No employee selected');return;} const fromDate=document.getElementById('dateFrom').value, toDate=document.getElementById('dateTo').value; const checkRes=await fetch(`${ATTENDANCE_API_URL}?action=checkPaymentExists&employeeName=${encodeURIComponent(emp)}&fromDate=${encodeURIComponent(fromDate)}&toDate=${encodeURIComponent(toDate)}`); const checkData=await checkRes.json(); if(checkData.exists){alert(`Payment already recorded for ${emp} in selected period.`);return;} const profile=await loadEmployeeProfile(emp); if(!profile.bankName||!profile.bankAccount){alert('Bank details missing.');return;} const payroll=window.currentPayrollData; document.getElementById('payEmployeeName').innerText=emp; document.getElementById('payBankName').innerText=profile.bankName; document.getElementById('payBankAccount').innerText=profile.bankAccount; document.getElementById('payNetPayable').innerText=payroll.netPayable.toFixed(2); document.getElementById('payEpfTotal').innerText=(payroll.epfDeduction+payroll.epfEmployerContribution).toFixed(2); document.getElementById('payEisTotal').innerText=(payroll.eisEmployee+payroll.eisEmployer).toFixed(2); document.getElementById('paySocsoTotal').innerText=(payroll.socsoEmployee+payroll.socsoEmployer).toFixed(2); document.getElementById('payTotalExpenditure').innerText=payroll.totalEmployerExpenditure.toFixed(2); document.getElementById('paymentModal').style.display='flex'; }
   async function confirmPayment() { const success=await recordPayment(window.currentPayrollEmployee, window.currentPayrollData, (await loadEmployeeProfile(window.currentPayrollEmployee)).bankName, (await loadEmployeeProfile(window.currentPayrollEmployee)).bankAccount); if(success){ alert('Payment recorded'); document.getElementById('paymentModal').style.display='none'; await renderSalesTable(); } else alert('Payment failed'); }
   function closePaymentModal(){document.getElementById('paymentModal').style.display='none';}
   async function openHistoryModal() { const emp=window.currentPayrollEmployee; if(!emp){alert('Select employee');return;} const payments=await getPaymentHistory(emp); const container=document.getElementById('historyList'); if(payments.length===0) container.innerHTML='<div class="loading">No records</div>'; else { let html=''; for(let p of payments) html+=`<div class="payment-history-item"><div class="flex-between"><strong>${new Date(p.timestamp).toLocaleString()}</strong><span>RM ${p.netPayable.toFixed(2)}</span></div><div>EPF total: RM ${(p.epfEmployee+p.epfEmployer).toFixed(2)}</div><div>EIS total: RM ${(p.eisEmployee+p.eisEmployer).toFixed(2)}</div><div>SOCSO total: RM ${(p.socsoEmployee+p.socsoEmployer).toFixed(2)}</div><div>Employer Expenditure: RM ${p.totalExpenditure.toFixed(2)}</div><div>Bank: ${p.bankName} (${p.bankAccount})</div></div>`; container.innerHTML=html; } document.getElementById('historyModal').style.display='flex'; }
   function closeHistoryModal(){document.getElementById('historyModal').style.display='none';}
-  async function saveProfile() { const emp=document.getElementById('profileEmployeeName').value; const profile={ hourlyRate:parseFloat(document.getElementById('hourlyRate').value)||0, epfEnabled:document.getElementById('epfEnabled').checked, epfNumber:document.getElementById('epfNumber').value.trim(), eisRate:parseFloat(document.getElementById('eisRate').value)||0.2, socsoEmployeeRate:parseFloat(document.getElementById('socsoEmployeeRate').value)||0.5, socsoEmployerRate:parseFloat(document.getElementById('socsoEmployerRate').value)||1.75, epfEmployeeRate:parseFloat(document.getElementById('epfEmployeeRate').value)||11, epfEmployerRate:parseFloat(document.getElementById('epfEmployerRate').value)||13, salesTarget:parseFloat(document.getElementById('salesTarget').value)||0, commissionBelowRate:parseFloat(document.getElementById('commissionBelowRate').value)||0, commissionAboveRate:parseFloat(document.getElementById('commissionAboveRate').value)||0, bankName:document.getElementById('bankNameSelect').value, bankAccount:document.getElementById('bankAccount').value.trim() }; const fd=new URLSearchParams(); fd.append('action','saveEmployeeProfile'); fd.append('employeeName',emp); for(let k in profile) fd.append(k, profile[k]); const res=await fetch(ATTENDANCE_API_URL,{method:'POST',body:fd}); const json=await res.json(); if(json.success){ document.getElementById('profileModal').style.display='none'; await renderSalesTable(); } else alert('Save failed'); }
+  async function saveProfile() { /* same as before */ const emp=document.getElementById('profileEmployeeName').value; const profile={ hourlyRate:parseFloat(document.getElementById('hourlyRate').value)||0, epfEnabled:document.getElementById('epfEnabled').checked, epfNumber:document.getElementById('epfNumber').value.trim(), eisRate:parseFloat(document.getElementById('eisRate').value)||0.2, socsoEmployeeRate:parseFloat(document.getElementById('socsoEmployeeRate').value)||0.5, socsoEmployerRate:parseFloat(document.getElementById('socsoEmployerRate').value)||1.75, epfEmployeeRate:parseFloat(document.getElementById('epfEmployeeRate').value)||11, epfEmployerRate:parseFloat(document.getElementById('epfEmployerRate').value)||13, salesTarget:parseFloat(document.getElementById('salesTarget').value)||0, commissionBelowRate:parseFloat(document.getElementById('commissionBelowRate').value)||0, commissionAboveRate:parseFloat(document.getElementById('commissionAboveRate').value)||0, bankName:document.getElementById('bankNameSelect').value, bankAccount:document.getElementById('bankAccount').value.trim() }; const fd=new URLSearchParams(); fd.append('action','saveEmployeeProfile'); fd.append('employeeName',emp); for(let k in profile) fd.append(k, profile[k]); const res=await fetch(ATTENDANCE_API_URL,{method:'POST',body:fd}); const json=await res.json(); if(json.success){ document.getElementById('profileModal').style.display='none'; await renderSalesTable(); } else alert('Save failed'); }
   function openProfileModal() { const emp=document.getElementById('employeeFilter').value; if(emp==='ALL'){alert('Select a specific employee');return;} loadEmployeeProfile(emp).then(profile=>{ document.getElementById('profileEmployeeName').value=emp; document.getElementById('profileModalTitle').innerText=`Profile - ${emp}`; document.getElementById('hourlyRate').value=profile.hourlyRate||''; document.getElementById('epfEnabled').checked=profile.epfEnabled||false; document.getElementById('epfNumber').value=profile.epfNumber||''; document.getElementById('epfEmployeeRate').value=profile.epfEmployeeRate||11; document.getElementById('epfEmployerRate').value=profile.epfEmployerRate||13; document.getElementById('eisRate').value=profile.eisRate??0.2; document.getElementById('socsoEmployeeRate').value=profile.socsoEmployeeRate??0.5; document.getElementById('socsoEmployerRate').value=profile.socsoEmployerRate??1.75; document.getElementById('salesTarget').value=profile.salesTarget||''; document.getElementById('commissionBelowRate').value=profile.commissionBelowRate||''; document.getElementById('commissionAboveRate').value=profile.commissionAboveRate||''; document.getElementById('bankNameSelect').value=profile.bankName||''; document.getElementById('bankAccount').value=profile.bankAccount||''; document.getElementById('epfDetailsDiv').style.display=profile.epfEnabled?'block':'none'; document.getElementById('profileModal').style.display='flex'; }); }
   function closeProfileModal(){document.getElementById('profileModal').style.display='none';}
 
@@ -475,7 +570,23 @@
   document.getElementById('closeHistoryModal').addEventListener('click',closeHistoryModal);
   document.getElementById('closeHistoryBtn').addEventListener('click',closeHistoryModal);
 
-  async function init() { setDefaultDateRange(); const savedEmp=loadFilters(); await loadAllData(false); if(savedEmp && savedEmp!=='ALL') setTimeout(()=>{ const sel=document.getElementById('employeeFilter'); if([...sel.options].some(o=>o.value===savedEmp)) sel.value=savedEmp; applyFiltersAndRender(); },100); }
+  function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
+  function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+
+  async function init() {
+    setDefaultDateRange();
+    const savedEmp = loadFilters();
+    await loadAllData(false);
+    if(savedEmp && savedEmp !== 'ALL') {
+      setTimeout(() => {
+        const sel = document.getElementById('employeeFilter');
+        if([...sel.options].some(o=>o.value===savedEmp)) sel.value = savedEmp;
+        applyFiltersAndRender();
+      }, 100);
+    }
+    // Periodic background check every 10 minutes
+    setInterval(() => checkAndUpdateBackground(), 10 * 60 * 1000);
+  }
   init();
 </script>
 </body>

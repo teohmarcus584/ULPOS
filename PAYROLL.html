@@ -53,10 +53,42 @@
     .payment-history-item { background: #f8fafc; border-radius: 16px; padding: 12px; margin-bottom: 10px; border-left: 4px solid #2c7da0; }
     .flex-between { display: flex; justify-content: space-between; align-items: center; }
     .calc-note { font-size: 0.7rem; color: #5e7b9c; margin-top: 4px; }
+    /* Loading overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      flex-direction: column;
+      backdrop-filter: blur(3px);
+    }
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #1f5e7e;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { color: white; margin-top: 12px; font-weight: 500; }
     @media (max-width: 640px) { th, td { font-size: 0.7rem; padding: 8px; } .stat-value { font-size: 1.5rem; } }
   </style>
 </head>
 <body>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay" style="display: none;">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Loading data...</div>
+</div>
+
 <div class="dashboard-container">
   <div class="header">
     <div class="header-left">
@@ -89,7 +121,7 @@
   <div class="table-wrapper">
     <table id="attendanceTable">
       <thead><tr><th>Employee</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Duration</th><th>Location</th></tr></thead>
-      <tbody id="attendanceBody"><tr><td colspan="6" class="loading">Loading attendance...‹/td›</tr›</tbody>
+      <tbody id="attendanceBody"><tr><td colspan="6" class="loading">Loading attendance...</td></tr></tbody>
     </table>
   </div>
 
@@ -97,7 +129,7 @@
   <div class="table-wrapper">
     <table id="salesTable">
       <thead><tr><th>Employee</th><th>Total Hours</th><th>Total Sales (RM)</th><th>Target (RM)</th><th>Achieved (%)</th><th>Commission (RM)</th><th>Total Payable (RM)</th></tr></thead>
-      <tbody id="salesBody"><tr><td colspan="7" class="loading">Select filters to load data...‹/td›</tr›</tbody>
+      <tbody id="salesBody"><tr><td colspan="7" class="loading">Select filters to load data...</td></tr></tbody>
     </table>
   </div>
 
@@ -245,30 +277,120 @@
   const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbyz7WKSvcxvPuDc0c2bI5SzgThNnzU9Mb7G6k7TYkI1UDDKLKPOkyfNMAbkjknAO-0a/exec";
   const SALES_API_URL = "https://script.google.com/macros/s/AKfycbxUSABSlgJWK24ZSv24GQTL6h2TnsrB5F-YVZ4-aG457G_8i_wOadGc3eGujKl5vugFBw/exec";
 
+  // Cache keys and expiry (1 hour)
+  const CACHE_ATTENDANCE_KEY = 'attendanceCache';
+  const CACHE_SALES_KEY = 'salesCache';
+  const CACHE_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
+
   let masterAttendance = [];
   let currentFiltered = [];
   let allSalesData = null;
   let filteredSales = null;
   let isLoading = false;
-  let activeFetchController = null;
 
-  // Helper: get date YYYY-MM-DD
-  function getDateString(date) {
-    return date.toISOString().split('T')[0];
+  // Loading overlay helpers
+  function showLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.style.display = 'flex';
+  }
+  function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.style.display = 'none';
   }
 
-  // Set default date range to last 30 days
-  function setDefaultDateRange() {
-    const today = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(today.getDate() - 30);
-    const fromInput = document.getElementById('dateFrom');
-    const toInput = document.getElementById('dateTo');
-    if (!fromInput.value) fromInput.value = getDateString(thirtyDaysAgo);
-    if (!toInput.value) toInput.value = getDateString(today);
+  // ==================== CACHE HELPERS ====================
+  function cacheAttendanceData(data) {
+    const cache = { timestamp: Date.now(), data: data };
+    localStorage.setItem(CACHE_ATTENDANCE_KEY, JSON.stringify(cache));
+  }
+  function cacheSalesData(data) {
+    const cache = { timestamp: Date.now(), data: data };
+    localStorage.setItem(CACHE_SALES_KEY, JSON.stringify(cache));
+  }
+  function getCachedAttendance() {
+    const cached = localStorage.getItem(CACHE_ATTENDANCE_KEY);
+    if (!cached) return null;
+    try {
+      const { timestamp, data } = JSON.parse(cached);
+      if (Date.now() - timestamp > CACHE_EXPIRY_MS) return null;
+      return data;
+    } catch(e) { return null; }
+  }
+  function getCachedSales() {
+    const cached = localStorage.getItem(CACHE_SALES_KEY);
+    if (!cached) return null;
+    try {
+      const { timestamp, data } = JSON.parse(cached);
+      if (Date.now() - timestamp > CACHE_EXPIRY_MS) return null;
+      return data;
+    } catch(e) { return null; }
   }
 
-  // ==================== EMPLOYEE PROFILE ====================
+  // ==================== API FETCH (with date filters) ====================
+  async function fetchAttendanceWithDates(fromDate, toDate) {
+    let url = `${ATTENDANCE_API_URL}?action=getAllAttendance`;
+    if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
+    if (toDate) url += `&to=${encodeURIComponent(toDate)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json.status === 'success' && Array.isArray(json.data)) return json.data;
+    throw new Error('Invalid attendance response');
+  }
+
+  async function fetchRawSalesDataWithDates(store, fromDate, toDate) {
+    let url = `${SALES_API_URL}?action=getEmployeeSalesData&store=${encodeURIComponent(store)}`;
+    if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
+    if (toDate) url += `&to=${encodeURIComponent(toDate)}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json.success && Array.isArray(json.labels)) return { labels: json.labels, data: json.data };
+    return null;
+  }
+
+  // ==================== LOAD DATA (with cache and loading overlay) ====================
+  async function loadAllData(forceRefresh = false) {
+    if (isLoading) return;
+    isLoading = true;
+    showLoading();
+    try {
+      let attendanceData, salesData;
+      const fromDate = document.getElementById('dateFrom').value;
+      const toDate = document.getElementById('dateTo').value;
+      const store = document.getElementById('storeSelect').value;
+
+      if (!forceRefresh) {
+        attendanceData = getCachedAttendance();
+        salesData = getCachedSales();
+      }
+
+      if (!attendanceData || !salesData) {
+        // Fetch fresh from APIs in parallel
+        [attendanceData, salesData] = await Promise.all([
+          fetchAttendanceWithDates(fromDate, toDate),
+          fetchRawSalesDataWithDates(store, fromDate, toDate)
+        ]);
+        // Cache the fresh data
+        cacheAttendanceData(attendanceData);
+        cacheSalesData(salesData);
+      }
+
+      masterAttendance = attendanceData;
+      allSalesData = salesData;
+
+      rebuildEmployeeFilter();
+      await applyFiltersAndRender();
+    } catch (err) {
+      console.error("loadAllData error:", err);
+      document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="6" class="loading" style="color:#b91c1c;">⚠️ Failed to load data: ${err.message}</td></tr>`;
+      document.getElementById('salesBody').innerHTML = `<tr><td colspan="7" class="loading" style="color:#b91c1c;">⚠️ Failed to load data</td></tr>`;
+    } finally {
+      hideLoading();
+      isLoading = false;
+    }
+  }
+
+  // ==================== EMPLOYEE PROFILE & PAYROLL ====================
   async function loadEmployeeProfile(employeeName) {
     try {
       const url = `${ATTENDANCE_API_URL}?action=getEmployeeProfile&employeeName=${encodeURIComponent(employeeName)}`;
@@ -319,33 +441,26 @@
     } catch(err) { console.error("saveProfile error", err); return false; }
   }
 
-  // ==================== PAYROLL CALCULATION ====================
   async function calculatePayroll(employeeName, totalHours, totalSales) {
     const profile = await loadEmployeeProfile(employeeName);
     const hourlyRate = profile.hourlyRate || 0;
     const grossSalary = totalHours * hourlyRate;
-    
-    let epfDeduction = 0;
-    let epfEmployerContribution = 0;
+    let epfDeduction = 0, epfEmployerContribution = 0;
     if (profile.epfEnabled && profile.epfNumber) {
       const employeeRate = (profile.epfEmployeeRate || 11) / 100;
       const employerRate = (profile.epfEmployerRate || 13) / 100;
       epfDeduction = grossSalary * employeeRate;
       epfEmployerContribution = grossSalary * employerRate;
     }
-    
     const WAGE_CEILING = 6000;
     const cappedWage = Math.min(grossSalary, WAGE_CEILING);
-    
     const eisRate = (profile.eisRate ?? 0.2) / 100;
     const eisEmployee = cappedWage * eisRate;
     const eisEmployer = cappedWage * eisRate;
-    
     const socsoEmployeeRate = (profile.socsoEmployeeRate ?? 0.5) / 100;
     const socsoEmployerRate = (profile.socsoEmployerRate ?? 1.75) / 100;
     const socsoEmployee = cappedWage * socsoEmployeeRate;
     const socsoEmployer = cappedWage * socsoEmployerRate;
-    
     let commission = 0;
     const target = profile.salesTarget || 0;
     if (target > 0) {
@@ -358,10 +473,8 @@
         commission = totalSales * belowRate;
       }
     }
-    
     const netPayable = grossSalary - epfDeduction - eisEmployee - socsoEmployee + commission;
     const totalEmployerExpenditure = netPayable + epfEmployerContribution + eisEmployer + socsoEmployer;
-    
     return { 
       grossSalary, hourlyRate, totalHours,
       cappedWage, WAGE_CEILING,
@@ -372,7 +485,7 @@
     };
   }
 
-  // ==================== LOCALSTORAGE ====================
+  // ==================== LOCALSTORAGE PERSISTENCE (filters) ====================
   function saveFilters() {
     const filters = {
       employee: document.getElementById('employeeFilter').value,
@@ -403,59 +516,15 @@
   function computeDurationHours(timeIn, timeOut) { const inMin=timeToMinutes(timeIn), outMin=timeToMinutes(timeOut); if(inMin===null||outMin===null) return null; let diff=outMin-inMin; if(diff<0) diff+=24*60; return parseFloat((diff/60).toFixed(2)); }
   function formatDuration(hrs) { if(hrs===null||isNaN(hrs)) return '—'; const h=Math.floor(hrs), m=Math.round((hrs-h)*60); if(h===0) return `${m}min`; if(m===0) return `${h}h`; return `${h}h ${m}min`; }
   function formatDateDMY(isoDate) { if(!isoDate) return '—'; const parts=isoDate.split('-'); if(parts.length===3) return `${parts[2]}/${parts[1]}/${parts[0]}`; return isoDate; }
-
-  // ==================== FETCH DATA (with date filters) ====================
-  async function fetchAttendanceWithDates(fromDate, toDate) {
-    let url = `${ATTENDANCE_API_URL}?action=getAllAttendance`;
-    if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
-    if (toDate) url += `&to=${encodeURIComponent(toDate)}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    if (json.status === 'success' && Array.isArray(json.data)) {
-      return json.data;
-    } else {
-      throw new Error('Invalid attendance response');
-    }
-  }
-
-  async function fetchRawSalesDataWithDates(store, fromDate, toDate) {
-    let url = `${SALES_API_URL}?action=getEmployeeSalesData&store=${encodeURIComponent(store)}`;
-    if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
-    if (toDate) url += `&to=${encodeURIComponent(toDate)}`;
-    const res = await fetch(url);
-    const json = await res.json();
-    if (json.success && Array.isArray(json.labels)) return { labels: json.labels, data: json.data };
-    return null;
-  }
-
-  async function loadAllData() {
-    if (isLoading) return;
-    isLoading = true;
-    const loadingEl = document.getElementById('attendanceBody');
-    if (loadingEl) loadingEl.innerHTML = '<tr><td colspan="6" class="loading">Loading data...‹/td›</tr›';
-    try {
-      const empFilter = document.getElementById('employeeFilter').value;
-      const fromDate = document.getElementById('dateFrom').value;
-      const toDate = document.getElementById('dateTo').value;
-      const store = document.getElementById('storeSelect').value;
-
-      // Parallel fetch attendance and sales
-      const [attendanceData, salesData] = await Promise.all([
-        fetchAttendanceWithDates(fromDate, toDate),
-        fetchRawSalesDataWithDates(store, fromDate, toDate)
-      ]);
-      masterAttendance = attendanceData;
-      allSalesData = salesData;
-
-      rebuildEmployeeFilter();
-      await applyFiltersAndRender(); // this will further filter and display
-    } catch (err) {
-      console.error("loadAllData error:", err);
-      document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="6" class="loading" style="color:#b91c1c;">⚠️ Failed to load data: ${err.message}‹/td›</tr›`;
-    } finally {
-      isLoading = false;
-    }
+  function getDateString(date) { return date.toISOString().split('T')[0]; }
+  function setDefaultDateRange() {
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    const fromInput = document.getElementById('dateFrom');
+    const toInput = document.getElementById('dateTo');
+    if (!fromInput.value) fromInput.value = getDateString(thirtyDaysAgo);
+    if (!toInput.value) toInput.value = getDateString(today);
   }
 
   // ==================== UI UPDATE ====================
@@ -468,11 +537,19 @@
   }
 
   async function applyFiltersAndRender() {
-    // Filter attendance based on current UI selections (already date-filtered from server, but we also apply employee filter locally)
     let filtered = [...masterAttendance];
     const empFilter = document.getElementById('employeeFilter').value;
     if (empFilter !== 'ALL') filtered = filtered.filter(r => r.employee === empFilter);
-    // No need to filter by date again because server already filtered
+    const from = document.getElementById('dateFrom').value ? new Date(document.getElementById('dateFrom').value + 'T00:00:00') : null;
+    const to = document.getElementById('dateTo').value ? new Date(document.getElementById('dateTo').value + 'T23:59:59') : null;
+    if (from || to) {
+      filtered = filtered.filter(r => {
+        const d = new Date(r.date + 'T00:00:00');
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+        return true;
+      });
+    }
     currentFiltered = filtered;
     renderAttendanceTable();
     updateAttendanceStats();
@@ -484,7 +561,6 @@
     } else {
       storeSelect.disabled = false;
     }
-    // Use the already fetched allSalesData (already date-filtered)
     await applySalesEmployeeFilter();
     saveFilters();
   }
@@ -507,7 +583,7 @@
 
   function renderAttendanceTable() {
     const tbody = document.getElementById('attendanceBody');
-    if (currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="loading">📭 No attendance records.‹/td›</tr›'; return; }
+    if (currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="loading">📭 No attendance records.</td></tr>'; return; }
     const sorted = [...currentFiltered].sort((a,b) => new Date(b.date) - new Date(a.date));
     let html = '';
     for (let r of sorted) {
@@ -557,7 +633,7 @@
     }
 
     if (employeesToShow.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="loading">No employees to display.‹/td›</tr›';
+      tbody.innerHTML = '<tr><td colspan="7" class="loading">No employees to display.</td></tr>';
       document.getElementById('payrollBreakdown').style.display = 'none';
       return;
     }
@@ -573,22 +649,17 @@
       for (let i=0; i<filteredSales.labels.length; i++) salesMap.set(filteredSales.labels[i], filteredSales.data[i]);
     }
 
-    let totalSalesSum = 0;
-    let topSalesEmp = '—';
-    let topSalesVal = 0;
-    let html = '';
-    let selectedEmployeePayroll = null;
+    let totalSalesSum = 0, topSalesEmp = '—', topSalesVal = 0;
+    let html = '', selectedEmployeePayroll = null;
 
     for (let emp of employeesToShow) {
       const hours = hoursMap.get(emp) || 0;
       const sales = salesMap.get(emp) || 0;
       totalSalesSum += sales;
       if (sales > topSalesVal) { topSalesVal = sales; topSalesEmp = emp; }
-      
       const profile = await loadEmployeeProfile(emp);
       const target = profile.salesTarget || 0;
-      let achievementPercent = 0;
-      let commission = 0;
+      let achievementPercent = 0, commission = 0;
       if (target > 0) {
         achievementPercent = (sales / target) * 100;
         if (sales >= target) {
@@ -603,10 +674,8 @@
       const achievementDisplay = target > 0 ? `${achievementPercent.toFixed(1)}%` : '—';
       const commissionDisplay = commission > 0 ? `RM ${commission.toFixed(2)}` : (target > 0 && sales < target ? `RM ${commission.toFixed(2)}` : '—');
       const targetDisplay = target > 0 ? `RM ${target.toFixed(2)}` : '—';
-      
       const payroll = await calculatePayroll(emp, hours, sales);
       const payableDisplay = hours > 0 ? `RM ${payroll.netPayable.toFixed(2)}` : '—';
-
       html += `<tr>
         <td>${escapeHtml(emp)}</td>
         <td>${hours.toFixed(1)} hrs</td>
@@ -616,10 +685,7 @@
         <td>${commissionDisplay}</td>
         <td><strong>${payableDisplay}</strong></td>
       </tr>`;
-
-      if (empFilter !== 'ALL' && emp === empFilter) {
-        selectedEmployeePayroll = payroll;
-      }
+      if (empFilter !== 'ALL' && emp === empFilter) selectedEmployeePayroll = payroll;
     }
 
     tbody.innerHTML = html;
@@ -629,21 +695,16 @@
     if (empFilter !== 'ALL' && selectedEmployeePayroll) {
       document.getElementById('payrollBreakdown').style.display = 'block';
       const p = selectedEmployeePayroll;
-      
       document.getElementById('grossAmount').innerHTML = `RM ${p.grossSalary.toFixed(2)} <span style="font-size:0.7rem;">(${p.totalHours} hrs × RM ${p.hourlyRate.toFixed(2)})</span>`;
       document.getElementById('epfEmployeeAmount').innerHTML = `RM ${p.epfDeduction.toFixed(2)}`;
       document.getElementById('epfEmployerAmount').innerHTML = `RM ${p.epfEmployerContribution.toFixed(2)}`;
-      
       document.getElementById('eisEmployeeAmount').innerHTML = `RM ${p.eisEmployee.toFixed(2)} <span style="font-size:0.7rem;">(0.2% of RM ${p.cappedWage.toFixed(2)})</span>`;
       document.getElementById('eisEmployerAmount').innerHTML = `RM ${p.eisEmployer.toFixed(2)} <span style="font-size:0.7rem;">(0.2% of RM ${p.cappedWage.toFixed(2)})</span>`;
-      
       document.getElementById('socsoEmployeeAmount').innerHTML = `RM ${p.socsoEmployee.toFixed(2)} <span style="font-size:0.7rem;">(0.5% of RM ${p.cappedWage.toFixed(2)})</span>`;
       document.getElementById('socsoEmployerAmount').innerHTML = `RM ${p.socsoEmployer.toFixed(2)} <span style="font-size:0.7rem;">(1.75% of RM ${p.cappedWage.toFixed(2)})</span>`;
-      
       document.getElementById('bonusAmount').innerText = `RM ${p.commission.toFixed(2)}`;
       document.getElementById('netPayableAmount').innerText = `RM ${p.netPayable.toFixed(2)}`;
       document.getElementById('totalEmployerExpenditure').innerText = `RM ${p.totalEmployerExpenditure.toFixed(2)}`;
-      
       window.currentPayrollData = p;
       window.currentPayrollEmployee = empFilter;
     } else {
@@ -687,10 +748,7 @@
   // ==================== PROFILE MODAL ====================
   async function openProfileModal() {
     const selectedEmployee = document.getElementById('employeeFilter').value;
-    if (selectedEmployee === 'ALL') {
-      alert('Please select a specific employee first.');
-      return;
-    }
+    if (selectedEmployee === 'ALL') { alert('Please select a specific employee first.'); return; }
     const profile = await loadEmployeeProfile(selectedEmployee);
     document.getElementById('profileEmployeeName').value = selectedEmployee;
     document.getElementById('profileModalTitle').innerText = `Profile - ${selectedEmployee}`;
@@ -706,18 +764,14 @@
     document.getElementById('commissionBelowRate').value = profile.commissionBelowRate || '';
     document.getElementById('commissionAboveRate').value = profile.commissionAboveRate || '';
     const bankSelect = document.getElementById('bankNameSelect');
-    if (profile.bankName) bankSelect.value = profile.bankName;
-    else bankSelect.value = '';
+    if (profile.bankName) bankSelect.value = profile.bankName; else bankSelect.value = '';
     document.getElementById('bankAccount').value = profile.bankAccount || '';
     const epfDetailsDiv = document.getElementById('epfDetailsDiv');
     epfDetailsDiv.style.display = profile.epfEnabled ? 'block' : 'none';
     document.getElementById('profileModal').style.display = 'flex';
   }
 
-  function closeProfileModal() {
-    document.getElementById('profileModal').style.display = 'none';
-  }
-
+  function closeProfileModal() { document.getElementById('profileModal').style.display = 'none'; }
   async function saveProfile() {
     const employeeName = document.getElementById('profileEmployeeName').value;
     const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
@@ -737,12 +791,8 @@
       hourlyRate, epfEnabled, epfNumber, eisRate, socsoEmployeeRate, socsoEmployerRate,
       epfEmployeeRate, epfEmployerRate, salesTarget, commissionBelowRate, commissionAboveRate, bankName, bankAccount 
     });
-    if (success) {
-      closeProfileModal();
-      await renderSalesTable();
-    } else {
-      alert('Failed to save profile. Check console.');
-    }
+    if (success) { closeProfileModal(); await renderSalesTable(); }
+    else alert('Failed to save profile. Check console.');
   }
 
   // ==================== PAYMENT MODAL ====================
@@ -759,49 +809,29 @@
         alert(`❌ Payment already recorded for ${emp} in the period ${fromDate || 'start'} to ${toDate || 'end'} on ${new Date(checkData.paymentDate).toLocaleDateString()}. Cannot pay again.`);
         return;
       }
-    } catch (err) {
-      console.error("Payment check failed", err);
-      alert("Unable to verify payment status. Please try again.");
-      return;
-    }
-    
+    } catch (err) { console.error("Payment check failed", err); alert("Unable to verify payment status. Please try again."); return; }
     const profile = await loadEmployeeProfile(emp);
-    if (!profile.bankName || !profile.bankAccount) {
-      alert('Bank details missing. Please update employee profile first.');
-      return;
-    }
+    if (!profile.bankName || !profile.bankAccount) { alert('Bank details missing. Please update employee profile first.'); return; }
     const payroll = window.currentPayrollData;
     document.getElementById('payEmployeeName').innerText = emp;
     document.getElementById('payBankName').innerText = profile.bankName;
     document.getElementById('payBankAccount').innerText = profile.bankAccount;
     document.getElementById('payNetPayable').innerText = payroll.netPayable.toFixed(2);
-    const epfTotal = payroll.epfDeduction + payroll.epfEmployerContribution;
-    document.getElementById('payEpfTotal').innerText = epfTotal.toFixed(2);
-    const eisTotal = payroll.eisEmployee + payroll.eisEmployer;
-    document.getElementById('payEisTotal').innerText = eisTotal.toFixed(2);
-    const socsoTotal = payroll.socsoEmployee + payroll.socsoEmployer;
-    document.getElementById('paySocsoTotal').innerText = socsoTotal.toFixed(2);
+    document.getElementById('payEpfTotal').innerText = (payroll.epfDeduction + payroll.epfEmployerContribution).toFixed(2);
+    document.getElementById('payEisTotal').innerText = (payroll.eisEmployee + payroll.eisEmployer).toFixed(2);
+    document.getElementById('paySocsoTotal').innerText = (payroll.socsoEmployee + payroll.socsoEmployer).toFixed(2);
     document.getElementById('payTotalExpenditure').innerText = payroll.totalEmployerExpenditure.toFixed(2);
     document.getElementById('paymentModal').style.display = 'flex';
   }
-
   async function confirmPayment() {
     const emp = window.currentPayrollEmployee;
     const payroll = window.currentPayrollData;
     const profile = await loadEmployeeProfile(emp);
     const success = await recordPayment(emp, payroll, profile.bankName, profile.bankAccount);
-    if (success) {
-      alert(`✅ Payment recorded for ${emp}.`);
-      document.getElementById('paymentModal').style.display = 'none';
-      await renderSalesTable();
-    } else {
-      alert('Payment failed. Check console.');
-    }
+    if (success) { alert(`✅ Payment recorded for ${emp}.`); document.getElementById('paymentModal').style.display = 'none'; await renderSalesTable(); }
+    else alert('Payment failed. Check console.');
   }
-
-  function closePaymentModal() {
-    document.getElementById('paymentModal').style.display = 'none';
-  }
+  function closePaymentModal() { document.getElementById('paymentModal').style.display = 'none'; }
 
   // ==================== PAYMENT HISTORY MODAL ====================
   async function openHistoryModal() {
@@ -809,9 +839,8 @@
     if (!emp) { alert('Select an employee first.'); return; }
     const payments = await getPaymentHistory(emp);
     const container = document.getElementById('historyList');
-    if (payments.length === 0) {
-      container.innerHTML = '<div class="loading">No payment records found.</div>';
-    } else {
+    if (payments.length === 0) container.innerHTML = '<div class="loading">No payment records found.</div>';
+    else {
       let html = '';
       for (let p of payments) {
         html += `<div class="payment-history-item">
@@ -827,17 +856,14 @@
     }
     document.getElementById('historyModal').style.display = 'flex';
   }
-
-  function closeHistoryModal() {
-    document.getElementById('historyModal').style.display = 'none';
-  }
+  function closeHistoryModal() { document.getElementById('historyModal').style.display = 'none'; }
 
   // ==================== EVENT LISTENERS ====================
-  document.getElementById('employeeFilter').addEventListener('change', async () => { await applyFiltersAndRender(); });
-  document.getElementById('dateFrom').addEventListener('change', () => loadAllData());
-  document.getElementById('dateTo').addEventListener('change', () => loadAllData());
-  document.getElementById('storeSelect').addEventListener('change', () => loadAllData());
-  document.getElementById('refreshBtn').addEventListener('click', () => loadAllData());
+  document.getElementById('employeeFilter').addEventListener('change', applyFiltersAndRender);
+  document.getElementById('dateFrom').addEventListener('change', applyFiltersAndRender);
+  document.getElementById('dateTo').addEventListener('change', applyFiltersAndRender);
+  document.getElementById('storeSelect').addEventListener('change', () => loadAllData(false));
+  document.getElementById('refreshBtn').addEventListener('click', () => loadAllData(true));
 
   document.getElementById('profileHeaderBtn').addEventListener('click', openProfileModal);
   document.getElementById('closeProfileModal').addEventListener('click', closeProfileModal);
@@ -846,7 +872,6 @@
   document.getElementById('epfEnabled').addEventListener('change', (e) => {
     document.getElementById('epfDetailsDiv').style.display = e.target.checked ? 'block' : 'none';
   });
-
   document.getElementById('payNowBtn').addEventListener('click', openPaymentModal);
   document.getElementById('confirmPayBtn').addEventListener('click', confirmPayment);
   document.getElementById('cancelPayBtn').addEventListener('click', closePaymentModal);
@@ -859,7 +884,7 @@
   async function init() {
     setDefaultDateRange();
     const savedEmployee = loadFilters();
-    await loadAllData(); // this will fetch only last 30 days of data
+    await loadAllData(false);
     if (savedEmployee && savedEmployee !== 'ALL') {
       const empSelect = document.getElementById('employeeFilter');
       setTimeout(() => {

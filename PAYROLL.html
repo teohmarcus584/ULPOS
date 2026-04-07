@@ -46,9 +46,11 @@
     .modal-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; }
     .payroll-breakdown { background: #f0f9ff; border-radius: 20px; padding: 16px; margin-top: 16px; border-left: 4px solid #1f5e7e; }
     .payroll-row { display: flex; justify-content: space-between; margin: 8px 0; font-size: 0.9rem; }
+    .payroll-sub { margin-left: 20px; font-size: 0.85rem; color: #2c5f7a; }
     .payroll-total { font-weight: 800; font-size: 1.1rem; color: #0f3b4c; border-top: 1px solid #cbd5e1; padding-top: 8px; margin-top: 8px; }
     .payment-history-item { background: #f8fafc; border-radius: 16px; padding: 12px; margin-bottom: 10px; border-left: 4px solid #2c7da0; }
     .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .calc-note { font-size: 0.7rem; color: #5e7b9c; margin-top: 4px; }
     @media (max-width: 640px) { th, td { font-size: 0.7rem; padding: 8px; } .stat-value { font-size: 1.5rem; } }
   </style>
 </head>
@@ -85,7 +87,7 @@
   <div class="table-wrapper">
     <table id="attendanceTable">
       <thead><tr><th>Employee</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Duration</th><th>Location</th></tr></thead>
-      <tbody id="attendanceBody"><tr><td colspan="6" class="loading">Loading attendance...</td> </tr></tbody>
+      <tbody id="attendanceBody"><tr><td colspan="6" class="loading">Loading attendance...</td></tr></tbody>
     </table>
   </div>
 
@@ -93,22 +95,34 @@
   <div class="table-wrapper">
     <table id="salesTable">
       <thead><tr><th>Employee</th><th>Total Hours</th><th>Total Sales (RM)</th><th>Target (RM)</th><th>Achieved (%)</th><th>Commission (RM)</th><th>Total Payable (RM)</th></tr></thead>
-      <tbody id="salesBody"><tr><td colspan="7" class="loading">Select filters to load data...</td> </tr></tbody>
+      <tbody id="salesBody"><tr><td colspan="7" class="loading">Select filters to load data...</td></tr></tbody>
     </table>
   </div>
 
-  <!-- Payroll Breakdown Panel (updated with separate EIS & SOCSO lines) -->
+  <!-- Payroll Breakdown Panel with detailed calculations -->
   <div id="payrollBreakdown" class="payroll-breakdown">
     <div style="font-weight: 600; margin-bottom: 12px;">📊 Payroll Details</div>
     <div class="payroll-row"><span>Gross Salary (Hours × Hourly Rate):</span><span id="grossAmount">RM 0.00</span></div>
+    <div class="payroll-sub" id="grossDetail" style="display: none;">—</div>
     <div class="payroll-row"><span>EPF Employee Contribution:</span><span id="epfEmployeeAmount">RM 0.00</span></div>
     <div class="payroll-row"><span>EPF Employer Contribution:</span><span id="epfEmployerAmount">RM 0.00</span></div>
-    <div class="payroll-row"><span>EIS Employee (0.2% up to RM6k):</span><span id="eisEmployeeAmount">RM 0.00</span></div>
-    <div class="payroll-row"><span>EIS Employer (0.2% up to RM6k):</span><span id="eisEmployerAmount">RM 0.00</span></div>
-    <div class="payroll-row"><span>SOCSO Employee (0.5% up to RM6k):</span><span id="socsoEmployeeAmount">RM 0.00</span></div>
-    <div class="payroll-row"><span>SOCSO Employer (1.75% up to RM6k):</span><span id="socsoEmployerAmount">RM 0.00</span></div>
+    
+    <div class="payroll-row" style="margin-top: 8px;"><strong>EIS (Employment Insurance)</strong><span></span></div>
+    <div class="payroll-sub">EIS Employee (0.2% of capped wage):</div>
+    <div class="payroll-sub" id="eisEmployeeDetail" style="margin-left: 40px;">—</div>
+    <div class="payroll-sub">EIS Employer (0.2% of capped wage):</div>
+    <div class="payroll-sub" id="eisEmployerDetail" style="margin-left: 40px;">—</div>
+    
+    <div class="payroll-row" style="margin-top: 8px;"><strong>SOCSO (Social Security)</strong><span></span></div>
+    <div class="payroll-sub">SOCSO Employee (0.5% of capped wage):</div>
+    <div class="payroll-sub" id="socsoEmployeeDetail" style="margin-left: 40px;">—</div>
+    <div class="payroll-sub">SOCSO Employer (1.75% of capped wage):</div>
+    <div class="payroll-sub" id="socsoEmployerDetail" style="margin-left: 40px;">—</div>
+    
     <div class="payroll-row"><span>Sales Commission:</span><span id="bonusAmount">RM 0.00</span></div>
     <div class="payroll-row payroll-total"><span>Net Payable (to Employee):</span><span id="netPayableAmount">RM 0.00</span></div>
+    <div class="payroll-row" style="margin-top: 8px;"><span>Total Employer Expenditure:</span><span id="totalEmployerExpenditure">RM 0.00</span></div>
+    <div class="calc-note">* EIS & SOCSO are calculated on gross salary capped at RM 6,000 per month (statutory ceiling).</div>
     <div style="margin-top: 16px; display: flex; gap: 12px;">
       <button id="payNowBtn" class="btn-primary" style="flex:1"><i class="fas fa-credit-card"></i> Process Payment</button>
       <button id="viewHistoryBtn" class="btn-primary" style="background:#2c7da0;"><i class="fas fa-history"></i> Payment History</button>
@@ -116,7 +130,7 @@
   </div>
 </div>
 
-<!-- Employee Profile Modal (updated with separate EIS and SOCSO fields) -->
+<!-- Employee Profile Modal (separate EIS and SOCSO rates) -->
 <div id="profileModal" class="modal-overlay">
   <div class="modal-container">
     <span class="close-modal" id="closeProfileModal">&times;</span>
@@ -135,14 +149,12 @@
       <label>EPF Employer Rate (%)</label>
       <input type="number" id="epfEmployerRate" class="modal-input" step="0.01" placeholder="e.g., 13">
     </div>
-    <!-- Corrected EIS and SOCSO fields -->
     <label>EIS Rate (%) (Employee & Employer, 0.2% up to RM6k)</label>
     <input type="number" id="eisRate" class="modal-input" step="0.01" placeholder="0.2" value="0.2">
     <label>SOCSO Employee Rate (%) (0.5% up to RM6k)</label>
     <input type="number" id="socsoEmployeeRate" class="modal-input" step="0.01" placeholder="0.5" value="0.5">
     <label>SOCSO Employer Rate (%) (1.75% up to RM6k)</label>
     <input type="number" id="socsoEmployerRate" class="modal-input" step="0.01" placeholder="1.75" value="1.75">
-    
     <label>Sales Target (RM)</label>
     <input type="number" id="salesTarget" class="modal-input" step="0.01" placeholder="e.g., 5000">
     <label>Commission Rate - Below Target (% of total sales)</label>
@@ -180,7 +192,7 @@
   </div>
 </div>
 
-<!-- Payment Modal (updated to show correct breakdown) -->
+<!-- Payment Modal -->
 <div id="paymentModal" class="modal-overlay">
   <div class="modal-container">
     <span class="close-modal" id="closePaymentModal">&times;</span>
@@ -203,7 +215,7 @@
   </div>
 </div>
 
-<!-- Payment History Modal (updated to show separate contributions) -->
+<!-- Payment History Modal -->
 <div id="historyModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 600px;">
     <span class="close-modal" id="closeHistoryModal">&times;</span>
@@ -225,7 +237,7 @@
   let allSalesData = null;
   let filteredSales = null;
 
-  // ==================== EMPLOYEE PROFILE (with new fields) ====================
+  // ==================== EMPLOYEE PROFILE (with separate rates) ====================
   async function loadEmployeeProfile(employeeName) {
     try {
       const url = `${ATTENDANCE_API_URL}?action=getEmployeeProfile&employeeName=${encodeURIComponent(employeeName)}`;
@@ -233,27 +245,21 @@
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if (json.success && json.profile) return json.profile;
-      // Default values including new fields
       return { 
-        hourlyRate: 0, 
-        epfEnabled: false, 
-        epfNumber: '', 
-        eisRate: 0.2,           // EIS rate (0.2%)
-        socsoEmployeeRate: 0.5, // SOCSO employee rate (0.5%)
-        socsoEmployerRate: 1.75,// SOCSO employer rate (1.75%)
-        epfEmployeeRate: 11, 
-        epfEmployerRate: 13, 
-        salesTarget: 0, 
-        commissionAboveRate: 0, 
-        commissionBelowRate: 0, 
-        bankName: '', 
-        bankAccount: '' 
+        hourlyRate: 0, epfEnabled: false, epfNumber: '', 
+        eisRate: 0.2, socsoEmployeeRate: 0.5, socsoEmployerRate: 1.75,
+        epfEmployeeRate: 11, epfEmployerRate: 13, 
+        salesTarget: 0, commissionAboveRate: 0, commissionBelowRate: 0, 
+        bankName: '', bankAccount: '' 
       };
     } catch(err) {
       console.error("loadProfile error", err);
       return { 
-        hourlyRate: 0, epfEnabled: false, epfNumber: '', eisRate: 0.2, socsoEmployeeRate: 0.5, socsoEmployerRate: 1.75,
-        epfEmployeeRate: 11, epfEmployerRate: 13, salesTarget: 0, commissionAboveRate: 0, commissionBelowRate: 0, bankName: '', bankAccount: '' 
+        hourlyRate: 0, epfEnabled: false, epfNumber: '', 
+        eisRate: 0.2, socsoEmployeeRate: 0.5, socsoEmployerRate: 1.75,
+        epfEmployeeRate: 11, epfEmployerRate: 13, 
+        salesTarget: 0, commissionAboveRate: 0, commissionBelowRate: 0, 
+        bankName: '', bankAccount: '' 
       };
     }
   }
@@ -282,12 +288,13 @@
     } catch(err) { console.error("saveProfile error", err); return false; }
   }
 
-  // ==================== PAYROLL + COMMISSION (corrected with EIS & SOCSO ceilings) ====================
+  // ==================== PAYROLL + COMMISSION with detailed calculations ====================
   async function calculatePayroll(employeeName, totalHours, totalSales) {
     const profile = await loadEmployeeProfile(employeeName);
-    const grossSalary = totalHours * (profile.hourlyRate || 0);
+    const hourlyRate = profile.hourlyRate || 0;
+    const grossSalary = totalHours * hourlyRate;
     
-    // EPF calculations (no ceiling, but percentage based on salary)
+    // EPF (no ceiling, but rates may differ by salary bracket – simplified)
     let epfDeduction = 0;
     let epfEmployerContribution = 0;
     if (profile.epfEnabled && profile.epfNumber) {
@@ -297,14 +304,14 @@
       epfEmployerContribution = grossSalary * employerRate;
     }
     
-    // EIS: 0.2% each, capped at RM 6,000 monthly wage ceiling
-    const wageCap = 6000;
-    const cappedWage = Math.min(grossSalary, wageCap);
+    // EIS & SOCSO: wage ceiling RM 6,000 per month (statutory)
+    const WAGE_CEILING = 6000;
+    const cappedWage = Math.min(grossSalary, WAGE_CEILING);
+    
     const eisRate = (profile.eisRate ?? 0.2) / 100;
     const eisEmployee = cappedWage * eisRate;
     const eisEmployer = cappedWage * eisRate;
     
-    // SOCSO: employee 0.5%, employer 1.75%, capped at RM 6,000
     const socsoEmployeeRate = (profile.socsoEmployeeRate ?? 0.5) / 100;
     const socsoEmployerRate = (profile.socsoEmployerRate ?? 1.75) / 100;
     const socsoEmployee = cappedWage * socsoEmployeeRate;
@@ -324,19 +331,16 @@
       }
     }
     
-    // Net Payable to Employee: gross - EPF_employee - EIS_employee - SOCSO_employee + commission
     const netPayable = grossSalary - epfDeduction - eisEmployee - socsoEmployee + commission;
+    const totalEmployerExpenditure = netPayable + epfEmployerContribution + eisEmployer + socsoEmployer;
     
     return { 
-      grossSalary, 
-      epfDeduction, 
-      epfEmployerContribution, 
-      eisEmployee, 
-      eisEmployer, 
-      socsoEmployee, 
-      socsoEmployer, 
-      commission, 
-      netPayable 
+      grossSalary, hourlyRate, totalHours,
+      cappedWage, WAGE_CEILING,
+      epfDeduction, epfEmployerContribution,
+      eisEmployee, eisEmployer, eisRate: profile.eisRate ?? 0.2,
+      socsoEmployee, socsoEmployer, socsoEmployeeRate: profile.socsoEmployeeRate ?? 0.5, socsoEmployerRate: profile.socsoEmployerRate ?? 1.75,
+      commission, netPayable, totalEmployerExpenditure
     };
   }
 
@@ -458,12 +462,11 @@
       }
     }
     await renderSalesTable();
-    updateSalesStats();
   }
 
   function renderAttendanceTable() {
     const tbody = document.getElementById('attendanceBody');
-    if (currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="loading">📭 No attendance records.</td></tr>'; return; }
+    if (currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="loading">📭 No attendance records. </td></tr>'; return; }
     const sorted = [...currentFiltered].sort((a,b) => new Date(b.date) - new Date(a.date));
     let html = '';
     for (let r of sorted) {
@@ -560,8 +563,8 @@
       const commissionDisplay = commission > 0 ? `RM ${commission.toFixed(2)}` : (target > 0 && sales < target ? `RM ${commission.toFixed(2)}` : '—');
       const targetDisplay = target > 0 ? `RM ${target.toFixed(2)}` : '—';
       
-      const { netPayable, grossSalary, epfDeduction, epfEmployerContribution, eisEmployee, eisEmployer, socsoEmployee, socsoEmployer } = await calculatePayroll(emp, hours, sales);
-      const payableDisplay = hours > 0 ? `RM ${netPayable.toFixed(2)}` : '—';
+      const payroll = await calculatePayroll(emp, hours, sales);
+      const payableDisplay = hours > 0 ? `RM ${payroll.netPayable.toFixed(2)}` : '—';
 
       html += `<tr>
         <td>${escapeHtml(emp)}</td>
@@ -574,7 +577,7 @@
       </tr>`;
 
       if (empFilter !== 'ALL' && emp === empFilter) {
-        selectedEmployeePayroll = { grossSalary, epfDeduction, epfEmployerContribution, eisEmployee, eisEmployer, socsoEmployee, socsoEmployer, commission, netPayable };
+        selectedEmployeePayroll = payroll;
       }
     }
 
@@ -584,23 +587,31 @@
 
     if (empFilter !== 'ALL' && selectedEmployeePayroll) {
       document.getElementById('payrollBreakdown').style.display = 'block';
-      document.getElementById('grossAmount').innerText = `RM ${selectedEmployeePayroll.grossSalary.toFixed(2)}`;
-      document.getElementById('epfEmployeeAmount').innerHTML = `RM ${selectedEmployeePayroll.epfDeduction.toFixed(2)} <span style="font-size:0.7rem;">(employee)</span>`;
-      document.getElementById('epfEmployerAmount').innerHTML = `RM ${selectedEmployeePayroll.epfEmployerContribution.toFixed(2)} <span style="font-size:0.7rem;">(employer)</span>`;
-      document.getElementById('eisEmployeeAmount').innerText = `RM ${selectedEmployeePayroll.eisEmployee.toFixed(2)}`;
-      document.getElementById('eisEmployerAmount').innerText = `RM ${selectedEmployeePayroll.eisEmployer.toFixed(2)}`;
-      document.getElementById('socsoEmployeeAmount').innerText = `RM ${selectedEmployeePayroll.socsoEmployee.toFixed(2)}`;
-      document.getElementById('socsoEmployerAmount').innerText = `RM ${selectedEmployeePayroll.socsoEmployer.toFixed(2)}`;
-      document.getElementById('bonusAmount').innerText = `RM ${selectedEmployeePayroll.commission.toFixed(2)}`;
-      document.getElementById('netPayableAmount').innerText = `RM ${selectedEmployeePayroll.netPayable.toFixed(2)}`;
-      window.currentPayrollData = selectedEmployeePayroll;
+      const p = selectedEmployeePayroll;
+      
+      document.getElementById('grossAmount').innerHTML = `RM ${p.grossSalary.toFixed(2)} <span style="font-size:0.7rem;">(${p.totalHours} hrs × RM ${p.hourlyRate.toFixed(2)})</span>`;
+      document.getElementById('grossDetail').style.display = 'block';
+      document.getElementById('epfEmployeeAmount').innerHTML = `RM ${p.epfDeduction.toFixed(2)} <span style="font-size:0.7rem;">(${p.epfDeduction > 0 ? (p.epfDeduction/p.grossSalary*100).toFixed(1)+'%' : '—'})</span>`;
+      document.getElementById('epfEmployerAmount').innerHTML = `RM ${p.epfEmployerContribution.toFixed(2)}`;
+      
+      // EIS details
+      document.getElementById('eisEmployeeDetail').innerHTML = `RM ${p.eisEmployee.toFixed(2)} (0.2% of RM ${p.cappedWage.toFixed(2)})`;
+      document.getElementById('eisEmployerDetail').innerHTML = `RM ${p.eisEmployer.toFixed(2)} (0.2% of RM ${p.cappedWage.toFixed(2)})`;
+      
+      // SOCSO details
+      document.getElementById('socsoEmployeeDetail').innerHTML = `RM ${p.socsoEmployee.toFixed(2)} (0.5% of RM ${p.cappedWage.toFixed(2)})`;
+      document.getElementById('socsoEmployerDetail').innerHTML = `RM ${p.socsoEmployer.toFixed(2)} (1.75% of RM ${p.cappedWage.toFixed(2)})`;
+      
+      document.getElementById('bonusAmount').innerText = `RM ${p.commission.toFixed(2)}`;
+      document.getElementById('netPayableAmount').innerText = `RM ${p.netPayable.toFixed(2)}`;
+      document.getElementById('totalEmployerExpenditure').innerText = `RM ${p.totalEmployerExpenditure.toFixed(2)}`;
+      
+      window.currentPayrollData = p;
       window.currentPayrollEmployee = empFilter;
     } else {
       document.getElementById('payrollBreakdown').style.display = 'none';
     }
   }
-
-  function updateSalesStats() {}
 
   // ==================== PAYMENT FUNCTIONS ====================
   async function recordPayment(employeeName, payrollData, bankName, bankAccount) {
@@ -615,7 +626,7 @@
       eisEmployer: payrollData.eisEmployer,
       socsoEmployee: payrollData.socsoEmployee,
       socsoEmployer: payrollData.socsoEmployer,
-      totalExpenditure: payrollData.netPayable + payrollData.epfEmployerContribution + payrollData.eisEmployer + payrollData.socsoEmployer,
+      totalExpenditure: payrollData.totalEmployerExpenditure,
       bankName: bankName,
       bankAccount: bankAccount,
       status: 'paid'
@@ -732,8 +743,7 @@
     document.getElementById('payEisTotal').innerText = eisTotal.toFixed(2);
     const socsoTotal = payroll.socsoEmployee + payroll.socsoEmployer;
     document.getElementById('paySocsoTotal').innerText = socsoTotal.toFixed(2);
-    const totalExp = payroll.netPayable + payroll.epfEmployerContribution + payroll.eisEmployer + payroll.socsoEmployer;
-    document.getElementById('payTotalExpenditure').innerText = totalExp.toFixed(2);
+    document.getElementById('payTotalExpenditure').innerText = payroll.totalEmployerExpenditure.toFixed(2);
     document.getElementById('paymentModal').style.display = 'flex';
   }
 

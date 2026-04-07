@@ -3646,19 +3646,45 @@ function processBarcode() {
   const code = barcodeBuffer.trim();
   if (code === '') return;
   
-  // Find product by ID (barcode)
   const product = products.find(p => String(p.id) === code);
-  if (product) {
-    addToCart(product);
-    // Optional: flash the barcode status briefly
+  if (!product) {
+    showAlertModal('Barcode not found', `Product with ID ${code} does not exist.`);
+    resetBarcodeBuffer();
+    return;
+  }
+
+  if (inventoryMode) {
+    // ✅ INVENTORY MODE: Increase stock by 1
+    const oldStock = product.stock;
+    const newStock = oldStock + 1;
+    product.stock = newStock;
+    
+    // Update UI immediately
+    const displaySpan = document.querySelector(`.stock-display[data-id="${product.id}"]`);
+    if (displaySpan) displaySpan.innerText = newStock;
+    
+    // Schedule server update and log history
+    scheduleStockUpdate(product.id, newStock);
+    logStockChange(product.id, product.name, product.category, oldStock, newStock, 1);
+    checkAndNotifyOutOfStock(product.id, product.name, newStock);
+    
+    // Visual feedback
     const statusSpan = document.getElementById('barcodeStatus');
     if (statusSpan) {
       statusSpan.style.background = '#c8e6c9';
       statusSpan.style.transition = '0.2s';
       setTimeout(() => { statusSpan.style.background = '#e8f5e9'; }, 200);
     }
+    // Optional: show a quick success message (no modal)
+    console.log(`✅ Stock increased for ${product.name} to ${newStock}`);
   } else {
-    showAlertModal('Barcode not found', `Product with ID ${code} does not exist.`);
+    // Normal mode: add to cart
+    addToCart(product);
+    const statusSpan = document.getElementById('barcodeStatus');
+    if (statusSpan) {
+      statusSpan.style.background = '#c8e6c9';
+      setTimeout(() => { statusSpan.style.background = '#e8f5e9'; }, 200);
+    }
   }
   resetBarcodeBuffer();
 }

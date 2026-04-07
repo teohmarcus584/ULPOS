@@ -46,9 +46,29 @@
       font-size: 0.9rem;
     }
     
+    /* ===== IMPROVED LOGOUT BUTTON ===== */
+    .logout-header-btn {
+      background: #ef4444;
+      border: none;
+      border-radius: 40px;
+      padding: 8px 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      letter-spacing: 0.3px;
+    }
     .logout-header-btn:hover {
       background: #dc2626;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(220,38,38,0.2);
     }
+    .logout-header-btn:active {
+      transform: scale(0.96);
+    }
+    
     .printer-icon-btn {
       background: #1e293b;
       border: none;
@@ -1135,7 +1155,7 @@
     <div class="pos-header-right">
       <span class="cashier-info" id="employeeNameHeader"></span>
        <span id="barcodeStatus" class="cashier-info" style="background:#e8f5e9; color:#2c7a4b;">📷 Barcode ready</span>
-      <button id="logoutHeaderBtn" class="logout-header-btn">Logout</button>
+      <button id="logoutHeaderBtn" class="logout-header-btn">🚪 Logout</button>
       <button id="printerIconBtn" class="printer-icon-btn">🖨️</button>
     </div>
   </div>
@@ -1315,7 +1335,7 @@
 <button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">🌸 15ML PERFUME EDP PROMO (RM 8)</button>
 <div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">💰 Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option> <option value="year">This Year</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">❌ Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead><th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody>       </table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option> <option value="year">This Year</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">❌ Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead><th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody></table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="settlementModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
@@ -1362,7 +1382,7 @@
   </div>
 </div>
 
-<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead><th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody>       </table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="collectionModal" class="modal-overlay"><div class="modal-container" style="max-width: 800px;"><span class="close-modal" id="closeCollectionModal">×</span><div class="modal-title">💵 Cash Collection</div><div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div><div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead><th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th> </thead><tbody id="collectionTableBody"></tbody></table></div><div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="receiptsModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeReceiptsModal">×</span><div class="modal-title">📜 Receipt History</div><div class="receipts-filters"><div class="filter-group" id="receiptsStoreFilterGroup"><label>Store</label><select id="receiptsStoreSelect"><option value="all">All Stores</option></select></div><div id="receiptsEmployeeFilter" class="filter-group" style="display: none;"><label>Employee</label><select id="receiptsEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="receiptsDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="receiptsCustomDateRange" style="display: none;" class="date-range"><input type="date" id="receiptsFromDate"><input type="date" id="receiptsToDate"></div><div class="filter-group" style="flex: 2;"><label>Search (Receipt # or Product)</label><input type="text" id="receiptsSearch" placeholder="Type to filter..."></div></div><div id="receiptsList" class="receipts-list">Loading receipts...</div><div class="modal-buttons"><button id="closeReceiptsBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
@@ -1536,7 +1556,7 @@ const EMPLOYEE_CACHE_TTL = 1 * 60 * 1000; // 1 hour
     return new Promise((resolve) => {
       const overlay = document.getElementById('alertModal');
       document.getElementById('alertModalTitle').innerText = title;
-      document.getElementById('alertModalMessage').innerText = message;
+      document.getElementById('alertModalMessage').innerHTML = message;
       overlay.style.display = 'flex';
       const okBtn = document.getElementById('alertModalOk');
       const closeBtn = document.getElementById('closeAlertModal');
@@ -2042,6 +2062,8 @@ async function saveTelegramSettings() {
       timestampMs: now
     });
     renderStockHistory();
+    // After any stock change, update category highlighting if in inventory mode
+    if (inventoryMode) refreshCategoryHighlighting();
   }
 
   function renderStockHistory() {
@@ -2194,8 +2216,45 @@ async function saveTelegramSettings() {
       renderProductGrid();
     }
   }
+  // Refresh category highlighting based on new inventory mode
+  refreshCategoryHighlighting();
   renderProductGrid();
 }
+  // ==================== CATEGORY HIGHLIGHTING FOR LOW STOCK (Inventory mode only) ====================
+  function refreshCategoryHighlighting() {
+    if (!inventoryMode) {
+      // Remove any custom background from options
+      for (let i = 0; i < categorySelect.options.length; i++) {
+        categorySelect.options[i].style.backgroundColor = '';
+        categorySelect.options[i].style.color = '';
+      }
+      return;
+    }
+    // Build low-stock categories: any category that has at least one product with stock < LOW_STOCK_THRESHOLD
+    const lowStockCategories = new Set();
+    products.forEach(prod => {
+      if (prod.stock < LOW_STOCK_THRESHOLD) {
+        lowStockCategories.add(prod.category);
+      }
+    });
+    // Apply background to matching options
+    for (let i = 0; i < categorySelect.options.length; i++) {
+      const opt = categorySelect.options[i];
+      if (opt.value === 'all') {
+        opt.style.backgroundColor = '';
+        opt.style.color = '';
+        continue;
+      }
+      if (lowStockCategories.has(opt.value)) {
+        opt.style.backgroundColor = '#fee2e2';  // light red
+        opt.style.color = '#b91c1c';
+      } else {
+        opt.style.backgroundColor = '';
+        opt.style.color = '';
+      }
+    }
+  }
+
   // ==================== PRELOAD ALL STORES IN BACKGROUND ====================
   async function preloadAllStoresData() {
     const stores = ["queens", "sunshine", "gurney_paragon"];
@@ -2304,6 +2363,7 @@ async function fetchProductsFromSheet(force = false) {
         localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
         updateCategoryDropdown();
         renderProductGrid();
+        refreshCategoryHighlighting(); // update highlighting after products refresh
         hideLoading();
         return true;
       }
@@ -2316,6 +2376,7 @@ async function fetchProductsFromSheet(force = false) {
           products = cachedProducts;
           updateCategoryDropdown();
           renderProductGrid();
+          refreshCategoryHighlighting();
           hideLoading();
           return true;
         }
@@ -2333,6 +2394,7 @@ async function fetchProductsFromSheet(force = false) {
             localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
             updateCategoryDropdown();
             renderProductGrid();
+            refreshCategoryHighlighting();
             hideLoading();
             return true;
           }
@@ -2357,6 +2419,7 @@ async function fetchProductsFromSheet(force = false) {
       localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
       updateCategoryDropdown();
       renderProductGrid();
+      refreshCategoryHighlighting();
       hideLoading();
       return true;
 
@@ -2416,6 +2479,7 @@ function mergeProductChanges(existingProducts, changes) {
           checkAndNotifyOutOfStock(product.id, product.name, newStock);
         }
         localStorage.removeItem(`products_${currentStore}`);
+        refreshCategoryHighlighting(); // update category dropdown when stock changes
       }
     } catch (err) {
       console.error("Error updating stock:", err);
@@ -3445,7 +3509,7 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
           <td>${escapeHtml(p.category)}</td>
         <td style="text-align: right;">${p.quantity}</td>
         <td style="text-align: right;">RM ${p.total.toFixed(2)}</td>
-       `;
+      </tr>`;
     });
     tbody.innerHTML = html;
   }
@@ -3667,6 +3731,7 @@ function processBarcode() {
     scheduleStockUpdate(product.id, newStock);
     logStockChange(product.id, product.name, product.category, oldStock, newStock, 1);
     checkAndNotifyOutOfStock(product.id, product.name, newStock);
+    refreshCategoryHighlighting(); // update dropdown highlighting after stock change
     
     // Visual feedback
     const statusSpan = document.getElementById('barcodeStatus');
@@ -4286,6 +4351,7 @@ if (transaction.buy3_free1_discount > 0) {
           btn.dataset.current = newStock;
           const incBtn = document.querySelector(`.inc-stock[data-id="${id}"]`);
           if (incBtn) incBtn.dataset.current = newStock;
+          refreshCategoryHighlighting(); // update dropdown after stock change
         }
         e.stopPropagation();
       });
@@ -4306,6 +4372,7 @@ if (transaction.buy3_free1_discount > 0) {
           btn.dataset.current = newStock;
           const decBtn = document.querySelector(`.dec-stock[data-id="${id}"]`);
           if (decBtn) decBtn.dataset.current = newStock;
+          refreshCategoryHighlighting(); // update dropdown after stock change
         }
         e.stopPropagation();
       });
@@ -4656,6 +4723,8 @@ async function finishLoginAfterVerification() {
   preloadSettlement();
   preloadReport();
     enableBarcodeScanner();
+    // Refresh category highlighting after login (products are loaded)
+    refreshCategoryHighlighting();
 
   // ========== AUTO-SYNC PRODUCTS EVERY 5 SECONDS ==========
   //window.autoSyncInterval = setInterval(async () => {
@@ -4961,6 +5030,7 @@ async function finishLoginAfterVerification() {
         currentStore = storeSelect.value;
         await fetchProductsFromSheet();
         clearCart();
+        refreshCategoryHighlighting(); // update category highlighting when store changes
       }
     });
   }
@@ -5017,6 +5087,8 @@ function updateCategoryDropdown() {
   } else {
     categorySelect.value = 'all';
   }
+  // Refresh highlighting after rebuilding options
+  refreshCategoryHighlighting();
 }
   async function fetchEmployees() {
     try {
@@ -5241,23 +5313,24 @@ if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener(
   function renderCollectionTable() {
     const tbody = document.getElementById('collectionTableBody');
     if (!currentUnsettledCash.length) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.</td></tr>';
-      return;
-    }
-    let html = '';
-    currentUnsettledCash.forEach(rec => {
-      const date = new Date(rec.timestamp).toLocaleDateString();
-      html += `<tr data-id="${rec.id}">
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.</td></tr>';
+    } else {
+      let html = '';
+      currentUnsettledCash.forEach(rec => {
+        const date = new Date(rec.timestamp).toLocaleDateString();
+        html += `<tr data-id="${rec.id}">
           <td><input type="checkbox" class="collection-checkbox" value="${rec.id}"></td>
           <td>${date}</td>
           <td>${getEmployeeName(rec.employee_id)}</td>
-        <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
+          <td style="text-align: right;">RM ${rec.cash_actual.toFixed(2)}</td>
         </tr>`;
-    });
-    tbody.innerHTML = html;
-    document.querySelectorAll('.collection-checkbox').forEach(cb => {
-      cb.addEventListener('change', updateCollectionButtonState);
-    });
+      });
+      tbody.innerHTML = html;
+      document.querySelectorAll('.collection-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateCollectionButtonState);
+      });
+    }
   }
 
   function updateTotalOutstanding() {
@@ -5284,7 +5357,6 @@ if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener(
     }
   })();
 
-  
 </script>
 </body>
 </html>

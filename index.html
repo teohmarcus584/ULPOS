@@ -5309,12 +5309,10 @@ if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener(
       hideLoading();
     }
   }
-
   function renderCollectionTable() {
     const tbody = document.getElementById('collectionTableBody');
     if (!currentUnsettledCash.length) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No unsettled cash records found.</td></tr>';
     } else {
       let html = '';
       currentUnsettledCash.forEach(rec => {

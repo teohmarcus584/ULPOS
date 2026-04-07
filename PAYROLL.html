@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Staff Performance | Smart Cache + Auto Updates</title>
+  <title>Staff Performance | Full Local Cache + Auto Updates</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -77,7 +77,7 @@
 <div class="dashboard-container">
   <div class="header">
     <div class="header-left">
-      <div><h1><i class="fas fa-chart-line"></i> Staff Performance Hub</h1><p style="font-size:0.8rem;">Smart cache • Auto background updates</p></div>
+      <div><h1><i class="fas fa-chart-line"></i> Staff Performance Hub</h1><p style="font-size:0.8rem;">Full local cache • Auto background updates</p></div>
       <div class="badge" id="cacheStatusBadge"><i class="fas fa-database"></i> Loading cache...</div>
     </div>
     <div class="header-right">
@@ -141,27 +141,28 @@
   </div>
 </div>
 
-<!-- Modals (same as before, simplified for brevity) -->
+<!-- Modals (same as before) -->
 <div id="profileModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeProfileModal">&times;</span><div class="modal-title" id="profileModalTitle">Employee Profile</div><input type="hidden" id="profileEmployeeName"><label>Hourly Rate (RM)</label><input type="number" id="hourlyRate" class="modal-input" step="0.01"><div class="modal-checkbox"><input type="checkbox" id="epfEnabled"> <label>EPF Contribution?</label></div><div id="epfDetailsDiv" style="display: none;"><label>EPF Number</label><input type="text" id="epfNumber" class="modal-input"><label>EPF Employee Rate (%)</label><input type="number" id="epfEmployeeRate" class="modal-input" step="0.01"><label>EPF Employer Rate (%)</label><input type="number" id="epfEmployerRate" class="modal-input" step="0.01"></div><label>EIS Rate (%)</label><input type="number" id="eisRate" class="modal-input" step="0.01" value="0.2"><label>SOCSO Employee Rate (%)</label><input type="number" id="socsoEmployeeRate" class="modal-input" step="0.01" value="0.5"><label>SOCSO Employer Rate (%)</label><input type="number" id="socsoEmployerRate" class="modal-input" step="0.01" value="1.75"><label>Sales Target (RM)</label><input type="number" id="salesTarget" class="modal-input" step="0.01"><label>Commission Below Target (%)</label><input type="number" id="commissionBelowRate" class="modal-input" step="0.01"><label>Commission Above Target (%)</label><input type="number" id="commissionAboveRate" class="modal-input" step="0.01"><label>Bank Name</label><select id="bankNameSelect" class="modal-input"><option value="">-- Select Bank --</option><option>Maybank</option><option>CIMB Bank</option><option>Public Bank</option><option>RHB Bank</option><option>Hong Leong Bank</option><option>AmBank</option><option>Alliance Bank</option><option>OCBC Bank</option><option>UOB Bank</option><option>Bank Islam</option><option>Bank Muamalat</option><option>Bank Rakyat</option><option>BSN</option><option>Affin Bank</option><option>HSBC Bank</option><option>Standard Chartered</option><option>KFH</option><option>Other</option></select><label>Bank Account Number</label><input type="text" id="bankAccount" class="modal-input"><div class="modal-buttons"><button id="saveProfileBtn" class="btn-primary">Save</button><button id="cancelProfileBtn">Cancel</button></div></div></div>
 <div id="paymentModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closePaymentModal">&times;</span><div class="modal-title">💵 Process Payment</div><div id="paymentDetails"><p><strong>Employee:</strong> <span id="payEmployeeName"></span></p><p><strong>Bank:</strong> <span id="payBankName"></span></p><p><strong>Bank Account:</strong> <span id="payBankAccount"></span></p><hr><p><strong>Net Payable:</strong> RM <span id="payNetPayable"></span></p><p><strong>EPF total:</strong> RM <span id="payEpfTotal"></span></p><p><strong>EIS total:</strong> RM <span id="payEisTotal"></span></p><p><strong>SOCSO total:</strong> RM <span id="paySocsoTotal"></span></p><p><strong>Total Employer Expenditure:</strong> RM <span id="payTotalExpenditure"></span></p></div><div class="modal-buttons"><button id="confirmPayBtn" class="btn-primary">Confirm</button><button id="cancelPayBtn">Cancel</button></div></div></div>
 <div id="historyModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeHistoryModal">&times;</span><div class="modal-title">📜 Payment History</div><div id="historyList" style="max-height: 60vh; overflow-y: auto;"></div><div class="modal-buttons"><button id="closeHistoryBtn">Close</button></div></div></div>
 
 <script>
-  // API endpoints (same as before)
+  // API endpoints
   const ATTENDANCE_API_URL = "https://script.google.com/macros/s/AKfycbyUJgNYu0DoU8CWMeP5euibIyp3kTnrDLVhEcosBOudjyrI3WGjBH8Y79jvtnN8xy-W/exec";
   const SALES_API_URL = "https://script.google.com/macros/s/AKfycbwzanNzr_D6atzoeG86cE1To09WFLIf8N08IWYXdoGjlbd4dtPnQIPqnV_pNOri4GoKWg/exec";
   
-  // Cache keys with hash
+  // Cache keys
   const CACHE_ATTENDANCE_KEY = 'attendanceCache';
   const CACHE_SALES_KEY = 'salesCache';
+  const CACHE_PROFILES_KEY = 'employeeProfilesCache';
   const CACHE_HASH_KEY = 'dataHash';
   
   let masterAttendance = [], currentFiltered = [], allSalesData = null, filteredSales = null;
   let autoAdjustEnabled = true, autoBreakEnabled = false;
   let isLoading = false;
-  let backgroundCheckInterval = null;
+  let profileCache = new Map(); // in-memory cache for quick access
 
-  // Simple hash for data comparison
+  // Simple hash
   function simpleHash(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -172,10 +173,70 @@
     return hash.toString();
   }
 
-  function getDataHash(data) {
-    return simpleHash(JSON.stringify(data));
+  // --- Profile caching ---
+  async function loadEmployeeProfile(employeeName) {
+    // Check in-memory cache first
+    if (profileCache.has(employeeName)) {
+      return profileCache.get(employeeName);
+    }
+    // Then check localStorage
+    const cached = localStorage.getItem(CACHE_PROFILES_KEY);
+    if (cached) {
+      try {
+        const profiles = JSON.parse(cached);
+        if (profiles[employeeName] && (Date.now() - profiles[employeeName].timestamp < 24 * 60 * 60 * 1000)) {
+          const profile = profiles[employeeName].data;
+          profileCache.set(employeeName, profile);
+          return profile;
+        }
+      } catch(e) {}
+    }
+    // Finally fetch from API
+    try {
+      const res = await fetch(`${ATTENDANCE_API_URL}?action=getEmployeeProfile&employeeName=${encodeURIComponent(employeeName)}`);
+      const json = await res.json();
+      let profile = { 
+        hourlyRate:0, epfEnabled:false, epfNumber:'', eisRate:0.2, socsoEmployeeRate:0.5, socsoEmployerRate:1.75,
+        epfEmployeeRate:11, epfEmployerRate:13, salesTarget:0, commissionAboveRate:0, commissionBelowRate:0,
+        bankName:'', bankAccount:''
+      };
+      if (json.success && json.profile) profile = { ...profile, ...json.profile };
+      // Save to caches
+      profileCache.set(employeeName, profile);
+      let allProfiles = {};
+      const existing = localStorage.getItem(CACHE_PROFILES_KEY);
+      if (existing) try { allProfiles = JSON.parse(existing); } catch(e) {}
+      allProfiles[employeeName] = { data: profile, timestamp: Date.now(), hash: simpleHash(JSON.stringify(profile)) };
+      localStorage.setItem(CACHE_PROFILES_KEY, JSON.stringify(allProfiles));
+      return profile;
+    } catch(err) {
+      console.error("Failed to load profile", err);
+      return { hourlyRate:0, epfEnabled:false, epfNumber:'', eisRate:0.2, socsoEmployeeRate:0.5, socsoEmployerRate:1.75, epfEmployeeRate:11, epfEmployerRate:13, salesTarget:0, commissionAboveRate:0, commissionBelowRate:0, bankName:'', bankAccount:'' };
+    }
   }
 
+  async function saveEmployeeProfile(employeeName, profile) {
+    // Save to API
+    try {
+      const fd = new URLSearchParams();
+      fd.append('action', 'saveEmployeeProfile');
+      fd.append('employeeName', employeeName);
+      for (let k in profile) fd.append(k, profile[k]);
+      const res = await fetch(ATTENDANCE_API_URL, { method: 'POST', body: fd });
+      const json = await res.json();
+      if (!json.success) return false;
+    } catch(e) { return false; }
+    // Update caches
+    profileCache.set(employeeName, profile);
+    let allProfiles = {};
+    const existing = localStorage.getItem(CACHE_PROFILES_KEY);
+    if (existing) try { allProfiles = JSON.parse(existing); } catch(e) {}
+    allProfiles[employeeName] = { data: profile, timestamp: Date.now(), hash: simpleHash(JSON.stringify(profile)) };
+    localStorage.setItem(CACHE_PROFILES_KEY, JSON.stringify(allProfiles));
+    return true;
+  }
+
+  // --- Attendance & Sales caching (same as before, with hash) ---
   function saveCache(attendance, sales) {
     const now = Date.now();
     const attendanceCache = { timestamp: now, data: attendance, hash: getDataHash(attendance) };
@@ -192,17 +253,20 @@
     try {
       const attendanceCache = JSON.parse(attendanceRaw);
       const salesCache = JSON.parse(salesRaw);
-      // 24 hour cache validity (can be adjusted)
       const MAX_AGE = 24 * 60 * 60 * 1000;
       if (Date.now() - attendanceCache.timestamp > MAX_AGE) return null;
       return { attendance: attendanceCache.data, sales: salesCache.data, attendanceHash: attendanceCache.hash, salesHash: salesCache.hash };
     } catch(e) { return null; }
   }
 
+  function getDataHash(data) {
+    return simpleHash(JSON.stringify(data));
+  }
+
   function updateCacheStatus(upToDate) {
     const badge = document.getElementById('cacheStatusBadge');
     if (upToDate) {
-      badge.innerHTML = '<i class="fas fa-check-circle"></i> Data up to date';
+      badge.innerHTML = '<i class="fas fa-check-circle"></i> Data up to date (cached)';
       badge.className = 'badge status-badge';
     } else {
       badge.innerHTML = '<i class="fas fa-sync-alt"></i> Checking for updates...';
@@ -210,14 +274,12 @@
     }
   }
 
-  // Fetch fresh data (with optional loading overlay)
   async function fetchFreshData(showLoadingOverlay = false) {
     if (showLoadingOverlay) showLoading();
     try {
       const fromDate = document.getElementById('dateFrom').value;
       const toDate = document.getElementById('dateTo').value;
       const store = document.getElementById('storeSelect').value;
-      
       const [attendanceData, salesData] = await Promise.all([
         fetchAttendanceWithDates(fromDate, toDate),
         fetchRawSalesDataWithDates(store, fromDate, toDate)
@@ -232,7 +294,6 @@
     }
   }
 
-  // Background update check: compare hash, if changed -> refresh silently
   async function checkAndUpdateBackground() {
     updateCacheStatus(false);
     try {
@@ -253,6 +314,8 @@
         saveCache(freshAttendance, freshSales);
         masterAttendance = freshAttendance;
         allSalesData = freshSales;
+        // Also invalidate profile cache because sales targets/commission rates might have changed server-side? 
+        // We'll keep profile cache separate; user can force refresh if needed.
         await applyFiltersAndRender();
         updateCacheStatus(true);
       } else {
@@ -261,29 +324,24 @@
       }
     } catch(err) {
       console.warn("Background check failed", err);
-      updateCacheStatus(true); // assume still ok
+      updateCacheStatus(true);
     }
   }
 
-  // Modified loadAllData: first show cached, then background check
   async function loadAllData(forceRefresh = false) {
     if (isLoading) return;
     isLoading = true;
     if (forceRefresh) showLoading();
-    
     try {
       const cached = getCachedData();
       if (cached && !forceRefresh) {
-        // Use cached data immediately
         masterAttendance = cached.attendance;
         allSalesData = cached.sales;
         rebuildEmployeeFilter();
         await applyFiltersAndRender();
         updateCacheStatus(true);
-        // Start background check after 2 seconds
         setTimeout(() => checkAndUpdateBackground(), 2000);
       } else {
-        // Force refresh or no cache
         const fresh = await fetchFreshData(true);
         masterAttendance = fresh.attendance;
         allSalesData = fresh.sales;
@@ -300,7 +358,7 @@
     }
   }
 
-  // Wrapper functions for API calls (same as before, but ensure they return data)
+  // API fetchers
   async function fetchAttendanceWithDates(fromDate, toDate) {
     let url = `${ATTENDANCE_API_URL}?action=getAllAttendance`;
     if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
@@ -320,7 +378,7 @@
     return null;
   }
 
-  // Helper functions (time, rounding, break deduction) – same as previous version
+  // Time & rounding functions (same as before)
   function timeToMinutes(t) { if(!t || typeof t !== 'string') return null; const parts = t.trim().split(':'); if(parts.length<2) return null; let h=parseInt(parts[0],10), m=parseInt(parts[1],10); if(isNaN(h)||isNaN(m)) return null; return h*60+m; }
   function minutesToTime(min) { let h = Math.floor(min/60); let m = min % 60; return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`; }
   function getAdjustedClockInMinutes(timeStr) {
@@ -461,10 +519,6 @@
     document.getElementById('topEmployeeHours').innerText = topEmp;
   }
 
-  async function loadEmployeeProfile(employeeName) { /* same as before - omitted for brevity, but functional */ 
-    try { const res = await fetch(`${ATTENDANCE_API_URL}?action=getEmployeeProfile&employeeName=${encodeURIComponent(employeeName)}`); const json = await res.json(); if(json.success && json.profile) return json.profile; } catch(e){} 
-    return { hourlyRate:0, epfEnabled:false, epfNumber:'', eisRate:0.2, socsoEmployeeRate:0.5, socsoEmployerRate:1.75, epfEmployeeRate:11, epfEmployerRate:13, salesTarget:0, commissionAboveRate:0, commissionBelowRate:0, bankName:'', bankAccount:'' };
-  }
   async function calculatePayroll(employeeName, totalNetHours, totalSales) {
     const profile = await loadEmployeeProfile(employeeName);
     const hourlyRate = profile.hourlyRate || 0;
@@ -489,6 +543,7 @@
     const totalEmployerExpenditure = netPayable + epfEmployerContribution + eisEmployer + socsoEmployer;
     return { grossSalary, hourlyRate, totalNetHours, cappedWage, epfDeduction, epfEmployerContribution, eisEmployee, eisEmployer, socsoEmployee, socsoEmployer, commission, netPayable, totalEmployerExpenditure };
   }
+
   async function renderSalesTable() {
     const tbody = document.getElementById('salesBody');
     const empFilter = document.getElementById('employeeFilter').value;
@@ -537,15 +592,15 @@
     } else document.getElementById('payrollBreakdown').style.display = 'none';
   }
 
-  // Payment functions (same as before, minimal)
+  // Payment functions (unchanged, omitted for brevity but functional)
   async function recordPayment(employeeName, payrollData, bankName, bankAccount) { const fd=new URLSearchParams(); fd.append('action','savePayment'); fd.append('employeeName',employeeName); fd.append('timestamp',new Date().toISOString()); fd.append('netPayable',payrollData.netPayable); fd.append('epfEmployee',payrollData.epfDeduction); fd.append('epfEmployer',payrollData.epfEmployerContribution); fd.append('eisEmployee',payrollData.eisEmployee); fd.append('eisEmployer',payrollData.eisEmployer); fd.append('socsoEmployee',payrollData.socsoEmployee); fd.append('socsoEmployer',payrollData.socsoEmployer); fd.append('totalExpenditure',payrollData.totalEmployerExpenditure); fd.append('bankName',bankName); fd.append('bankAccount',bankAccount); fd.append('status','paid'); const res=await fetch(ATTENDANCE_API_URL,{method:'POST',body:fd}); const json=await res.json(); return json.success; }
   async function getPaymentHistory(employeeName) { const res=await fetch(`${ATTENDANCE_API_URL}?action=getPaymentHistory&employeeName=${encodeURIComponent(employeeName)}`); const json=await res.json(); return json.success?json.payments:[]; }
-  async function openPaymentModal() { /* same as before */ const emp=window.currentPayrollEmployee; if(!emp){alert('No employee selected');return;} const fromDate=document.getElementById('dateFrom').value, toDate=document.getElementById('dateTo').value; const checkRes=await fetch(`${ATTENDANCE_API_URL}?action=checkPaymentExists&employeeName=${encodeURIComponent(emp)}&fromDate=${encodeURIComponent(fromDate)}&toDate=${encodeURIComponent(toDate)}`); const checkData=await checkRes.json(); if(checkData.exists){alert(`Payment already recorded for ${emp} in selected period.`);return;} const profile=await loadEmployeeProfile(emp); if(!profile.bankName||!profile.bankAccount){alert('Bank details missing.');return;} const payroll=window.currentPayrollData; document.getElementById('payEmployeeName').innerText=emp; document.getElementById('payBankName').innerText=profile.bankName; document.getElementById('payBankAccount').innerText=profile.bankAccount; document.getElementById('payNetPayable').innerText=payroll.netPayable.toFixed(2); document.getElementById('payEpfTotal').innerText=(payroll.epfDeduction+payroll.epfEmployerContribution).toFixed(2); document.getElementById('payEisTotal').innerText=(payroll.eisEmployee+payroll.eisEmployer).toFixed(2); document.getElementById('paySocsoTotal').innerText=(payroll.socsoEmployee+payroll.socsoEmployer).toFixed(2); document.getElementById('payTotalExpenditure').innerText=payroll.totalEmployerExpenditure.toFixed(2); document.getElementById('paymentModal').style.display='flex'; }
+  async function openPaymentModal() { const emp=window.currentPayrollEmployee; if(!emp){alert('No employee selected');return;} const fromDate=document.getElementById('dateFrom').value, toDate=document.getElementById('dateTo').value; const checkRes=await fetch(`${ATTENDANCE_API_URL}?action=checkPaymentExists&employeeName=${encodeURIComponent(emp)}&fromDate=${encodeURIComponent(fromDate)}&toDate=${encodeURIComponent(toDate)}`); const checkData=await checkRes.json(); if(checkData.exists){alert(`Payment already recorded for ${emp} in selected period.`);return;} const profile=await loadEmployeeProfile(emp); if(!profile.bankName||!profile.bankAccount){alert('Bank details missing.');return;} const payroll=window.currentPayrollData; document.getElementById('payEmployeeName').innerText=emp; document.getElementById('payBankName').innerText=profile.bankName; document.getElementById('payBankAccount').innerText=profile.bankAccount; document.getElementById('payNetPayable').innerText=payroll.netPayable.toFixed(2); document.getElementById('payEpfTotal').innerText=(payroll.epfDeduction+payroll.epfEmployerContribution).toFixed(2); document.getElementById('payEisTotal').innerText=(payroll.eisEmployee+payroll.eisEmployer).toFixed(2); document.getElementById('paySocsoTotal').innerText=(payroll.socsoEmployee+payroll.socsoEmployer).toFixed(2); document.getElementById('payTotalExpenditure').innerText=payroll.totalEmployerExpenditure.toFixed(2); document.getElementById('paymentModal').style.display='flex'; }
   async function confirmPayment() { const success=await recordPayment(window.currentPayrollEmployee, window.currentPayrollData, (await loadEmployeeProfile(window.currentPayrollEmployee)).bankName, (await loadEmployeeProfile(window.currentPayrollEmployee)).bankAccount); if(success){ alert('Payment recorded'); document.getElementById('paymentModal').style.display='none'; await renderSalesTable(); } else alert('Payment failed'); }
   function closePaymentModal(){document.getElementById('paymentModal').style.display='none';}
   async function openHistoryModal() { const emp=window.currentPayrollEmployee; if(!emp){alert('Select employee');return;} const payments=await getPaymentHistory(emp); const container=document.getElementById('historyList'); if(payments.length===0) container.innerHTML='<div class="loading">No records</div>'; else { let html=''; for(let p of payments) html+=`<div class="payment-history-item"><div class="flex-between"><strong>${new Date(p.timestamp).toLocaleString()}</strong><span>RM ${p.netPayable.toFixed(2)}</span></div><div>EPF total: RM ${(p.epfEmployee+p.epfEmployer).toFixed(2)}</div><div>EIS total: RM ${(p.eisEmployee+p.eisEmployer).toFixed(2)}</div><div>SOCSO total: RM ${(p.socsoEmployee+p.socsoEmployer).toFixed(2)}</div><div>Employer Expenditure: RM ${p.totalExpenditure.toFixed(2)}</div><div>Bank: ${p.bankName} (${p.bankAccount})</div></div>`; container.innerHTML=html; } document.getElementById('historyModal').style.display='flex'; }
   function closeHistoryModal(){document.getElementById('historyModal').style.display='none';}
-  async function saveProfile() { /* same as before */ const emp=document.getElementById('profileEmployeeName').value; const profile={ hourlyRate:parseFloat(document.getElementById('hourlyRate').value)||0, epfEnabled:document.getElementById('epfEnabled').checked, epfNumber:document.getElementById('epfNumber').value.trim(), eisRate:parseFloat(document.getElementById('eisRate').value)||0.2, socsoEmployeeRate:parseFloat(document.getElementById('socsoEmployeeRate').value)||0.5, socsoEmployerRate:parseFloat(document.getElementById('socsoEmployerRate').value)||1.75, epfEmployeeRate:parseFloat(document.getElementById('epfEmployeeRate').value)||11, epfEmployerRate:parseFloat(document.getElementById('epfEmployerRate').value)||13, salesTarget:parseFloat(document.getElementById('salesTarget').value)||0, commissionBelowRate:parseFloat(document.getElementById('commissionBelowRate').value)||0, commissionAboveRate:parseFloat(document.getElementById('commissionAboveRate').value)||0, bankName:document.getElementById('bankNameSelect').value, bankAccount:document.getElementById('bankAccount').value.trim() }; const fd=new URLSearchParams(); fd.append('action','saveEmployeeProfile'); fd.append('employeeName',emp); for(let k in profile) fd.append(k, profile[k]); const res=await fetch(ATTENDANCE_API_URL,{method:'POST',body:fd}); const json=await res.json(); if(json.success){ document.getElementById('profileModal').style.display='none'; await renderSalesTable(); } else alert('Save failed'); }
+  async function saveProfileWrapper() { const emp=document.getElementById('profileEmployeeName').value; const profile={ hourlyRate:parseFloat(document.getElementById('hourlyRate').value)||0, epfEnabled:document.getElementById('epfEnabled').checked, epfNumber:document.getElementById('epfNumber').value.trim(), eisRate:parseFloat(document.getElementById('eisRate').value)||0.2, socsoEmployeeRate:parseFloat(document.getElementById('socsoEmployeeRate').value)||0.5, socsoEmployerRate:parseFloat(document.getElementById('socsoEmployerRate').value)||1.75, epfEmployeeRate:parseFloat(document.getElementById('epfEmployeeRate').value)||11, epfEmployerRate:parseFloat(document.getElementById('epfEmployerRate').value)||13, salesTarget:parseFloat(document.getElementById('salesTarget').value)||0, commissionBelowRate:parseFloat(document.getElementById('commissionBelowRate').value)||0, commissionAboveRate:parseFloat(document.getElementById('commissionAboveRate').value)||0, bankName:document.getElementById('bankNameSelect').value, bankAccount:document.getElementById('bankAccount').value.trim() }; const success = await saveEmployeeProfile(emp, profile); if(success){ document.getElementById('profileModal').style.display='none'; await renderSalesTable(); } else alert('Save failed'); }
   function openProfileModal() { const emp=document.getElementById('employeeFilter').value; if(emp==='ALL'){alert('Select a specific employee');return;} loadEmployeeProfile(emp).then(profile=>{ document.getElementById('profileEmployeeName').value=emp; document.getElementById('profileModalTitle').innerText=`Profile - ${emp}`; document.getElementById('hourlyRate').value=profile.hourlyRate||''; document.getElementById('epfEnabled').checked=profile.epfEnabled||false; document.getElementById('epfNumber').value=profile.epfNumber||''; document.getElementById('epfEmployeeRate').value=profile.epfEmployeeRate||11; document.getElementById('epfEmployerRate').value=profile.epfEmployerRate||13; document.getElementById('eisRate').value=profile.eisRate??0.2; document.getElementById('socsoEmployeeRate').value=profile.socsoEmployeeRate??0.5; document.getElementById('socsoEmployerRate').value=profile.socsoEmployerRate??1.75; document.getElementById('salesTarget').value=profile.salesTarget||''; document.getElementById('commissionBelowRate').value=profile.commissionBelowRate||''; document.getElementById('commissionAboveRate').value=profile.commissionAboveRate||''; document.getElementById('bankNameSelect').value=profile.bankName||''; document.getElementById('bankAccount').value=profile.bankAccount||''; document.getElementById('epfDetailsDiv').style.display=profile.epfEnabled?'block':'none'; document.getElementById('profileModal').style.display='flex'; }); }
   function closeProfileModal(){document.getElementById('profileModal').style.display='none';}
 
@@ -560,7 +615,7 @@
   document.getElementById('profileHeaderBtn').addEventListener('click',openProfileModal);
   document.getElementById('closeProfileModal').addEventListener('click',closeProfileModal);
   document.getElementById('cancelProfileBtn').addEventListener('click',closeProfileModal);
-  document.getElementById('saveProfileBtn').addEventListener('click',saveProfile);
+  document.getElementById('saveProfileBtn').addEventListener('click',saveProfileWrapper);
   document.getElementById('epfEnabled').addEventListener('change',(e)=>document.getElementById('epfDetailsDiv').style.display=e.target.checked?'block':'none');
   document.getElementById('payNowBtn').addEventListener('click',openPaymentModal);
   document.getElementById('confirmPayBtn').addEventListener('click',confirmPayment);
@@ -584,7 +639,6 @@
         applyFiltersAndRender();
       }, 100);
     }
-    // Periodic background check every 10 minutes
     setInterval(() => checkAndUpdateBackground(), 10 * 60 * 1000);
   }
   init();

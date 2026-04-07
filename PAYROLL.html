@@ -46,8 +46,6 @@
     .modal-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; }
     .payroll-breakdown { background: #f0f9ff; border-radius: 20px; padding: 16px; margin-top: 16px; border-left: 4px solid #1f5e7e; }
     .payroll-row { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; font-size: 0.9rem; gap: 12px; flex-wrap: wrap; }
-    .payroll-sub { margin-left: 20px; font-size: 0.85rem; color: #2c5f7a; }
-    .payroll-total { font-weight: 800; font-size: 1.1rem; color: #0f3b4c; border-top: 1px solid #cbd5e1; padding-top: 8px; margin-top: 8px; }
     .payroll-grid { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; margin: 8px 0; flex-wrap: wrap; }
     .payroll-grid-item { flex: 1; min-width: 160px; }
     .payroll-grid-item .label { font-weight: 500; color: #2c5f7a; }
@@ -81,8 +79,8 @@
 
   <div class="filters-panel">
     <div class="filter-group"><label>Employee</label><select id="employeeFilter"><option value="ALL">👥 All employees</option></select></div>
-    <div class="filter-group"><label>From date (optional)</label><input type="date" id="dateFrom"></div>
-    <div class="filter-group"><label>To date (optional)</label><input type="date" id="dateTo"></div>
+    <div class="filter-group"><label>From date</label><input type="date" id="dateFrom"></div>
+    <div class="filter-group"><label>To date</label><input type="date" id="dateTo"></div>
     <div class="filter-group"><label>Store (Sales)</label><select id="storeSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div>
     <div class="filter-group"><button id="refreshBtn" class="btn-primary">Refresh data</button></div>
   </div>
@@ -91,7 +89,7 @@
   <div class="table-wrapper">
     <table id="attendanceTable">
       <thead><tr><th>Employee</th><th>Date</th><th>Time In</th><th>Time Out</th><th>Duration</th><th>Location</th></tr></thead>
-      <tbody id="attendanceBody"><tr><td colspan="6" class="loading">Loading attendance...</td></tr></tbody>
+      <tbody id="attendanceBody"><tr><td colspan="6" class="loading">Loading attendance...‹/td›</tr›</tbody>
     </table>
   </div>
 
@@ -99,11 +97,11 @@
   <div class="table-wrapper">
     <table id="salesTable">
       <thead><tr><th>Employee</th><th>Total Hours</th><th>Total Sales (RM)</th><th>Target (RM)</th><th>Achieved (%)</th><th>Commission (RM)</th><th>Total Payable (RM)</th></tr></thead>
-      <tbody id="salesBody"><tr><td colspan="7" class="loading">Select filters to load data...</td></tr></tbody>
+      <tbody id="salesBody"><tr><td colspan="7" class="loading">Select filters to load data...‹/td›</tr›</tbody>
     </table>
   </div>
 
-  <!-- Improved Payroll Breakdown Panel with side‑by‑side alignment -->
+  <!-- Payroll Breakdown Panel -->
   <div id="payrollBreakdown" class="payroll-breakdown">
     <div style="font-weight: 600; margin-bottom: 12px;">📊 Payroll Details</div>
     <div class="payroll-row"><span>Gross Salary (Hours × Hourly Rate):</span><span id="grossAmount">RM 0.00</span></div>
@@ -254,6 +252,22 @@
   let isLoading = false;
   let activeFetchController = null;
 
+  // Helper: get date YYYY-MM-DD
+  function getDateString(date) {
+    return date.toISOString().split('T')[0];
+  }
+
+  // Set default date range to last 30 days
+  function setDefaultDateRange() {
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    const fromInput = document.getElementById('dateFrom');
+    const toInput = document.getElementById('dateTo');
+    if (!fromInput.value) fromInput.value = getDateString(thirtyDaysAgo);
+    if (!toInput.value) toInput.value = getDateString(today);
+  }
+
   // ==================== EMPLOYEE PROFILE ====================
   async function loadEmployeeProfile(employeeName) {
     try {
@@ -390,40 +404,58 @@
   function formatDuration(hrs) { if(hrs===null||isNaN(hrs)) return '—'; const h=Math.floor(hrs), m=Math.round((hrs-h)*60); if(h===0) return `${m}min`; if(m===0) return `${h}h`; return `${h}h ${m}min`; }
   function formatDateDMY(isoDate) { if(!isoDate) return '—'; const parts=isoDate.split('-'); if(parts.length===3) return `${parts[2]}/${parts[1]}/${parts[0]}`; return isoDate; }
 
-  // ==================== FETCH DATA ====================
-  async function fetchAttendance() {
-    if (activeFetchController) activeFetchController.abort();
-    activeFetchController = new AbortController();
-    const url = `${ATTENDANCE_API_URL}?action=getAllAttendance`;
-    try {
-      const res = await fetch(url, { signal: activeFetchController.signal });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      if (json.status === 'success' && Array.isArray(json.data)) {
-        masterAttendance = json.data;
-        rebuildEmployeeFilter();
-        await applyFiltersAndRender();
-      } else throw new Error('Invalid attendance response');
-    } catch(err) {
-      if (err.name !== 'AbortError') {
-        console.error(err);
-        document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="6" class="loading" style="color:#b91c1c;">⚠️ Failed to load attendance: ${err.message}</td></tr>`;
-      }
-    } finally {
-      activeFetchController = null;
+  // ==================== FETCH DATA (with date filters) ====================
+  async function fetchAttendanceWithDates(fromDate, toDate) {
+    let url = `${ATTENDANCE_API_URL}?action=getAllAttendance`;
+    if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
+    if (toDate) url += `&to=${encodeURIComponent(toDate)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json.status === 'success' && Array.isArray(json.data)) {
+      return json.data;
+    } else {
+      throw new Error('Invalid attendance response');
     }
   }
 
-  async function fetchRawSalesData(store, fromDate, toDate) {
+  async function fetchRawSalesDataWithDates(store, fromDate, toDate) {
     let url = `${SALES_API_URL}?action=getEmployeeSalesData&store=${encodeURIComponent(store)}`;
     if (fromDate) url += `&from=${encodeURIComponent(fromDate)}`;
     if (toDate) url += `&to=${encodeURIComponent(toDate)}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json.success && Array.isArray(json.labels)) return { labels: json.labels, data: json.data };
+    return null;
+  }
+
+  async function loadAllData() {
+    if (isLoading) return;
+    isLoading = true;
+    const loadingEl = document.getElementById('attendanceBody');
+    if (loadingEl) loadingEl.innerHTML = '<tr><td colspan="6" class="loading">Loading data...‹/td›</tr›';
     try {
-      const res = await fetch(url);
-      const json = await res.json();
-      if (json.success && Array.isArray(json.labels)) return { labels: json.labels, data: json.data };
-      return null;
-    } catch(err) { console.error("Sales fetch error:", err); return null; }
+      const empFilter = document.getElementById('employeeFilter').value;
+      const fromDate = document.getElementById('dateFrom').value;
+      const toDate = document.getElementById('dateTo').value;
+      const store = document.getElementById('storeSelect').value;
+
+      // Parallel fetch attendance and sales
+      const [attendanceData, salesData] = await Promise.all([
+        fetchAttendanceWithDates(fromDate, toDate),
+        fetchRawSalesDataWithDates(store, fromDate, toDate)
+      ]);
+      masterAttendance = attendanceData;
+      allSalesData = salesData;
+
+      rebuildEmployeeFilter();
+      await applyFiltersAndRender(); // this will further filter and display
+    } catch (err) {
+      console.error("loadAllData error:", err);
+      document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="6" class="loading" style="color:#b91c1c;">⚠️ Failed to load data: ${err.message}‹/td›</tr›`;
+    } finally {
+      isLoading = false;
+    }
   }
 
   // ==================== UI UPDATE ====================
@@ -436,45 +468,25 @@
   }
 
   async function applyFiltersAndRender() {
-    if (isLoading) return;
-    isLoading = true;
-    try {
-      let filtered = [...masterAttendance];
-      const empFilter = document.getElementById('employeeFilter').value;
-      if (empFilter !== 'ALL') filtered = filtered.filter(r => r.employee === empFilter);
-      const from = document.getElementById('dateFrom').value ? new Date(document.getElementById('dateFrom').value + 'T00:00:00') : null;
-      const to = document.getElementById('dateTo').value ? new Date(document.getElementById('dateTo').value + 'T23:59:59') : null;
-      if (from || to) {
-        filtered = filtered.filter(r => {
-          const d = new Date(r.date + 'T00:00:00');
-          if (from && d < from) return false;
-          if (to && d > to) return false;
-          return true;
-        });
-      }
-      currentFiltered = filtered;
-      renderAttendanceTable();
-      updateAttendanceStats();
+    // Filter attendance based on current UI selections (already date-filtered from server, but we also apply employee filter locally)
+    let filtered = [...masterAttendance];
+    const empFilter = document.getElementById('employeeFilter').value;
+    if (empFilter !== 'ALL') filtered = filtered.filter(r => r.employee === empFilter);
+    // No need to filter by date again because server already filtered
+    currentFiltered = filtered;
+    renderAttendanceTable();
+    updateAttendanceStats();
 
-      const storeSelect = document.getElementById('storeSelect');
-      if (empFilter !== 'ALL') {
-        storeSelect.value = "all";
-        storeSelect.disabled = true;
-      } else {
-        storeSelect.disabled = false;
-      }
-      const store = storeSelect.value;
-      const fromDate = document.getElementById('dateFrom').value;
-      const toDate = document.getElementById('dateTo').value;
-      allSalesData = await fetchRawSalesData(store, fromDate, toDate);
-      await applySalesEmployeeFilter();
-      saveFilters();
-    } catch (err) {
-      console.error("applyFiltersAndRender error:", err);
-      document.getElementById('salesBody').innerHTML = `<tr><td colspan="7" class="loading" style="color:#b91c1c;">⚠️ Failed to load data: ${err.message}</td></tr>`;
-    } finally {
-      isLoading = false;
+    const storeSelect = document.getElementById('storeSelect');
+    if (empFilter !== 'ALL') {
+      storeSelect.value = "all";
+      storeSelect.disabled = true;
+    } else {
+      storeSelect.disabled = false;
     }
+    // Use the already fetched allSalesData (already date-filtered)
+    await applySalesEmployeeFilter();
+    saveFilters();
   }
 
   async function applySalesEmployeeFilter() {
@@ -495,7 +507,7 @@
 
   function renderAttendanceTable() {
     const tbody = document.getElementById('attendanceBody');
-    if (currentFiltered.length === 0) { tbody.innerHTML = '<td><td colspan="6" class="loading">📭 No attendance records. </td></tr>'; return; }
+    if (currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="loading">📭 No attendance records.‹/td›</tr›'; return; }
     const sorted = [...currentFiltered].sort((a,b) => new Date(b.date) - new Date(a.date));
     let html = '';
     for (let r of sorted) {
@@ -545,7 +557,7 @@
     }
 
     if (employeesToShow.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="loading">No employees to display. </td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="loading">No employees to display.‹/td›</tr›';
       document.getElementById('payrollBreakdown').style.display = 'none';
       return;
     }
@@ -822,10 +834,10 @@
 
   // ==================== EVENT LISTENERS ====================
   document.getElementById('employeeFilter').addEventListener('change', async () => { await applyFiltersAndRender(); });
-  document.getElementById('dateFrom').addEventListener('change', () => applyFiltersAndRender());
-  document.getElementById('dateTo').addEventListener('change', () => applyFiltersAndRender());
-  document.getElementById('storeSelect').addEventListener('change', () => applyFiltersAndRender());
-  document.getElementById('refreshBtn').addEventListener('click', () => fetchAttendance());
+  document.getElementById('dateFrom').addEventListener('change', () => loadAllData());
+  document.getElementById('dateTo').addEventListener('change', () => loadAllData());
+  document.getElementById('storeSelect').addEventListener('change', () => loadAllData());
+  document.getElementById('refreshBtn').addEventListener('click', () => loadAllData());
 
   document.getElementById('profileHeaderBtn').addEventListener('click', openProfileModal);
   document.getElementById('closeProfileModal').addEventListener('click', closeProfileModal);
@@ -845,8 +857,9 @@
 
   // ==================== INIT ====================
   async function init() {
+    setDefaultDateRange();
     const savedEmployee = loadFilters();
-    await fetchAttendance();
+    await loadAllData(); // this will fetch only last 30 days of data
     if (savedEmployee && savedEmployee !== 'ALL') {
       const empSelect = document.getElementById('employeeFilter');
       setTimeout(() => {
@@ -858,9 +871,6 @@
           applyFiltersAndRender();
         }
       }, 100);
-    } else if (savedEmployee === 'ALL') {
-      document.getElementById('employeeFilter').value = 'ALL';
-      await applyFiltersAndRender();
     }
   }
   init();

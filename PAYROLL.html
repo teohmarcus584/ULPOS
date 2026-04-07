@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Staff Performance | Hours + Sales + Payroll (Rounding Toggle)</title>
+  <title>Staff Performance | Hours + Sales + Payroll (Rounding + Auto Break)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -23,7 +23,7 @@
     .stat-value { font-size: 2rem; font-weight: 800; color: #0f3b4c; }
     .stat-sub { font-size: 0.7rem; color: #5e7b9c; margin-top: 6px; }
     .filters-panel { background: white; border-radius: 24px; padding: 20px 24px; margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; border: 1px solid #e2edf5; }
-    .filter-group { flex: 1; min-width: 140px; }
+    .filter-group { flex: 1; min-width: 130px; }
     .filter-group label { display: block; font-size: 0.7rem; font-weight: 600; margin-bottom: 6px; color: #2c5f7a; }
     select, input, button { width: 100%; padding: 10px 12px; border-radius: 16px; border: 1px solid #cbdde9; font-family: inherit; background: white; }
     button { background: #f1f5f9; cursor: pointer; transition: 0.2s; font-weight: 500; }
@@ -44,6 +44,7 @@
     td { padding: 12px; border-bottom: 1px solid #edf2f7; }
     .duration-badge { background: #e0f2fe; padding: 4px 10px; border-radius: 30px; font-size: 0.75rem; font-weight: 500; display: inline-block; }
     .adjusted-badge { background: #fef9e3; color: #b45309; font-size: 0.7rem; border-radius: 20px; padding: 2px 8px; margin-left: 6px; white-space: nowrap; }
+    .break-badge { background: #e6f7e6; color: #2e7d32; font-size: 0.7rem; border-radius: 20px; padding: 2px 8px; margin-left: 6px; }
     .loading { text-align: center; padding: 48px; color: #5e7b9c; }
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; }
     .modal-container { background: white; max-width: 550px; width: 90%; border-radius: 28px; padding: 24px; box-shadow: 0 20px 35px rgba(0,0,0,0.2); position: relative; max-height: 85vh; overflow-y: auto; }
@@ -77,7 +78,7 @@
 <div class="dashboard-container">
   <div class="header">
     <div class="header-left">
-      <div><h1><i class="fas fa-chart-line"></i> Staff Performance Hub</h1><p style="font-size:0.8rem;">Rounding toggle • EPF/EIS/SOCSO + Commission</p></div>
+      <div><h1><i class="fas fa-chart-line"></i> Staff Performance Hub</h1><p style="font-size:0.8rem;">Rounding + Auto break • EPF/EIS/SOCSO + Commission</p></div>
       <div class="badge"><i class="fas fa-sync-alt"></i> Live from Google Sheets</div>
     </div>
     <div class="header-right">
@@ -88,7 +89,7 @@
   <div class="stats-grid">
     <div class="stat-card"><div class="stat-title">Employees</div><div class="stat-value" id="totalEmployees">—</div></div>
     <div class="stat-card"><div class="stat-title">Total shifts</div><div class="stat-value" id="totalShifts">—</div></div>
-    <div class="stat-card"><div class="stat-title">Total hours</div><div class="stat-value" id="totalHours">—</div><div class="stat-sub" id="hoursNote">(rounding enabled)</div></div>
+    <div class="stat-card"><div class="stat-title">Total hours</div><div class="stat-value" id="totalHours">—</div><div class="stat-sub" id="hoursNote">(net after adjustments)</div></div>
     <div class="stat-card"><div class="stat-title">Top by hours</div><div class="stat-value" id="topEmployeeHours">—</div></div>
     <div class="stat-card"><div class="stat-title">Total sales (RM)</div><div class="stat-value" id="totalSales">—</div></div>
     <div class="stat-card"><div class="stat-title">Top by sales</div><div class="stat-value" id="topEmployeeSales">—</div></div>
@@ -101,55 +102,55 @@
     <div class="filter-group"><label>Store (Sales)</label><select id="storeSelect"><option value="all">All Stores</option><option value="queens">Queensbay</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div>
     <div class="filter-group toggle-group">
       <label><i class="fas fa-magic"></i> Auto‑adjust time</label>
-      <label class="switch">
-        <input type="checkbox" id="roundingToggle" checked>
-        <span class="slider"></span>
-      </label>
+      <label class="switch"><input type="checkbox" id="roundingToggle" checked><span class="slider"></span></label>
+    </div>
+    <div class="filter-group toggle-group">
+      <label><i class="fas fa-coffee"></i> Auto break deduction</label>
+      <label class="switch"><input type="checkbox" id="breakToggle"><span class="slider"></span></label>
     </div>
     <div class="filter-group"><button id="refreshBtn" class="btn-primary">Refresh data</button></div>
   </div>
 
-  <div class="section-title"><i class="fas fa-clock"></i> Attendance & Hours</div>
+  <div class="section-title"><i class="fas fa-clock"></i> Attendance & Hours (net after adjustments)</div>
   <div class="table-wrapper">
     <table id="attendanceTable">
-      <thead><tr><th>Employee</th><th>Date</th><th>Original In</th><th>Adjusted In</th><th>Original Out</th><th>Adjusted Out</th><th>Duration</th><th>Location</th></tr></thead>
-      <tbody id="attendanceBody"><tr><td colspan="8" class="loading">Loading attendance...</td></tr></tbody>
-    </table>
-  </div>
-
-  <div class="section-title"><i class="fas fa-chart-line"></i> Sales & Payroll Performance</div>
-  <div class="table-wrapper">
-    <table id="salesTable">
-      <thead><tr><th>Employee</th><th>Total Hours</th><th>Total Sales (RM)</th><th>Target (RM)</th><th>Achieved (%)</th><th>Commission (RM)</th><th>Total Payable (RM)</th></tr></thead>
-      <tbody id="salesBody"><tr><td colspan="7" class="loading">Select filters to load data...</td></tr></tbody>
-    </table>
-  </div>
-
-  <!-- Payroll Breakdown Panel -->
-  <div id="payrollBreakdown" class="payroll-breakdown">
-    <div style="font-weight: 600; margin-bottom: 12px;">📊 Payroll Details</div>
-    <div class="payroll-row"><span>Gross Salary (Hours × Hourly Rate):</span><span id="grossAmount">RM 0.00</span></div>
-    <div class="payroll-row"><span>EPF Employee Contribution:</span><span id="epfEmployeeAmount">RM 0.00</span></div>
-    <div class="payroll-row"><span>EPF Employer Contribution:</span><span id="epfEmployerAmount">RM 0.00</span></div>
-    <div style="margin-top: 12px;"><strong>EIS (Employment Insurance)</strong></div>
-    <div class="payroll-grid"><div class="payroll-grid-item"><div class="label">EIS Employee (0.2% of capped wage)</div><div class="value" id="eisEmployeeAmount">RM 0.00</div></div><div class="payroll-grid-item"><div class="label">EIS Employer (0.2% of capped wage)</div><div class="value" id="eisEmployerAmount">RM 0.00</div></div></div>
-    <div style="margin-top: 12px;"><strong>SOCSO (Social Security)</strong></div>
-    <div class="payroll-grid"><div class="payroll-grid-item"><div class="label">SOCSO Employee (0.5% of capped wage)</div><div class="value" id="socsoEmployeeAmount">RM 0.00</div></div><div class="payroll-grid-item"><div class="label">SOCSO Employer (1.75% of capped wage)</div><div class="value" id="socsoEmployerAmount">RM 0.00</div></div></div>
-    <div class="payroll-row"><span>Sales Commission:</span><span id="bonusAmount">RM 0.00</span></div>
-    <div class="payroll-row payroll-total"><span>Net Payable (to Employee):</span><span id="netPayableAmount">RM 0.00</span></div>
-    <div class="payroll-row"><span>Total Employer Expenditure:</span><span id="totalEmployerExpenditure">RM 0.00</span></div>
-    <div class="calc-note" id="roundingNote">* Rounding rules: Clock‑in forward (e.g., 10:15→10:30, 15:35→16:00); Clock‑out backward (e.g., 16:15→16:00). Toggle above to disable.</div>
-    <div style="margin-top: 16px; display: flex; gap: 12px;">
-      <button id="payNowBtn" class="btn-primary" style="flex:1"><i class="fas fa-credit-card"></i> Process Payment</button>
-      <button id="viewHistoryBtn" class="btn-primary" style="background:#2c7da0;"><i class="fas fa-history"></i> Payment History</button>
-    </div>
-  </div>
+      <thead><tr><th>Employee</th><th>Date</th><th>Original In</th><th>Adjusted In</th><th>Original Out</th><th>Adjusted Out</th><th>Raw Hours</th><th>Break Deduct</th><th>Net Hours</th><th>Location</th></thead>
+      <tbody id="attendanceBody"><tr><td colspan="10" class="loading">Loading attendance......</td></tr>
+    </tbody>
+  </table>
 </div>
 
-<!-- Employee Profile Modal -->
-<div id="profileModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeProfileModal">&times;</span><div class="modal-title" id="profileModalTitle">Employee Profile</div><input type="hidden" id="profileEmployeeName"><label>Hourly Rate (RM)</label><input type="number" id="hourlyRate" class="modal-input" step="0.01"><div class="modal-checkbox"><input type="checkbox" id="epfEnabled"> <label>EPF Contribution?</label></div><div id="epfDetailsDiv" style="display: none;"><label>EPF Number</label><input type="text" id="epfNumber" class="modal-input"><label>EPF Employee Rate (%)</label><input type="number" id="epfEmployeeRate" class="modal-input" step="0.01"><label>EPF Employer Rate (%)</label><input type="number" id="epfEmployerRate" class="modal-input" step="0.01"></div><label>EIS Rate (%) (Employee & Employer, 0.2% up to RM6k)</label><input type="number" id="eisRate" class="modal-input" step="0.01" value="0.2"><label>SOCSO Employee Rate (%) (0.5% up to RM6k)</label><input type="number" id="socsoEmployeeRate" class="modal-input" step="0.01" value="0.5"><label>SOCSO Employer Rate (%) (1.75% up to RM6k)</label><input type="number" id="socsoEmployerRate" class="modal-input" step="0.01" value="1.75"><label>Sales Target (RM)</label><input type="number" id="salesTarget" class="modal-input" step="0.01"><label>Commission Rate - Below Target (% of total sales)</label><input type="number" id="commissionBelowRate" class="modal-input" step="0.01"><label>Commission Rate - Above Target (% of excess)</label><input type="number" id="commissionAboveRate" class="modal-input" step="0.01"><label>Bank Name</label><select id="bankNameSelect" class="modal-input"><option value="">-- Select Bank --</option><option>Maybank</option><option>CIMB Bank</option><option>Public Bank</option><option>RHB Bank</option><option>Hong Leong Bank</option><option>AmBank</option><option>Alliance Bank</option><option>OCBC Bank</option><option>UOB Bank</option><option>Bank Islam</option><option>Bank Muamalat</option><option>Bank Rakyat</option><option>BSN</option><option>Affin Bank</option><option>HSBC Bank</option><option>Standard Chartered</option><option>KFH</option><option>Other</option></select><label>Bank Account Number</label><input type="text" id="bankAccount" class="modal-input"><div class="modal-buttons"><button id="saveProfileBtn" class="btn-primary">Save</button><button id="cancelProfileBtn">Cancel</button></div></div></div>
+<div class="section-title"><i class="fas fa-chart-line"></i> Sales & Payroll Performance</div>
+<div class="table-wrapper">
+  <table id="salesTable">
+    <thead><tr><th>Employee</th><th>Net Hours</th><th>Total Sales (RM)</th><th>Target (RM)</th><th>Achieved (%)</th><th>Commission (RM)</th><th>Total Payable (RM)</th></tr></thead>
+    <tbody id="salesBody"><tr><td colspan="7" class="loading">Select filters to load data...</td></tr></tbody>
+  </table>
+</div>
 
-<!-- Payment Modal & History Modal -->
+<!-- Payroll Breakdown Panel -->
+<div id="payrollBreakdown" class="payroll-breakdown">
+  <div style="font-weight: 600; margin-bottom: 12px;">📊 Payroll Details</div>
+  <div class="payroll-row"><span>Gross Salary (Net Hours × Hourly Rate):</span><span id="grossAmount">RM 0.00</span></div>
+  <div class="payroll-row"><span>EPF Employee Contribution:</span><span id="epfEmployeeAmount">RM 0.00</span></div>
+  <div class="payroll-row"><span>EPF Employer Contribution:</span><span id="epfEmployerAmount">RM 0.00</span></div>
+  <div style="margin-top: 12px;"><strong>EIS (Employment Insurance)</strong></div>
+  <div class="payroll-grid"><div class="payroll-grid-item"><div class="label">EIS Employee (0.2% of capped wage)</div><div class="value" id="eisEmployeeAmount">RM 0.00</div></div><div class="payroll-grid-item"><div class="label">EIS Employer (0.2% of capped wage)</div><div class="value" id="eisEmployerAmount">RM 0.00</div></div></div>
+  <div style="margin-top: 12px;"><strong>SOCSO (Social Security)</strong></div>
+  <div class="payroll-grid"><div class="payroll-grid-item"><div class="label">SOCSO Employee (0.5% of capped wage)</div><div class="value" id="socsoEmployeeAmount">RM 0.00</div></div><div class="payroll-grid-item"><div class="label">SOCSO Employer (1.75% of capped wage)</div><div class="value" id="socsoEmployerAmount">RM 0.00</div></div></div>
+  <div class="payroll-row"><span>Sales Commission:</span><span id="bonusAmount">RM 0.00</span></div>
+  <div class="payroll-row payroll-total"><span>Net Payable (to Employee):</span><span id="netPayableAmount">RM 0.00</span></div>
+  <div class="payroll-row"><span>Total Employer Expenditure:</span><span id="totalEmployerExpenditure">RM 0.00</span></div>
+  <div class="calc-note" id="rulesNote">* Rounding rules & break deduction (if enabled): ≥11h raw → deduct 2h; 6–10.99h → deduct 1h.</div>
+  <div style="margin-top: 16px; display: flex; gap: 12px;">
+    <button id="payNowBtn" class="btn-primary" style="flex:1"><i class="fas fa-credit-card"></i> Process Payment</button>
+    <button id="viewHistoryBtn" class="btn-primary" style="background:#2c7da0;"><i class="fas fa-history"></i> Payment History</button>
+  </div>
+</div>
+</div>
+
+<!-- Modals (same as before, omitted for brevity but kept functional) -->
+<div id="profileModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeProfileModal">&times;</span><div class="modal-title" id="profileModalTitle">Employee Profile</div><input type="hidden" id="profileEmployeeName"><label>Hourly Rate (RM)</label><input type="number" id="hourlyRate" class="modal-input" step="0.01"><div class="modal-checkbox"><input type="checkbox" id="epfEnabled"> <label>EPF Contribution?</label></div><div id="epfDetailsDiv" style="display: none;"><label>EPF Number</label><input type="text" id="epfNumber" class="modal-input"><label>EPF Employee Rate (%)</label><input type="number" id="epfEmployeeRate" class="modal-input" step="0.01"><label>EPF Employer Rate (%)</label><input type="number" id="epfEmployerRate" class="modal-input" step="0.01"></div><label>EIS Rate (%) (Employee & Employer, 0.2% up to RM6k)</label><input type="number" id="eisRate" class="modal-input" step="0.01" value="0.2"><label>SOCSO Employee Rate (%) (0.5% up to RM6k)</label><input type="number" id="socsoEmployeeRate" class="modal-input" step="0.01" value="0.5"><label>SOCSO Employer Rate (%) (1.75% up to RM6k)</label><input type="number" id="socsoEmployerRate" class="modal-input" step="0.01" value="1.75"><label>Sales Target (RM)</label><input type="number" id="salesTarget" class="modal-input" step="0.01"><label>Commission Rate - Below Target (% of total sales)</label><input type="number" id="commissionBelowRate" class="modal-input" step="0.01"><label>Commission Rate - Above Target (% of excess)</label><input type="number" id="commissionAboveRate" class="modal-input" step="0.01"><label>Bank Name</label><select id="bankNameSelect" class="modal-input"><option value="">-- Select Bank --</option><option>Maybank</option><option>CIMB Bank</option><option>Public Bank</option><option>RHB Bank</option><option>Hong Leong Bank</option><option>AmBank</option><option>Alliance Bank</option><option>OCBC Bank</option><option>UOB Bank</option><option>Bank Islam</option><option>Bank Muamalat</option><option>Bank Rakyat</option><option>BSN</option><option>Affin Bank</option><option>HSBC Bank</option><option>Standard Chartered</option><option>KFH</option><option>Other</option></select><label>Bank Account Number</label><input type="text" id="bankAccount" class="modal-input"><div class="modal-buttons"><button id="saveProfileBtn" class="btn-primary">Save</button><button id="cancelProfileBtn">Cancel</button></div></div></div>
 <div id="paymentModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closePaymentModal">&times;</span><div class="modal-title">💵 Process Payment</div><div id="paymentDetails"><p><strong>Employee:</strong> <span id="payEmployeeName"></span></p><p><strong>Bank:</strong> <span id="payBankName"></span></p><p><strong>Bank Account:</strong> <span id="payBankAccount"></span></p><hr><p><strong>Net Payable (Employee):</strong> RM <span id="payNetPayable"></span></p><p><strong>EPF (Employee+Employer):</strong> RM <span id="payEpfTotal"></span></p><p><strong>EIS (Employee+Employer):</strong> RM <span id="payEisTotal"></span></p><p><strong>SOCSO (Employee+Employer):</strong> RM <span id="paySocsoTotal"></span></p><p style="font-weight: 800;"><strong>Total Employer Expenditure:</strong> RM <span id="payTotalExpenditure"></span></p></div><div class="modal-buttons"><button id="confirmPayBtn" class="btn-primary">✅ Confirm Payment</button><button id="cancelPayBtn">Cancel</button></div></div></div>
 <div id="historyModal" class="modal-overlay"><div class="modal-container" style="max-width: 600px;"><span class="close-modal" id="closeHistoryModal">&times;</span><div class="modal-title">📜 Payment History</div><div id="historyList" style="max-height: 60vh; overflow-y: auto;"></div><div class="modal-buttons"><button id="closeHistoryBtn">Close</button></div></div></div>
 
@@ -160,7 +161,8 @@
   const CACHE_SALES_KEY = 'salesCache';
   const CACHE_EXPIRY_MS = 60 * 60 * 1000;
   let masterAttendance = [], currentFiltered = [], allSalesData = null, filteredSales = null, isLoading = false;
-  let autoAdjustEnabled = true;  // toggle state
+  let autoAdjustEnabled = true;
+  let autoBreakEnabled = false;
 
   function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
   function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
@@ -172,18 +174,18 @@
   function timeToMinutes(t) { if(!t || typeof t !== 'string') return null; const parts = t.trim().split(':'); if(parts.length<2) return null; let h=parseInt(parts[0],10), m=parseInt(parts[1],10); if(isNaN(h)||isNaN(m)) return null; return h*60+m; }
   function minutesToTime(min) { let h = Math.floor(min/60); let m = min % 60; return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`; }
 
-  // Rounding functions (only applied if autoAdjustEnabled)
+  // Rounding functions (only if autoAdjustEnabled)
   function getAdjustedClockInMinutes(timeStr) {
     if(!autoAdjustEnabled) return timeToMinutes(timeStr);
     let mins = timeToMinutes(timeStr);
     if(mins === null) return null;
-    if(mins < 600) return 600;                     // before 10:00 -> 10:00
-    if(mins >= 615 && mins < 630) return 630;      // 10:15-10:29 -> 10:30
-    if(mins >= 935 && mins < 960) return 960;      // 15:35-15:59 -> 16:00
-    if(mins >= 975 && mins < 990) return 990;      // 16:15-16:29 -> 16:30
-    if(mins >= 1000 && mins < 1020) return 1020;   // 16:40-16:59 -> 17:00
-    if(mins >= 1050 && mins < 1080) return 1080;   // 17:30-17:59 -> 18:00
-    if(mins >= 1110 && mins < 1140) return 1140;   // 18:30-18:59 -> 19:00
+    if(mins < 600) return 600;
+    if(mins >= 615 && mins < 630) return 630;
+    if(mins >= 935 && mins < 960) return 960;
+    if(mins >= 975 && mins < 990) return 990;
+    if(mins >= 1000 && mins < 1020) return 1020;
+    if(mins >= 1050 && mins < 1080) return 1080;
+    if(mins >= 1110 && mins < 1140) return 1140;
     return mins;
   }
   function getAdjustedClockOutMinutes(timeStr) {
@@ -201,13 +203,31 @@
     if(origMin === adjMin) return null;
     return minutesToTime(adjMin);
   }
-  function computeDurationHours(timeIn, timeOut) {
-    const inMin = autoAdjustEnabled ? getAdjustedClockInMinutes(timeIn) : timeToMinutes(timeIn);
-    const outMin = autoAdjustEnabled ? getAdjustedClockOutMinutes(timeOut) : timeToMinutes(timeOut);
+  function computeRawDurationHours(timeIn, timeOut) {
+    const inMin = getAdjustedClockInMinutes(timeIn);
+    const outMin = getAdjustedClockOutMinutes(timeOut);
     if(inMin === null || outMin === null) return null;
     let diff = outMin - inMin;
     if(diff < 0) diff += 24*60;
     return parseFloat((diff/60).toFixed(2));
+  }
+  // Break deduction: rawHours -> net hours
+  function applyBreakDeduction(rawHours) {
+    if(!autoBreakEnabled) return rawHours;
+    if(rawHours >= 11) return Math.max(0, rawHours - 2);
+    if(rawHours >= 6) return Math.max(0, rawHours - 1);
+    return rawHours;
+  }
+  function getNetHours(timeIn, timeOut) {
+    const raw = computeRawDurationHours(timeIn, timeOut);
+    if(raw === null) return null;
+    return applyBreakDeduction(raw);
+  }
+  function getBreakDeductionAmount(rawHours) {
+    if(!autoBreakEnabled) return 0;
+    if(rawHours >= 11) return 2;
+    if(rawHours >= 6) return 1;
+    return 0;
   }
 
   function formatDuration(hrs) { if(hrs===null||isNaN(hrs)) return '—'; const h=Math.floor(hrs), m=Math.round((hrs-h)*60); if(h===0) return `${m}min`; if(m===0) return `${h}h`; return `${h}h ${m}min`; }
@@ -249,7 +269,7 @@
       masterAttendance = attendanceData; allSalesData = salesData;
       rebuildEmployeeFilter();
       await applyFiltersAndRender();
-    } catch(err) { console.error(err); document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="8" class="loading">⚠️ Failed to load</td></tr>`; }
+    } catch(err) { console.error(err); document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="10" class="loading">⚠️ Failed to load</td></tr>`; }
     finally { hideLoading(); isLoading = false; }
   }
 
@@ -275,11 +295,10 @@
     if(empFilter !== 'ALL') { storeSelect.value = "all"; storeSelect.disabled = true; } else storeSelect.disabled = false;
     await applySalesEmployeeFilter();
     saveFilters();
-    // update note text
-    document.getElementById('roundingNote').innerHTML = autoAdjustEnabled ? 
-      '* Rounding rules active: Clock‑in forward (e.g., 10:15→10:30, 15:35→16:00); Clock‑out backward (e.g., 16:15→16:00). Toggle to disable.' :
-      '* Rounding is OFF – original clock times used for hours and payroll.';
-    document.getElementById('hoursNote').innerText = autoAdjustEnabled ? '(rounding enabled)' : '(original hours)';
+    document.getElementById('rulesNote').innerHTML = autoBreakEnabled ? 
+      '* Break deduction ON: ≥11h raw → deduct 2h; 6–10.99h → deduct 1h. Rounding ' + (autoAdjustEnabled ? 'ON' : 'OFF') : 
+      '* Break deduction OFF. Rounding ' + (autoAdjustEnabled ? 'ON' : 'OFF');
+    document.getElementById('hoursNote').innerText = autoBreakEnabled ? '(net after break deduction)' : '(raw hours)';
   }
 
   async function applySalesEmployeeFilter() {
@@ -294,23 +313,25 @@
 
   function renderAttendanceTable() {
     const tbody = document.getElementById('attendanceBody');
-    if(currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="loading">📭 No records</td></tr>'; return; }
+    if(currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="10" class="loading">📭 No records</td></tr>'; return; }
     const sorted = [...currentFiltered].sort((a,b)=>new Date(b.date)-new Date(a.date));
     let html = '';
     for(let r of sorted) {
       const adjInStr = getAdjustedTimeString(r.timeIn, true);
       const adjOutStr = getAdjustedTimeString(r.timeOut, false);
-      const hrs = computeDurationHours(r.timeIn, r.timeOut);
-      const durationDisplay = hrs !== null ? formatDuration(hrs) : '⚠️';
-      const showAdjusted = autoAdjustEnabled;
+      const rawHrs = computeRawDurationHours(r.timeIn, r.timeOut);
+      const netHrs = getNetHours(r.timeIn, r.timeOut);
+      const breakDeduct = (rawHrs !== null && autoBreakEnabled) ? getBreakDeductionAmount(rawHrs) : 0;
       html += `<tr>
         <td><i class="fas fa-user-circle"></i> ${escapeHtml(r.employee)}</td>
         <td>${formatDateDMY(r.date)}</td>
         <td>${escapeHtml(r.timeIn)}</td>
-        <td>${showAdjusted && adjInStr ? `<span class="adjusted-badge">${adjInStr}</span>` : (showAdjusted ? '—' : escapeHtml(r.timeIn))}</td>
+        <td>${adjInStr ? `<span class="adjusted-badge">${adjInStr}</span>` : '—'}</td>
         <td>${escapeHtml(r.timeOut)}</td>
-        <td>${showAdjusted && adjOutStr ? `<span class="adjusted-badge">${adjOutStr}</span>` : (showAdjusted ? '—' : escapeHtml(r.timeOut))}</td>
-        <td><span class="duration-badge">${durationDisplay}</span></td>
+        <td>${adjOutStr ? `<span class="adjusted-badge">${adjOutStr}</span>` : '—'}</td>
+        <td>${rawHrs !== null ? formatDuration(rawHrs) : '⚠️'}</td>
+        <td>${autoBreakEnabled && breakDeduct > 0 ? `<span class="break-badge">-${breakDeduct}h</span>` : '—'}</td>
+        <td><span class="duration-badge">${netHrs !== null ? formatDuration(netHrs) : '⚠️'}</span></td>
         <td>${escapeHtml(r.location)}</td>
       </tr>`;
     }
@@ -321,13 +342,13 @@
     const uniqueEmps = new Set(currentFiltered.map(r => r.employee));
     document.getElementById('totalEmployees').innerText = uniqueEmps.size;
     document.getElementById('totalShifts').innerText = currentFiltered.length;
-    let totalHours = 0;
+    let totalNetHours = 0;
     const empHours = new Map();
     for(let r of currentFiltered) {
-      const hrs = computeDurationHours(r.timeIn, r.timeOut);
-      if(hrs !== null) { totalHours += hrs; empHours.set(r.employee, (empHours.get(r.employee)||0)+hrs); }
+      const net = getNetHours(r.timeIn, r.timeOut);
+      if(net !== null) { totalNetHours += net; empHours.set(r.employee, (empHours.get(r.employee)||0) + net); }
     }
-    document.getElementById('totalHours').innerHTML = `${totalHours.toFixed(1)} <span style="font-size:0.8rem;">hrs</span>`;
+    document.getElementById('totalHours').innerHTML = `${totalNetHours.toFixed(1)} <span style="font-size:0.8rem;">hrs</span>`;
     let topEmp='—', topHrs=0;
     for(let [name, hrs] of empHours) if(hrs>topHrs) { topHrs=hrs; topEmp=name; }
     document.getElementById('topEmployeeHours').innerText = topEmp;
@@ -342,10 +363,10 @@
     return { hourlyRate:0, epfEnabled:false, epfNumber:'', eisRate:0.2, socsoEmployeeRate:0.5, socsoEmployerRate:1.75, epfEmployeeRate:11, epfEmployerRate:13, salesTarget:0, commissionAboveRate:0, commissionBelowRate:0, bankName:'', bankAccount:'' };
   }
 
-  async function calculatePayroll(employeeName, totalHours, totalSales) {
+  async function calculatePayroll(employeeName, totalNetHours, totalSales) {
     const profile = await loadEmployeeProfile(employeeName);
     const hourlyRate = profile.hourlyRate || 0;
-    const grossSalary = totalHours * hourlyRate;
+    const grossSalary = totalNetHours * hourlyRate;
     let epfDeduction=0, epfEmployerContribution=0;
     if(profile.epfEnabled && profile.epfNumber) {
       const empRate = (profile.epfEmployeeRate||11)/100, emplRate = (profile.epfEmployerRate||13)/100;
@@ -364,7 +385,7 @@
     }
     const netPayable = grossSalary - epfDeduction - eisEmployee - socsoEmployee + commission;
     const totalEmployerExpenditure = netPayable + epfEmployerContribution + eisEmployer + socsoEmployer;
-    return { grossSalary, hourlyRate, totalHours, cappedWage, epfDeduction, epfEmployerContribution, eisEmployee, eisEmployer, socsoEmployee, socsoEmployer, commission, netPayable, totalEmployerExpenditure };
+    return { grossSalary, hourlyRate, totalNetHours, cappedWage, epfDeduction, epfEmployerContribution, eisEmployee, eisEmployer, socsoEmployee, socsoEmployer, commission, netPayable, totalEmployerExpenditure };
   }
 
   async function renderSalesTable() {
@@ -377,22 +398,22 @@
       employeesToShow = Array.from(attendanceEmps).sort();
     } else employeesToShow = [empFilter];
     if(employeesToShow.length===0) { tbody.innerHTML='<tr><td colspan="7" class="loading">No data</td></tr>'; document.getElementById('payrollBreakdown').style.display='none'; return; }
-    const hoursMap = new Map();
-    for(let r of currentFiltered) { const hrs = computeDurationHours(r.timeIn, r.timeOut); if(hrs!==null) hoursMap.set(r.employee, (hoursMap.get(r.employee)||0)+hrs); }
+    const netHoursMap = new Map();
+    for(let r of currentFiltered) { const net = getNetHours(r.timeIn, r.timeOut); if(net!==null) netHoursMap.set(r.employee, (netHoursMap.get(r.employee)||0)+net); }
     const salesMap = new Map();
     if(filteredSales && filteredSales.labels) for(let i=0;i<filteredSales.labels.length;i++) salesMap.set(filteredSales.labels[i], filteredSales.data[i]);
     let totalSalesSum=0, topSalesEmp='—', topSalesVal=0;
     let html='', selectedPayroll=null;
     for(let emp of employeesToShow) {
-      const hours = hoursMap.get(emp)||0;
+      const netHours = netHoursMap.get(emp)||0;
       const sales = salesMap.get(emp)||0;
       totalSalesSum+=sales; if(sales>topSalesVal) { topSalesVal=sales; topSalesEmp=emp; }
       const profile = await loadEmployeeProfile(emp);
       const target = profile.salesTarget||0;
       let achievement='—', commission=0;
       if(target>0) { const percent = (sales/target)*100; achievement=`${percent.toFixed(1)}%`; if(sales>=target) commission=(sales-target)*((profile.commissionAboveRate||0)/100); else commission=sales*((profile.commissionBelowRate||0)/100); }
-      const payroll = await calculatePayroll(emp, hours, sales);
-      html+=`<tr><td>${escapeHtml(emp)}</td><td>${hours.toFixed(1)} hrs</td><td>RM ${sales.toFixed(2)}</td><td>${target>0?`RM ${target.toFixed(2)}`:'—'}</td><td>${achievement}</td><td>${commission>0?`RM ${commission.toFixed(2)}`:'—'}</td><td><strong>RM ${payroll.netPayable.toFixed(2)}</strong></td></tr>`;
+      const payroll = await calculatePayroll(emp, netHours, sales);
+      html+=`<tr><td>${escapeHtml(emp)}</td><td>${netHours.toFixed(1)} hrs</td><td>RM ${sales.toFixed(2)}</td><td>${target>0?`RM ${target.toFixed(2)}`:'—'}</td><td>${achievement}</td><td>${commission>0?`RM ${commission.toFixed(2)}`:'—'}</td><td><strong>RM ${payroll.netPayable.toFixed(2)}</strong></td></tr>`;
       if(empFilter !== 'ALL' && emp === empFilter) selectedPayroll = payroll;
     }
     tbody.innerHTML = html;
@@ -401,7 +422,7 @@
     if(empFilter !== 'ALL' && selectedPayroll) {
       document.getElementById('payrollBreakdown').style.display = 'block';
       const p = selectedPayroll;
-      document.getElementById('grossAmount').innerHTML = `RM ${p.grossSalary.toFixed(2)} <span style="font-size:0.7rem;">(${p.totalHours} hrs × RM ${p.hourlyRate.toFixed(2)})</span>`;
+      document.getElementById('grossAmount').innerHTML = `RM ${p.grossSalary.toFixed(2)} <span style="font-size:0.7rem;">(${p.totalNetHours} hrs × RM ${p.hourlyRate.toFixed(2)})</span>`;
       document.getElementById('epfEmployeeAmount').innerHTML = `RM ${p.epfDeduction.toFixed(2)}`;
       document.getElementById('epfEmployerAmount').innerHTML = `RM ${p.epfEmployerContribution.toFixed(2)}`;
       document.getElementById('eisEmployeeAmount').innerHTML = `RM ${p.eisEmployee.toFixed(2)} <span style="font-size:0.7rem;">(0.2% of RM ${p.cappedWage.toFixed(2)})</span>`;
@@ -421,7 +442,7 @@
   function setDefaultDateRange() { const today=new Date(); const thirtyDaysAgo=new Date(); thirtyDaysAgo.setDate(today.getDate()-30); if(!document.getElementById('dateFrom').value) document.getElementById('dateFrom').value=getDateString(thirtyDaysAgo); if(!document.getElementById('dateTo').value) document.getElementById('dateTo').value=getDateString(today); restrictFutureDates(); }
   function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
 
-  // Payment functions (unchanged, but refer to global)
+  // Payment functions (unchanged)
   async function recordPayment(employeeName, payrollData, bankName, bankAccount) { const fd=new URLSearchParams(); fd.append('action','savePayment'); fd.append('employeeName',employeeName); fd.append('timestamp',new Date().toISOString()); fd.append('netPayable',payrollData.netPayable); fd.append('epfEmployee',payrollData.epfDeduction); fd.append('epfEmployer',payrollData.epfEmployerContribution); fd.append('eisEmployee',payrollData.eisEmployee); fd.append('eisEmployer',payrollData.eisEmployer); fd.append('socsoEmployee',payrollData.socsoEmployee); fd.append('socsoEmployer',payrollData.socsoEmployer); fd.append('totalExpenditure',payrollData.totalEmployerExpenditure); fd.append('bankName',bankName); fd.append('bankAccount',bankAccount); fd.append('status','paid'); const res=await fetch(ATTENDANCE_API_URL,{method:'POST',body:fd}); const json=await res.json(); return json.success; }
   async function getPaymentHistory(employeeName) { const res=await fetch(`${ATTENDANCE_API_URL}?action=getPaymentHistory&employeeName=${encodeURIComponent(employeeName)}`); const json=await res.json(); return json.success?json.payments:[]; }
   async function openPaymentModal() { const emp=window.currentPayrollEmployee; if(!emp){alert('No employee selected');return;} const fromDate=document.getElementById('dateFrom').value, toDate=document.getElementById('dateTo').value; const checkRes=await fetch(`${ATTENDANCE_API_URL}?action=checkPaymentExists&employeeName=${encodeURIComponent(emp)}&fromDate=${encodeURIComponent(fromDate)}&toDate=${encodeURIComponent(toDate)}`); const checkData=await checkRes.json(); if(checkData.exists){alert(`Payment already recorded for ${emp} in selected period.`);return;} const profile=await loadEmployeeProfile(emp); if(!profile.bankName||!profile.bankAccount){alert('Bank details missing.');return;} const payroll=window.currentPayrollData; document.getElementById('payEmployeeName').innerText=emp; document.getElementById('payBankName').innerText=profile.bankName; document.getElementById('payBankAccount').innerText=profile.bankAccount; document.getElementById('payNetPayable').innerText=payroll.netPayable.toFixed(2); document.getElementById('payEpfTotal').innerText=(payroll.epfDeduction+payroll.epfEmployerContribution).toFixed(2); document.getElementById('payEisTotal').innerText=(payroll.eisEmployee+payroll.eisEmployer).toFixed(2); document.getElementById('paySocsoTotal').innerText=(payroll.socsoEmployee+payroll.socsoEmployer).toFixed(2); document.getElementById('payTotalExpenditure').innerText=payroll.totalEmployerExpenditure.toFixed(2); document.getElementById('paymentModal').style.display='flex'; }
@@ -433,13 +454,9 @@
   function openProfileModal() { const emp=document.getElementById('employeeFilter').value; if(emp==='ALL'){alert('Select a specific employee');return;} loadEmployeeProfile(emp).then(profile=>{ document.getElementById('profileEmployeeName').value=emp; document.getElementById('profileModalTitle').innerText=`Profile - ${emp}`; document.getElementById('hourlyRate').value=profile.hourlyRate||''; document.getElementById('epfEnabled').checked=profile.epfEnabled||false; document.getElementById('epfNumber').value=profile.epfNumber||''; document.getElementById('epfEmployeeRate').value=profile.epfEmployeeRate||11; document.getElementById('epfEmployerRate').value=profile.epfEmployerRate||13; document.getElementById('eisRate').value=profile.eisRate??0.2; document.getElementById('socsoEmployeeRate').value=profile.socsoEmployeeRate??0.5; document.getElementById('socsoEmployerRate').value=profile.socsoEmployerRate??1.75; document.getElementById('salesTarget').value=profile.salesTarget||''; document.getElementById('commissionBelowRate').value=profile.commissionBelowRate||''; document.getElementById('commissionAboveRate').value=profile.commissionAboveRate||''; document.getElementById('bankNameSelect').value=profile.bankName||''; document.getElementById('bankAccount').value=profile.bankAccount||''; document.getElementById('epfDetailsDiv').style.display=profile.epfEnabled?'block':'none'; document.getElementById('profileModal').style.display='flex'; }); }
   function closeProfileModal(){document.getElementById('profileModal').style.display='none';}
 
-  // Toggle event
-  document.getElementById('roundingToggle').addEventListener('change', (e) => {
-    autoAdjustEnabled = e.target.checked;
-    applyFiltersAndRender();
-  });
-
-  // Other event listeners
+  // Event listeners
+  document.getElementById('roundingToggle').addEventListener('change', (e) => { autoAdjustEnabled = e.target.checked; applyFiltersAndRender(); });
+  document.getElementById('breakToggle').addEventListener('change', (e) => { autoBreakEnabled = e.target.checked; applyFiltersAndRender(); });
   document.getElementById('employeeFilter').addEventListener('change', applyFiltersAndRender);
   document.getElementById('dateFrom').addEventListener('change', ()=>{ restrictFutureDates(); applyFiltersAndRender(); });
   document.getElementById('dateTo').addEventListener('change', ()=>{ restrictFutureDates(); applyFiltersAndRender(); });

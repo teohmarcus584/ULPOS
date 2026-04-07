@@ -45,9 +45,13 @@
     .modal-checkbox input { width: auto; }
     .modal-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; }
     .payroll-breakdown { background: #f0f9ff; border-radius: 20px; padding: 16px; margin-top: 16px; border-left: 4px solid #1f5e7e; }
-    .payroll-row { display: flex; justify-content: space-between; margin: 8px 0; font-size: 0.9rem; }
+    .payroll-row { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; font-size: 0.9rem; gap: 12px; flex-wrap: wrap; }
     .payroll-sub { margin-left: 20px; font-size: 0.85rem; color: #2c5f7a; }
     .payroll-total { font-weight: 800; font-size: 1.1rem; color: #0f3b4c; border-top: 1px solid #cbd5e1; padding-top: 8px; margin-top: 8px; }
+    .payroll-grid { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; margin: 8px 0; flex-wrap: wrap; }
+    .payroll-grid-item { flex: 1; min-width: 160px; }
+    .payroll-grid-item .label { font-weight: 500; color: #2c5f7a; }
+    .payroll-grid-item .value { font-weight: 600; }
     .payment-history-item { background: #f8fafc; border-radius: 16px; padding: 12px; margin-bottom: 10px; border-left: 4px solid #2c7da0; }
     .flex-between { display: flex; justify-content: space-between; align-items: center; }
     .calc-note { font-size: 0.7rem; color: #5e7b9c; margin-top: 4px; }
@@ -99,29 +103,40 @@
     </table>
   </div>
 
-  <!-- Payroll Breakdown Panel with detailed calculations -->
+  <!-- Improved Payroll Breakdown Panel with side‑by‑side alignment -->
   <div id="payrollBreakdown" class="payroll-breakdown">
     <div style="font-weight: 600; margin-bottom: 12px;">📊 Payroll Details</div>
     <div class="payroll-row"><span>Gross Salary (Hours × Hourly Rate):</span><span id="grossAmount">RM 0.00</span></div>
-    <div class="payroll-sub" id="grossDetail" style="display: none;">—</div>
     <div class="payroll-row"><span>EPF Employee Contribution:</span><span id="epfEmployeeAmount">RM 0.00</span></div>
     <div class="payroll-row"><span>EPF Employer Contribution:</span><span id="epfEmployerAmount">RM 0.00</span></div>
-    
-    <div class="payroll-row" style="margin-top: 8px;"><strong>EIS (Employment Insurance)</strong><span></span></div>
-    <div class="payroll-sub">EIS Employee (0.2% of capped wage):</div>
-    <div class="payroll-sub" id="eisEmployeeDetail" style="margin-left: 40px;">—</div>
-    <div class="payroll-sub">EIS Employer (0.2% of capped wage):</div>
-    <div class="payroll-sub" id="eisEmployerDetail" style="margin-left: 40px;">—</div>
-    
-    <div class="payroll-row" style="margin-top: 8px;"><strong>SOCSO (Social Security)</strong><span></span></div>
-    <div class="payroll-sub">SOCSO Employee (0.5% of capped wage):</div>
-    <div class="payroll-sub" id="socsoEmployeeDetail" style="margin-left: 40px;">—</div>
-    <div class="payroll-sub">SOCSO Employer (1.75% of capped wage):</div>
-    <div class="payroll-sub" id="socsoEmployerDetail" style="margin-left: 40px;">—</div>
-    
+
+    <div style="margin-top: 12px;"><strong>EIS (Employment Insurance)</strong></div>
+    <div class="payroll-grid">
+      <div class="payroll-grid-item">
+        <div class="label">EIS Employee (0.2% of capped wage)</div>
+        <div class="value" id="eisEmployeeAmount">RM 0.00</div>
+      </div>
+      <div class="payroll-grid-item">
+        <div class="label">EIS Employer (0.2% of capped wage)</div>
+        <div class="value" id="eisEmployerAmount">RM 0.00</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 12px;"><strong>SOCSO (Social Security)</strong></div>
+    <div class="payroll-grid">
+      <div class="payroll-grid-item">
+        <div class="label">SOCSO Employee (0.5% of capped wage)</div>
+        <div class="value" id="socsoEmployeeAmount">RM 0.00</div>
+      </div>
+      <div class="payroll-grid-item">
+        <div class="label">SOCSO Employer (1.75% of capped wage)</div>
+        <div class="value" id="socsoEmployerAmount">RM 0.00</div>
+      </div>
+    </div>
+
     <div class="payroll-row"><span>Sales Commission:</span><span id="bonusAmount">RM 0.00</span></div>
     <div class="payroll-row payroll-total"><span>Net Payable (to Employee):</span><span id="netPayableAmount">RM 0.00</span></div>
-    <div class="payroll-row" style="margin-top: 8px;"><span>Total Employer Expenditure:</span><span id="totalEmployerExpenditure">RM 0.00</span></div>
+    <div class="payroll-row"><span>Total Employer Expenditure:</span><span id="totalEmployerExpenditure">RM 0.00</span></div>
     <div class="calc-note">* EIS & SOCSO are calculated on gross salary capped at RM 6,000 per month (statutory ceiling).</div>
     <div style="margin-top: 16px; display: flex; gap: 12px;">
       <button id="payNowBtn" class="btn-primary" style="flex:1"><i class="fas fa-credit-card"></i> Process Payment</button>
@@ -130,7 +145,7 @@
   </div>
 </div>
 
-<!-- Employee Profile Modal (separate EIS and SOCSO rates) -->
+<!-- Employee Profile Modal -->
 <div id="profileModal" class="modal-overlay">
   <div class="modal-container">
     <span class="close-modal" id="closeProfileModal">&times;</span>
@@ -236,8 +251,10 @@
   let currentFiltered = [];
   let allSalesData = null;
   let filteredSales = null;
+  let isLoading = false;
+  let activeFetchController = null;
 
-  // ==================== EMPLOYEE PROFILE (with separate rates) ====================
+  // ==================== EMPLOYEE PROFILE ====================
   async function loadEmployeeProfile(employeeName) {
     try {
       const url = `${ATTENDANCE_API_URL}?action=getEmployeeProfile&employeeName=${encodeURIComponent(employeeName)}`;
@@ -288,13 +305,12 @@
     } catch(err) { console.error("saveProfile error", err); return false; }
   }
 
-  // ==================== PAYROLL + COMMISSION with detailed calculations ====================
+  // ==================== PAYROLL CALCULATION ====================
   async function calculatePayroll(employeeName, totalHours, totalSales) {
     const profile = await loadEmployeeProfile(employeeName);
     const hourlyRate = profile.hourlyRate || 0;
     const grossSalary = totalHours * hourlyRate;
     
-    // EPF (no ceiling, but rates may differ by salary bracket – simplified)
     let epfDeduction = 0;
     let epfEmployerContribution = 0;
     if (profile.epfEnabled && profile.epfNumber) {
@@ -304,7 +320,6 @@
       epfEmployerContribution = grossSalary * employerRate;
     }
     
-    // EIS & SOCSO: wage ceiling RM 6,000 per month (statutory)
     const WAGE_CEILING = 6000;
     const cappedWage = Math.min(grossSalary, WAGE_CEILING);
     
@@ -317,7 +332,6 @@
     const socsoEmployee = cappedWage * socsoEmployeeRate;
     const socsoEmployer = cappedWage * socsoEmployerRate;
     
-    // Commission
     let commission = 0;
     const target = profile.salesTarget || 0;
     if (target > 0) {
@@ -338,13 +352,13 @@
       grossSalary, hourlyRate, totalHours,
       cappedWage, WAGE_CEILING,
       epfDeduction, epfEmployerContribution,
-      eisEmployee, eisEmployer, eisRate: profile.eisRate ?? 0.2,
-      socsoEmployee, socsoEmployer, socsoEmployeeRate: profile.socsoEmployeeRate ?? 0.5, socsoEmployerRate: profile.socsoEmployerRate ?? 1.75,
+      eisEmployee, eisEmployer,
+      socsoEmployee, socsoEmployer,
       commission, netPayable, totalEmployerExpenditure
     };
   }
 
-  // ==================== LOCALSTORAGE PERSISTENCE ====================
+  // ==================== LOCALSTORAGE ====================
   function saveFilters() {
     const filters = {
       employee: document.getElementById('employeeFilter').value,
@@ -378,9 +392,11 @@
 
   // ==================== FETCH DATA ====================
   async function fetchAttendance() {
+    if (activeFetchController) activeFetchController.abort();
+    activeFetchController = new AbortController();
     const url = `${ATTENDANCE_API_URL}?action=getAllAttendance`;
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: activeFetchController.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if (json.status === 'success' && Array.isArray(json.data)) {
@@ -389,8 +405,12 @@
         await applyFiltersAndRender();
       } else throw new Error('Invalid attendance response');
     } catch(err) {
-      console.error(err);
-      document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="6" class="loading" style="color:#b91c1c;">⚠️ Failed to load attendance: ${err.message}</td></tr>`;
+      if (err.name !== 'AbortError') {
+        console.error(err);
+        document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="6" class="loading" style="color:#b91c1c;">⚠️ Failed to load attendance: ${err.message}</td></tr>`;
+      }
+    } finally {
+      activeFetchController = null;
     }
   }
 
@@ -416,36 +436,45 @@
   }
 
   async function applyFiltersAndRender() {
-    let filtered = [...masterAttendance];
-    const empFilter = document.getElementById('employeeFilter').value;
-    if (empFilter !== 'ALL') filtered = filtered.filter(r => r.employee === empFilter);
-    const from = document.getElementById('dateFrom').value ? new Date(document.getElementById('dateFrom').value + 'T00:00:00') : null;
-    const to = document.getElementById('dateTo').value ? new Date(document.getElementById('dateTo').value + 'T23:59:59') : null;
-    if (from || to) {
-      filtered = filtered.filter(r => {
-        const d = new Date(r.date + 'T00:00:00');
-        if (from && d < from) return false;
-        if (to && d > to) return false;
-        return true;
-      });
-    }
-    currentFiltered = filtered;
-    renderAttendanceTable();
-    updateAttendanceStats();
+    if (isLoading) return;
+    isLoading = true;
+    try {
+      let filtered = [...masterAttendance];
+      const empFilter = document.getElementById('employeeFilter').value;
+      if (empFilter !== 'ALL') filtered = filtered.filter(r => r.employee === empFilter);
+      const from = document.getElementById('dateFrom').value ? new Date(document.getElementById('dateFrom').value + 'T00:00:00') : null;
+      const to = document.getElementById('dateTo').value ? new Date(document.getElementById('dateTo').value + 'T23:59:59') : null;
+      if (from || to) {
+        filtered = filtered.filter(r => {
+          const d = new Date(r.date + 'T00:00:00');
+          if (from && d < from) return false;
+          if (to && d > to) return false;
+          return true;
+        });
+      }
+      currentFiltered = filtered;
+      renderAttendanceTable();
+      updateAttendanceStats();
 
-    const storeSelect = document.getElementById('storeSelect');
-    if (empFilter !== 'ALL') {
-      storeSelect.value = "all";
-      storeSelect.disabled = true;
-    } else {
-      storeSelect.disabled = false;
+      const storeSelect = document.getElementById('storeSelect');
+      if (empFilter !== 'ALL') {
+        storeSelect.value = "all";
+        storeSelect.disabled = true;
+      } else {
+        storeSelect.disabled = false;
+      }
+      const store = storeSelect.value;
+      const fromDate = document.getElementById('dateFrom').value;
+      const toDate = document.getElementById('dateTo').value;
+      allSalesData = await fetchRawSalesData(store, fromDate, toDate);
+      await applySalesEmployeeFilter();
+      saveFilters();
+    } catch (err) {
+      console.error("applyFiltersAndRender error:", err);
+      document.getElementById('salesBody').innerHTML = `<tr><td colspan="7" class="loading" style="color:#b91c1c;">⚠️ Failed to load data: ${err.message}</td></tr>`;
+    } finally {
+      isLoading = false;
     }
-    const store = storeSelect.value;
-    const fromDate = document.getElementById('dateFrom').value;
-    const toDate = document.getElementById('dateTo').value;
-    allSalesData = await fetchRawSalesData(store, fromDate, toDate);
-    await applySalesEmployeeFilter();
-    saveFilters();
   }
 
   async function applySalesEmployeeFilter() {
@@ -466,7 +495,7 @@
 
   function renderAttendanceTable() {
     const tbody = document.getElementById('attendanceBody');
-    if (currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="loading">📭 No attendance records. </td></tr>'; return; }
+    if (currentFiltered.length === 0) { tbody.innerHTML = '<td><td colspan="6" class="loading">📭 No attendance records. </td></tr>'; return; }
     const sorted = [...currentFiltered].sort((a,b) => new Date(b.date) - new Date(a.date));
     let html = '';
     for (let r of sorted) {
@@ -516,7 +545,7 @@
     }
 
     if (employeesToShow.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="loading">No employees to display.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="loading">No employees to display. </td></tr>';
       document.getElementById('payrollBreakdown').style.display = 'none';
       return;
     }
@@ -590,17 +619,14 @@
       const p = selectedEmployeePayroll;
       
       document.getElementById('grossAmount').innerHTML = `RM ${p.grossSalary.toFixed(2)} <span style="font-size:0.7rem;">(${p.totalHours} hrs × RM ${p.hourlyRate.toFixed(2)})</span>`;
-      document.getElementById('grossDetail').style.display = 'block';
-      document.getElementById('epfEmployeeAmount').innerHTML = `RM ${p.epfDeduction.toFixed(2)} <span style="font-size:0.7rem;">(${p.epfDeduction > 0 ? (p.epfDeduction/p.grossSalary*100).toFixed(1)+'%' : '—'})</span>`;
+      document.getElementById('epfEmployeeAmount').innerHTML = `RM ${p.epfDeduction.toFixed(2)}`;
       document.getElementById('epfEmployerAmount').innerHTML = `RM ${p.epfEmployerContribution.toFixed(2)}`;
       
-      // EIS details
-      document.getElementById('eisEmployeeDetail').innerHTML = `RM ${p.eisEmployee.toFixed(2)} (0.2% of RM ${p.cappedWage.toFixed(2)})`;
-      document.getElementById('eisEmployerDetail').innerHTML = `RM ${p.eisEmployer.toFixed(2)} (0.2% of RM ${p.cappedWage.toFixed(2)})`;
+      document.getElementById('eisEmployeeAmount').innerHTML = `RM ${p.eisEmployee.toFixed(2)} <span style="font-size:0.7rem;">(0.2% of RM ${p.cappedWage.toFixed(2)})</span>`;
+      document.getElementById('eisEmployerAmount').innerHTML = `RM ${p.eisEmployer.toFixed(2)} <span style="font-size:0.7rem;">(0.2% of RM ${p.cappedWage.toFixed(2)})</span>`;
       
-      // SOCSO details
-      document.getElementById('socsoEmployeeDetail').innerHTML = `RM ${p.socsoEmployee.toFixed(2)} (0.5% of RM ${p.cappedWage.toFixed(2)})`;
-      document.getElementById('socsoEmployerDetail').innerHTML = `RM ${p.socsoEmployer.toFixed(2)} (1.75% of RM ${p.cappedWage.toFixed(2)})`;
+      document.getElementById('socsoEmployeeAmount').innerHTML = `RM ${p.socsoEmployee.toFixed(2)} <span style="font-size:0.7rem;">(0.5% of RM ${p.cappedWage.toFixed(2)})</span>`;
+      document.getElementById('socsoEmployerAmount').innerHTML = `RM ${p.socsoEmployer.toFixed(2)} <span style="font-size:0.7rem;">(1.75% of RM ${p.cappedWage.toFixed(2)})</span>`;
       
       document.getElementById('bonusAmount').innerText = `RM ${p.commission.toFixed(2)}`;
       document.getElementById('netPayableAmount').innerText = `RM ${p.netPayable.toFixed(2)}`;
@@ -707,7 +733,7 @@
     }
   }
 
-  // ==================== PAYMENT MODAL with duplicate check ====================
+  // ==================== PAYMENT MODAL ====================
   async function openPaymentModal() {
     const emp = window.currentPayrollEmployee;
     if (!emp) { alert('No employee selected or payroll data not loaded.'); return; }
@@ -795,9 +821,7 @@
   }
 
   // ==================== EVENT LISTENERS ====================
-  document.getElementById('employeeFilter').addEventListener('change', async () => {
-    await applyFiltersAndRender();
-  });
+  document.getElementById('employeeFilter').addEventListener('change', async () => { await applyFiltersAndRender(); });
   document.getElementById('dateFrom').addEventListener('change', () => applyFiltersAndRender());
   document.getElementById('dateTo').addEventListener('change', () => applyFiltersAndRender());
   document.getElementById('storeSelect').addEventListener('change', () => applyFiltersAndRender());
@@ -828,10 +852,11 @@
       setTimeout(() => {
         if ([...empSelect.options].some(opt => opt.value === savedEmployee)) {
           empSelect.value = savedEmployee;
+          applyFiltersAndRender();
         } else {
           empSelect.value = 'ALL';
+          applyFiltersAndRender();
         }
-        applyFiltersAndRender();
       }, 100);
     } else if (savedEmployee === 'ALL') {
       document.getElementById('employeeFilter').value = 'ALL';

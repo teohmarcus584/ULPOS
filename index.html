@@ -2541,128 +2541,79 @@ async function saveTelegramSettings() {
   }
 
 async function fetchProductsFromSheet(force = false) {
-  let attempt = 0;
-  const maxAttempts = force ? 1 : 2;
-  let lastError = null;
+  const store = currentStore;
+  const cacheKey = `products_${store}`;
+  const hashKey = `products_hash_${store}`;
+  const now = Date.now();
 
-  while (attempt < maxAttempts) {
-    try {
-      const store = currentStore;
-      const cacheKey = `products_${store}`;
-      const hashKey = `products_hash_${store}`;
-      const now = Date.now();
-
-      // 1. Forced full fetch (skip cache)
-      if (force || attempt === 1) {
-        let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
-        const response = await fetch(url);
-        const result = await response.json();
-        if (!result.success || !Array.isArray(result.products)) throw new Error('Invalid data');
-        products = result.products.map(p => ({
-          id: p.id,
-          name: p.name,
-          price: parseFloat(p.price),
-          stock: parseInt(p.stock) || 0,
-          category: p.category || "Uncategorized"
-        })).sort((a, b) => a.name.localeCompare(b.name));
-        const newHash = computeProductsHash(products);
-        localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products, hash: newHash }));
-        localStorage.setItem(hashKey, newHash);
-        const nowISO = new Date().toISOString();
-        lastSyncTimestamps[store] = nowISO;
-        localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
-        updateCategoryDropdown();
-        renderProductGrid();
-        refreshCategoryHighlighting();
-        updateSyncStatus(true, now);
-        hideLoading();
-        return true;
-      }
-
-      // 2. Normal path: try to load from cache (even if expired, we'll use it as fallback)
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        const { timestamp, products: cachedProducts, hash: cachedHash } = JSON.parse(cached);
-        // If cache is fresh (less than 5 min) OR we have a hash match, use it directly
-        if (now - timestamp < 5 * 60 * 1000) {
-          products = cachedProducts;
-          updateCategoryDropdown();
-          renderProductGrid();
-          refreshCategoryHighlighting();
-          updateSyncStatus(true, timestamp);
-          hideLoading();
-          return true;
-        }
-        // Cache expired – try to check for updates via hash
-        const currentHash = localStorage.getItem(hashKey);
-        if (currentHash && cachedHash === currentHash) {
-          // No changes, refresh timestamp
-          localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: cachedProducts, hash: cachedHash }));
-          products = cachedProducts;
-          updateCategoryDropdown();
-          renderProductGrid();
-          refreshCategoryHighlighting();
-          updateSyncStatus(true, now);
-          hideLoading();
-          return true;
-        }
-        // Hash mismatch or missing – we will attempt a fetch below, but if fetch fails we'll fall back to this cache
-        // Store it as fallback
-        var fallbackProducts = cachedProducts;
-      }
-
-      // 3. Fetch fresh data (full sync)
-      let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (!result.success || !Array.isArray(result.products)) throw new Error('Invalid data');
-      products = result.products.map(p => ({
-        id: p.id,
-        name: p.name,
-        price: parseFloat(p.price),
-        stock: parseInt(p.stock) || 0,
-        category: p.category || "Uncategorized"
-      })).sort((a, b) => a.name.localeCompare(b.name));
-      const newHash = computeProductsHash(products);
-      localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products, hash: newHash }));
-      localStorage.setItem(hashKey, newHash);
-      const nowISO = new Date().toISOString();
-      lastSyncTimestamps[store] = nowISO;
-      localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
+  // 1. Always try to load from localStorage first (even if expired)
+  const cached = localStorage.getItem(cacheKey);
+  let cachedProducts = null;
+  if (cached) {
+    const { products: cachedData } = JSON.parse(cached);
+    cachedProducts = cachedData;
+    // Immediately set products and render (so user sees something)
+    if (!force && cachedProducts && cachedProducts.length) {
+      products = cachedProducts;
       updateCategoryDropdown();
       renderProductGrid();
       refreshCategoryHighlighting();
-      updateSyncStatus(true, now);
-      hideLoading();
-      return true;
+      updateSyncStatus(false); // show warning that sync may be stale
+    }
+  }
 
-    } catch (err) {
-      console.error(`Attempt ${attempt + 1} failed:`, err);
-      lastError = err;
-      if (attempt === 0 && !force) {
-        attempt++;
-        force = true;
-        continue;
-      }
-      // If fetch fails and we have a fallback cache (even expired), use it and show warning
-      if (fallbackProducts) {
-        products = fallbackProducts;
-        updateCategoryDropdown();
-        renderProductGrid();
-        refreshCategoryHighlighting();
-        updateSyncStatus(false); // mark sync as error, but data is shown
-        showAlertModal('Warning', 'Using cached product data. Sync failed. Check your network connection.');
-        hideLoading();
-        return true; // still consider "success" because we have data
-      }
+  // 2. If force refresh or no cache, show loading (but we already have cache maybe)
+  if (force || !cachedProducts) {
+    if (!cachedProducts) showLoading('Loading products...');
+  }
+
+  try {
+    // 3. Try to fetch fresh data
+    let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (!result.success || !Array.isArray(result.products)) throw new Error('Invalid data');
+
+    const freshProducts = result.products.map(p => ({
+      id: p.id,
+      name: p.name,
+      price: parseFloat(p.price),
+      stock: parseInt(p.stock) || 0,
+      category: p.category || "Uncategorized"
+    })).sort((a, b) => a.name.localeCompare(b.name));
+
+    const newHash = computeProductsHash(freshProducts);
+    localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: freshProducts, hash: newHash }));
+    localStorage.setItem(hashKey, newHash);
+    const nowISO = new Date().toISOString();
+    lastSyncTimestamps[store] = nowISO;
+    localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
+
+    // Update products and re-render only if data changed (optional but good)
+    if (JSON.stringify(products) !== JSON.stringify(freshProducts)) {
+      products = freshProducts;
+      updateCategoryDropdown();
+      renderProductGrid();
+      refreshCategoryHighlighting();
+    }
+    updateSyncStatus(true, now);
+    hideLoading();
+    return true;
+  } catch (err) {
+    console.error('Fetch failed, using cached data:', err);
+    // If we already have cached products (set earlier), just show error badge
+    if (cachedProducts) {
+      updateSyncStatus(false);
+      if (!force) showAlertModal('Sync Failed', 'Using cached product data. Please check your network.');
+    } else {
       // No cache at all – show error and retry button
       await showAlertModal('Error', 'Failed to load products. Check URL & sheet.');
       updateSyncStatus(false);
-      hideLoading();
-      return false;
+      renderProductGrid(); // will show retry button because products is empty
     }
+    hideLoading();
+    return cachedProducts ? true : false;
   }
-  return false;
 }
   // Background sync: check for changes without showing loading
   async function backgroundSync() {

@@ -2948,29 +2948,29 @@ window.addEventListener('online', syncPendingSales);
     clearPromo();
   }
 
-  function addToCart(product) {
-    if (product.stock <= 0) {
-      showAlertModal('Out of Stock', `${product.name} is out of stock.`);
-      return;
-    }
-     // Play animation if button element is provided
+ function addToCart(product, buttonElement = null) {
+  if (product.stock <= 0) {
+    showAlertModal('Out of Stock', `${product.name} is out of stock.`);
+    return;
+  }
+  // Play animation if button element is provided
   if (buttonElement) {
     animateProductToCart(buttonElement, product.name);
   }
-    const existing = cart.find(item => item.product.id === product.id);
-    if (existing) {
-      if (existing.quantity + 1 > product.stock) {
-        showAlertModal('Stock limit', `Cannot add more than ${product.stock} units.`);
-        return;
-      }
-      existing.quantity += 1;
-      if (existing.freeQuantity > existing.quantity) existing.freeQuantity = existing.quantity;
-    } else {
-      cart.push({ product: { ...product }, quantity: 1, freeQuantity: 0 });
+  const existing = cart.find(item => item.product.id === product.id);
+  if (existing) {
+    if (existing.quantity + 1 > product.stock) {
+      showAlertModal('Stock limit', `Cannot add more than ${product.stock} units.`);
+      return;
     }
-    updateCartUI();
-    clearPromo();
+    existing.quantity += 1;
+    if (existing.freeQuantity > existing.quantity) existing.freeQuantity = existing.quantity;
+  } else {
+    cart.push({ product: { ...product }, quantity: 1, freeQuantity: 0 });
   }
+  updateCartUI();
+  clearPromo();
+}
 
   function clearCart() {
     if (cart.length === 0) return;

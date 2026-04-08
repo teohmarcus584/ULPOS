@@ -2565,7 +2565,7 @@ async function fetchProductsFromSheet(force = false) {
     }
   }
 
-  function startBackgroundSync(intervalSeconds = 18000) {
+  function startBackgroundSync(intervalSeconds = 60) {
     if (syncInterval) clearInterval(syncInterval);
     syncInterval = setInterval(() => {
       if (currentEmployee && document.getElementById('mainContent').style.display === 'block') {
@@ -4851,7 +4851,7 @@ document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLo
   document.getElementById('closeTelegramModal')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
   document.getElementById('closeTelegramModalBtn')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
 
- async function finishLoginAfterVerification() {
+  async function finishLoginAfterVerification() {
   // Clear any existing auto-sync interval to avoid duplicates
   if (window.autoSyncInterval) clearInterval(window.autoSyncInterval);
 
@@ -4861,12 +4861,6 @@ document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLo
 
   // Set the sold-by select to current employee
   soldBySelectCart.value = currentEmployee.id;
-
-  // ✅ FIX: For non‑admin, set currentStore from employee's assigned store
-  if (!currentEmployee.isAdmin && currentEmployee.store) {
-    currentStore = currentEmployee.store;
-    storeSelect.value = currentStore;
-  }
 
   // Show/hide admin-only buttons and controls
   const sideInventory = document.getElementById('sideInventoryBtn');
@@ -4944,11 +4938,11 @@ document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLo
   // Preload settlement and report data in background (silent)
   preloadSettlement();
   preloadReport();
-  enableBarcodeScanner();
-  // Refresh category highlighting after login (products are loaded)
-  refreshCategoryHighlighting();
-  // Start background sync every 60 seconds
-  startBackgroundSync(60);
+    enableBarcodeScanner();
+    // Refresh category highlighting after login (products are loaded)
+    refreshCategoryHighlighting();
+    // Start background sync every 60 seconds
+    startBackgroundSync(60);
 }
   async function openReportsModal() {
     if (currentEmployee?.isAdmin) {

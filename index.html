@@ -1122,11 +1122,11 @@
 #sideStockAlertBtn {
   display: none;
 }
-/* ==================== CLEAN COLLAPSIBLE CART ==================== */
+/* ==================== CLEAN COLLAPSIBLE CART (WORKS IN ALL MODES) ==================== */
 .cart-panel {
   position: relative;
   transition: flex 0.3s ease, min-width 0.3s ease;
-  overflow: visible;        /* allows handle to protrude */
+  overflow: visible;      /* critical: allows the handle to protrude */
   border-radius: 28px;
 }
 
@@ -1173,7 +1173,7 @@
   flex: 0 0 56px !important;
   min-width: 56px;
   width: 56px;
-  margin-left: auto;        /* pushes the cart to the right edge */
+  margin-left: auto;           /* pushes the whole panel to the right edge */
   border-radius: 16px;
   background: white;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -1181,10 +1181,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;        /* keep icon visible */
+  overflow: visible;
 }
 
-/* In collapsed mode, the handle becomes the whole panel */
+/* Collapsed handle becomes the whole panel – a rounded square */
 .cart-panel.collapsed .cart-handle {
   position: static;
   width: 100%;
@@ -5714,7 +5714,7 @@ if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener(
       });
     }
   })();
- const cartPanel = document.querySelector('.cart-panel');
+const cartPanel = document.querySelector('.cart-panel');
 const cartHandle = document.getElementById('cartHandle');
 if (cartHandle && cartPanel) {
   const iconSpan = cartHandle.querySelector('.cart-handle-icon');
@@ -5733,7 +5733,7 @@ if (cartHandle && cartPanel) {
     localStorage.setItem('cartCollapsed', cartPanel.classList.contains('collapsed'));
   });
   
-  // Restore state on load
+  // Restore saved state on page load
   if (localStorage.getItem('cartCollapsed') === 'true') {
     cartPanel.classList.add('collapsed');
   }

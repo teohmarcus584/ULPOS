@@ -1125,12 +1125,19 @@
 /* ==================== CLEAN COLLAPSIBLE CART ==================== */
 .cart-panel {
   position: relative;
-  transition: flex 0.3s ease, min-width 0.3s ease;
-  overflow: visible;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  border-radius: 28px;
 }
 
-/* Handle base – appears on the left edge when expanded */
-.cart-handle {
+/* Expanded state (default) */
+.cart-panel:not(.collapsed) {
+  flex: 1.2;
+  min-width: 280px;
+}
+
+/* Expanded handle – semi‑circle on left edge */
+.cart-panel:not(.collapsed) .cart-handle {
   position: absolute;
   left: -12px;
   top: 50%;
@@ -1146,73 +1153,78 @@
   justify-content: center;
   cursor: pointer;
   z-index: 20;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
   box-shadow: -1px 1px 4px rgba(0,0,0,0.05);
 }
 
-.cart-handle:hover {
+.cart-panel:not(.collapsed) .cart-handle:hover {
   background: #f8fafc;
   width: 32px;
   left: -14px;
 }
 
-.cart-handle-icon {
+.cart-panel:not(.collapsed) .cart-handle-icon {
   font-size: 0.9rem;
   color: #475569;
-  transition: transform 0.2s;
 }
 
-/* When collapsed – panel becomes a narrow bar */
+/* ===== COLLAPSED STATE ===== */
 .cart-panel.collapsed {
-  flex: 0 0 48px !important;
-  min-width: 48px;
+  flex: 0 0 56px !important;
+  min-width: 56px;
+  width: 56px;
+  margin-left: auto;          /* push to the right edge */
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* In collapsed mode, the handle moves to the RIGHT edge of the bar, becomes a circle */
+/* In collapsed mode, the handle becomes the whole panel – a rounded square */
 .cart-panel.collapsed .cart-handle {
-  left: auto;
-  right: -16px;           /* half outside, half inside */
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid #cbd5e1;
-  background: #f1f5f9;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  position: static;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 16px;
+  box-shadow: none;
+  transform: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
 .cart-panel.collapsed .cart-handle:hover {
-  width: 36px;
-  height: 36px;
-  right: -18px;
-  background: #e2e8f0;
+  background: #f1f5f9;
+  width: 100%;
+  left: auto;
 }
 
-/* Icon changes from arrow to cart */
+/* Icon becomes shopping cart, centred */
 .cart-panel.collapsed .cart-handle-icon {
-  font-size: 1.1rem;
-  /* we'll change the text via JS, see below */
+  font-size: 1.5rem;
+  color: #2c7a4b;
 }
 
-/* Hide all content inside cart when collapsed */
+/* Hide all other content when collapsed */
 .cart-panel.collapsed > *:not(.cart-handle) {
   display: none;
 }
 
 /* Mobile adjustment */
 @media (max-width: 780px) {
-  .cart-handle {
-    width: 24px;
-    height: 48px;
-    left: -10px;
-  }
   .cart-panel.collapsed {
-    flex: 0 0 40px !important;
-    min-width: 40px;
+    flex: 0 0 48px !important;
+    min-width: 48px;
+    width: 48px;
   }
-  .cart-panel.collapsed .cart-handle {
-    width: 28px;
-    height: 28px;
-    right: -14px;
+  .cart-panel.collapsed .cart-handle-icon {
+    font-size: 1.3rem;
   }
 }
   </style>
@@ -5717,7 +5729,7 @@ if (cartHandle && cartPanel) {
     localStorage.setItem('cartCollapsed', cartPanel.classList.contains('collapsed'));
   });
   
-  // Restore saved state
+  // Restore state on load
   if (localStorage.getItem('cartCollapsed') === 'true') {
     cartPanel.classList.add('collapsed');
   }

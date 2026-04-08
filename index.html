@@ -1282,7 +1282,7 @@
       <button id="sideChangePinBtn" class="menu-btn">🔑 Change PIN</button>
       <!-- Stock Alert and Telegram buttons are hidden via CSS (display: none) but their functionality remains -->
       <button id="sideStockAlertBtn" class="menu-btn" >🔔 Stock Alerts: OFF</button>
-      <button id="sideTelegramBtn" class="menu-btn">📱Alerts</button>
+      <button id="sideTelegramBtn" class="menu-btn">📱 Telegram Alerts</button>
     </div>
   </div>
 </div>
@@ -1543,7 +1543,15 @@ const EMPLOYEE_CACHE_TTL = 1 * 60 * 1000; // 1 hour
   let notificationsSupported = false;
   let notificationsEnabled = false;
   let alertedOutOfStockProducts = new Set();
-  let telegramAccounts = localStorage.getItem('telegramAccounts');
+  // Helper function to normalize line endings (CRLF → LF) and trim empty lines
+function normalizeTelegramAccounts(raw) {
+  return raw.split(/\r?\n/)
+            .map(line => line.trim())
+            .filter(line => line)
+            .join('\n');
+}
+
+let telegramAccounts = localStorage.getItem('telegramAccounts');
 const DEFAULT_TELEGRAM_ACCOUNTS = 
   '8585264579:AAGW6fb4uMp2qGJa0yC6q2itWd2xgwI3NDY,7888819771\n' +
   '8722182854:AAFCXGhMDeLaoD3axUzS2zcBXeep1c-yhI0,1103858184\n' +
@@ -1554,8 +1562,10 @@ if (!telegramAccounts) {
   localStorage.setItem('telegramAccounts', telegramAccounts);
   console.log("Default Telegram accounts auto-saved to localStorage.");
 } else {
-  // If already exists, use it (no overwrite)
-  console.log("Telegram accounts loaded from localStorage.");
+  // Normalize existing accounts (fix line endings)
+  telegramAccounts = normalizeTelegramAccounts(telegramAccounts);
+  localStorage.setItem('telegramAccounts', telegramAccounts);
+  console.log("Telegram accounts loaded and normalized from localStorage.");
 }
 
   // ==================== DOM ELEMENTS ====================

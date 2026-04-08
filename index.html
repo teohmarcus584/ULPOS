@@ -1122,65 +1122,117 @@
 #sideStockAlertBtn {
   display: none;
 }
-/* ==================== COLLAPSIBLE CART PANEL ==================== */
+/* ==================== NICER COLLAPSIBLE CART PANEL ==================== */
 .cart-panel {
   position: relative;
-  transition: flex 0.3s ease, min-width 0.3s ease;
+  transition: flex 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1), min-width 0.35s ease;
   overflow: hidden;
+  border-radius: 28px;
 }
 
-/* The handle / tab (cart icon) */
+/* The handle – now a sleek pill-shaped tab */
 .cart-handle {
   position: absolute;
-  left: -24px;
+  left: -16px;
   top: 50%;
   transform: translateY(-50%);
-  width: 32px;
-  height: 70px;
-  background: #cbd5e1;
-  border-radius: 20px 0 0 20px;
+  width: 36px;
+  height: 96px;
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  border: 1px solid rgba(203, 213, 225, 0.6);
+  border-right: none;
+  border-radius: 40px 0 0 40px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   cursor: pointer;
   z-index: 20;
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: #1e293b;
-  transition: left 0.3s ease, background 0.2s;
-  box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #475569;
+  transition: all 0.25s ease;
+  box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(2px);
 }
+
 .cart-handle:hover {
-  background: #94a3b8;
-  color: white;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  width: 42px;
+  left: -20px;
+  color: #0f172a;
+  box-shadow: -4px 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.cart-handle:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+/* Icon and text inside handle */
+.cart-handle-icon {
+  font-size: 1.4rem;
+  display: block;
+}
+
+.cart-handle-text {
+  font-size: 0.65rem;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 1px;
+  font-weight: 500;
 }
 
 /* When cart is collapsed */
 .cart-panel.collapsed {
-  flex: 0 0 40px !important;
-  min-width: 40px;
+  flex: 0 0 48px !important;
+  min-width: 48px;
 }
+
 .cart-panel.collapsed .cart-handle {
-  left: 4px;
-  transform: translateY(-50%);
+  left: 6px;
+  width: 36px;
+  border-radius: 0 40px 40px 0;
+  border-left: none;
+  border-right: 1px solid rgba(203, 213, 225, 0.6);
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
 }
+
+.cart-panel.collapsed .cart-handle:hover {
+  left: 4px;
+  width: 40px;
+}
+
+.cart-panel.collapsed .cart-handle-text {
+  display: none;
+}
+
+.cart-panel.collapsed .cart-handle-icon {
+  font-size: 1.5rem;
+  margin: 8px 0;
+}
+
+/* Hide all other content when collapsed */
 .cart-panel.collapsed > *:not(.cart-handle) {
   display: none;
 }
 
-/* Optional: rotate the icon when collapsed (uncomment if desired) */
-/* .cart-panel.collapsed .cart-handle {
-  transform: translateY(-50%) scaleX(-1);
-} */
-
-/* Hide the handle on mobile if needed (cart already full width) */
+/* On mobile, keep handle visible but make it smaller */
 @media (max-width: 780px) {
   .cart-handle {
-    display: none;
+    width: 30px;
+    height: 70px;
+    left: -12px;
+  }
+  .cart-handle-icon {
+    font-size: 1.1rem;
+  }
+  .cart-handle-text {
+    font-size: 0.55rem;
   }
   .cart-panel.collapsed {
-    flex: 1.2 !important;
-    min-width: 280px;
+    flex: 0 0 38px !important;
+    min-width: 38px;
   }
 }
   </style>
@@ -1266,7 +1318,10 @@
     </div>
 
     <div class="cart-panel">
-    <div id="cartHandle" class="cart-handle" title="Collapse / Expand cart">🛒</div>
+    <div id="cartHandle" class="cart-handle" title="Collapse / Expand cart">
+  <span class="cart-handle-icon">🛒</span>
+  <span class="cart-handle-text">CART</span>
+</div>
       <div class="cart-header">
         <div class="cart-title" id="cartTitle">🧾 Current Sale</div>
         <div class="cart-header-right">

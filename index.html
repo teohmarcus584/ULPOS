@@ -1122,21 +1122,21 @@
 #sideStockAlertBtn {
   display: none;
 }
-/* ==================== CLEAN COLLAPSIBLE CART (WORKS IN ALL MODES) ==================== */
+/* ==================== COLLAPSIBLE CART (WORKS IN ALL MODES) ==================== */
 .cart-panel {
   position: relative;
   transition: flex 0.3s ease, min-width 0.3s ease;
-  overflow: visible;      /* critical: allows the handle to protrude */
+  overflow: visible;
   border-radius: 28px;
 }
 
-/* Expanded state – normal width */
+/* Expanded state */
 .cart-panel:not(.collapsed) {
   flex: 1.2;
   min-width: 280px;
 }
 
-/* Expanded handle – semi‑circle on left edge */
+/* Expanded handle – semi‑circle on left */
 .cart-panel:not(.collapsed) .cart-handle {
   position: absolute;
   left: -12px;
@@ -1168,62 +1168,62 @@
   color: #475569;
 }
 
-/* ===== COLLAPSED STATE ===== */
+/* ===== COLLAPSED STATE – small rounded square on the right ===== */
 .cart-panel.collapsed {
   flex: 0 0 56px !important;
-  min-width: 56px;
-  width: 56px;
-  margin-left: auto;           /* pushes the whole panel to the right edge */
+  min-width: 56px !important;
+  width: 56px !important;
+  margin-left: auto;
+  margin-right: -8px;        /* flush to edge */
   border-radius: 16px;
   background: white;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 0 !important;
   overflow: visible;
 }
 
-/* Collapsed handle becomes the whole panel – a rounded square */
+/* In collapsed mode, the handle takes over the whole panel */
 .cart-panel.collapsed .cart-handle {
-  position: static;
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  border: none;
-  border-radius: 16px;
-  box-shadow: none;
-  transform: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: static !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  transform: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   cursor: pointer;
+  margin: 0;
+  padding: 0;
 }
 
 .cart-panel.collapsed .cart-handle:hover {
-  background: #f1f5f9;
+  background: #f1f5f9 !important;
 }
 
-/* Icon becomes shopping cart, centred */
+/* Icon becomes shopping cart */
 .cart-panel.collapsed .cart-handle-icon {
-  font-size: 1.5rem;
-  color: #2c7a4b;
+  font-size: 1.5rem !important;
+  color: #2c7a4b !important;
 }
 
-/* Hide all other content when collapsed */
+/* Hide everything except the handle when collapsed */
 .cart-panel.collapsed > *:not(.cart-handle) {
-  display: none;
+  display: none !important;
 }
 
-/* Mobile adjustment */
+/* Mobile */
 @media (max-width: 780px) {
   .cart-panel.collapsed {
     flex: 0 0 48px !important;
-    min-width: 48px;
-    width: 48px;
+    min-width: 48px !important;
+    width: 48px !important;
   }
   .cart-panel.collapsed .cart-handle-icon {
-    font-size: 1.3rem;
+    font-size: 1.3rem !important;
   }
   .cart-panel:not(.collapsed) .cart-handle {
     width: 24px;
@@ -2390,6 +2390,8 @@ async function saveTelegramSettings() {
   // Refresh category highlighting based on new inventory mode
   refreshCategoryHighlighting();
   renderProductGrid();
+ // ✅ Force refresh the handle icon (in case collapsed state is active)
+  if (typeof updateHandleIcon === 'function') updateHandleIcon();
 }
   // ==================== CATEGORY HIGHLIGHTING FOR LOW STOCK (Inventory mode only) ====================
   function refreshCategoryHighlighting() {

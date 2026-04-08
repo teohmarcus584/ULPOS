@@ -1122,6 +1122,67 @@
 #sideStockAlertBtn {
   display: none;
 }
+/* ==================== COLLAPSIBLE CART PANEL ==================== */
+.cart-panel {
+  position: relative;
+  transition: flex 0.3s ease, min-width 0.3s ease;
+  overflow: hidden;
+}
+
+/* The handle / tab (cart icon) */
+.cart-handle {
+  position: absolute;
+  left: -24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 70px;
+  background: #cbd5e1;
+  border-radius: 20px 0 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #1e293b;
+  transition: left 0.3s ease, background 0.2s;
+  box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+}
+.cart-handle:hover {
+  background: #94a3b8;
+  color: white;
+}
+
+/* When cart is collapsed */
+.cart-panel.collapsed {
+  flex: 0 0 40px !important;
+  min-width: 40px;
+}
+.cart-panel.collapsed .cart-handle {
+  left: 4px;
+  transform: translateY(-50%);
+}
+.cart-panel.collapsed > *:not(.cart-handle) {
+  display: none;
+}
+
+/* Optional: rotate the icon when collapsed (uncomment if desired) */
+/* .cart-panel.collapsed .cart-handle {
+  transform: translateY(-50%) scaleX(-1);
+} */
+
+/* Hide the handle on mobile if needed (cart already full width) */
+@media (max-width: 780px) {
+  .cart-handle {
+    display: none;
+  }
+  .cart-panel.collapsed {
+    flex: 1.2 !important;
+    min-width: 280px;
+  }
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -1205,6 +1266,7 @@
     </div>
 
     <div class="cart-panel">
+    <div id="cartHandle" class="cart-handle" title="Collapse / Expand cart">🛒</div>
       <div class="cart-header">
         <div class="cart-title" id="cartTitle">🧾 Current Sale</div>
         <div class="cart-header-right">
@@ -5609,7 +5671,19 @@ if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener(
       });
     }
   })();
-
+  // ==================== COLLAPSIBLE CART PANEL ====================
+  const cartPanel = document.querySelector('.cart-panel');
+  const cartHandle = document.getElementById('cartHandle');
+  if (cartHandle && cartPanel) {
+    cartHandle.addEventListener('click', () => {
+      cartPanel.classList.toggle('collapsed');
+      localStorage.setItem('cartCollapsed', cartPanel.classList.contains('collapsed'));
+    });
+    // Restore state on load
+    if (localStorage.getItem('cartCollapsed') === 'true') {
+      cartPanel.classList.add('collapsed');
+    }
+  }
 </script>
 </body>
 </html>

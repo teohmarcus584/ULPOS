@@ -2565,14 +2565,7 @@ async function fetchProductsFromSheet(force = false) {
     }
   }
 
-  function startBackgroundSync(intervalSeconds = 60) {
-    if (syncInterval) clearInterval(syncInterval);
-    syncInterval = setInterval(() => {
-      if (currentEmployee && document.getElementById('mainContent').style.display === 'block') {
-        backgroundSync();
-      }
-    }, intervalSeconds * 1000);
-  }
+
 
   function mergeProductChanges(existingProducts, changes) {
     const map = new Map();
@@ -4963,7 +4956,7 @@ async function finishLoginAfterVerification() {
   // Refresh category highlighting after login (products are loaded)
   refreshCategoryHighlighting();
   // Start background sync every 60 seconds
-  startBackgroundSync(60);
+  
 }
   async function openReportsModal() {
     if (currentEmployee?.isAdmin) {

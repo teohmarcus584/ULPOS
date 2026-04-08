@@ -2565,7 +2565,7 @@ async function fetchProductsFromSheet(force = false) {
     }
   }
 
-  function startBackgroundSync(intervalSeconds = 60) {
+  function startBackgroundSync(intervalSeconds = 18000) {
     if (syncInterval) clearInterval(syncInterval);
     syncInterval = setInterval(() => {
       if (currentEmployee && document.getElementById('mainContent').style.display === 'block') {

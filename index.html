@@ -1122,46 +1122,38 @@
 #sideStockAlertBtn {
   display: none;
 }
-/* ==================== NICER COLLAPSIBLE CART PANEL ==================== */
+/* ==================== SEMI-CIRCLE CART HANDLE ==================== */
 .cart-panel {
   position: relative;
   transition: flex 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1), min-width 0.35s ease;
-  overflow: hidden;
-  border-radius: 28px;
+  overflow: visible; /* allow handle to protrude */
 }
 
-/* The handle – now a sleek pill-shaped tab */
+/* Semi-circle handle */
 .cart-handle {
   position: absolute;
-  left: -16px;
+  left: -20px;
   top: 50%;
   transform: translateY(-50%);
-  width: 36px;
-  height: 96px;
-  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
-  border: 1px solid rgba(203, 213, 225, 0.6);
+  width: 40px;
+  height: 80px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
   border-right: none;
-  border-radius: 40px 0 0 40px;
+  border-radius: 40px 0 0 40px; /* creates a semi-circle on the left */
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
   cursor: pointer;
   z-index: 20;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #475569;
   transition: all 0.25s ease;
   box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.05);
-  backdrop-filter: blur(2px);
 }
 
 .cart-handle:hover {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  width: 42px;
-  left: -20px;
-  color: #0f172a;
+  background: #f8fafc;
+  width: 44px;
+  left: -22px;
   box-shadow: -4px 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -1169,18 +1161,16 @@
   transform: translateY(-50%) scale(0.96);
 }
 
-/* Icon and text inside handle */
-.cart-handle-icon {
-  font-size: 1.4rem;
-  display: block;
+/* Arrow inside */
+.cart-handle-arrow {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #475569;
+  transition: transform 0.25s ease;
 }
 
-.cart-handle-text {
-  font-size: 0.65rem;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  letter-spacing: 1px;
-  font-weight: 500;
+.cart-handle:hover .cart-handle-arrow {
+  color: #0f172a;
 }
 
 /* When cart is collapsed */
@@ -1190,26 +1180,21 @@
 }
 
 .cart-panel.collapsed .cart-handle {
-  left: 6px;
-  width: 36px;
-  border-radius: 0 40px 40px 0;
+  left: 4px;
+  border-radius: 0 40px 40px 0; /* flip semi-circle to the right */
   border-left: none;
-  border-right: 1px solid rgba(203, 213, 225, 0.6);
-  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border-right: 1px solid #cbd5e1;
+  background: #f1f5f9;
 }
 
 .cart-panel.collapsed .cart-handle:hover {
-  left: 4px;
-  width: 40px;
+  left: 2px;
+  width: 42px;
 }
 
-.cart-panel.collapsed .cart-handle-text {
-  display: none;
-}
-
-.cart-panel.collapsed .cart-handle-icon {
-  font-size: 1.5rem;
-  margin: 8px 0;
+/* Rotate arrow when collapsed (points left) */
+.cart-panel.collapsed .cart-handle-arrow {
+  transform: rotate(180deg);
 }
 
 /* Hide all other content when collapsed */
@@ -1217,18 +1202,15 @@
   display: none;
 }
 
-/* On mobile, keep handle visible but make it smaller */
+/* On mobile, adjust size */
 @media (max-width: 780px) {
   .cart-handle {
-    width: 30px;
-    height: 70px;
-    left: -12px;
+    width: 32px;
+    height: 64px;
+    left: -16px;
   }
-  .cart-handle-icon {
-    font-size: 1.1rem;
-  }
-  .cart-handle-text {
-    font-size: 0.55rem;
+  .cart-handle-arrow {
+    font-size: 1rem;
   }
   .cart-panel.collapsed {
     flex: 0 0 38px !important;
@@ -1318,9 +1300,8 @@
     </div>
 
     <div class="cart-panel">
-    <div id="cartHandle" class="cart-handle" title="Collapse / Expand cart">
-  <span class="cart-handle-icon">🛒</span>
-  <span class="cart-handle-text">CART</span>
+   <div id="cartHandle" class="cart-handle" title="Collapse / Expand cart">
+  <span class="cart-handle-arrow">▶</span>
 </div>
       <div class="cart-header">
         <div class="cart-title" id="cartTitle">🧾 Current Sale</div>

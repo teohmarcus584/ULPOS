@@ -3720,7 +3720,7 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
       document.getElementById('adminReportTotalSales').innerText = `RM ${cached.totals.totalSales.toFixed(2)}`;
       document.getElementById('adminReportCashTotal').innerText = `RM ${cached.totals.cashTotal.toFixed(2)}`;
       document.getElementById('adminReportCardTotal').innerText = `RM ${cached.totals.cardTotal.toFixed(2)}`;
-      document.getElementById('adminReportQRTotal').innerText = `RM ${cached.totals.qrTotal.toFixed(2)}`;
+      document.getElementById('adminReportQRTotal').innerText = `RM ${cached.totals.otherTotal.toFixed(2)}`;
       document.getElementById('adminReportAlipayTotal').innerText = `RM ${cached.totals.alipayTotal.toFixed(2)}`;
       document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(cached.totals.refundTotal).toFixed(2)}`;
       document.getElementById('adminReportRefundedBills').innerText = cached.totals.refundedTransactionCount;

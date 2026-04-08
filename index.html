@@ -4590,8 +4590,8 @@ if (transaction.buy3_free1_discount > 0) {
     window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer, printPrizeVoucher: printPrizeVoucher };
   })();
 
-  // ==================== RENDER PRODUCT GRID ====================
- function renderProductGrid() {
+ // ==================== RENDER PRODUCT GRID ====================
+function renderProductGrid() {
   // 1. Get filter values
   const searchTerm = searchInput.value.toLowerCase();
   const selectedCategory = categorySelect.value;
@@ -4717,21 +4717,22 @@ if (transaction.buy3_free1_discount > 0) {
       });
     });
   } else {
-   document.querySelectorAll('.add-btn').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    const product = products.find(p => p.id == btn.dataset.id);
-    if (product && product.stock > 0) addToCart(product, btn);
-    e.stopPropagation();
-  });
-});
-}
-  // ==================== VIEW TOGGLE ====================
-  function setViewMode(mode) {
-    viewMode = mode;
-    document.getElementById('gridViewBtn').classList.toggle('active', mode === 'grid');
-    document.getElementById('listViewBtn').classList.toggle('active', mode === 'list');
-    renderProductGrid();
+    document.querySelectorAll('.add-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const product = products.find(p => p.id == btn.dataset.id);
+        if (product && product.stock > 0) addToCart(product, btn);
+        e.stopPropagation();
+      });
+    });
   }
+}   // <-- renderProductGrid ends here
+
+// ==================== VIEW TOGGLE ====================
+function setViewMode(mode) {
+  viewMode = mode;
+  document.getElementById('gridViewBtn').classList.toggle('active', mode === 'grid');
+  document.getElementById('listViewBtn').classList.toggle('active', mode === 'list');
+  renderProductGrid();
 }
   // ==================== PRELOAD SETTLEMENT AND REPORT AFTER LOGIN ====================
  async function preloadSettlement() {

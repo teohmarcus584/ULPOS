@@ -4851,7 +4851,7 @@ document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLo
   document.getElementById('closeTelegramModal')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
   document.getElementById('closeTelegramModalBtn')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
 
-  async function finishLoginAfterVerification() {
+async function finishLoginAfterVerification() {
   // Clear any existing auto-sync interval to avoid duplicates
   if (window.autoSyncInterval) clearInterval(window.autoSyncInterval);
 
@@ -4912,6 +4912,21 @@ document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLo
     if (employeeFilterGroup) employeeFilterGroup.style.display = 'none';
     if (storeChartContainer) storeChartContainer.style.display = 'none';
     if (employeeChartContainer) employeeChartContainer.style.display = 'none';
+
+    // ✅ Hide payment method breakdown rows (Cash, Card, QR Pay, Alipay) in report modal
+    const paymentBreakdownIds = [
+      'adminReportCashTotal',
+      'adminReportCardTotal',
+      'adminReportQRTotal',
+      'adminReportAlipayTotal'
+    ];
+    paymentBreakdownIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.parentElement && el.parentElement.classList.contains('stat-item')) {
+        el.parentElement.style.display = 'none';
+      }
+    });
+    // Refund rows (adminReportRefundTotal, adminReportRefundedBills) remain visible
   }
 
   // Set settlement store select (disabled for non‑admin)
@@ -4938,11 +4953,11 @@ document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLo
   // Preload settlement and report data in background (silent)
   preloadSettlement();
   preloadReport();
-    enableBarcodeScanner();
-    // Refresh category highlighting after login (products are loaded)
-    refreshCategoryHighlighting();
-    // Start background sync every 60 seconds
-    startBackgroundSync(60);
+  enableBarcodeScanner();
+  // Refresh category highlighting after login (products are loaded)
+  refreshCategoryHighlighting();
+  // Start background sync every 60 seconds
+  startBackgroundSync(60);
 }
   async function openReportsModal() {
     if (currentEmployee?.isAdmin) {

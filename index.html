@@ -1122,93 +1122,99 @@
 #sideStockAlertBtn {
   display: none;
 }
-/* ==================== SEMI-CIRCLE / CIRCLE HANDLE ==================== */
+/* ==================== CLEAN COLLAPSIBLE CART ==================== */
 .cart-panel {
   position: relative;
-  transition: flex 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1), min-width 0.35s ease;
+  transition: flex 0.3s ease, min-width 0.3s ease;
   overflow: visible;
 }
 
-/* Handle base */
+/* Handle base – appears on the left edge when expanded */
 .cart-handle {
   position: absolute;
   left: -12px;
   top: 50%;
   transform: translateY(-50%);
   width: 28px;
-  height: 60px;
-  background: #ffffff;
+  height: 56px;
+  background: white;
   border: 1px solid #e2e8f0;
   border-right: none;
-  border-radius: 30px 0 0 30px;   /* semi-circle on left */
+  border-radius: 28px 0 0 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 20;
   transition: all 0.25s ease;
-  box-shadow: -1px 1px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: -1px 1px 4px rgba(0,0,0,0.05);
 }
 
 .cart-handle:hover {
   background: #f8fafc;
   width: 32px;
   left: -14px;
-  box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.cart-handle:active {
-  transform: translateY(-50%) scale(0.95);
-}
-
-/* Arrow icon */
 .cart-handle-icon {
-  font-size: 1rem;
-  font-weight: bold;
+  font-size: 0.9rem;
   color: #475569;
-  transition: all 0.2s ease;
+  transition: transform 0.2s;
 }
 
-.cart-handle:hover .cart-handle-icon {
-  color: #0f172a;
-}
-
-/* === COLLAPSED STATE === */
+/* When collapsed – panel becomes a narrow bar */
 .cart-panel.collapsed {
-  flex: 0 0 40px !important;
-  min-width: 40px;
+  flex: 0 0 48px !important;
+  min-width: 48px;
 }
 
-/* Collapsed handle becomes a circle on the right edge */
+/* In collapsed mode, the handle moves to the RIGHT edge of the bar, becomes a circle */
 .cart-panel.collapsed .cart-handle {
   left: auto;
-  right: -12px;               /* stick to right edge */
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;        /* full circle */
-  border: 1px solid #e2e8f0;
-  border-left: none;         /* optional: clean look */
+  right: -16px;           /* half outside, half inside */
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #cbd5e1;
   background: #f1f5f9;
-  box-shadow: 1px 1px 6px rgba(0, 0, 0, 0.08);
-  transform: translateY(-50%);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 .cart-panel.collapsed .cart-handle:hover {
-  width: 40px;
-  height: 40px;
-  right: -14px;
+  width: 36px;
+  height: 36px;
+  right: -18px;
   background: #e2e8f0;
 }
 
-/* Change icon from arrow to shopping cart */
+/* Icon changes from arrow to cart */
 .cart-panel.collapsed .cart-handle-icon {
-  content: "🛒";
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  /* we'll change the text via JS, see below */
 }
 
-/* But we need to replace the text, not just font-size. 
-   Use JS to change the inner HTML on toggle (see below). 
-   Or we can use CSS pseudo-element but it's simpler with JS. */
+/* Hide all content inside cart when collapsed */
+.cart-panel.collapsed > *:not(.cart-handle) {
+  display: none;
+}
+
+/* Mobile adjustment */
+@media (max-width: 780px) {
+  .cart-handle {
+    width: 24px;
+    height: 48px;
+    left: -10px;
+  }
+  .cart-panel.collapsed {
+    flex: 0 0 40px !important;
+    min-width: 40px;
+  }
+  .cart-panel.collapsed .cart-handle {
+    width: 28px;
+    height: 28px;
+    right: -14px;
+  }
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -5695,29 +5701,27 @@ if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener(
  const cartPanel = document.querySelector('.cart-panel');
 const cartHandle = document.getElementById('cartHandle');
 if (cartHandle && cartPanel) {
-  const handleIcon = cartHandle.querySelector('.cart-handle-icon');
+  const iconSpan = cartHandle.querySelector('.cart-handle-icon');
   
-  function updateCartHandleIcon() {
+  function updateHandleIcon() {
     if (cartPanel.classList.contains('collapsed')) {
-      handleIcon.textContent = '🛒';
+      iconSpan.textContent = '🛒';
     } else {
-      handleIcon.textContent = '▶';
+      iconSpan.textContent = '▶';
     }
   }
   
   cartHandle.addEventListener('click', () => {
     cartPanel.classList.toggle('collapsed');
-    updateCartHandleIcon();
+    updateHandleIcon();
     localStorage.setItem('cartCollapsed', cartPanel.classList.contains('collapsed'));
   });
   
-  // Restore state on load
+  // Restore saved state
   if (localStorage.getItem('cartCollapsed') === 'true') {
     cartPanel.classList.add('collapsed');
-    updateCartHandleIcon();
-  } else {
-    updateCartHandleIcon();
   }
+  updateHandleIcon();
 }
 </script>
 </body>

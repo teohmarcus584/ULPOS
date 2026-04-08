@@ -3824,17 +3824,17 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
         employeeId,
         from,
         to,
-        totals: {
-          totalSales: totals.totalSales,
-          cashTotal: totals.cashTotal,
-          cardTotal: totals.cardTotal,
-          qrTotal: totals.qrTotal,
-          alipayTotal: totals.alipayTotal,
-          refundTotal: totals.refundTotal,
-          refundedTransactionCount: totals.refundedTransactionCount,
-          transactionCount: totals.transactionCount,
-          totalItems: totals.totalItems
-        },
+       totals: {
+  totalSales: totals.totalSales,
+  cashTotal: totals.cashTotal,
+  cardTotal: totals.cardTotal,
+  otherTotal: totals.otherTotal,   // ✅ use otherTotal
+  alipayTotal: totals.alipayTotal,
+  refundTotal: totals.refundTotal,
+  refundedTransactionCount: totals.refundedTransactionCount,
+  transactionCount: totals.transactionCount,
+  totalItems: totals.totalItems
+}
         productDetails: productData,
         chartData: { ...chartData, employeeSales: employeeSalesData }
       };
@@ -4629,17 +4629,17 @@ if (transaction.buy3_free1_discount > 0) {
       employeeId,
       from: todayStr,
       to: todayStr,
-      totals: {
-        totalSales: totals.totalSales,
-        cashTotal: totals.cashTotal,
-        cardTotal: totals.cardTotal,
-        qrTotal: totals.qrTotal,
-        alipayTotal: totals.alipayTotal,
-        refundTotal: totals.refundTotal,
-        refundedTransactionCount: totals.refundedTransactionCount,
-        transactionCount: totals.transactionCount,
-        totalItems: totals.totalItems
-      },
+       totals: {
+    totalSales: totals.totalSales,
+    cashTotal: totals.cashTotal,
+    cardTotal: totals.cardTotal,
+    otherTotal: totals.otherTotal,   // ✅ use otherTotal
+    alipayTotal: totals.alipayTotal,
+    refundTotal: totals.refundTotal,
+    refundedTransactionCount: totals.refundedTransactionCount,
+    transactionCount: totals.transactionCount,
+    totalItems: totals.totalItems
+  },
       productDetails: productData,
       chartData: { ...chartData, employeeSales: employeeSalesData }
     };

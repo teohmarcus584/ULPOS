@@ -1122,37 +1122,37 @@
 #sideStockAlertBtn {
   display: none;
 }
-/* ==================== SLIMMER SEMI-CIRCLE HANDLE ==================== */
+/* ==================== SEMI-CIRCLE / CIRCLE HANDLE ==================== */
 .cart-panel {
   position: relative;
   transition: flex 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1), min-width 0.35s ease;
   overflow: visible;
 }
 
-/* Slim handle attached to the left edge */
+/* Handle base */
 .cart-handle {
   position: absolute;
-  left: -12px;           /* only half protrudes */
+  left: -12px;
   top: 50%;
   transform: translateY(-50%);
-  width: 24px;           /* slimmer width */
-  height: 60px;          /* slimmer height */
+  width: 28px;
+  height: 60px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-right: none;
-  border-radius: 30px 0 0 30px;  /* semi-circle on the left */
+  border-radius: 30px 0 0 30px;   /* semi-circle on left */
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 20;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   box-shadow: -1px 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 .cart-handle:hover {
   background: #f8fafc;
-  width: 28px;
+  width: 32px;
   left: -14px;
   box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.08);
 }
@@ -1161,63 +1161,54 @@
   transform: translateY(-50%) scale(0.95);
 }
 
-/* Arrow inside */
-.cart-handle-arrow {
+/* Arrow icon */
+.cart-handle-icon {
   font-size: 1rem;
   font-weight: bold;
-  color: #64748b;
-  transition: transform 0.2s ease;
+  color: #475569;
+  transition: all 0.2s ease;
 }
 
-.cart-handle:hover .cart-handle-arrow {
+.cart-handle:hover .cart-handle-icon {
   color: #0f172a;
 }
 
-/* When cart is collapsed */
+/* === COLLAPSED STATE === */
 .cart-panel.collapsed {
-  flex: 0 0 36px !important;
-  min-width: 36px;
+  flex: 0 0 40px !important;
+  min-width: 40px;
 }
 
+/* Collapsed handle becomes a circle on the right edge */
 .cart-panel.collapsed .cart-handle {
-  left: 6px;                /* sits on the right side of the collapsed panel */
-  border-radius: 0 30px 30px 0;
-  border-left: none;
-  border-right: 1px solid #e2e8f0;
+  left: auto;
+  right: -12px;               /* stick to right edge */
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;        /* full circle */
+  border: 1px solid #e2e8f0;
+  border-left: none;         /* optional: clean look */
   background: #f1f5f9;
-  width: 24px;
+  box-shadow: 1px 1px 6px rgba(0, 0, 0, 0.08);
+  transform: translateY(-50%);
 }
 
 .cart-panel.collapsed .cart-handle:hover {
-  left: 4px;
-  width: 28px;
+  width: 40px;
+  height: 40px;
+  right: -14px;
+  background: #e2e8f0;
 }
 
-/* Rotate arrow when collapsed (points left) */
-.cart-panel.collapsed .cart-handle-arrow {
-  transform: rotate(180deg);
+/* Change icon from arrow to shopping cart */
+.cart-panel.collapsed .cart-handle-icon {
+  content: "🛒";
+  font-size: 1.2rem;
 }
 
-/* Hide all other content when collapsed */
-.cart-panel.collapsed > *:not(.cart-handle) {
-  display: none;
-}
-
-/* Mobile adjustment */
-@media (max-width: 780px) {
-  .cart-handle {
-    width: 20px;
-    height: 50px;
-    left: -10px;
-  }
-  .cart-handle-arrow {
-    font-size: 0.8rem;
-  }
-  .cart-panel.collapsed {
-    flex: 0 0 30px !important;
-    min-width: 30px;
-  }
-}
+/* But we need to replace the text, not just font-size. 
+   Use JS to change the inner HTML on toggle (see below). 
+   Or we can use CSS pseudo-element but it's simpler with JS. */
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -1302,7 +1293,7 @@
 
     <div class="cart-panel">
    <div id="cartHandle" class="cart-handle" title="Collapse / Expand cart">
-  <span class="cart-handle-arrow">▶</span>
+  <span class="cart-handle-icon">▶</span>
 </div>
       <div class="cart-header">
         <div class="cart-title" id="cartTitle">🧾 Current Sale</div>
@@ -5059,14 +5050,7 @@ async function finishLoginAfterVerification() {
   preloadReport();
   enableBarcodeScanner();
   
-  
-  // ========== TEMPORARY TEST: Send Telegram alert on reload ==========
-sendTelegramMessage("🔄 POS system reloaded. Telegram alerts are active.\n\n(This is a test message. All configured accounts should receive this.)")
-  .then(sent => {
-    if (sent) console.log("✅ Test Telegram message sent to all accounts.");
-    else console.warn("⚠️ Test Telegram message failed.");
-  });
-// ========== END TEMPORARY TEST ==========
+ 
   // Refresh category highlighting after login (products are loaded)
   refreshCategoryHighlighting();
   // Start background sync every 60 seconds
@@ -5708,19 +5692,33 @@ if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener(
       });
     }
   })();
-  // ==================== COLLAPSIBLE CART PANEL ====================
-  const cartPanel = document.querySelector('.cart-panel');
-  const cartHandle = document.getElementById('cartHandle');
-  if (cartHandle && cartPanel) {
-    cartHandle.addEventListener('click', () => {
-      cartPanel.classList.toggle('collapsed');
-      localStorage.setItem('cartCollapsed', cartPanel.classList.contains('collapsed'));
-    });
-    // Restore state on load
-    if (localStorage.getItem('cartCollapsed') === 'true') {
-      cartPanel.classList.add('collapsed');
+ const cartPanel = document.querySelector('.cart-panel');
+const cartHandle = document.getElementById('cartHandle');
+if (cartHandle && cartPanel) {
+  const handleIcon = cartHandle.querySelector('.cart-handle-icon');
+  
+  function updateCartHandleIcon() {
+    if (cartPanel.classList.contains('collapsed')) {
+      handleIcon.textContent = '🛒';
+    } else {
+      handleIcon.textContent = '▶';
     }
   }
+  
+  cartHandle.addEventListener('click', () => {
+    cartPanel.classList.toggle('collapsed');
+    updateCartHandleIcon();
+    localStorage.setItem('cartCollapsed', cartPanel.classList.contains('collapsed'));
+  });
+  
+  // Restore state on load
+  if (localStorage.getItem('cartCollapsed') === 'true') {
+    cartPanel.classList.add('collapsed');
+    updateCartHandleIcon();
+  } else {
+    updateCartHandleIcon();
+  }
+}
 </script>
 </body>
 </html>

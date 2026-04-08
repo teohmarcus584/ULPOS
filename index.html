@@ -1122,51 +1122,51 @@
 #sideStockAlertBtn {
   display: none;
 }
-/* ==================== SEMI-CIRCLE CART HANDLE ==================== */
+/* ==================== SLIMMER SEMI-CIRCLE HANDLE ==================== */
 .cart-panel {
   position: relative;
   transition: flex 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1), min-width 0.35s ease;
-  overflow: visible; /* allow handle to protrude */
+  overflow: visible;
 }
 
-/* Semi-circle handle */
+/* Slim handle attached to the left edge */
 .cart-handle {
   position: absolute;
-  left: -20px;
+  left: -12px;           /* only half protrudes */
   top: 50%;
   transform: translateY(-50%);
-  width: 40px;
-  height: 80px;
+  width: 24px;           /* slimmer width */
+  height: 60px;          /* slimmer height */
   background: #ffffff;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #e2e8f0;
   border-right: none;
-  border-radius: 40px 0 0 40px; /* creates a semi-circle on the left */
+  border-radius: 30px 0 0 30px;  /* semi-circle on the left */
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 20;
-  transition: all 0.25s ease;
-  box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  box-shadow: -1px 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 .cart-handle:hover {
   background: #f8fafc;
-  width: 44px;
-  left: -22px;
-  box-shadow: -4px 4px 12px rgba(0, 0, 0, 0.1);
+  width: 28px;
+  left: -14px;
+  box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .cart-handle:active {
-  transform: translateY(-50%) scale(0.96);
+  transform: translateY(-50%) scale(0.95);
 }
 
 /* Arrow inside */
 .cart-handle-arrow {
-  font-size: 1.3rem;
+  font-size: 1rem;
   font-weight: bold;
-  color: #475569;
-  transition: transform 0.25s ease;
+  color: #64748b;
+  transition: transform 0.2s ease;
 }
 
 .cart-handle:hover .cart-handle-arrow {
@@ -1175,21 +1175,22 @@
 
 /* When cart is collapsed */
 .cart-panel.collapsed {
-  flex: 0 0 48px !important;
-  min-width: 48px;
+  flex: 0 0 36px !important;
+  min-width: 36px;
 }
 
 .cart-panel.collapsed .cart-handle {
-  left: 4px;
-  border-radius: 0 40px 40px 0; /* flip semi-circle to the right */
+  left: 6px;                /* sits on the right side of the collapsed panel */
+  border-radius: 0 30px 30px 0;
   border-left: none;
-  border-right: 1px solid #cbd5e1;
+  border-right: 1px solid #e2e8f0;
   background: #f1f5f9;
+  width: 24px;
 }
 
 .cart-panel.collapsed .cart-handle:hover {
-  left: 2px;
-  width: 42px;
+  left: 4px;
+  width: 28px;
 }
 
 /* Rotate arrow when collapsed (points left) */
@@ -1202,19 +1203,19 @@
   display: none;
 }
 
-/* On mobile, adjust size */
+/* Mobile adjustment */
 @media (max-width: 780px) {
   .cart-handle {
-    width: 32px;
-    height: 64px;
-    left: -16px;
+    width: 20px;
+    height: 50px;
+    left: -10px;
   }
   .cart-handle-arrow {
-    font-size: 1rem;
+    font-size: 0.8rem;
   }
   .cart-panel.collapsed {
-    flex: 0 0 38px !important;
-    min-width: 38px;
+    flex: 0 0 30px !important;
+    min-width: 30px;
   }
 }
   </style>

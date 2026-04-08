@@ -4845,16 +4845,11 @@ document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLo
       updateStockAlertButtonUI();
     }));
   }
-  if (sideTelegramBtn) {
-    sideTelegramBtn.addEventListener('click', wrapMenuAction(() => {
-      const accounts = localStorage.getItem('telegramAccounts');
-      if (accounts) {
-        alert(`📱 Current Telegram accounts:\n\n${accounts}\n\n(To change, ask the store administrator.)`);
-      } else {
-        alert('⚠️ No Telegram accounts configured. Out‑of‑stock alerts will not be sent.');
-      }
-    }));
-  }
+if (sideTelegramBtn) {
+  sideTelegramBtn.addEventListener('click', wrapMenuAction(() => {
+    showTelegramModal();   // ← this opens the modal with textarea + Save/Test
+  }));
+}
 
   document.getElementById('saveTelegramSettingsBtn')?.addEventListener('click', saveTelegramSettings);
   document.getElementById('closeTelegramModal')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');

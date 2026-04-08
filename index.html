@@ -3465,30 +3465,36 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
   }
 
   async function processRefund(transactionId, store) {
-    showLoading('Processing refund...');
-    try {
-      const formData = new URLSearchParams();
-      formData.append("action", "refundTransaction");
-      formData.append("transaction_id", transactionId);
-      formData.append("employee_id", currentEmployee.id);
-      formData.append("employee_name", currentEmployee.name);
-      const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
-      const result = await response.json();
-      if (result.success) {
-        await showAlertModal('Refund Successful', `Refund ID: ${result.refundId}\nStock restored.`);
-        updateReceipts();
-        localStorage.removeItem(`products_${currentStore}`);
-        await fetchProductsFromSheet();
-      } else {
-        await showAlertModal('Refund Failed', result.error || 'Unknown error');
+  showLoading('Processing refund...');
+  try {
+    const formData = new URLSearchParams();
+    formData.append("action", "refundTransaction");
+    formData.append("transaction_id", transactionId);
+    formData.append("employee_id", currentEmployee.id);
+    formData.append("employee_name", currentEmployee.name);
+    const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
+    const result = await response.json();
+    if (result.success) {
+      await showAlertModal('Refund Successful', `Refund ID: ${result.refundId}\nStock restored.`);
+      updateReceipts();
+      localStorage.removeItem(`products_${currentStore}`);
+      await fetchProductsFromSheet();
+      
+      // ✅ Refresh report data if the report modal is open
+      const reportModal = document.getElementById('adminReportModal');
+      if (reportModal && reportModal.style.display === 'flex') {
+        await updateAdminReport();
       }
-    } catch (err) {
-      console.error(err);
-      await showAlertModal('Error', 'Connection error while processing refund.');
-    } finally {
-      hideLoading();
+    } else {
+      await showAlertModal('Refund Failed', result.error || 'Unknown error');
     }
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Error', 'Connection error while processing refund.');
+  } finally {
+    hideLoading();
   }
+}
 
   // ==================== REPORTS ====================
 async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, silent = false) {
@@ -5398,21 +5404,27 @@ function updateCategoryDropdown() {
     fetchReceipts(store, employeeId, from, to, search);
   }
 
-  const toggleBtn = document.getElementById('toggleProductDetailsBtn');
-  const productDetailsContainer = document.getElementById('productDetailsContainer');
-  if (toggleBtn && productDetailsContainer) {
-    toggleBtn.addEventListener('click', () => {
-      productDetailsVisible = !productDetailsVisible;
-      if (productDetailsVisible) {
-        productDetailsContainer.style.display = 'block';
-        toggleBtn.innerText = '📦 Hide Product Details';
-        if (lastProductData) renderProductDetails(lastProductData);
+ const toggleBtn = document.getElementById('toggleProductDetailsBtn');
+const productDetailsContainer = document.getElementById('productDetailsContainer');
+if (toggleBtn && productDetailsContainer) {
+  toggleBtn.addEventListener('click', async () => {
+    productDetailsVisible = !productDetailsVisible;
+    if (productDetailsVisible) {
+      productDetailsContainer.style.display = 'block';
+      toggleBtn.innerText = '📦 Hide Product Details';
+      // If lastProductData is null or empty, fetch fresh product data from the current report
+      if (!lastProductData || lastProductData.length === 0) {
+        // Re-run updateAdminReport to get fresh product details
+        await updateAdminReport();
       } else {
-        productDetailsContainer.style.display = 'none';
-        toggleBtn.innerText = '📦 Show Product Details';
+        renderProductDetails(lastProductData);
       }
-    });
-  }
+    } else {
+      productDetailsContainer.style.display = 'none';
+      toggleBtn.innerText = '📦 Show Product Details';
+    }
+  });
+}
 
   const closeClaimPrizeModal = document.getElementById('closeClaimPrizeModal');
   if (closeClaimPrizeModal) closeClaimPrizeModal.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');

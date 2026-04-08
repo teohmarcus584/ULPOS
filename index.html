@@ -3671,7 +3671,7 @@ async function updateAdminReport() {
     store = document.getElementById('adminReportStoreSelect').value;
     employeeId = document.getElementById('adminReportEmployeeSelect').value;
   } else {
-    store = currentStore;
+    store = 'all'; 
     employeeId = currentEmployee.id;
   }
 
@@ -4608,7 +4608,7 @@ if (transaction.buy3_free1_discount > 0) {
       store = 'all';
       employeeId = 'all';
     } else {
-      store = currentStore;
+      store = 'all';
       employeeId = currentEmployee.id;
     }
     // ✅ Fetch sales report silently (no loading overlay)

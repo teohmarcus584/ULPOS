@@ -4054,48 +4054,80 @@ function disableBarcodeScanner() {
  async function refreshSettlementTotals(store, silent = false) {
   const todayStr = getLocalDateString(new Date());
   const report = await fetchSalesReport(store, 'all', todayStr, todayStr, true, silent);
-    if (report) {
-      currentSettlementTotals = {
-        cash: report.cashTotal,
-        card: report.cardTotal,
-        qr: report.qrTotal,
-        alipay: report.alipayTotal,
-        refund: report.refundTotal
-      };
-      document.getElementById('sysCash').innerText = `RM ${currentSettlementTotals.cash.toFixed(2)}`;
-      document.getElementById('sysCard').innerText = `RM ${currentSettlementTotals.card.toFixed(2)}`;
-      document.getElementById('sysQR').innerText = `RM ${currentSettlementTotals.qr.toFixed(2)}`;
-      document.getElementById('sysAlipay').innerText = `RM ${currentSettlementTotals.alipay.toFixed(2)}`;
-      document.getElementById('sysRefund').innerText = `RM ${Math.abs(currentSettlementTotals.refund).toFixed(2)}`;
+  if (report) {
+    // Safely extract values with fallbacks
+    const cash = report.cashTotal !== undefined ? report.cashTotal : 0;
+    const card = report.cardTotal !== undefined ? report.cardTotal : 0;
+    const qr = report.otherTotal !== undefined ? report.otherTotal : 0;
+    const alipay = report.alipayTotal !== undefined ? report.alipayTotal : 0;
+    const refund = report.refundTotal !== undefined ? report.refundTotal : 0;
 
-      const netTotal = currentSettlementTotals.cash + currentSettlementTotals.card + currentSettlementTotals.qr + currentSettlementTotals.alipay;
-      document.getElementById('sysNetTotal').innerText = `RM ${netTotal.toFixed(2)}`;
+    currentSettlementTotals = { cash, card, qr, alipay, refund };
+
+    // Only update UI if not silent (i.e., modal is open)
+    if (!silent) {
+      const sysCash = document.getElementById('sysCash');
+      if (sysCash) sysCash.innerText = `RM ${cash.toFixed(2)}`;
+      const sysCard = document.getElementById('sysCard');
+      if (sysCard) sysCard.innerText = `RM ${card.toFixed(2)}`;
+      const sysQR = document.getElementById('sysQR');
+      if (sysQR) sysQR.innerText = `RM ${qr.toFixed(2)}`;
+      const sysAlipay = document.getElementById('sysAlipay');
+      if (sysAlipay) sysAlipay.innerText = `RM ${alipay.toFixed(2)}`;
+      const sysRefund = document.getElementById('sysRefund');
+      if (sysRefund) sysRefund.innerText = `RM ${Math.abs(refund).toFixed(2)}`;
+
+      const netTotal = cash + card + qr + alipay;
+      const sysNetTotal = document.getElementById('sysNetTotal');
+      if (sysNetTotal) sysNetTotal.innerText = `RM ${netTotal.toFixed(2)}`;
 
       const alreadySettled = await checkSettlementStatus(store, todayStr);
       if (alreadySettled) {
-        document.getElementById('settlementError').innerHTML = '⚠️ Settlement has already been recorded for today. No further settlement allowed.';
-        document.getElementById('settlementError').style.display = 'block';
-        document.getElementById('checkSettlementBtn').disabled = true;
-        document.getElementById('recordSettlementBtn').style.display = 'none';
+        const settlementError = document.getElementById('settlementError');
+        if (settlementError) {
+          settlementError.innerHTML = '⚠️ Settlement has already been recorded for today. No further settlement allowed.';
+          settlementError.style.display = 'block';
+        }
+        const checkBtn = document.getElementById('checkSettlementBtn');
+        if (checkBtn) checkBtn.disabled = true;
+        const recordBtn = document.getElementById('recordSettlementBtn');
+        if (recordBtn) recordBtn.style.display = 'none';
         setSettlementFieldsEnabled(false);
       } else {
         setSettlementFieldsEnabled(true);
-        document.getElementById('actualCash').value = '';
-        document.getElementById('actualCard').value = '';
-        document.getElementById('actualQR').value = '';
-        document.getElementById('actualAlipay').value = '';
-        document.getElementById('pettyCashFloat').value = '0.00';
-        document.getElementById('settlementError').style.display = 'none';
-        document.getElementById('recordSettlementBtn').style.display = 'none';
-        document.getElementById('checkSettlementBtn').style.display = 'block';
-        document.getElementById('checkSettlementBtn').disabled = false;
-        document.getElementById('actualCash').classList.remove('error-field');
-        document.getElementById('actualCard').classList.remove('error-field');
-        document.getElementById('actualQR').classList.remove('error-field');
-        document.getElementById('actualAlipay').classList.remove('error-field');
+        const actualCash = document.getElementById('actualCash');
+        if (actualCash) actualCash.value = '';
+        const actualCard = document.getElementById('actualCard');
+        if (actualCard) actualCard.value = '';
+        const actualQR = document.getElementById('actualQR');
+        if (actualQR) actualQR.value = '';
+        const actualAlipay = document.getElementById('actualAlipay');
+        if (actualAlipay) actualAlipay.value = '';
+        const pettyCash = document.getElementById('pettyCashFloat');
+        if (pettyCash) pettyCash.value = '0.00';
+        const settlementError = document.getElementById('settlementError');
+        if (settlementError) settlementError.style.display = 'none';
+        const recordBtn = document.getElementById('recordSettlementBtn');
+        if (recordBtn) recordBtn.style.display = 'none';
+        const checkBtn = document.getElementById('checkSettlementBtn');
+        if (checkBtn) {
+          checkBtn.style.display = 'block';
+          checkBtn.disabled = false;
+        }
+        const errorFields = ['actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
+        errorFields.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.remove('error-field');
+        });
       }
     }
+  } else {
+    if (!silent) {
+      await showAlertModal('Error', 'Failed to load settlement data. Please check network and try again.');
+    }
+    console.error('refreshSettlementTotals: report is null');
   }
+}
 
   let currentSettlementTotals = null;
 

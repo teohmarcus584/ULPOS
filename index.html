@@ -3501,20 +3501,27 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
     const response = await fetch(url);
     const result = await response.json();
     if (result.success) {
-      // Safely update DOM elements (with fallbacks)
-      document.getElementById('adminReportTotalSales').innerText = `RM ${(result.totalSales || 0).toFixed(2)}`;
-      document.getElementById('adminReportCashTotal').innerText = `RM ${(result.cashTotal || 0).toFixed(2)}`;
-      document.getElementById('adminReportCardTotal').innerText = `RM ${(result.cardTotal || 0).toFixed(2)}`;
-      // QR Pay (otherTotal)
-      document.getElementById('adminReportOtherTotal').innerText = `RM ${(result.otherTotal || 0).toFixed(2)}`;
-      // Alipay total (new field)
-      const alipayTotal = result.alipayTotal !== undefined ? result.alipayTotal : 0;
-      const alipaySpan = document.getElementById('adminReportAlipayTotal');
-      if (alipaySpan) alipaySpan.innerText = `RM ${alipayTotal.toFixed(2)}`;
-      document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(result.refundTotal || 0).toFixed(2)}`;
-      document.getElementById('adminReportRefundedBills').innerText = result.refundedTransactionCount || 0;
-      document.getElementById('adminReportTransactionCount').innerText = result.transactionCount || 0;
-      document.getElementById('adminReportTotalItems').innerText = result.totalItems || 0;
+      // Only update DOM if not silent (i.e., report modal is open)
+      if (!silent) {
+        const totalSalesEl = document.getElementById('adminReportTotalSales');
+        if (totalSalesEl) totalSalesEl.innerText = `RM ${(result.totalSales || 0).toFixed(2)}`;
+        const cashTotalEl = document.getElementById('adminReportCashTotal');
+        if (cashTotalEl) cashTotalEl.innerText = `RM ${(result.cashTotal || 0).toFixed(2)}`;
+        const cardTotalEl = document.getElementById('adminReportCardTotal');
+        if (cardTotalEl) cardTotalEl.innerText = `RM ${(result.cardTotal || 0).toFixed(2)}`;
+        const qrTotalEl = document.getElementById('adminReportQRTotal');
+        if (qrTotalEl) qrTotalEl.innerText = `RM ${(result.otherTotal || 0).toFixed(2)}`;
+        const alipayTotalEl = document.getElementById('adminReportAlipayTotal');
+        if (alipayTotalEl) alipayTotalEl.innerText = `RM ${(result.alipayTotal || 0).toFixed(2)}`;
+        const refundTotalEl = document.getElementById('adminReportRefundTotal');
+        if (refundTotalEl) refundTotalEl.innerText = `RM ${Math.abs(result.refundTotal || 0).toFixed(2)}`;
+        const refundedBillsEl = document.getElementById('adminReportRefundedBills');
+        if (refundedBillsEl) refundedBillsEl.innerText = result.refundedTransactionCount || 0;
+        const transactionCountEl = document.getElementById('adminReportTransactionCount');
+        if (transactionCountEl) transactionCountEl.innerText = result.transactionCount || 0;
+        const totalItemsEl = document.getElementById('adminReportTotalItems');
+        if (totalItemsEl) totalItemsEl.innerText = result.totalItems || 0;
+      }
       return result;
     } else {
       throw new Error(result.error || 'Report data error');

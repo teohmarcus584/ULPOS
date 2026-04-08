@@ -5769,12 +5769,15 @@ if (cartHandle && cartPanel) {
 function animateProductToCart(clickedButton, productName) {
   // Get button position
   const btnRect = clickedButton.getBoundingClientRect();
-  // Get cart panel and header
-  const cartPanel = document.querySelector('.cart-panel');
-  const cartHeader = document.querySelector('.cart-header');
-  if (!cartPanel || !cartHeader) return;
   
-  const targetRect = cartHeader.getBoundingClientRect();
+  // Target: the cart panel itself (right side)
+  const cartPanel = document.querySelector('.cart-panel');
+  if (!cartPanel) return;
+  
+  const targetRect = cartPanel.getBoundingClientRect();
+  // End position: right edge of the cart panel, vertically centered
+  const endX = targetRect.right - 20;
+  const endY = targetRect.top + targetRect.height / 2;
   
   // Create flying clone
   const clone = document.createElement('div');
@@ -5782,7 +5785,7 @@ function animateProductToCart(clickedButton, productName) {
   clone.textContent = `+ ${productName}`;
   document.body.appendChild(clone);
   
-  // Set starting position
+  // Start position (center of clicked button)
   clone.style.left = `${btnRect.left + btnRect.width / 2}px`;
   clone.style.top = `${btnRect.top + btnRect.height / 2}px`;
   clone.style.transform = 'translate(-50%, -50%) scale(1)';
@@ -5790,27 +5793,27 @@ function animateProductToCart(clickedButton, productName) {
   // Force reflow
   clone.offsetHeight;
   
-  // Set ending position (to the cart header)
-  clone.style.left = `${targetRect.left + targetRect.width - 20}px`;
-  clone.style.top = `${targetRect.top + targetRect.height / 2}px`;
+  // End position – fly to the right side of the cart panel
+  clone.style.left = `${endX}px`;
+  clone.style.top = `${endY}px`;
   clone.style.transform = 'translate(-50%, -50%) scale(0.3)';
   clone.style.opacity = '0.5';
   
-  // ========== BOUNCE EFFECT ON CART HEADER ==========
-  cartHeader.style.transition = 'transform 0.1s ease';
-  cartHeader.style.transform = 'scale(1.02)';
-  setTimeout(() => {
-    cartHeader.style.transform = '';
-    setTimeout(() => { cartHeader.style.transition = ''; }, 200);
-  }, 100);
-  // ========== END BOUNCE EFFECT ==========
+  // Optional bounce effect on cart header (if exists)
+  const cartHeader = document.querySelector('.cart-header');
+  if (cartHeader) {
+    cartHeader.style.transition = 'transform 0.1s ease';
+    cartHeader.style.transform = 'scale(1.02)';
+    setTimeout(() => {
+      cartHeader.style.transform = '';
+      setTimeout(() => { cartHeader.style.transition = ''; }, 200);
+    }, 100);
+  }
   
-  // Remove after animation ends
+  // Remove clone after animation
   clone.addEventListener('transitionend', () => {
     if (clone.parentNode) clone.remove();
   });
-  
-  // Fallback removal
   setTimeout(() => {
     if (clone.parentNode) clone.remove();
   }, 500);

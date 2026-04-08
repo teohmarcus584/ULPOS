@@ -4958,6 +4958,15 @@ async function finishLoginAfterVerification() {
   preloadSettlement();
   preloadReport();
   enableBarcodeScanner();
+  
+  
+  // ========== TEMPORARY TEST: Send Telegram alert on reload ==========
+sendTelegramMessage("🔄 POS system reloaded. Telegram alerts are active.\n\n(This is a test message. All configured accounts should receive this.)")
+  .then(sent => {
+    if (sent) console.log("✅ Test Telegram message sent to all accounts.");
+    else console.warn("⚠️ Test Telegram message failed.");
+  });
+// ========== END TEMPORARY TEST ==========
   // Refresh category highlighting after login (products are loaded)
   refreshCategoryHighlighting();
   // Start background sync every 60 seconds

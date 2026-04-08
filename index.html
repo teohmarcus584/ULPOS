@@ -3665,189 +3665,187 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
     });
     tbody.innerHTML = html;
   }
+async function updateAdminReport() {
+  let store, employeeId;
+  if (currentEmployee.isAdmin) {
+    store = document.getElementById('adminReportStoreSelect').value;
+    employeeId = document.getElementById('adminReportEmployeeSelect').value;
+  } else {
+    store = currentStore;
+    employeeId = currentEmployee.id;
+  }
 
-  async function updateAdminReport() {
-    let store, employeeId;
-    if (currentEmployee.isAdmin) {
-      store = document.getElementById('adminReportStoreSelect').value;
-      employeeId = document.getElementById('adminReportEmployeeSelect').value;
-   } else {
-  store = currentStore;
-  employeeId = currentEmployee.id;
-}
+  const range = document.getElementById('adminReportDateRangeSelect').value;
+  let from = null, to = null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-    const range = document.getElementById('adminReportDateRangeSelect').value;
-    let from = null, to = null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  if (range === 'today') {
+    from = getLocalDateString(today);
+    to = from;
+  } else if (range === 'week') {
+    const start = new Date(today);
+    const dayOfWeek = today.getDay();
+    const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+    start.setDate(today.getDate() - diffToMonday);
+    from = getLocalDateString(start);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    to = getLocalDateString(end);
+  } else if (range === 'month') {
+    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+    from = getLocalDateString(start);
+    const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    to = getLocalDateString(end);
+  } else if (range === 'year') {
+    const start = new Date(today.getFullYear(), 0, 1);
+    const end = new Date(today.getFullYear(), 11, 31);
+    from = getLocalDateString(start);
+    to = getLocalDateString(end);
+  } else if (range === 'custom') {
+    from = document.getElementById('adminReportFromDate').value;
+    to = document.getElementById('adminReportToDate').value;
+    if (!from || !to) return;
+  }
 
-   if (range === 'today') {
-  from = getLocalDateString(today);
-  to = from;
-} else if (range === 'week') {
-  const start = new Date(today);
-  const dayOfWeek = today.getDay();
-  const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
-  start.setDate(today.getDate() - diffToMonday);
-  from = getLocalDateString(start);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  to = getLocalDateString(end);
-} else if (range === 'month') {
-  const start = new Date(today.getFullYear(), today.getMonth(), 1);
-  from = getLocalDateString(start);
-  const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-  to = getLocalDateString(end);
-} else if (range === 'year') {
-  const start = new Date(today.getFullYear(), 0, 1);
-  const end = new Date(today.getFullYear(), 11, 31);
-  from = getLocalDateString(start);
-  to = getLocalDateString(end);
-} else if (range === 'custom') {
-  from = document.getElementById('adminReportFromDate').value;
-  to = document.getElementById('adminReportToDate').value;
-  if (!from || !to) return;
-}
-
-    // Check if we have cached data matching the current filters
-    if (preloadedReportCache && 
-        preloadedReportCache.store === store && 
-        preloadedReportCache.employeeId === employeeId &&
-        preloadedReportCache.from === from &&
-        preloadedReportCache.to === to) {
-      // Use cached data
-      const cached = preloadedReportCache;
-      document.getElementById('adminReportTotalSales').innerText = `RM ${cached.totals.totalSales.toFixed(2)}`;
-      document.getElementById('adminReportCashTotal').innerText = `RM ${cached.totals.cashTotal.toFixed(2)}`;
-      document.getElementById('adminReportCardTotal').innerText = `RM ${cached.totals.cardTotal.toFixed(2)}`;
-      document.getElementById('adminReportQRTotal').innerText = `RM ${cached.totals.otherTotal.toFixed(2)}`;
-      document.getElementById('adminReportAlipayTotal').innerText = `RM ${cached.totals.alipayTotal.toFixed(2)}`;
-      document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(cached.totals.refundTotal).toFixed(2)}`;
-      document.getElementById('adminReportRefundedBills').innerText = cached.totals.refundedTransactionCount;
-      document.getElementById('adminReportTransactionCount').innerText = cached.totals.transactionCount;
-      document.getElementById('adminReportTotalItems').innerText = cached.totals.totalItems;
-      lastProductData = cached.productDetails;
-      if (productDetailsVisible) renderProductDetails(lastProductData);
-      // Render charts from cached data (we need to simulate the chart rendering)
-      if (cached.chartData) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-        // Re‑render charts if needed (simplified, we can trust that they are already rendered in preload)
-        if (cached.chartData.salesByStore) {
-          const storeCanvas = document.getElementById('storeChart');
-          if (storeCanvas && currentEmployee.isAdmin) {
-            if (window.storeChart && typeof window.storeChart.destroy === 'function') window.storeChart.destroy();
-            const storeLabels = cached.chartData.salesByStore.labels || [];
-            const storeData = cached.chartData.salesByStore.data || [];
-            if (storeLabels.length > 0) {
-              storeCanvas.style.display = 'block';
-              const ctx = storeCanvas.getContext('2d');
-              window.storeChart = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: storeLabels, datasets: [{ label: 'Sales (RM)', data: storeData, backgroundColor: 'rgba(54,162,235,0.6)', borderColor: 'rgba(54,162,235,1)', borderWidth: 1 }] },
-                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
-              });
-            } else {
-              storeCanvas.style.display = 'none';
-            }
-          }
-        }
-        if (cached.chartData.salesByDay || cached.chartData.hourly) {
-          const dayCanvas = document.getElementById('dayChart');
-          if (dayCanvas) {
-            if (window.dayChart && typeof window.dayChart.destroy === 'function') window.dayChart.destroy();
-            let labels, data, chartTitle;
-            if (cached.chartData.type === 'hourly') {
-              labels = cached.chartData.hourly.labels;
-              data = cached.chartData.hourly.data;
-              chartTitle = 'Hourly Sales (RM)';
-            } else {
-              labels = cached.chartData.salesByDay?.labels || [];
-              data = cached.chartData.salesByDay?.data || [];
-              chartTitle = 'Sales by Day (RM)';
-            }
-            if (labels.length > 0) {
-              dayCanvas.style.display = 'block';
-              const ctx = dayCanvas.getContext('2d');
-              window.dayChart = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: labels, datasets: [{ label: chartTitle, data: data, backgroundColor: 'rgba(75,192,192,0.6)', borderColor: 'rgba(75,192,192,1)', borderWidth: 1 }] },
-                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
-              });
-            } else {
-              dayCanvas.style.display = 'none';
-            }
-          }
-        }
-        if (cached.chartData.employeeSales && currentEmployee.isAdmin) {
-          const employeeCanvas = document.getElementById('employeeChart');
-          if (employeeCanvas) {
-            if (window.employeeChart && typeof window.employeeChart.destroy === 'function') window.employeeChart.destroy();
-            const labels = cached.chartData.employeeSales.labels || [];
-            const data = cached.chartData.employeeSales.data || [];
-            if (labels.length > 0) {
-              employeeCanvas.style.display = 'block';
-              const ctx = employeeCanvas.getContext('2d');
-              window.employeeChart = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: labels, datasets: [{ label: 'Sales by Employee (RM)', data: data, backgroundColor: 'rgba(255,99,132,0.6)', borderColor: 'rgba(255,99,132,1)', borderWidth: 1 }] },
-                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
-              });
-            } else {
-              employeeCanvas.style.display = 'none';
-            }
+  // Check if we have cached data matching the current filters
+  if (preloadedReportCache && 
+      preloadedReportCache.store === store && 
+      preloadedReportCache.employeeId === employeeId &&
+      preloadedReportCache.from === from &&
+      preloadedReportCache.to === to) {
+    // Use cached data
+    const cached = preloadedReportCache;
+    document.getElementById('adminReportTotalSales').innerText = `RM ${cached.totals.totalSales.toFixed(2)}`;
+    document.getElementById('adminReportCashTotal').innerText = `RM ${cached.totals.cashTotal.toFixed(2)}`;
+    document.getElementById('adminReportCardTotal').innerText = `RM ${cached.totals.cardTotal.toFixed(2)}`;
+    document.getElementById('adminReportQRTotal').innerText = `RM ${cached.totals.otherTotal.toFixed(2)}`;
+    document.getElementById('adminReportAlipayTotal').innerText = `RM ${cached.totals.alipayTotal.toFixed(2)}`;
+    document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(cached.totals.refundTotal).toFixed(2)}`;
+    document.getElementById('adminReportRefundedBills').innerText = cached.totals.refundedTransactionCount;
+    document.getElementById('adminReportTransactionCount').innerText = cached.totals.transactionCount;
+    document.getElementById('adminReportTotalItems').innerText = cached.totals.totalItems;
+    lastProductData = cached.productDetails;
+    if (productDetailsVisible) renderProductDetails(lastProductData);
+    // Render charts from cached data
+    if (cached.chartData) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      if (cached.chartData.salesByStore) {
+        const storeCanvas = document.getElementById('storeChart');
+        if (storeCanvas && currentEmployee.isAdmin) {
+          if (window.storeChart && typeof window.storeChart.destroy === 'function') window.storeChart.destroy();
+          const storeLabels = cached.chartData.salesByStore.labels || [];
+          const storeData = cached.chartData.salesByStore.data || [];
+          if (storeLabels.length > 0) {
+            storeCanvas.style.display = 'block';
+            const ctx = storeCanvas.getContext('2d');
+            window.storeChart = new Chart(ctx, {
+              type: 'bar',
+              data: { labels: storeLabels, datasets: [{ label: 'Sales (RM)', data: storeData, backgroundColor: 'rgba(54,162,235,0.6)', borderColor: 'rgba(54,162,235,1)', borderWidth: 1 }] },
+              options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
+            });
+          } else {
+            storeCanvas.style.display = 'none';
           }
         }
       }
-      return;
+      if (cached.chartData.salesByDay || cached.chartData.hourly) {
+        const dayCanvas = document.getElementById('dayChart');
+        if (dayCanvas) {
+          if (window.dayChart && typeof window.dayChart.destroy === 'function') window.dayChart.destroy();
+          let labels, data, chartTitle;
+          if (cached.chartData.type === 'hourly') {
+            labels = cached.chartData.hourly.labels;
+            data = cached.chartData.hourly.data;
+            chartTitle = 'Hourly Sales (RM)';
+          } else {
+            labels = cached.chartData.salesByDay?.labels || [];
+            data = cached.chartData.salesByDay?.data || [];
+            chartTitle = 'Sales by Day (RM)';
+          }
+          if (labels.length > 0) {
+            dayCanvas.style.display = 'block';
+            const ctx = dayCanvas.getContext('2d');
+            window.dayChart = new Chart(ctx, {
+              type: 'bar',
+              data: { labels: labels, datasets: [{ label: chartTitle, data: data, backgroundColor: 'rgba(75,192,192,0.6)', borderColor: 'rgba(75,192,192,1)', borderWidth: 1 }] },
+              options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
+            });
+          } else {
+            dayCanvas.style.display = 'none';
+          }
+        }
+      }
+      if (cached.chartData.employeeSales && currentEmployee.isAdmin) {
+        const employeeCanvas = document.getElementById('employeeChart');
+        if (employeeCanvas) {
+          if (window.employeeChart && typeof window.employeeChart.destroy === 'function') window.employeeChart.destroy();
+          const labels = cached.chartData.employeeSales.labels || [];
+          const data = cached.chartData.employeeSales.data || [];
+          if (labels.length > 0) {
+            employeeCanvas.style.display = 'block';
+            const ctx = employeeCanvas.getContext('2d');
+            window.employeeChart = new Chart(ctx, {
+              type: 'bar',
+              data: { labels: labels, datasets: [{ label: 'Sales by Employee (RM)', data: data, backgroundColor: 'rgba(255,99,132,0.6)', borderColor: 'rgba(255,99,132,1)', borderWidth: 1 }] },
+              options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
+            });
+          } else {
+            employeeCanvas.style.display = 'none';
+          }
+        }
+      }
     }
-
-    // Otherwise fetch fresh
-    const promises = [
-      fetchSalesReport(store, employeeId, from, to),
-      fetchSalesChartData(store, employeeId, from, to),
-      fetchProductSalesReport(store, employeeId, from, to)
-    ];
-    if (currentEmployee.isAdmin) {
-      promises.push(fetchEmployeeSalesData(store, from, to));
-    }
-
-    const results = await Promise.all(promises);
-    const totals = results[0];
-    const chartData = results[1];
-    const productData = results[2];
-    const employeeSalesData = results[3] ? { labels: results[3].labels, data: results[3].data } : null;
-
-    if (totals) {
-      // Cache the fresh data
-      preloadedReportCache = {
-        store,
-        employeeId,
-        from,
-        to,
-       totals: {
-  totalSales: totals.totalSales,
-  cashTotal: totals.cashTotal,
-  cardTotal: totals.cardTotal,
-  otherTotal: totals.otherTotal,   // ✅ use otherTotal
-  alipayTotal: totals.alipayTotal,
-  refundTotal: totals.refundTotal,
-  refundedTransactionCount: totals.refundedTransactionCount,
-  transactionCount: totals.transactionCount,
-  totalItems: totals.totalItems
-}
-        productDetails: productData,
-        chartData: { ...chartData, employeeSales: employeeSalesData }
-      };
-    }
-
-    if (productData) {
-      lastProductData = productData;
-      if (productDetailsVisible) renderProductDetails(lastProductData);
-    }
-
-    const loadingMsg = document.getElementById('adminReportLoadingMsg');
-    if (loadingMsg) loadingMsg.style.display = 'none';
+    return;
   }
+
+  // Otherwise fetch fresh
+  const promises = [
+    fetchSalesReport(store, employeeId, from, to),
+    fetchSalesChartData(store, employeeId, from, to),
+    fetchProductSalesReport(store, employeeId, from, to)
+  ];
+  if (currentEmployee.isAdmin) {
+    promises.push(fetchEmployeeSalesData(store, from, to));
+  }
+
+  const results = await Promise.all(promises);
+  const totals = results[0];
+  const chartData = results[1];
+  const productData = results[2];
+  const employeeSalesData = results[3] ? { labels: results[3].labels, data: results[3].data } : null;
+
+  if (totals) {
+    // Cache the fresh data
+    preloadedReportCache = {
+      store,
+      employeeId,
+      from,
+      to,
+      totals: {
+        totalSales: totals.totalSales,
+        cashTotal: totals.cashTotal,
+        cardTotal: totals.cardTotal,
+        otherTotal: totals.otherTotal,   // ✅ use otherTotal
+        alipayTotal: totals.alipayTotal,
+        refundTotal: totals.refundTotal,
+        refundedTransactionCount: totals.refundedTransactionCount,
+        transactionCount: totals.transactionCount,
+        totalItems: totals.totalItems
+      }, // ✅ ADDED COMMA – THIS WAS THE MISSING COMMA
+      productDetails: productData,
+      chartData: { ...chartData, employeeSales: employeeSalesData }
+    };
+  }
+
+  if (productData) {
+    lastProductData = productData;
+    if (productDetailsVisible) renderProductDetails(lastProductData);
+  }
+
+  const loadingMsg = document.getElementById('adminReportLoadingMsg');
+  if (loadingMsg) loadingMsg.style.display = 'none';
+}
 // ==================== BARCODE SCANNER ====================
 let barcodeBuffer = '';
 let barcodeTimer = null;
@@ -4629,17 +4627,17 @@ if (transaction.buy3_free1_discount > 0) {
       employeeId,
       from: todayStr,
       to: todayStr,
-       totals: {
-    totalSales: totals.totalSales,
-    cashTotal: totals.cashTotal,
-    cardTotal: totals.cardTotal,
-    otherTotal: totals.otherTotal,   // ✅ use otherTotal
-    alipayTotal: totals.alipayTotal,
-    refundTotal: totals.refundTotal,
-    refundedTransactionCount: totals.refundedTransactionCount,
-    transactionCount: totals.transactionCount,
-    totalItems: totals.totalItems
-  },
+      totals: {
+        totalSales: totals.totalSales,
+        cashTotal: totals.cashTotal,
+        cardTotal: totals.cardTotal,
+        otherTotal: totals.otherTotal,   // ✅ use otherTotal
+        alipayTotal: totals.alipayTotal,
+        refundTotal: totals.refundTotal,
+        refundedTransactionCount: totals.refundedTransactionCount,
+        transactionCount: totals.transactionCount,
+        totalItems: totals.totalItems
+      }, // ✅ ADDED COMMA
       productDetails: productData,
       chartData: { ...chartData, employeeSales: employeeSalesData }
     };

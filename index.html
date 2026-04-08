@@ -2543,6 +2543,7 @@ async function saveTelegramSettings() {
 async function fetchProductsFromSheet(force = false) {
   let attempt = 0;
   const maxAttempts = force ? 1 : 2;
+  let lastError = null;
 
   while (attempt < maxAttempts) {
     try {
@@ -2551,7 +2552,7 @@ async function fetchProductsFromSheet(force = false) {
       const hashKey = `products_hash_${store}`;
       const now = Date.now();
 
-      // 1. Forced full fetch
+      // 1. Forced full fetch (skip cache)
       if (force || attempt === 1) {
         let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
         const response = await fetch(url);
@@ -2578,11 +2579,11 @@ async function fetchProductsFromSheet(force = false) {
         return true;
       }
 
-      // 2. Normal path: try to load from cache
+      // 2. Normal path: try to load from cache (even if expired, we'll use it as fallback)
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const { timestamp, products: cachedProducts, hash: cachedHash } = JSON.parse(cached);
-        // Use cache if less than 5 minutes old OR we have a hash match (i.e., no changes)
+        // If cache is fresh (less than 5 min) OR we have a hash match, use it directly
         if (now - timestamp < 5 * 60 * 1000) {
           products = cachedProducts;
           updateCategoryDropdown();
@@ -2592,10 +2593,10 @@ async function fetchProductsFromSheet(force = false) {
           hideLoading();
           return true;
         }
-        // Cache expired: check for changes using hash comparison
+        // Cache expired – try to check for updates via hash
         const currentHash = localStorage.getItem(hashKey);
         if (currentHash && cachedHash === currentHash) {
-          // No changes detected, refresh cache timestamp only
+          // No changes, refresh timestamp
           localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: cachedProducts, hash: cachedHash }));
           products = cachedProducts;
           updateCategoryDropdown();
@@ -2605,7 +2606,9 @@ async function fetchProductsFromSheet(force = false) {
           hideLoading();
           return true;
         }
-        // Hash mismatch or missing, need to fetch
+        // Hash mismatch or missing – we will attempt a fetch below, but if fetch fails we'll fall back to this cache
+        // Store it as fallback
+        var fallbackProducts = cachedProducts;
       }
 
       // 3. Fetch fresh data (full sync)
@@ -2635,11 +2638,24 @@ async function fetchProductsFromSheet(force = false) {
 
     } catch (err) {
       console.error(`Attempt ${attempt + 1} failed:`, err);
+      lastError = err;
       if (attempt === 0 && !force) {
         attempt++;
         force = true;
         continue;
       }
+      // If fetch fails and we have a fallback cache (even expired), use it and show warning
+      if (fallbackProducts) {
+        products = fallbackProducts;
+        updateCategoryDropdown();
+        renderProductGrid();
+        refreshCategoryHighlighting();
+        updateSyncStatus(false); // mark sync as error, but data is shown
+        showAlertModal('Warning', 'Using cached product data. Sync failed. Check your network connection.');
+        hideLoading();
+        return true; // still consider "success" because we have data
+      }
+      // No cache at all – show error and retry button
       await showAlertModal('Error', 'Failed to load products. Check URL & sheet.');
       updateSyncStatus(false);
       hideLoading();
@@ -2648,7 +2664,6 @@ async function fetchProductsFromSheet(force = false) {
   }
   return false;
 }
-
   // Background sync: check for changes without showing loading
   async function backgroundSync() {
     if (syncInProgress) return;

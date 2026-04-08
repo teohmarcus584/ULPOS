@@ -135,6 +135,10 @@
       background: #ffebee;
       color: #c62828;
     }
+    /* Hide barcode status indicator */
+    #barcodeStatus {
+      display: none;
+    }
     /* rest of existing styles (keep everything else unchanged) */
     .pos-dashboard { display: flex; flex-wrap: wrap; gap: 20px; }
     .products-panel {
@@ -604,6 +608,7 @@
       display: flex;
       gap: 12px;
       margin: 20px 0;
+      flex-wrap: wrap;
     }
     .payment-btn {
       flex: 1;
@@ -1332,8 +1337,8 @@
   </div>
 </div>
 
-<!-- Payment Modal -->
-<div id="paymentModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closePaymentModal">×</span><div class="modal-title">💳 Select Payment Method</div><div class="payment-buttons"><button class="payment-btn" data-method="Cash">💵 Cash</button><button class="payment-btn" data-method="Card">💳 Card</button><button class="payment-btn" data-method="QR Pay">📱 QR Pay</button></div><div id="cashOptions" style="display: none;"><div class="suggestions" id="suggestionsContainer"></div><input type="number" id="customCashInput" class="custom-cash-input" placeholder="Enter amount received (RM)" step="0.01"><div class="modal-buttons"><button id="confirmCashBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelPaymentBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="otherPaymentOptions" style="display: none;"><div class="modal-buttons"><button id="confirmOtherBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelOtherBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div></div></div>
+<!-- Payment Modal (updated with Alipay) -->
+<div id="paymentModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closePaymentModal">×</span><div class="modal-title">💳 Select Payment Method</div><div class="payment-buttons"><button class="payment-btn" data-method="Cash">💵 Cash</button><button class="payment-btn" data-method="Card">💳 Card</button><button class="payment-btn" data-method="QR Pay">📱 QR Pay</button><button class="payment-btn" data-method="Alipay">💸 Alipay</button></div><div id="cashOptions" style="display: none;"><div class="suggestions" id="suggestionsContainer"></div><input type="number" id="customCashInput" class="custom-cash-input" placeholder="Enter amount received (RM)" step="0.01"><div class="modal-buttons"><button id="confirmCashBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelPaymentBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div><div id="otherPaymentOptions" style="display: none;"><div class="modal-buttons"><button id="confirmOtherBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelOtherBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div></div></div>
 
 <!-- Lucky Draw Modal -->
 <div id="luckyDrawModal" class="modal-overlay"><div class="modal-container" style="max-width: 400px;"><span class="close-modal" id="closeLuckyDrawModal">×</span><div class="modal-title">🎲 Lucky Draw</div><p>Transaction ID: <strong id="luckyTxId"></strong></p><p>Click below to enter the Lucky Draw with this receipt number.</p><div class="modal-buttons"><button id="openLuckyDrawBtn" class="modal-btn modal-btn-primary">🎁 Go to Lucky Draw</button><button id="closeLuckyDrawBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
@@ -1359,7 +1364,7 @@
 <button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">🌸 15ML PERFUME EDP PROMO (RM 8)</button>
 <div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">💰 Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option> <option value="year">This Year</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 Other: <span id="adminReportOtherTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">❌ Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead><th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody></table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option> <option value="year">This Year</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 QR Pay: <span id="adminReportQRTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💸 Alipay: <span id="adminReportAlipayTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">❌ Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead><th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody></table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="settlementModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
@@ -1382,6 +1387,7 @@
       <p>💵 Cash: <strong id="sysCash">RM 0.00</strong></p>
       <p>💳 Card: <strong id="sysCard">RM 0.00</strong></p>
       <p>📱 QR Pay: <strong id="sysQR">RM 0.00</strong></p>
+      <p>💸 Alipay: <strong id="sysAlipay">RM 0.00</strong></p>
       <p>❌ Refunds: <strong id="sysRefund">RM 0.00</strong></p>
       <p style="font-size: 1.4rem; font-weight: 800; margin-top: 12px;">💰 Net Total: <strong id="sysNetTotal">RM 0.00</strong></p>
     </div>
@@ -1396,6 +1402,10 @@
     <div class="filter-group">
       <label>QR Settlement (Actual)</label>
       <input type="number" id="actualQR" class="modal-input" placeholder="Enter actual QR settlement" step="0.01">
+    </div>
+    <div class="filter-group">
+      <label>Alipay Settlement (Actual)</label>
+      <input type="number" id="actualAlipay" class="modal-input" placeholder="Enter actual Alipay settlement" step="0.01">
     </div>
     <div id="settlementError" style="color:#ef4444; margin: 12px 0; display: none;"></div>
     <div class="modal-buttons">
@@ -1488,7 +1498,7 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx27b_Z11UiMA0E0YpfQHnmDr7iZWAxyqOcH9Qoyl-f38nLnocfEhipQYtwPLhuSOjUsg/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyl3-CudUB4FGWCzRfNDe-R04zUvoL8HIPUNbcc3lPez_F-LLx4FPjNf5gSM0Njf2rjFw/exec"; // REPLACE WITH YOUR URL
 
   // ==================== GLOBAL VARIABLES ====================
   let products = [];
@@ -3494,7 +3504,8 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
       document.getElementById('adminReportTotalSales').innerText = `RM ${result.totalSales.toFixed(2)}`;
       document.getElementById('adminReportCashTotal').innerText = `RM ${result.cashTotal.toFixed(2)}`;
       document.getElementById('adminReportCardTotal').innerText = `RM ${result.cardTotal.toFixed(2)}`;
-      document.getElementById('adminReportOtherTotal').innerText = `RM ${result.otherTotal.toFixed(2)}`;
+      document.getElementById('adminReportQRTotal').innerText = `RM ${result.qrTotal.toFixed(2)}`;
+      document.getElementById('adminReportAlipayTotal').innerText = `RM ${result.alipayTotal.toFixed(2)}`;
       document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(result.refundTotal).toFixed(2)}`;
       document.getElementById('adminReportRefundedBills').innerText = result.refundedTransactionCount;
       document.getElementById('adminReportTransactionCount').innerText = result.transactionCount;
@@ -3695,7 +3706,8 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
       document.getElementById('adminReportTotalSales').innerText = `RM ${cached.totals.totalSales.toFixed(2)}`;
       document.getElementById('adminReportCashTotal').innerText = `RM ${cached.totals.cashTotal.toFixed(2)}`;
       document.getElementById('adminReportCardTotal').innerText = `RM ${cached.totals.cardTotal.toFixed(2)}`;
-      document.getElementById('adminReportOtherTotal').innerText = `RM ${cached.totals.otherTotal.toFixed(2)}`;
+      document.getElementById('adminReportQRTotal').innerText = `RM ${cached.totals.qrTotal.toFixed(2)}`;
+      document.getElementById('adminReportAlipayTotal').innerText = `RM ${cached.totals.alipayTotal.toFixed(2)}`;
       document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(cached.totals.refundTotal).toFixed(2)}`;
       document.getElementById('adminReportRefundedBills').innerText = cached.totals.refundedTransactionCount;
       document.getElementById('adminReportTransactionCount').innerText = cached.totals.transactionCount;
@@ -3802,7 +3814,8 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
           totalSales: totals.totalSales,
           cashTotal: totals.cashTotal,
           cardTotal: totals.cardTotal,
-          otherTotal: totals.otherTotal,
+          qrTotal: totals.qrTotal,
+          alipayTotal: totals.alipayTotal,
           refundTotal: totals.refundTotal,
           refundedTransactionCount: totals.refundedTransactionCount,
           transactionCount: totals.transactionCount,
@@ -3943,12 +3956,14 @@ function disableBarcodeScanner() {
     document.getElementById('actualCash').value = '';
     document.getElementById('actualCard').value = '';
     document.getElementById('actualQR').value = '';
+    document.getElementById('actualAlipay').value = '';
     document.getElementById('pettyCashFloat').value = '0.00';
     document.getElementById('actualCash').classList.remove('error-field');
     document.getElementById('actualCard').classList.remove('error-field');
     document.getElementById('actualQR').classList.remove('error-field');
+    document.getElementById('actualAlipay').classList.remove('error-field');
 
-    const fieldsToDisable = ['actualCash', 'actualCard', 'actualQR'];
+    const fieldsToDisable = ['actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
     fieldsToDisable.forEach(id => {
       const el = document.getElementById(id);
       if (el) el.disabled = true;
@@ -4029,15 +4044,17 @@ function disableBarcodeScanner() {
       currentSettlementTotals = {
         cash: report.cashTotal,
         card: report.cardTotal,
-        qr: report.otherTotal,
+        qr: report.qrTotal,
+        alipay: report.alipayTotal,
         refund: report.refundTotal
       };
       document.getElementById('sysCash').innerText = `RM ${currentSettlementTotals.cash.toFixed(2)}`;
       document.getElementById('sysCard').innerText = `RM ${currentSettlementTotals.card.toFixed(2)}`;
       document.getElementById('sysQR').innerText = `RM ${currentSettlementTotals.qr.toFixed(2)}`;
+      document.getElementById('sysAlipay').innerText = `RM ${currentSettlementTotals.alipay.toFixed(2)}`;
       document.getElementById('sysRefund').innerText = `RM ${Math.abs(currentSettlementTotals.refund).toFixed(2)}`;
 
-      const netTotal = currentSettlementTotals.cash + currentSettlementTotals.card + currentSettlementTotals.qr;
+      const netTotal = currentSettlementTotals.cash + currentSettlementTotals.card + currentSettlementTotals.qr + currentSettlementTotals.alipay;
       document.getElementById('sysNetTotal').innerText = `RM ${netTotal.toFixed(2)}`;
 
       const alreadySettled = await checkSettlementStatus(store, todayStr);
@@ -4052,6 +4069,7 @@ function disableBarcodeScanner() {
         document.getElementById('actualCash').value = '';
         document.getElementById('actualCard').value = '';
         document.getElementById('actualQR').value = '';
+        document.getElementById('actualAlipay').value = '';
         document.getElementById('pettyCashFloat').value = '0.00';
         document.getElementById('settlementError').style.display = 'none';
         document.getElementById('recordSettlementBtn').style.display = 'none';
@@ -4060,6 +4078,7 @@ function disableBarcodeScanner() {
         document.getElementById('actualCash').classList.remove('error-field');
         document.getElementById('actualCard').classList.remove('error-field');
         document.getElementById('actualQR').classList.remove('error-field');
+        document.getElementById('actualAlipay').classList.remove('error-field');
       }
     }
   }
@@ -4067,7 +4086,7 @@ function disableBarcodeScanner() {
   let currentSettlementTotals = null;
 
   function setSettlementFieldsEnabled(enabled) {
-    const fields = ['settlementStoreSelect', 'pettyCashFloat', 'actualCash', 'actualCard', 'actualQR'];
+    const fields = ['settlementStoreSelect', 'pettyCashFloat', 'actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
     const isNonAdmin = !currentEmployee?.isAdmin;
     fields.forEach(id => {
       const el = document.getElementById(id);
@@ -4568,7 +4587,8 @@ if (transaction.buy3_free1_discount > 0) {
         totalSales: totals.totalSales,
         cashTotal: totals.cashTotal,
         cardTotal: totals.cardTotal,
-        otherTotal: totals.otherTotal,
+        qrTotal: totals.qrTotal,
+        alipayTotal: totals.alipayTotal,
         refundTotal: totals.refundTotal,
         refundedTransactionCount: totals.refundedTransactionCount,
         transactionCount: totals.transactionCount,
@@ -4720,6 +4740,10 @@ document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLo
   const closeSideMenuBtn = document.getElementById('closeSideMenuBtn');
 
   function openSideMenu() {
+    // If currently in inventory mode, exit it before opening menu (per request)
+    if (inventoryMode) {
+      toggleInventoryMode(); // exit inventory mode
+    }
     sideMenuOverlay.style.display = 'flex';
     setTimeout(() => {
       sideMenuDiv.classList.add('open');
@@ -4737,6 +4761,18 @@ document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLo
   if (closeSideMenuBtn) closeSideMenuBtn.addEventListener('click', closeSideMenu);
   if (sideMenuOverlay) sideMenuOverlay.addEventListener('click', (e) => { if (e.target === sideMenuOverlay) closeSideMenu(); });
 
+  // Helper to execute an action and then close side menu
+  function wrapMenuAction(actionFn) {
+    return async (...args) => {
+      // If in inventory mode, exit it before any other menu action (except inventory toggle itself)
+      if (inventoryMode && actionFn !== toggleInventoryMode) {
+        toggleInventoryMode();
+      }
+      await actionFn(...args);
+      closeSideMenu();
+    };
+  }
+
   const sideReportBtn = document.getElementById('sideReportBtn');
   const sideSettlementBtn = document.getElementById('sideSettlementBtn');
   const sideCollectionBtn = document.getElementById('sideCollectionBtn');
@@ -4745,24 +4781,33 @@ document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLo
   const sideDrawerBtn = document.getElementById('sideDrawerBtn');
   const sideStockAlertBtn = document.getElementById('sideStockAlertBtn');
   const sideTelegramBtn = document.getElementById('sideTelegramBtn');
+  
   if (sideStockAlertBtn) {
-    sideStockAlertBtn.addEventListener('click', async () => {
+    sideStockAlertBtn.addEventListener('click', wrapMenuAction(async () => {
       if (!notificationsEnabled) {
         await enableStockNotifications();
       } else {
         disableStockNotifications();
       }
       updateStockAlertButtonUI();
-    });
+    }));
   }
   if (sideTelegramBtn) {
-    sideTelegramBtn.addEventListener('click', showTelegramModal);
+    sideTelegramBtn.addEventListener('click', wrapMenuAction(() => {
+      const accounts = localStorage.getItem('telegramAccounts');
+      if (accounts) {
+        alert(`📱 Current Telegram accounts:\n\n${accounts}\n\n(To change, ask the store administrator.)`);
+      } else {
+        alert('⚠️ No Telegram accounts configured. Out‑of‑stock alerts will not be sent.');
+      }
+    }));
   }
 
   document.getElementById('saveTelegramSettingsBtn')?.addEventListener('click', saveTelegramSettings);
   document.getElementById('closeTelegramModal')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
   document.getElementById('closeTelegramModalBtn')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
-async function finishLoginAfterVerification() {
+
+  async function finishLoginAfterVerification() {
   // Clear any existing auto-sync interval to avoid duplicates
   if (window.autoSyncInterval) clearInterval(window.autoSyncInterval);
 
@@ -4791,7 +4836,7 @@ async function finishLoginAfterVerification() {
   if (systemTotalsDiv) {
     if (!currentEmployee.isAdmin) {
       systemTotalsDiv.style.display = 'block';
-      const breakdownIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund'];
+      const breakdownIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund', 'sysAlipay'];
       breakdownIds.forEach(id => {
         const el = document.getElementById(id);
         if (el && el.parentElement) el.parentElement.style.display = 'none';
@@ -4800,7 +4845,7 @@ async function finishLoginAfterVerification() {
       if (netTotalParent) netTotalParent.style.display = 'block';
     } else {
       systemTotalsDiv.style.display = 'block';
-      const allIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund', 'sysNetTotal'];
+      const allIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund', 'sysAlipay', 'sysNetTotal'];
       allIds.forEach(id => {
         const el = document.getElementById(id);
         if (el && el.parentElement) el.parentElement.style.display = 'block';
@@ -4854,14 +4899,6 @@ async function finishLoginAfterVerification() {
     refreshCategoryHighlighting();
     // Start background sync every 60 seconds
     startBackgroundSync(60);
-
-  // ========== AUTO-SYNC PRODUCTS EVERY 5 SECONDS ==========
-  //window.autoSyncInterval = setInterval(async () => {
-    // Only sync if the main dashboard is visible and user is logged in
-  //  if (currentEmployee && document.getElementById('mainContent').style.display === 'block') {
- //     await fetchProductsFromSheet(false); // silent background sync
-//}
- // }, 600000); // 5 seconds – adjust as needed
 }
   async function openReportsModal() {
     if (currentEmployee?.isAdmin) {
@@ -4918,11 +4955,11 @@ async function finishLoginAfterVerification() {
     closeSideMenu();
   }
 
-  if (sideReportBtn) sideReportBtn.addEventListener('click', openReportsModal);
-  if (sideSettlementBtn) sideSettlementBtn.addEventListener('click', () => { openSettlementModal(); closeSideMenu(); });
-  if (sideCollectionBtn) sideCollectionBtn.addEventListener('click', () => { openCollectionModal(); closeSideMenu(); });
-  if (sideInventoryBtn) sideInventoryBtn.addEventListener('click', () => { toggleInventoryMode(); closeSideMenu(); });
-  if (sideReceiptsBtn) sideReceiptsBtn.addEventListener('click', async () => {
+  if (sideReportBtn) sideReportBtn.addEventListener('click', wrapMenuAction(openReportsModal));
+  if (sideSettlementBtn) sideSettlementBtn.addEventListener('click', wrapMenuAction(() => { openSettlementModal(); }));
+  if (sideCollectionBtn) sideCollectionBtn.addEventListener('click', wrapMenuAction(() => { openCollectionModal(); }));
+  if (sideInventoryBtn) sideInventoryBtn.addEventListener('click', wrapMenuAction(() => { toggleInventoryMode(); }));
+  if (sideReceiptsBtn) sideReceiptsBtn.addEventListener('click', wrapMenuAction(async () => {
     const modal = document.getElementById('receiptsModal');
     if (modal) {
       modal.style.display = 'flex';
@@ -4976,16 +5013,14 @@ async function finishLoginAfterVerification() {
     }
 
     updateReceipts();
-    closeSideMenu();
-  });
-  if (sideDrawerBtn) sideDrawerBtn.addEventListener('click', async () => {
+  }));
+  if (sideDrawerBtn) sideDrawerBtn.addEventListener('click', wrapMenuAction(async () => {
     if (!window.printerAPI || !window.printerAPI.isConnected) {
       await showAlertModal('Printer not connected', 'Please connect a printer first using the printer icon.');
     } else {
       await window.printerAPI.openDrawer();
     }
-    closeSideMenu();
-  });
+  }));
 
   document.getElementById('closeAdminReportBtn')?.addEventListener('click', () => document.getElementById('adminReportModal').style.display = 'none');
   document.getElementById('closeAdminReportModal')?.addEventListener('click', () => document.getElementById('adminReportModal').style.display = 'none');
@@ -5025,10 +5060,12 @@ async function finishLoginAfterVerification() {
     const actualCash = parseFloat(document.getElementById('actualCash').value);
     const actualCard = parseFloat(document.getElementById('actualCard').value);
     const actualQR = parseFloat(document.getElementById('actualQR').value);
+    const actualAlipay = parseFloat(document.getElementById('actualAlipay').value);
     const errors = [];
     if (isNaN(actualCash)) errors.push('Cash Count');
     if (isNaN(actualCard)) errors.push('Card Settlement');
     if (isNaN(actualQR)) errors.push('QR Settlement');
+    if (isNaN(actualAlipay)) errors.push('Alipay Settlement');
     if (errors.length > 0) {
       const settlementError = document.getElementById('settlementError');
       if (settlementError) {
@@ -5041,15 +5078,18 @@ async function finishLoginAfterVerification() {
     const cashOk = Math.abs(actualCash - currentSettlementTotals.cash) < 0.01;
     const cardOk = Math.abs(actualCard - currentSettlementTotals.card) < 0.01;
     const qrOk = Math.abs(actualQR - currentSettlementTotals.qr) < 0.01;
+    const alipayOk = Math.abs(actualAlipay - currentSettlementTotals.alipay) < 0.01;
 
     const actualCashEl = document.getElementById('actualCash');
     const actualCardEl = document.getElementById('actualCard');
     const actualQREl = document.getElementById('actualQR');
+    const actualAlipayEl = document.getElementById('actualAlipay');
     if (actualCashEl) actualCashEl.classList.toggle('error-field', !cashOk);
     if (actualCardEl) actualCardEl.classList.toggle('error-field', !cardOk);
     if (actualQREl) actualQREl.classList.toggle('error-field', !qrOk);
+    if (actualAlipayEl) actualAlipayEl.classList.toggle('error-field', !alipayOk);
 
-    if (cashOk && cardOk && qrOk) {
+    if (cashOk && cardOk && qrOk && alipayOk) {
       const settlementError = document.getElementById('settlementError');
       if (settlementError) settlementError.style.display = 'none';
       setSettlementFieldsEnabled(false);
@@ -5068,6 +5108,7 @@ async function finishLoginAfterVerification() {
           if (!cashOk) errorMessages.push(`Cash (System: RM ${currentSettlementTotals.cash.toFixed(2)}, Entered: RM ${actualCash.toFixed(2)})`);
           if (!cardOk) errorMessages.push(`Card (System: RM ${currentSettlementTotals.card.toFixed(2)}, Entered: RM ${actualCard.toFixed(2)})`);
           if (!qrOk) errorMessages.push(`QR (System: RM ${currentSettlementTotals.qr.toFixed(2)}, Entered: RM ${actualQR.toFixed(2)})`);
+          if (!alipayOk) errorMessages.push(`Alipay (System: RM ${currentSettlementTotals.alipay.toFixed(2)}, Entered: RM ${actualAlipay.toFixed(2)})`);
           settlementError.innerHTML = `❌ Mismatch in:<br>${errorMessages.join('<br>')}<br>Please correct and try again.`;
         } else {
           settlementError.innerHTML = `❌ Mismatch detected! Count properly and try again.`;
@@ -5083,6 +5124,7 @@ async function finishLoginAfterVerification() {
     const actualCash = parseFloat(document.getElementById('actualCash').value);
     const actualCard = parseFloat(document.getElementById('actualCard').value);
     const actualQR = parseFloat(document.getElementById('actualQR').value);
+    const actualAlipay = parseFloat(document.getElementById('actualAlipay').value);
     const recordBtn = document.getElementById('recordSettlementBtn');
     if (recordBtn) recordBtn.disabled = true;
     showLoading('Recording settlement...');
@@ -5097,9 +5139,11 @@ async function finishLoginAfterVerification() {
       formData.append("cash_system", currentSettlementTotals.cash);
       formData.append("card_system", currentSettlementTotals.card);
       formData.append("qr_system", currentSettlementTotals.qr);
+      formData.append("alipay_system", currentSettlementTotals.alipay);
       formData.append("cash_actual", actualCash);
       formData.append("card_actual", actualCard);
       formData.append("qr_actual", actualQR);
+      formData.append("alipay_actual", actualAlipay);
       const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
       const result = await response.json();
       if (result.success) {

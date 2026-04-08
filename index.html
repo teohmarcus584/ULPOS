@@ -4711,16 +4711,14 @@ if (transaction.buy3_free1_discount > 0) {
     }
 });
 async function verifyEmployeeByPin(pin) {
-  // ✅ No cache – always fetch fresh from server
   showLoading('Verifying...');
+  const pinInputEl = document.getElementById('pinInput');
   try {
     const url = `${APPS_SCRIPT_URL}?action=verifyByPin&pin=${encodeURIComponent(pin)}`;
     const response = await fetch(url);
     const result = await response.json();
     if (result.success) {
       currentEmployee = result.employee;
-      // (Optional) You may still update the cache if you want, but PIN verification will ignore it.
-      // We'll keep the cache for other uses (like dropdowns) but not for login.
       if (!cachedEmployees.find(e => e.id == currentEmployee.id)) {
         cachedEmployees.push(currentEmployee);
         localStorage.setItem('cachedEmployees', JSON.stringify({
@@ -4735,11 +4733,14 @@ async function verifyEmployeeByPin(pin) {
       return true;
     } else {
       document.getElementById('loginError').innerText = result.error || 'Invalid PIN';
+      // ✅ Clear the PIN input field so user can retype
+      if (pinInputEl) pinInputEl.value = '';
       return false;
     }
   } catch (err) {
     console.error(err);
     document.getElementById('loginError').innerText = 'Connection error';
+    if (pinInputEl) pinInputEl.value = '';
     return false;
   } finally {
     hideLoading();

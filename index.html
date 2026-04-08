@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=yes, viewport-fit=cover">
-  <title>POS System | PIN Login</title>
+  <title>POS System | Smart Sync + Local Cache</title>
   <style>
     /* ========== ALL EXISTING STYLES (kept intact) ========== */
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -31,6 +31,7 @@
       display: flex;
       align-items: center;
       gap: 16px;
+      flex-wrap: wrap;
     }
     .pos-header-right {
       display: flex;
@@ -45,8 +46,7 @@
       border-radius: 40px;
       font-size: 0.9rem;
     }
-    
-    /* ===== IMPROVED LOGOUT BUTTON ===== */
+    /* Improved logout button */
     .logout-header-btn {
       background: #ef4444;
       border: none;
@@ -68,7 +68,6 @@
     .logout-header-btn:active {
       transform: scale(0.96);
     }
-    
     .printer-icon-btn {
       background: #1e293b;
       border: none;
@@ -115,6 +114,28 @@
       cursor: not-allowed;
       opacity: 0.7;
     }
+    /* Sync status badge */
+    .sync-status {
+      background: #e8f5e9;
+      color: #2c7a4b;
+      padding: 6px 12px;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .sync-status.warning {
+      background: #fff3e0;
+      color: #e67e22;
+    }
+    .sync-status.error {
+      background: #ffebee;
+      color: #c62828;
+    }
+    /* rest of existing styles (keep everything else unchanged) */
     .pos-dashboard { display: flex; flex-wrap: wrap; gap: 20px; }
     .products-panel {
       flex: 2; min-width: 260px; background: white; border-radius: 28px; padding: 20px;
@@ -1150,6 +1171,9 @@
           <option value="sunshine">Sunshine</option>
           <option value="gurney_paragon">Gurney Paragon</option>
         </select>
+        <div id="syncStatus" class="sync-status" title="Last sync: never">
+          <i class="fas fa-database"></i> <span>Loading...</span>
+        </div>
       </div>
     </div>
     <div class="pos-header-right">
@@ -1165,7 +1189,7 @@
       <div class="filter-bar">
         <select id="categorySelect"><option value="all">📂 All Categories</option></select>
         <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search product...">
-        <button id="refreshProductsPanelBtn" class="refresh-btn" title="Refresh products">🔄</button>
+        <button id="refreshProductsPanelBtn" class="refresh-btn" title="Force sync now">🔄 Sync now</button>
         <button id="lowStockToggleBtn" class="low-stock-toggle">⚠️ Low Stock</button>
         <div class="view-toggle">
           <button id="gridViewBtn" class="active" title="Grid view">⊞</button>
@@ -1464,7 +1488,7 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwzanNzr_D6atzoeG86cE1To09WFLIf8N08IWYXdoGjlbd4dtPnQIPqnV_pNOri4GoKWg/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx27b_Z11UiMA0E0YpfQHnmDr7iZWAxyqOcH9Qoyl-f38nLnocfEhipQYtwPLhuSOjUsg/exec"; // REPLACE WITH YOUR URL
 
   // ==================== GLOBAL VARIABLES ====================
   let products = [];
@@ -1500,6 +1524,11 @@ let lowStockFilterActive = false;   // track filter state
 let cachedEmployees = [];        // { id, name, pin, isAdmin }
 let employeesLastFetched = 0;
 const EMPLOYEE_CACHE_TTL = 1 * 60 * 1000; // 1 hour
+  // ==================== SMART SYNC VARIABLES ====================
+  let syncInterval = null;
+  let lastSyncTimestamp = null;
+  let syncInProgress = false;
+
   // ==================== NOTIFICATION & TELEGRAM VARIABLES ====================
   let notificationsSupported = false;
   let notificationsEnabled = false;
@@ -2332,16 +2361,28 @@ async function saveTelegramSettings() {
 
     
 
-  // ==================== FETCH PRODUCTS ====================
+  // ==================== FETCH PRODUCTS (with caching and hash) ====================
+  // Simple hash function for change detection
+  function computeProductsHash(productsArray) {
+    let str = JSON.stringify(productsArray.map(p => ({ id: p.id, name: p.name, price: p.price, stock: p.stock, category: p.category })));
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash |= 0;
+    }
+    return hash.toString();
+  }
+
 async function fetchProductsFromSheet(force = false) {
- 
   let attempt = 0;
-  const maxAttempts = force ? 1 : 2; // if not forced, try once normally, then once forced
+  const maxAttempts = force ? 1 : 2;
 
   while (attempt < maxAttempts) {
     try {
       const store = currentStore;
       const cacheKey = `products_${store}`;
+      const hashKey = `products_hash_${store}`;
       const now = Date.now();
 
       // 1. Forced full fetch
@@ -2357,51 +2398,51 @@ async function fetchProductsFromSheet(force = false) {
           stock: parseInt(p.stock) || 0,
           category: p.category || "Uncategorized"
         })).sort((a, b) => a.name.localeCompare(b.name));
-        localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
+        const newHash = computeProductsHash(products);
+        localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products, hash: newHash }));
+        localStorage.setItem(hashKey, newHash);
         const nowISO = new Date().toISOString();
         lastSyncTimestamps[store] = nowISO;
         localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
         updateCategoryDropdown();
         renderProductGrid();
-        refreshCategoryHighlighting(); // update highlighting after products refresh
+        refreshCategoryHighlighting();
+        updateSyncStatus(true, now);
         hideLoading();
         return true;
       }
 
-      // 2. Normal path (cache + incremental sync)
+      // 2. Normal path: try to load from cache
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
-        const { timestamp, products: cachedProducts } = JSON.parse(cached);
-        if (now - timestamp < 60 * 1000) {   // 1 second
+        const { timestamp, products: cachedProducts, hash: cachedHash } = JSON.parse(cached);
+        // Use cache if less than 5 minutes old OR we have a hash match (i.e., no changes)
+        if (now - timestamp < 5 * 60 * 1000) {
           products = cachedProducts;
           updateCategoryDropdown();
           renderProductGrid();
           refreshCategoryHighlighting();
+          updateSyncStatus(true, timestamp);
           hideLoading();
           return true;
         }
-
-        const lastSync = lastSyncTimestamps[store];
-        if (lastSync) {
-          const changesUrl = `${APPS_SCRIPT_URL}?action=getProductChanges&store=${store}&since=${encodeURIComponent(lastSync)}&_=${now}`;
-          const changesResponse = await fetch(changesUrl);
-          const changes = await changesResponse.json();
-          if (changes.success && changes.products && changes.newSince) {
-            const merged = mergeProductChanges(cachedProducts, changes.products);
-            products = merged.sort((a, b) => a.name.localeCompare(b.name));
-            localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: merged }));
-            lastSyncTimestamps[store] = changes.newSince;
-            localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
-            updateCategoryDropdown();
-            renderProductGrid();
-            refreshCategoryHighlighting();
-            hideLoading();
-            return true;
-          }
+        // Cache expired: check for changes using hash comparison
+        const currentHash = localStorage.getItem(hashKey);
+        if (currentHash && cachedHash === currentHash) {
+          // No changes detected, refresh cache timestamp only
+          localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: cachedProducts, hash: cachedHash }));
+          products = cachedProducts;
+          updateCategoryDropdown();
+          renderProductGrid();
+          refreshCategoryHighlighting();
+          updateSyncStatus(true, now);
+          hideLoading();
+          return true;
         }
+        // Hash mismatch or missing, need to fetch
       }
 
-      // 3. No valid cache or incremental failed – full fetch
+      // 3. Fetch fresh data (full sync)
       let url = `${APPS_SCRIPT_URL}?action=getProducts&store=${store}&_=${now}`;
       const response = await fetch(url);
       const result = await response.json();
@@ -2413,26 +2454,28 @@ async function fetchProductsFromSheet(force = false) {
         stock: parseInt(p.stock) || 0,
         category: p.category || "Uncategorized"
       })).sort((a, b) => a.name.localeCompare(b.name));
-      localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products }));
+      const newHash = computeProductsHash(products);
+      localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products, hash: newHash }));
+      localStorage.setItem(hashKey, newHash);
       const nowISO = new Date().toISOString();
       lastSyncTimestamps[store] = nowISO;
       localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
       updateCategoryDropdown();
       renderProductGrid();
       refreshCategoryHighlighting();
+      updateSyncStatus(true, now);
       hideLoading();
       return true;
 
     } catch (err) {
       console.error(`Attempt ${attempt + 1} failed:`, err);
       if (attempt === 0 && !force) {
-        // First attempt failed – retry with forced fetch
         attempt++;
-        force = true; // force the next attempt
+        force = true;
         continue;
       }
-      // Both attempts failed
       await showAlertModal('Error', 'Failed to load products. Check URL & sheet.');
+      updateSyncStatus(false);
       hideLoading();
       return false;
     }
@@ -2440,24 +2483,95 @@ async function fetchProductsFromSheet(force = false) {
   return false;
 }
 
-function mergeProductChanges(existingProducts, changes) {
-  const map = new Map();
-  existingProducts.forEach(p => map.set(p.id, p));
-  for (const change of changes) {
-    if (change.deleted) {
-      map.delete(change.id);
-    } else {
-      map.set(change.id, {
-        id: change.id,
-        name: change.name,
-        price: parseFloat(change.price),
-        stock: parseInt(change.stock) || 0,
-        category: change.category || "Uncategorized"
-      });
+  // Background sync: check for changes without showing loading
+  async function backgroundSync() {
+    if (syncInProgress) return;
+    syncInProgress = true;
+    try {
+      const store = currentStore;
+      const cacheKey = `products_${store}`;
+      const hashKey = `products_hash_${store}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (!cached) {
+        // No cache, do a full sync
+        await fetchProductsFromSheet(false);
+        return;
+      }
+      const { hash: cachedHash } = JSON.parse(cached);
+      // Fetch only hash from server (lightweight endpoint)
+      const url = `${APPS_SCRIPT_URL}?action=getProductsHash&store=${store}&_=${Date.now()}`;
+      const response = await fetch(url);
+      const result = await response.json();
+      if (result.success && result.hash) {
+        if (result.hash !== cachedHash) {
+          console.log("Hash mismatch, updating products...");
+          await fetchProductsFromSheet(true);
+        } else {
+          // Update timestamp only
+          const { products: cachedProducts, hash } = JSON.parse(cached);
+          localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), products: cachedProducts, hash }));
+          updateSyncStatus(true, Date.now());
+        }
+      } else {
+        // Fallback: full sync
+        await fetchProductsFromSheet(true);
+      }
+    } catch (err) {
+      console.warn("Background sync failed:", err);
+      updateSyncStatus(false);
+    } finally {
+      syncInProgress = false;
     }
   }
-  return Array.from(map.values());
-}
+
+  function updateSyncStatus(success, timestampMs) {
+    const statusDiv = document.getElementById('syncStatus');
+    if (!statusDiv) return;
+    if (success && timestampMs) {
+      lastSyncTimestamp = timestampMs;
+      const date = new Date(timestampMs);
+      const timeStr = date.toLocaleTimeString();
+      statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> <span>Synced ${timeStr}</span>`;
+      statusDiv.className = 'sync-status';
+      statusDiv.title = `Last sync: ${date.toLocaleString()}`;
+    } else if (success && lastSyncTimestamp) {
+      const date = new Date(lastSyncTimestamp);
+      const timeStr = date.toLocaleTimeString();
+      statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> <span>Synced ${timeStr}</span>`;
+      statusDiv.className = 'sync-status';
+    } else {
+      statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <span>Sync error</span>`;
+      statusDiv.className = 'sync-status error';
+    }
+  }
+
+  function startBackgroundSync(intervalSeconds = 60) {
+    if (syncInterval) clearInterval(syncInterval);
+    syncInterval = setInterval(() => {
+      if (currentEmployee && document.getElementById('mainContent').style.display === 'block') {
+        backgroundSync();
+      }
+    }, intervalSeconds * 1000);
+  }
+
+  function mergeProductChanges(existingProducts, changes) {
+    const map = new Map();
+    existingProducts.forEach(p => map.set(p.id, p));
+    for (const change of changes) {
+      if (change.deleted) {
+        map.delete(change.id);
+      } else {
+        map.set(change.id, {
+          id: change.id,
+          name: change.name,
+          price: parseFloat(change.price),
+          stock: parseInt(change.stock) || 0,
+          category: change.category || "Uncategorized"
+        });
+      }
+    }
+    return Array.from(map.values());
+  }
 
   // ==================== STOCK UPDATE ====================
   async function updateStockOnServer(productId, newStock) {
@@ -2480,6 +2594,9 @@ function mergeProductChanges(existingProducts, changes) {
         }
         localStorage.removeItem(`products_${currentStore}`);
         refreshCategoryHighlighting(); // update category dropdown when stock changes
+        // Also invalidate hash cache so next sync picks up change
+        const hashKey = `products_hash_${currentStore}`;
+        localStorage.removeItem(hashKey);
       }
     } catch (err) {
       console.error("Error updating stock:", err);
@@ -4725,6 +4842,8 @@ async function finishLoginAfterVerification() {
     enableBarcodeScanner();
     // Refresh category highlighting after login (products are loaded)
     refreshCategoryHighlighting();
+    // Start background sync every 60 seconds
+    startBackgroundSync(60);
 
   // ========== AUTO-SYNC PRODUCTS EVERY 5 SECONDS ==========
   //window.autoSyncInterval = setInterval(async () => {
@@ -5056,6 +5175,8 @@ async function finishLoginAfterVerification() {
     cachedReceipts = null;
     currentEmployee = null;
     disableBarcodeScanner();
+    // Stop background sync
+    if (syncInterval) clearInterval(syncInterval);
     document.getElementById('mainContent').style.display = 'none';
     document.getElementById('loginModal').style.display = 'flex';
     document.getElementById('pinInput').value = '';
@@ -5309,6 +5430,7 @@ if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener(
       hideLoading();
     }
   }
+
   function renderCollectionTable() {
     const tbody = document.getElementById('collectionTableBody');
     if (!currentUnsettledCash.length) {

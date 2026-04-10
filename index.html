@@ -3291,7 +3291,9 @@ function applyCustomDiscount() {
  async function completeCheckout(paymentMethod, cashReceived) {
     document.getElementById('paymentModal').style.display = 'none';
     const totalAmount = pendingTransaction.totalAmount;
-    const transactionId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+   // Generate a compact numeric ID (e.g., TXN-12345678)
+const numericId = (Date.now() % 100000000) + Math.floor(Math.random() * 1000);
+const transactionId = `TXN-${numericId}`;
     const saleItems = cart.map(item => ({
       id: item.product.id,
       category: item.product.category,

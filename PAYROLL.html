@@ -95,11 +95,11 @@
   </div>
 
   <div class="filters-panel">
-    <div class="filter-group"><label>Employee</label><select id="employeeFilter"><option value="ALL">👥 All employees</option></select></div>
+    <div class="filter-group"><label>Employee</label><select id="employeeFilter"><option value="ALL">?? All employees</option></select></div>
     <div class="filter-group"><label>From date</label><input type="date" id="dateFrom" max=""></div>
     <div class="filter-group"><label>To date</label><input type="date" id="dateTo" max=""></div>
     <div class="filter-group"><label>Store (Sales)</label><select id="storeSelect"><option value="all">All Stores</option><option value="queens">Queensbay</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div>
-    <div class="filter-group toggle-group"><label><i class="fas fa-magic"></i> Auto‑adjust time</label><label class="switch"><input type="checkbox" id="roundingToggle" checked><span class="slider"></span></label></div>
+    <div class="filter-group toggle-group"><label><i class="fas fa-magic"></i> Auto?adjust time</label><label class="switch"><input type="checkbox" id="roundingToggle" checked><span class="slider"></span></label></div>
     <div class="filter-group toggle-group"><label><i class="fas fa-coffee"></i> Auto break</label><label class="switch"><input type="checkbox" id="breakToggle"><span class="slider"></span></label></div>
     <div class="filter-group"><button id="refreshBtn" class="btn-primary"><i class="fas fa-sync-alt"></i> Force refresh</button></div>
   </div>
@@ -122,7 +122,7 @@
 
   <!-- Payroll Breakdown Panel -->
   <div id="payrollBreakdown" class="payroll-breakdown">
-    <div style="font-weight: 600; margin-bottom: 12px;">📊 Payroll Details</div>
+    <div style="font-weight: 600; margin-bottom: 12px;">?? Payroll Details</div>
     <div class="payroll-row"><span>Gross Salary (Net Hours × Hourly Rate):</span><span id="grossAmount">RM 0.00</span></div>
     <div class="payroll-row"><span>EPF Employee Contribution:</span><span id="epfEmployeeAmount">RM 0.00</span></div>
     <div class="payroll-row"><span>EPF Employer Contribution:</span><span id="epfEmployerAmount">RM 0.00</span></div>
@@ -133,7 +133,7 @@
     <div class="payroll-row"><span>Sales Commission:</span><span id="bonusAmount">RM 0.00</span></div>
     <div class="payroll-row payroll-total"><span>Net Payable (to Employee):</span><span id="netPayableAmount">RM 0.00</span></div>
     <div class="payroll-row"><span>Total Employer Expenditure:</span><span id="totalEmployerExpenditure">RM 0.00</span></div>
-    <div class="calc-note" id="rulesNote">* Break deduction (if enabled): ≥11h raw → -2h; 6–10.99h → -1h.</div>
+    <div class="calc-note" id="rulesNote">* Break deduction (if enabled): ?11h raw ? -2h; 6–10.99h ? -1h.</div>
     <div style="margin-top: 16px; display: flex; gap: 12px;">
       <button id="payNowBtn" class="btn-primary" style="flex:1"><i class="fas fa-credit-card"></i> Process Payment</button>
       <button id="viewHistoryBtn" class="btn-primary" style="background:#2c7da0;"><i class="fas fa-history"></i> Payment History</button>
@@ -143,8 +143,8 @@
 
 <!-- Modals (same as before) -->
 <div id="profileModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeProfileModal">&times;</span><div class="modal-title" id="profileModalTitle">Employee Profile</div><input type="hidden" id="profileEmployeeName"><label>Hourly Rate (RM)</label><input type="number" id="hourlyRate" class="modal-input" step="0.01"><div class="modal-checkbox"><input type="checkbox" id="epfEnabled"> <label>EPF Contribution?</label></div><div id="epfDetailsDiv" style="display: none;"><label>EPF Number</label><input type="text" id="epfNumber" class="modal-input"><label>EPF Employee Rate (%)</label><input type="number" id="epfEmployeeRate" class="modal-input" step="0.01"><label>EPF Employer Rate (%)</label><input type="number" id="epfEmployerRate" class="modal-input" step="0.01"></div><label>EIS Rate (%)</label><input type="number" id="eisRate" class="modal-input" step="0.01" value="0.2"><label>SOCSO Employee Rate (%)</label><input type="number" id="socsoEmployeeRate" class="modal-input" step="0.01" value="0.5"><label>SOCSO Employer Rate (%)</label><input type="number" id="socsoEmployerRate" class="modal-input" step="0.01" value="1.75"><label>Sales Target (RM)</label><input type="number" id="salesTarget" class="modal-input" step="0.01"><label>Commission Below Target (%)</label><input type="number" id="commissionBelowRate" class="modal-input" step="0.01"><label>Commission Above Target (%)</label><input type="number" id="commissionAboveRate" class="modal-input" step="0.01"><label>Bank Name</label><select id="bankNameSelect" class="modal-input"><option value="">-- Select Bank --</option><option>Maybank</option><option>CIMB Bank</option><option>Public Bank</option><option>RHB Bank</option><option>Hong Leong Bank</option><option>AmBank</option><option>Alliance Bank</option><option>OCBC Bank</option><option>UOB Bank</option><option>Bank Islam</option><option>Bank Muamalat</option><option>Bank Rakyat</option><option>BSN</option><option>Affin Bank</option><option>HSBC Bank</option><option>Standard Chartered</option><option>KFH</option><option>Other</option></select><label>Bank Account Number</label><input type="text" id="bankAccount" class="modal-input"><div class="modal-buttons"><button id="saveProfileBtn" class="btn-primary">Save</button><button id="cancelProfileBtn">Cancel</button></div></div></div>
-<div id="paymentModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closePaymentModal">&times;</span><div class="modal-title">💵 Process Payment</div><div id="paymentDetails"><p><strong>Employee:</strong> <span id="payEmployeeName"></span></p><p><strong>Bank:</strong> <span id="payBankName"></span></p><p><strong>Bank Account:</strong> <span id="payBankAccount"></span></p><hr><p><strong>Net Payable:</strong> RM <span id="payNetPayable"></span></p><p><strong>EPF total:</strong> RM <span id="payEpfTotal"></span></p><p><strong>EIS total:</strong> RM <span id="payEisTotal"></span></p><p><strong>SOCSO total:</strong> RM <span id="paySocsoTotal"></span></p><p><strong>Total Employer Expenditure:</strong> RM <span id="payTotalExpenditure"></span></p></div><div class="modal-buttons"><button id="confirmPayBtn" class="btn-primary">Confirm</button><button id="cancelPayBtn">Cancel</button></div></div></div>
-<div id="historyModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeHistoryModal">&times;</span><div class="modal-title">📜 Payment History</div><div id="historyList" style="max-height: 60vh; overflow-y: auto;"></div><div class="modal-buttons"><button id="closeHistoryBtn">Close</button></div></div></div>
+<div id="paymentModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closePaymentModal">&times;</span><div class="modal-title">?? Process Payment</div><div id="paymentDetails"><p><strong>Employee:</strong> <span id="payEmployeeName"></span></p><p><strong>Bank:</strong> <span id="payBankName"></span></p><p><strong>Bank Account:</strong> <span id="payBankAccount"></span></p><hr><p><strong>Net Payable:</strong> RM <span id="payNetPayable"></span></p><p><strong>EPF total:</strong> RM <span id="payEpfTotal"></span></p><p><strong>EIS total:</strong> RM <span id="payEisTotal"></span></p><p><strong>SOCSO total:</strong> RM <span id="paySocsoTotal"></span></p><p><strong>Total Employer Expenditure:</strong> RM <span id="payTotalExpenditure"></span></p></div><div class="modal-buttons"><button id="confirmPayBtn" class="btn-primary">Confirm</button><button id="cancelPayBtn">Cancel</button></div></div></div>
+<div id="historyModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeHistoryModal">&times;</span><div class="modal-title">?? Payment History</div><div id="historyList" style="max-height: 60vh; overflow-y: auto;"></div><div class="modal-buttons"><button id="closeHistoryBtn">Close</button></div></div></div>
 
 <script>
   // API endpoints
@@ -336,7 +336,7 @@
       const cached = getCachedData();
       if (cached && !forceRefresh) {
         masterAttendance = cached.attendance;
-        allSalesData = cached.sales;
+        allSalesData = await fetchRawSalesDataWithDates(storeSelect.value, dateFrom.value, dateTo.value);
         rebuildEmployeeFilter();
         await applyFiltersAndRender();
         updateCacheStatus(true);
@@ -351,7 +351,7 @@
       }
     } catch(err) {
       console.error("loadAllData error", err);
-      document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="10" class="loading">⚠️ Failed to load data: ${err.message}</td></tr>`;
+      document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="10" class="loading">?? Failed to load data: ${err.message}</td></tr>`;
     } finally {
       if (forceRefresh) hideLoading();
       isLoading = false;
@@ -443,7 +443,7 @@
   function rebuildEmployeeFilter() {
     const employees = [...new Set(masterAttendance.map(r => r.employee))].sort();
     const select = document.getElementById('employeeFilter');
-    let html = '<option value="ALL">👥 All employees</option>';
+    let html = '<option value="ALL">?? All employees</option>';
     employees.forEach(emp => html += `<option value="${escapeHtml(emp)}">${escapeHtml(emp)}</option>`);
     select.innerHTML = html;
   }
@@ -462,7 +462,7 @@
     if(empFilter !== 'ALL') { storeSelect.value = "all"; storeSelect.disabled = true; } else storeSelect.disabled = false;
     await applySalesEmployeeFilter();
     saveFilters();
-    document.getElementById('rulesNote').innerHTML = autoBreakEnabled ? '* Break deduction ON: ≥11h raw → -2h; 6–10.99h → -1h.' : '* Break deduction OFF.';
+    document.getElementById('rulesNote').innerHTML = autoBreakEnabled ? '* Break deduction ON: ?11h raw ? -2h; 6–10.99h ? -1h.' : '* Break deduction OFF.';
     document.getElementById('hoursNote').innerText = autoBreakEnabled ? '(net after break deduction)' : '(raw hours)';
   }
 
@@ -478,7 +478,7 @@
 
   function renderAttendanceTable() {
     const tbody = document.getElementById('attendanceBody');
-    if(currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="10" class="loading">📭 No records</td></tr>'; return; }
+    if(currentFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="10" class="loading">?? No records</td></tr>'; return; }
     const sorted = [...currentFiltered].sort((a,b)=>new Date(b.date)-new Date(a.date));
     let html = '';
     for(let r of sorted) {
@@ -494,9 +494,9 @@
         <td>${adjInStr ? `<span class="adjusted-badge">${adjInStr}</span>` : '—'}</td>
         <td>${escapeHtml(r.timeOut)}</td>
         <td>${adjOutStr ? `<span class="adjusted-badge">${adjOutStr}</span>` : '—'}</td>
-        <td>${rawHrs !== null ? formatDuration(rawHrs) : '⚠️'}</td>
+        <td>${rawHrs !== null ? formatDuration(rawHrs) : '??'}</td>
         <td>${autoBreakEnabled && breakDeduct > 0 ? `<span class="break-badge">-${breakDeduct}h</span>` : '—'}</td>
-        <td><span class="duration-badge">${netHrs !== null ? formatDuration(netHrs) : '⚠️'}</span></td>
+        <td><span class="duration-badge">${netHrs !== null ? formatDuration(netHrs) : '??'}</span></td>
         <td>${escapeHtml(r.location)}</td>
       </tr>`;
     }

@@ -2090,36 +2090,40 @@ async function saveTelegramSettings() {
   }
 
   function checkAndNotifyOutOfStock(productId, productName, newStock) {
-    const storeName = currentStore.charAt(0).toUpperCase() + currentStore.slice(1);
-    const timestamp = new Date().toLocaleString();
+  const storeName = currentStore.charAt(0).toUpperCase() + currentStore.slice(1);
+  const timestamp = new Date().toLocaleString();
 
-    if (newStock <= LOW_STOCK_THRESHOLD && newStock > 0 && !alertedLowStockProducts.has(productId)) {
-      alertedLowStockProducts.add(productId);
-      const message = `⚠️ LOW STOCK ⚠️\nStore: ${storeName}\nProduct: ${productName}\nQuantity left: ${newStock}\nTime: ${timestamp}`;
-      if (telegramAccounts) sendTelegramMessage(message);
-      if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
-        new Notification(`⚠️ Low Stock`, { body: `${productName} only ${newStock} left.` });
-      } else if (notificationsEnabled) {
-        showOutOfStockAlert(`${productName} only ${newStock} left.`);
-      }
-    }
-    if (newStock === 0 && !alertedOutOfStockProducts.has(productId)) {
-      alertedOutOfStockProducts.add(productId);
-      const message = `❌ OUT OF STOCK ❌\nStore: ${storeName}\nProduct: ${productName}\nTime: ${timestamp}`;
-     if (telegramAccounts) sendTelegramMessage(message);
-      if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
-        new Notification(`❌ Out of Stock`, { body: `${productName} is out of stock.` });
-      } else if (notificationsEnabled) {
-        showOutOfStockAlert(`${productName} is out of stock.`);
-      }
-    }
-    if (newStock > LOW_STOCK_THRESHOLD && alertedLowStockProducts.has(productId)) {
-      alertedLowStockProducts.delete(productId);
-    }
-    if (newStock > 0 && alertedOutOfStockProducts.has(productId)) {
-      alertedOutOfStockProducts.delete(productId);
+  // NEGATIVE or ZERO stock → OUT OF STOCK alert
+  if (newStock <= 0 && !alertedOutOfStockProducts.has(productId)) {
+    alertedOutOfStockProducts.add(productId);
+    const message = `❌ OUT OF STOCK ❌\nStore: ${storeName}\nProduct: ${productName}\nQuantity: ${newStock}\nTime: ${timestamp}`;
+    if (telegramAccounts) sendTelegramMessage(message);
+    if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
+      new Notification(`❌ Out of Stock`, { body: `${productName} is out of stock (${newStock} left).` });
+    } else if (notificationsEnabled) {
+      showOutOfStockAlert(`${productName} is out of stock (${newStock} left).`);
     }
   }
+  // LOW STOCK (positive but ≤ threshold) alert
+  else if (newStock > 0 && newStock <= LOW_STOCK_THRESHOLD && !alertedLowStockProducts.has(productId)) {
+    alertedLowStockProducts.add(productId);
+    const message = `⚠️ LOW STOCK ⚠️\nStore: ${storeName}\nProduct: ${productName}\nQuantity left: ${newStock}\nTime: ${timestamp}`;
+    if (telegramAccounts) sendTelegramMessage(message);
+    if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
+      new Notification(`⚠️ Low Stock`, { body: `${productName} only ${newStock} left.` });
+    } else if (notificationsEnabled) {
+      showOutOfStockAlert(`${productName} only ${newStock} left.`);
+    }
+  }
+
+  // Reset alerts when stock recovers above threshold
+  if (newStock > LOW_STOCK_THRESHOLD && alertedLowStockProducts.has(productId)) {
+    alertedLowStockProducts.delete(productId);
+  }
+  if (newStock > 0 && alertedOutOfStockProducts.has(productId)) {
+    alertedOutOfStockProducts.delete(productId);
+  }
+}
 
   // ==================== CUSTOMER LOYALTY FUNCTIONS ====================
   async function fetchCustomerByPhone(phone) {
@@ -4783,7 +4787,7 @@ function renderProductGrid() {
     document.querySelectorAll('.add-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const product = products.find(p => p.id == btn.dataset.id);
-        if (product && product.stock > 0) addToCart(product);
+        if (product) addToCart(product);
         e.stopPropagation();
       });
     });

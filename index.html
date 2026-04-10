@@ -3273,7 +3273,7 @@ function applyCustomDiscount() {
     document.getElementById('paymentModal').style.display = 'none';
     const totalAmount = pendingTransaction.totalAmount;
 const shortNumericId = Math.floor(Math.random() * 900000) + 100000;
-const transactionId = `TXN-${shortNumericId}`;
+const transactionId = `TXN${shortNumericId}`;
     const saleItems = cart.map(item => ({
       id: item.product.id,
       category: item.product.category,

@@ -4647,14 +4647,14 @@ function renderProductGrid() {
 
     if (filteredCategories.length === 0) {
       productGridEl.innerHTML = '<div style="text-align:center; padding:20px;">No categories match your search.</div>';
-      productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
+      productGridEl.className = 'product-grid';   // force grid even when empty
       return;
     }
 
     let html = '';
     filteredCategories.forEach(cat => {
       const productCount = products.filter(p => p.category === cat).length;
-      // Use category image mapping (define categoryImages object globally)
+      // Use category image mapping (categoryImages defined globally)
       const imgUrl = (categoryImages && categoryImages[cat]) || (categoryImages && categoryImages["default"]) || "https://via.placeholder.com/150?text=📦";
       html += `
         <div class="category-card" data-category="${escapeHtml(cat)}">
@@ -4668,7 +4668,8 @@ function renderProductGrid() {
     });
 
     productGridEl.innerHTML = html;
-    productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
+    // ✅ FORCE GRID MODE for category cards (ignore viewMode)
+    productGridEl.className = 'product-grid';
 
     // Attach click event to each category card
     document.querySelectorAll('.category-card').forEach(card => {
@@ -4714,6 +4715,7 @@ function renderProductGrid() {
     `;
     const retryBtn = document.getElementById('retryLoadProductsBtn');
     if (retryBtn) retryBtn.addEventListener('click', async () => await fetchProductsFromSheet(true));
+    productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
     return;
   }
 
@@ -4756,6 +4758,7 @@ function renderProductGrid() {
   });
 
   productGridEl.innerHTML = html;
+  // ✅ Respect user's viewMode for product list (grid or list)
   productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
 
   // Attach event listeners for inventory buttons (if in inventory mode)

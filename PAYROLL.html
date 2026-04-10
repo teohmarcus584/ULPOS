@@ -456,7 +456,7 @@ function getSalesCacheKey(store, fromDate, toDate) {
   let filtered = [...masterAttendance];
   const empFilter = document.getElementById('employeeFilter')?.value;
   if (empFilter && empFilter !== 'ALL') filtered = filtered.filter(r => r.employee === empFilter);
-  
+
   const from = document.getElementById('dateFrom')?.value ? new Date(document.getElementById('dateFrom').value + 'T00:00:00') : null;
   const to = document.getElementById('dateTo')?.value ? new Date(document.getElementById('dateTo').value + 'T23:59:59') : null;
   if (from || to) {
@@ -470,7 +470,7 @@ function getSalesCacheKey(store, fromDate, toDate) {
   currentFiltered = filtered;
   renderAttendanceTable();
   updateAttendanceStats();
-  
+
   const storeSelect = document.getElementById('storeSelect');
   if (storeSelect) {
     if (empFilter !== 'ALL') {
@@ -480,14 +480,14 @@ function getSalesCacheKey(store, fromDate, toDate) {
       storeSelect.disabled = false;
     }
   }
-  
+
   await applySalesEmployeeFilter();
   saveFilters();
-  
+
   const rulesNote = document.getElementById('rulesNote');
   if (rulesNote) {
-    rulesNote.innerHTML = autoBreakEnabled 
-      ? '* Break deduction ON: ≥11h raw → -2h; 6–10.99h → -1h.' 
+    rulesNote.innerHTML = autoBreakEnabled
+      ? '* Break deduction ON: ≥11h raw → -2h; 6–10.99h → -1h.'
       : '* Break deduction OFF.';
   }
   const hoursNote = document.getElementById('hoursNote');
@@ -540,22 +540,31 @@ function getSalesCacheKey(store, fromDate, toDate) {
     }
     tbody.innerHTML = html;
   }
+function updateAttendanceStats() {
+  const uniqueEmps = new Set(currentFiltered.map(r => r.employee));
+  const totalEmployeesEl = document.getElementById('totalEmployees');
+  if (totalEmployeesEl) totalEmployeesEl.innerText = uniqueEmps.size;
 
-  function updateAttendanceStats() {
-    const uniqueEmps = new Set(currentFiltered.map(r => r.employee));
-    document.getElementById('totalEmployees').innerText = uniqueEmps.size;
-    document.getElementById('totalShifts').innerText = currentFiltered.length;
-    let totalNetHours = 0;
-    const empHours = new Map();
-    for(let r of currentFiltered) {
-      const net = getNetHours(r.timeIn, r.timeOut);
-      if(net !== null) { totalNetHours += net; empHours.set(r.employee, (empHours.get(r.employee)||0) + net); }
+  const totalShiftsEl = document.getElementById('totalShifts');
+  if (totalShiftsEl) totalShiftsEl.innerText = currentFiltered.length;
+
+  let totalNetHours = 0;
+  const empHours = new Map();
+  for (let r of currentFiltered) {
+    const net = getNetHours(r.timeIn, r.timeOut);
+    if (net !== null) {
+      totalNetHours += net;
+      empHours.set(r.employee, (empHours.get(r.employee) || 0) + net);
     }
-    document.getElementById('totalHours').innerHTML = `${totalNetHours.toFixed(1)} <span style="font-size:0.8rem;">hrs</span>`;
-    let topEmp='—', topHrs=0;
-    for(let [name, hrs] of empHours) if(hrs>topHrs) { topHrs=hrs; topEmp=name; }
-    document.getElementById('topEmployeeHours').innerText = topEmp;
   }
+  const totalHoursEl = document.getElementById('totalHours');
+  if (totalHoursEl) totalHoursEl.innerHTML = `${totalNetHours.toFixed(1)} <span style="font-size:0.8rem;">hrs</span>`;
+
+  let topEmp = '—', topHrs = 0;
+  for (let [name, hrs] of empHours) if (hrs > topHrs) { topHrs = hrs; topEmp = name; }
+  const topEmployeeHoursEl = document.getElementById('topEmployeeHours');
+  if (topEmployeeHoursEl) topEmployeeHoursEl.innerText = topEmp;
+}
 
   async function calculatePayroll(employeeName, totalNetHours, totalSales) {
     const profile = await loadEmployeeProfile(employeeName);

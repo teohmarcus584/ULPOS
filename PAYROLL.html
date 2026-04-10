@@ -331,36 +331,44 @@ function getSalesCacheKey(store, fromDate, toDate) {
       updateCacheStatus(true);
     }
   }
-
-  async function loadAllData(forceRefresh = false) {
-    if (isLoading) return;
-    isLoading = true;
-    if (forceRefresh) showLoading();
-    try {
-      const cached = getCachedData();
-      if (cached && !forceRefresh) {
-        masterAttendance = cached.attendance;
-        allSalesData = cached.sales;
-        rebuildEmployeeFilter();
-        await applyFiltersAndRender();
-        updateCacheStatus(true);
-        setTimeout(() => checkAndUpdateBackground(), 2000);
-      } else {
-        const fresh = await fetchFreshData(true);
-        masterAttendance = fresh.attendance;
-        allSalesData = fresh.sales;
-        rebuildEmployeeFilter();
-        await applyFiltersAndRender();
-        updateCacheStatus(true);
-      }
-    } catch(err) {
-      console.error("loadAllData error", err);
-      document.getElementById('attendanceBody').innerHTML = `<tr><td colspan="10" class="loading">⚠️ Failed to load data: ${err.message}</td></tr>`;
-    } finally {
-      if (forceRefresh) hideLoading();
-      isLoading = false;
+async function loadAllData(forceRefresh = false) {
+  if (isLoading) return;
+  isLoading = true;
+  if (forceRefresh) showLoading();
+  try {
+    const fromDate = document.getElementById('dateFrom').value;
+    const toDate = document.getElementById('dateTo').value;
+    const store = document.getElementById('storeSelect').value;
+    const cached = getCachedData(store, fromDate, toDate);
+    if (cached && !forceRefresh) {
+      masterAttendance = cached.attendance;
+      allSalesData = cached.sales;
+      rebuildEmployeeFilter();
+      await applyFiltersAndRender();
+      updateCacheStatus(true);
+      setTimeout(() => checkAndUpdateBackground(), 2000);
+    } else {
+      const fresh = await fetchFreshData(true);
+      masterAttendance = fresh.attendance;
+      allSalesData = fresh.sales;
+      rebuildEmployeeFilter();
+      await applyFiltersAndRender();
+      updateCacheStatus(true);
     }
+  } catch (err) {
+    console.error("loadAllData error", err);
+    // Safe update of attendanceBody (if it exists)
+    const attendanceBody = document.getElementById('attendanceBody');
+    if (attendanceBody) {
+      attendanceBody.innerHTML = `<tr><td colspan="10" class="loading">⚠️ Failed to load data: ${err.message}</td></tr>`;
+    } else {
+      console.error('attendanceBody element not found – cannot display error message');
+    }
+  } finally {
+    if (forceRefresh) hideLoading();
+    isLoading = false;
   }
+}
 
   // API fetchers
   async function fetchAttendanceWithDates(fromDate, toDate) {
@@ -451,14 +459,19 @@ function getSalesCacheKey(store, fromDate, toDate) {
     employees.forEach(emp => html += `<option value="${escapeHtml(emp)}">${escapeHtml(emp)}</option>`);
     select.innerHTML = html;
   }
-
- async function applyFiltersAndRender() {
+async function applyFiltersAndRender() {
+  // Filter attendance data based on employee selection
   let filtered = [...masterAttendance];
   const empFilter = document.getElementById('employeeFilter')?.value;
-  if (empFilter && empFilter !== 'ALL') filtered = filtered.filter(r => r.employee === empFilter);
+  if (empFilter && empFilter !== 'ALL') {
+    filtered = filtered.filter(r => r.employee === empFilter);
+  }
 
-  const from = document.getElementById('dateFrom')?.value ? new Date(document.getElementById('dateFrom').value + 'T00:00:00') : null;
-  const to = document.getElementById('dateTo')?.value ? new Date(document.getElementById('dateTo').value + 'T23:59:59') : null;
+  // Apply date range filters
+  const fromInput = document.getElementById('dateFrom');
+  const toInput = document.getElementById('dateTo');
+  const from = fromInput?.value ? new Date(fromInput.value + 'T00:00:00') : null;
+  const to = toInput?.value ? new Date(toInput.value + 'T23:59:59') : null;
   if (from || to) {
     filtered = filtered.filter(r => {
       const d = new Date(r.date + 'T00:00:00');
@@ -467,10 +480,14 @@ function getSalesCacheKey(store, fromDate, toDate) {
       return true;
     });
   }
+
   currentFiltered = filtered;
+
+  // Render the attendance table and update stats
   renderAttendanceTable();
   updateAttendanceStats();
 
+  // Handle store select: disable when a specific employee is selected
   const storeSelect = document.getElementById('storeSelect');
   if (storeSelect) {
     if (empFilter !== 'ALL') {
@@ -481,37 +498,24 @@ function getSalesCacheKey(store, fromDate, toDate) {
     }
   }
 
+  // Apply sales filter and render sales table
   await applySalesEmployeeFilter();
+
+  // Save current filter settings
   saveFilters();
 
+  // Update notes based on break toggle
   const rulesNote = document.getElementById('rulesNote');
   if (rulesNote) {
     rulesNote.innerHTML = autoBreakEnabled
       ? '* Break deduction ON: ≥11h raw → -2h; 6–10.99h → -1h.'
       : '* Break deduction OFF.';
   }
+
   const hoursNote = document.getElementById('hoursNote');
   if (hoursNote) {
     hoursNote.innerText = autoBreakEnabled ? '(net after break deduction)' : '(raw hours)';
   }
-}
- async function applySalesEmployeeFilter() {
-  const empFilter = document.getElementById('employeeFilter').value;
-  if(empFilter === 'ALL') {
-    filteredSales = allSalesData ? { labels: allSalesData.labels, data: allSalesData.data } : null;
-  } else {
-    if(!allSalesData || !allSalesData.labels) {
-      filteredSales = { labels: [empFilter], data: [0] };
-    } else {
-      // Normalise: lower case and trim
-      const normalizedFilter = empFilter.trim().toLowerCase();
-      const idx = allSalesData.labels.findIndex(name => name.trim().toLowerCase() === normalizedFilter);
-      filteredSales = idx !== -1 
-        ? { labels: [allSalesData.labels[idx]], data: [allSalesData.data[idx]] } 
-        : { labels: [empFilter], data: [0] };
-    }
-  }
-  await renderSalesTable();
 }
 
   function renderAttendanceTable() {
@@ -541,27 +545,15 @@ function getSalesCacheKey(store, fromDate, toDate) {
     tbody.innerHTML = html;
   }
 function updateAttendanceStats() {
-  const uniqueEmps = new Set(currentFiltered.map(r => r.employee));
   const totalEmployeesEl = document.getElementById('totalEmployees');
   if (totalEmployeesEl) totalEmployeesEl.innerText = uniqueEmps.size;
-
+  
   const totalShiftsEl = document.getElementById('totalShifts');
   if (totalShiftsEl) totalShiftsEl.innerText = currentFiltered.length;
-
-  let totalNetHours = 0;
-  const empHours = new Map();
-  for (let r of currentFiltered) {
-    const net = getNetHours(r.timeIn, r.timeOut);
-    if (net !== null) {
-      totalNetHours += net;
-      empHours.set(r.employee, (empHours.get(r.employee) || 0) + net);
-    }
-  }
+  
   const totalHoursEl = document.getElementById('totalHours');
   if (totalHoursEl) totalHoursEl.innerHTML = `${totalNetHours.toFixed(1)} <span style="font-size:0.8rem;">hrs</span>`;
-
-  let topEmp = '—', topHrs = 0;
-  for (let [name, hrs] of empHours) if (hrs > topHrs) { topHrs = hrs; topEmp = name; }
+  
   const topEmployeeHoursEl = document.getElementById('topEmployeeHours');
   if (topEmployeeHoursEl) topEmployeeHoursEl.innerText = topEmp;
 }
@@ -592,55 +584,155 @@ function updateAttendanceStats() {
   }
 
   async function renderSalesTable() {
-    const tbody = document.getElementById('salesBody');
-    const empFilter = document.getElementById('employeeFilter').value;
-    let employeesToShow = [];
-    if(empFilter === 'ALL') {
-    const attendanceEmps = new Set(currentFiltered.map(r => r.employee.trim().toLowerCase()));
-if(filteredSales && filteredSales.labels) {
-  filteredSales.labels.forEach(l => attendanceEmps.add(l.trim().toLowerCase()));
-}
-employeesToShow = Array.from(attendanceEmps).sort();
-    } else employeesToShow = [empFilter];
-    if(employeesToShow.length===0) { tbody.innerHTML='<tr><td colspan="7" class="loading">No data</td></tr>'; document.getElementById('payrollBreakdown').style.display='none'; return; }
-    const netHoursMap = new Map();
-    for(let r of currentFiltered) { const net = getNetHours(r.timeIn, r.timeOut); if(net!==null) netHoursMap.set(r.employee, (netHoursMap.get(r.employee)||0)+net); }
-    const salesMap = new Map();
-    if(filteredSales && filteredSales.labels) for(let i=0;i<filteredSales.labels.length;i++) salesMap.set(filteredSales.labels[i], filteredSales.data[i]);
-    let totalSalesSum=0, topSalesEmp='—', topSalesVal=0;
-    let html='', selectedPayroll=null;
-    for(let emp of employeesToShow) {
-      const netHours = netHoursMap.get(emp)||0;
-      const sales = salesMap.get(emp)||0;
-      totalSalesSum+=sales; if(sales>topSalesVal) { topSalesVal=sales; topSalesEmp=emp; }
-      const profile = await loadEmployeeProfile(emp);
-      const target = profile.salesTarget||0;
-      let achievement='—', commission=0;
-      if(target>0) { const percent = (sales/target)*100; achievement=`${percent.toFixed(1)}%`; if(sales>=target) commission=(sales-target)*((profile.commissionAboveRate||0)/100); else commission=sales*((profile.commissionBelowRate||0)/100); }
-      const payroll = await calculatePayroll(emp, netHours, sales);
-      html+=`<tr><td>${escapeHtml(emp)}</td><td>${netHours.toFixed(1)} hrs</td><td>RM ${sales.toFixed(2)}</td><td>${target>0?`RM ${target.toFixed(2)}`:'—'}</td><td>${achievement}</td><td>${commission>0?`RM ${commission.toFixed(2)}`:'—'}</td><td><strong>RM ${payroll.netPayable.toFixed(2)}</strong></td></tr>`;
-      if(empFilter !== 'ALL' && emp === empFilter) selectedPayroll = payroll;
-    }
-    tbody.innerHTML = html;
-    document.getElementById('totalSales').innerHTML = `RM ${totalSalesSum.toFixed(2)}`;
-    document.getElementById('topEmployeeSales').innerText = topSalesEmp;
-    if(empFilter !== 'ALL' && selectedPayroll) {
-      document.getElementById('payrollBreakdown').style.display = 'block';
-      const p = selectedPayroll;
-      document.getElementById('grossAmount').innerHTML = `RM ${p.grossSalary.toFixed(2)} <span style="font-size:0.7rem;">(${p.totalNetHours} hrs × RM ${p.hourlyRate.toFixed(2)})</span>`;
-      document.getElementById('epfEmployeeAmount').innerHTML = `RM ${p.epfDeduction.toFixed(2)}`;
-      document.getElementById('epfEmployerAmount').innerHTML = `RM ${p.epfEmployerContribution.toFixed(2)}`;
-      document.getElementById('eisEmployeeAmount').innerHTML = `RM ${p.eisEmployee.toFixed(2)}`;
-      document.getElementById('eisEmployerAmount').innerHTML = `RM ${p.eisEmployer.toFixed(2)}`;
-      document.getElementById('socsoEmployeeAmount').innerHTML = `RM ${p.socsoEmployee.toFixed(2)}`;
-      document.getElementById('socsoEmployerAmount').innerHTML = `RM ${p.socsoEmployer.toFixed(2)}`;
-      document.getElementById('bonusAmount').innerText = `RM ${p.commission.toFixed(2)}`;
-      document.getElementById('netPayableAmount').innerText = `RM ${p.netPayable.toFixed(2)}`;
-      document.getElementById('totalEmployerExpenditure').innerText = `RM ${p.totalEmployerExpenditure.toFixed(2)}`;
-      window.currentPayrollData = p; window.currentPayrollEmployee = empFilter;
-    } else document.getElementById('payrollBreakdown').style.display = 'none';
+  // Safely get the tbody element
+  const tbody = document.getElementById('salesBody');
+  if (!tbody) {
+    console.error('salesBody element not found – cannot render sales table');
+    return;
   }
 
+  const empFilter = document.getElementById('employeeFilter').value;
+  let employeesToShow = [];
+
+  // Determine which employees to display
+  if (empFilter === 'ALL') {
+    // Collect all employee names from attendance (current filtered) and sales data
+    const attendanceEmps = new Set(currentFiltered.map(r => r.employee.trim().toLowerCase()));
+    if (filteredSales && filteredSales.labels) {
+      filteredSales.labels.forEach(l => attendanceEmps.add(l.trim().toLowerCase()));
+    }
+    employeesToShow = Array.from(attendanceEmps).sort();
+  } else {
+    employeesToShow = [empFilter];
+  }
+
+  // If no employees to show, display empty state
+  if (employeesToShow.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="loading">No data</td></tr>';
+    const payrollDiv = document.getElementById('payrollBreakdown');
+    if (payrollDiv) payrollDiv.style.display = 'none';
+    return;
+  }
+
+  // Map net hours per employee (from attendance)
+  const netHoursMap = new Map();
+  for (let r of currentFiltered) {
+    const net = getNetHours(r.timeIn, r.timeOut);
+    if (net !== null) {
+      netHoursMap.set(r.employee, (netHoursMap.get(r.employee) || 0) + net);
+    }
+  }
+
+  // Map sales per employee (from sales data)
+  const salesMap = new Map();
+  if (filteredSales && filteredSales.labels) {
+    for (let i = 0; i < filteredSales.labels.length; i++) {
+      salesMap.set(filteredSales.labels[i], filteredSales.data[i]);
+    }
+  }
+
+  let totalSalesSum = 0;
+  let topSalesEmp = '—';
+  let topSalesVal = 0;
+  let html = '';
+  let selectedPayroll = null;
+
+  // Build table rows
+  for (let emp of employeesToShow) {
+    const netHours = netHoursMap.get(emp) || 0;
+    const sales = salesMap.get(emp) || 0;
+    totalSalesSum += sales;
+    if (sales > topSalesVal) {
+      topSalesVal = sales;
+      topSalesEmp = emp;
+    }
+
+    const profile = await loadEmployeeProfile(emp);
+    const target = profile.salesTarget || 0;
+    let achievement = '—';
+    let commission = 0;
+
+    if (target > 0) {
+      const percent = (sales / target) * 100;
+      achievement = `${percent.toFixed(1)}%`;
+      if (sales >= target) {
+        commission = (sales - target) * ((profile.commissionAboveRate || 0) / 100);
+      } else {
+        commission = sales * ((profile.commissionBelowRate || 0) / 100);
+      }
+    }
+
+    const payroll = await calculatePayroll(emp, netHours, sales);
+    html += `
+      <tr>
+        <td>${escapeHtml(emp)}</td>
+        <td>${netHours.toFixed(1)} hrs</td>
+        <td>RM ${sales.toFixed(2)}</td>
+        <td>${target > 0 ? `RM ${target.toFixed(2)}` : '—'}</td>
+        <td>${achievement}</td>
+        <td>${commission > 0 ? `RM ${commission.toFixed(2)}` : '—'}</td>
+        <td><strong>RM ${payroll.netPayable.toFixed(2)}</strong></td>
+      </tr>
+    `;
+
+    if (empFilter !== 'ALL' && emp === empFilter) {
+      selectedPayroll = payroll;
+    }
+  }
+
+  // Insert rows into table
+  tbody.innerHTML = html;
+
+  // Update total sales and top employee stats
+  const totalSalesSpan = document.getElementById('totalSales');
+  if (totalSalesSpan) totalSalesSpan.innerHTML = `RM ${totalSalesSum.toFixed(2)}`;
+
+  const topEmployeeSalesSpan = document.getElementById('topEmployeeSales');
+  if (topEmployeeSalesSpan) topEmployeeSalesSpan.innerText = topSalesEmp;
+
+  // Show payroll breakdown only when a single employee is selected
+  const payrollDiv = document.getElementById('payrollBreakdown');
+  if (empFilter !== 'ALL' && selectedPayroll) {
+    if (payrollDiv) payrollDiv.style.display = 'block';
+    const p = selectedPayroll;
+
+    const grossAmountSpan = document.getElementById('grossAmount');
+    if (grossAmountSpan) grossAmountSpan.innerHTML = `RM ${p.grossSalary.toFixed(2)} <span style="font-size:0.7rem;">(${p.totalNetHours} hrs × RM ${p.hourlyRate.toFixed(2)})</span>`;
+
+    const epfEmployeeSpan = document.getElementById('epfEmployeeAmount');
+    if (epfEmployeeSpan) epfEmployeeSpan.innerHTML = `RM ${p.epfDeduction.toFixed(2)}`;
+
+    const epfEmployerSpan = document.getElementById('epfEmployerAmount');
+    if (epfEmployerSpan) epfEmployerSpan.innerHTML = `RM ${p.epfEmployerContribution.toFixed(2)}`;
+
+    const eisEmployeeSpan = document.getElementById('eisEmployeeAmount');
+    if (eisEmployeeSpan) eisEmployeeSpan.innerHTML = `RM ${p.eisEmployee.toFixed(2)}`;
+
+    const eisEmployerSpan = document.getElementById('eisEmployerAmount');
+    if (eisEmployerSpan) eisEmployerSpan.innerHTML = `RM ${p.eisEmployer.toFixed(2)}`;
+
+    const socsoEmployeeSpan = document.getElementById('socsoEmployeeAmount');
+    if (socsoEmployeeSpan) socsoEmployeeSpan.innerHTML = `RM ${p.socsoEmployee.toFixed(2)}`;
+
+    const socsoEmployerSpan = document.getElementById('socsoEmployerAmount');
+    if (socsoEmployerSpan) socsoEmployerSpan.innerHTML = `RM ${p.socsoEmployer.toFixed(2)}`;
+
+    const bonusSpan = document.getElementById('bonusAmount');
+    if (bonusSpan) bonusSpan.innerText = `RM ${p.commission.toFixed(2)}`;
+
+    const netPayableSpan = document.getElementById('netPayableAmount');
+    if (netPayableSpan) netPayableSpan.innerText = `RM ${p.netPayable.toFixed(2)}`;
+
+    const totalEmployerSpan = document.getElementById('totalEmployerExpenditure');
+    if (totalEmployerSpan) totalEmployerSpan.innerText = `RM ${p.totalEmployerExpenditure.toFixed(2)}`;
+
+    // Store for payment modal
+    window.currentPayrollData = p;
+    window.currentPayrollEmployee = empFilter;
+  } else {
+    if (payrollDiv) payrollDiv.style.display = 'none';
+  }
+}
   // Payment functions (unchanged, omitted for brevity but functional)
   async function recordPayment(employeeName, payrollData, bankName, bankAccount) { const fd=new URLSearchParams(); fd.append('action','savePayment'); fd.append('employeeName',employeeName); fd.append('timestamp',new Date().toISOString()); fd.append('netPayable',payrollData.netPayable); fd.append('epfEmployee',payrollData.epfDeduction); fd.append('epfEmployer',payrollData.epfEmployerContribution); fd.append('eisEmployee',payrollData.eisEmployee); fd.append('eisEmployer',payrollData.eisEmployer); fd.append('socsoEmployee',payrollData.socsoEmployee); fd.append('socsoEmployer',payrollData.socsoEmployer); fd.append('totalExpenditure',payrollData.totalEmployerExpenditure); fd.append('bankName',bankName); fd.append('bankAccount',bankAccount); fd.append('status','paid'); const res=await fetch(ATTENDANCE_API_URL,{method:'POST',body:fd}); const json=await res.json(); return json.success; }
   async function getPaymentHistory(employeeName) { const res=await fetch(`${ATTENDANCE_API_URL}?action=getPaymentHistory&employeeName=${encodeURIComponent(employeeName)}`); const json=await res.json(); return json.success?json.payments:[]; }

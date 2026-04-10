@@ -3272,8 +3272,8 @@ function applyCustomDiscount() {
  async function completeCheckout(paymentMethod, cashReceived) {
     document.getElementById('paymentModal').style.display = 'none';
     const totalAmount = pendingTransaction.totalAmount;
-const shortNumericId = Math.floor(Math.random() * 900000) + 100000;
-const transactionId = `TXN${shortNumericId}`;
+      const transactionId = getNextTransactionNumber(currentStore);
+const transactionId = getNextTransactionNumber(currentStore);
     const saleItems = cart.map(item => ({
       id: item.product.id,
       category: item.product.category,
@@ -5785,7 +5785,28 @@ if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener(
       });
     }
   }
-
+function getNextTransactionNumber(store) {
+  // Map store to prefix
+  const prefixMap = {
+    'queens': '38',
+    'sunshine': '39',
+    'gurney_paragon': '40'
+  };
+  const prefix = prefixMap[store] || '00';
+  const storageKey = `txnCounter_${store}`;
+  
+  // Get current counter from localStorage (default to 0)
+  let counter = parseInt(localStorage.getItem(storageKey)) || 0;
+  counter++;
+  
+  // Save the new counter
+  localStorage.setItem(storageKey, counter);
+  
+  // Pad counter to 5 digits (e.g., 1 -> 00001)
+  const paddedCounter = counter.toString().padStart(5, '0');
+  
+  return `TXN${prefix}${paddedCounter}`;
+}
   function updateTotalOutstanding() {
     const total = currentUnsettledCash.reduce((sum, rec) => sum + rec.cash_actual, 0);
     document.getElementById('totalOutstandingCash').innerText = `RM ${total.toFixed(2)}`;

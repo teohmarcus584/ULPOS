@@ -608,9 +608,9 @@
   document.getElementById('roundingToggle').addEventListener('change', (e) => { autoAdjustEnabled = e.target.checked; applyFiltersAndRender(); });
   document.getElementById('breakToggle').addEventListener('change', (e) => { autoBreakEnabled = e.target.checked; applyFiltersAndRender(); });
   document.getElementById('employeeFilter').addEventListener('change', applyFiltersAndRender);
-  document.getElementById('dateFrom').addEventListener('change', ()=>{ restrictFutureDates(); applyFiltersAndRender(); });
-  document.getElementById('dateTo').addEventListener('change', ()=>{ restrictFutureDates(); applyFiltersAndRender(); });
-  document.getElementById('storeSelect').addEventListener('change',()=>loadAllData(false));
+  document.getElementById('storeSelect').addEventListener('change', () => loadAllData(true));
+document.getElementById('dateFrom').addEventListener('change', () => loadAllData(true));
+document.getElementById('dateTo').addEventListener('change', () => loadAllData(true));
   document.getElementById('refreshBtn').addEventListener('click',()=>loadAllData(true));
   document.getElementById('profileHeaderBtn').addEventListener('click',openProfileModal);
   document.getElementById('closeProfileModal').addEventListener('click',closeProfileModal);

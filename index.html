@@ -5747,7 +5747,7 @@ if (promoBuy3Free1ExcludePerfume) promoBuy3Free1ExcludePerfume.addEventListener(
       const response = await fetch(url);
       const result = await response.json();
       if (result.success) {
-        currentUnsettledCash = result.records;
+        currentUnsettledCash = (result.records || []).filter(rec => rec.payment_method === 'Cash');
         renderCollectionTable();
         updateTotalOutstanding();
         document.getElementById('collectSelectedBtn').disabled = true;

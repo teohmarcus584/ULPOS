@@ -4988,7 +4988,7 @@ document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLo
         if (digit && pinInputEl.value.length < 4) {
           pinInputEl.value += digit;
           if (pinInputEl.value.length === 4) {
-           
+           verifyEmployeeByPin(pinInputEl.value);  
           }
         } else if (action === 'clear') {
           pinInputEl.value = pinInputEl.value.slice(0, -1);

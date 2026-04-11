@@ -3371,7 +3371,7 @@ function getUTCDateString(date) {
       let from = null, to = null;
       const today = new Date();
       today.setHours(0,0,0,0);
-     if (range === 'today') {
+    if (range === 'today') {
   from = getUTCDateString(today);
   to = from;
 } else if (range === 'week') {
@@ -3379,24 +3379,20 @@ function getUTCDateString(date) {
   const dayOfWeek = today.getDay();
   const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
   start.setDate(today.getDate() - diffToMonday);
-  from = getLocalDateString(start);
+  from = getUTCDateString(start);        // ✅ use UTC
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
-  to = getLocalDateString(end);
+  to = getUTCDateString(end);            // ✅ use UTC
 } else if (range === 'month') {
   const start = new Date(today.getFullYear(), today.getMonth(), 1);
-  from = getLocalDateString(start);
+  from = getUTCDateString(start);        // ✅ use UTC
   const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-  to = getLocalDateString(end);
+  to = getUTCDateString(end);            // ✅ use UTC
 } else if (range === 'year') {
   const start = new Date(today.getFullYear(), 0, 1);
+  from = getUTCDateString(start);        // ✅ use UTC
   const end = new Date(today.getFullYear(), 11, 31);
-  from = getLocalDateString(start);
-  to = getLocalDateString(end);
-} else if (range === 'custom') {
-  from = document.getElementById('receiptsFromDate')?.value;
-  to = document.getElementById('receiptsToDate')?.value;
-  if (!from || !to) return;
+  to = getUTCDateString(end);            // ✅ use UTC
 }
       let url = `${APPS_SCRIPT_URL}?action=getReceipts&store=${store}&employeeId=${employeeId}`;
       if (from) url += `&from=${encodeURIComponent(from)}`;
@@ -5567,54 +5563,59 @@ async function getNextTransactionNumber(store) {
     return `${prefix}-${timestamp}-${random}`;
   }
 }
-  function updateReceipts() {
-    let store;
-    if (currentEmployee?.isAdmin) {
-      const receiptsStore = document.getElementById('receiptsStoreSelect');
-      store = receiptsStore ? receiptsStore.value : 'all';
-    } else {
-      store = currentStore;
-    }
-    let employeeId = 'all';
-    if (currentEmployee?.isAdmin) {
-      const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
-      employeeId = receiptsEmpSelect ? receiptsEmpSelect.value : 'all';
-    }
-    const rangeSelect = document.getElementById('receiptsDateRangeSelect');
-    const range = rangeSelect ? rangeSelect.value : 'today';
-    const search = document.getElementById('receiptsSearch').value;
-    let from = null, to = null;
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    if (range === 'today') {
-      from = getLocalDateString(today);
-      to = from;
-    } else if (range === 'week') {
-      const start = new Date(today);
-      const dayOfWeek = today.getDay();
-      const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
-      start.setDate(today.getDate() - diffToMonday);
-      from = getLocalDateString(start);
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
-      to = getLocalDateString(end);
-    } else if (range === 'month') {
-      const start = new Date(today.getFullYear(), today.getMonth(), 1);
-      from = getLocalDateString(start);
-      const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      to = getLocalDateString(end);
-    } else if (range === 'year') {
-      const start = new Date(today.getFullYear(), 0, 1);
-      const end = new Date(today.getFullYear(), 11, 31);
-      from = getLocalDateString(start);
-      to = getLocalDateString(end);
-    } else if (range === 'custom') {
-      from = document.getElementById('receiptsFromDate')?.value;
-      to = document.getElementById('receiptsToDate')?.value;
-      if (!from || !to) return;
-    }
-    fetchReceipts(store, employeeId, from, to, search);
+ function updateReceipts() {
+  let store;
+  if (currentEmployee?.isAdmin) {
+    const receiptsStore = document.getElementById('receiptsStoreSelect');
+    store = receiptsStore ? receiptsStore.value : 'all';
+  } else {
+    store = currentStore;
   }
+  let employeeId = 'all';
+  if (currentEmployee?.isAdmin) {
+    const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
+    employeeId = receiptsEmpSelect ? receiptsEmpSelect.value : 'all';
+  }
+  const rangeSelect = document.getElementById('receiptsDateRangeSelect');
+  const range = rangeSelect ? rangeSelect.value : 'today';
+  const search = document.getElementById('receiptsSearch').value;
+  let from = null, to = null;
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  
+  if (range === 'today') {
+    // ✅ Use UTC date
+    from = getUTCDateString(today);
+    to = from;
+  } else if (range === 'week') {
+    const start = new Date(today);
+    const dayOfWeek = today.getDay();
+    const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+    start.setDate(today.getDate() - diffToMonday);
+    from = getUTCDateString(start);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    to = getUTCDateString(end);
+  } else if (range === 'month') {
+    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+    from = getUTCDateString(start);
+    const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    to = getUTCDateString(end);
+  } else if (range === 'year') {
+    const start = new Date(today.getFullYear(), 0, 1);
+    const end = new Date(today.getFullYear(), 11, 31);
+    from = getUTCDateString(start);
+    to = getUTCDateString(end);
+  } else if (range === 'custom') {
+    from = document.getElementById('receiptsFromDate')?.value;
+    to = document.getElementById('receiptsToDate')?.value;
+    if (!from || !to) return;
+    // ✅ Convert custom date inputs to UTC strings as well
+    if (from) from = getUTCDateString(new Date(from));
+    if (to) to = getUTCDateString(new Date(to));
+  }
+  fetchReceipts(store, employeeId, from, to, search);
+}
 
   const toggleBtn = document.getElementById('toggleProductDetailsBtn');
   const productDetailsContainer = document.getElementById('productDetailsContainer');

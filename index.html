@@ -1492,7 +1492,7 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfdCjVWYLEiWJYdeOUQ7HgyGbBw7rxK-hZVhm1HnClo-buLdnb-BKendOJgRozMHnBjg/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyl6klLaZ1lSqsxNofZ6HW8sYGNbJJxEn3xL7VGFBHfkcxuydHt4HMwsLrGhsm3-AX9/exec"; // REPLACE WITH YOUR URL
 
   // ==================== GLOBAL VARIABLES ====================
   let products = [];
@@ -3224,7 +3224,8 @@ function applyCustomDiscount() {
   document.getElementById('paymentModal').style.display = 'none';
   const totalAmount = pendingTransaction.totalAmount;
 
-  const transactionId = getNextTransactionNumber(currentStore);
+  const transactionId = await getNextTransactionNumber(currentStore); // ✅ added await
+
   const saleItems = cart.map(item => ({
     id: item.product.id,
     category: item.product.category,
@@ -3234,6 +3235,7 @@ function applyCustomDiscount() {
     free_quantity: item.freeQuantity,
     total: (item.quantity - item.freeQuantity) * item.product.price
   }));
+
   const transaction = {
     transaction_id: transactionId,
     items: saleItems,
@@ -3248,6 +3250,7 @@ function applyCustomDiscount() {
     prize_claimed: claimedReceiptInfo,
     customer_id: selectedCustomer ? selectedCustomer.id : null
   };
+
   queueSale(transaction);
   const success = true; // assume success, will sync later
   const customerIdForLuckyDraw = selectedCustomer ? selectedCustomer.id : null;
@@ -3263,6 +3266,7 @@ function applyCustomDiscount() {
         checkAndNotifyOutOfStock(product.id, product.name, newStock);
       }
     }
+
     localStorage.setItem(`products_${currentStore}`, JSON.stringify({
       timestamp: Date.now(),
       products: products
@@ -3310,7 +3314,6 @@ function applyCustomDiscount() {
     await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
   }
 }
-
   async function saveTransactionToSheet(transaction) {
     
     try {
@@ -5536,12 +5539,28 @@ function attachStoreCardClickListeners() {
     });
   });
 }
-function getNextTransactionNumber(store) {
-  // Example: generate a unique ID using timestamp + store prefix
-  const prefix = store.substring(0, 3).toUpperCase();
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 1000);
-  return `${prefix}-${timestamp}-${random}`;
+async function getNextTransactionNumber(store) {
+  try {
+    const response = await fetch(`${APPS_SCRIPT_URL}?action=getNextTransactionNumber&store=${store}`);
+    const result = await response.json();
+    if (result.success) {
+      return result.transaction_id;
+    } else {
+      console.error('Backend error:', result.error);
+      // Fallback (should never happen)
+      const prefix = store.substring(0, 3).toUpperCase();
+      const timestamp = Date.now();
+      const random = Math.floor(Math.random() * 1000);
+      return `${prefix}-${timestamp}-${random}`;
+    }
+  } catch (err) {
+    console.error('Failed to fetch transaction number:', err);
+    // Fallback
+    const prefix = store.substring(0, 3).toUpperCase();
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    return `${prefix}-${timestamp}-${random}`;
+  }
 }
   function updateReceipts() {
     let store;

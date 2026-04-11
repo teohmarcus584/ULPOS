@@ -3823,7 +3823,7 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
   today.setHours(0, 0, 0, 0);
 
   if (range === 'today') {
-    from = to = getLocalDateString(today);
+    from = to = getUTCDateString(today);           // ✅ Use UTC
   } else if (range === 'week') {
     const start = new Date(today);
     const dayOfWeek = today.getDay();

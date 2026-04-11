@@ -1231,78 +1231,45 @@
     left: -10px;
   }
 }
-/* Category cards (displayed when "All Categories" is selected) */
-.category-card {
-  background: #ffffff;
-  border-radius: 24px;
-  padding: 16px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-}
-.category-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 20px rgba(0,0,0,0.1);
-  border-color: #cbd5e1;
-}
-.category-card-image {
-  width: 100%;
-  height: 140px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 12px;
-  background: #f8fafc;
-  border-radius: 16px;
-  overflow: hidden;
-}
-.category-card-image img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-.category-card-name {
-  font-weight: 700;
-  font-size: 1rem;
-  color: #0f172a;
-  margin: 8px 0 4px;
-}
-.category-card-count {
-  font-size: 0.8rem;
-  color: #64748b;
-}
 .store-summary-card {
   background: white;
-  border-radius: 28px;
-  padding: 20px;
+  border-radius: 24px;
+  padding: 16px 20px;
   flex: 1;
-  min-width: 180px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  min-width: 240px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   border: 1px solid #e2e8f0;
-  text-align: center;
   transition: transform 0.2s;
 }
 .store-summary-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
 }
 .store-name {
   font-size: 1.2rem;
-  font-weight: 600;
-  margin-bottom: 12px;
+  font-weight: 700;
+  margin-bottom: 16px;
   color: #0f172a;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+.store-summary-card > div {
+  margin: 6px 0;
+  font-size: 0.9rem;
 }
 .store-total {
-  font-size: 1.8rem;
   font-weight: 800;
+  font-size: 1.1rem;
   color: #2c7a4b;
-  margin: 8px 0;
+  margin-top: 8px;
 }
-.store-bills {
-  font-size: 1rem;
-  color: #475569;
+.store-cash, .store-card, .store-qr, .store-alipay, .store-refund {
+  display: flex;
+  justify-content: space-between;
+}
+.store-refunded-bills, .store-transactions, .store-items-sold {
+  display: flex;
+  justify-content: space-between;
 }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -1556,21 +1523,44 @@
     <!-- Queens -->
     <div class="store-summary-card" data-store="queens">
       <div class="store-name">🏬 Queens</div>
-      <div class="store-total">RM 0.00</div>
-      <div class="store-bills">🧾 Bills: 0</div>
+      <div class="store-total">Total Sales: RM 0.00</div>
+      <div class="store-cash">💵 Cash: RM 0.00</div>
+      <div class="store-card">💳 Card: RM 0.00</div>
+      <div class="store-qr">📱 QR Pay: RM 0.00</div>
+      <div class="store-alipay">💸 Alipay: RM 0.00</div>
+      <div class="store-refund">❌ Refunds: RM 0.00</div>
+      <div class="store-refunded-bills">📄 Refunded Bills: 0</div>
+      <div class="store-transactions">Transactions: 0</div>
+      <div class="store-items-sold">Items Sold: 0</div>
     </div>
     <!-- Sunshine -->
     <div class="store-summary-card" data-store="sunshine">
       <div class="store-name">☀️ Sunshine</div>
-      <div class="store-total">RM 0.00</div>
-      <div class="store-bills">🧾 Bills: 0</div>
+      <div class="store-total">Total Sales: RM 0.00</div>
+      <div class="store-cash">💵 Cash: RM 0.00</div>
+      <div class="store-card">💳 Card: RM 0.00</div>
+      <div class="store-qr">📱 QR Pay: RM 0.00</div>
+      <div class="store-alipay">💸 Alipay: RM 0.00</div>
+      <div class="store-refund">❌ Refunds: RM 0.00</div>
+      <div class="store-refunded-bills">📄 Refunded Bills: 0</div>
+      <div class="store-transactions">Transactions: 0</div>
+      <div class="store-items-sold">Items Sold: 0</div>
     </div>
     <!-- Gurney Paragon -->
     <div class="store-summary-card" data-store="gurney_paragon">
       <div class="store-name">🏙️ Gurney Paragon</div>
-      <div class="store-total">RM 0.00</div>
-      <div class="store-bills">🧾 Bills: 0</div>
+      <div class="store-total">Total Sales: RM 0.00</div>
+      <div class="store-cash">💵 Cash: RM 0.00</div>
+      <div class="store-card">💳 Card: RM 0.00</div>
+      <div class="store-qr">📱 QR Pay: RM 0.00</div>
+      <div class="store-alipay">💸 Alipay: RM 0.00</div>
+      <div class="store-refund">❌ Refunds: RM 0.00</div>
+      <div class="store-refunded-bills">📄 Refunded Bills: 0</div>
+      <div class="store-transactions">Transactions: 0</div>
+      <div class="store-items-sold">Items Sold: 0</div>
     </div>
+  </div>
+</div>
   </div>
 </div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead><th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody></table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
@@ -3926,16 +3916,27 @@ async function updateAdminReport() {
     if (!from || !to) return;
   }
 
-  // 1. Fetch main report totals (overall, payment methods, etc.)
+  // 1. Fetch overall report totals (respecting store/employee filters)
   const totals = await fetchSalesReport(store, employeeId, from, to, false, false);
   if (!totals) return;
 
-  // 2. Fetch product details (if needed for the "Show Product Details" button)
+  // Update overall stats (existing DOM elements)
+  document.getElementById('adminReportTotalSales').innerText = `RM ${totals.totalSales.toFixed(2)}`;
+  document.getElementById('adminReportCashTotal').innerText = `RM ${totals.cashTotal.toFixed(2)}`;
+  document.getElementById('adminReportCardTotal').innerText = `RM ${totals.cardTotal.toFixed(2)}`;
+  document.getElementById('adminReportQRTotal').innerText = `RM ${totals.otherTotal.toFixed(2)}`;
+  document.getElementById('adminReportAlipayTotal').innerText = `RM ${totals.alipayTotal.toFixed(2)}`;
+  document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(totals.refundTotal).toFixed(2)}`;
+  document.getElementById('adminReportRefundedBills').innerText = totals.refundedTransactionCount || 0;
+  document.getElementById('adminReportTransactionCount').innerText = totals.transactionCount || 0;
+  document.getElementById('adminReportTotalItems').innerText = totals.totalItems || 0;
+
+  // 2. Fetch product details for the "Show Product Details" button
   const productData = await fetchProductSalesReport(store, employeeId, from, to);
   lastProductData = productData;
   if (productDetailsVisible) renderProductDetails(lastProductData);
 
-  // 3. If admin, fetch per‑store breakdown (ignoring employee filter)
+  // 3. If admin, fetch detailed breakdown for each store (ignoring employee filter)
   const storeBreakdownDiv = document.getElementById('storeBreakdownContainer');
   if (currentEmployee.isAdmin) {
     storeBreakdownDiv.style.display = 'block';
@@ -3944,26 +3945,25 @@ async function updateAdminReport() {
       fetchSalesReport(storeName, 'all', from, to, false, true) // silent fetch
     );
     const storeResults = await Promise.all(storePromises);
-    const storeTotals = {};
+    
     stores.forEach((storeName, idx) => {
       const data = storeResults[idx];
-      storeTotals[storeName] = {
-        totalSales: data ? data.totalSales : 0,
-        transactionCount: data ? data.transactionCount : 0
-      };
-    });
-
-    // Update the three cards
-    for (const [storeName, vals] of Object.entries(storeTotals)) {
+      if (!data) return;
       const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
-      if (card) {
-        card.querySelector('.store-total').innerText = `RM ${vals.totalSales.toFixed(2)}`;
-        card.querySelector('.store-bills').innerText = `🧾 Bills: ${vals.transactionCount}`;
-      }
-    }
+      if (!card) return;
+      
+      card.querySelector('.store-total').innerText = `Total Sales: RM ${data.totalSales.toFixed(2)}`;
+      card.querySelector('.store-cash').innerHTML = `💵 Cash: RM ${data.cashTotal.toFixed(2)}`;
+      card.querySelector('.store-card').innerHTML = `💳 Card: RM ${data.cardTotal.toFixed(2)}`;
+      card.querySelector('.store-qr').innerHTML = `📱 QR Pay: RM ${data.otherTotal.toFixed(2)}`;
+      card.querySelector('.store-alipay').innerHTML = `💸 Alipay: RM ${data.alipayTotal.toFixed(2)}`;
+      card.querySelector('.store-refund').innerHTML = `❌ Refunds: RM ${Math.abs(data.refundTotal).toFixed(2)}`;
+      card.querySelector('.store-refunded-bills').innerHTML = `📄 Refunded Bills: ${data.refundedTransactionCount || 0}`;
+      card.querySelector('.store-transactions').innerHTML = `Transactions: ${data.transactionCount || 0}`;
+      card.querySelector('.store-items-sold').innerHTML = `Items Sold: ${data.totalItems || 0}`;
+    });
   } else {
-    // Non‑admin: hide store breakdown
-    if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
+    storeBreakdownDiv.style.display = 'none';
   }
 }
 // ==================== BARCODE SCANNER ====================

@@ -3345,7 +3345,12 @@ function applyCustomDiscount() {
       hideLoading();
     }
   }
-
+function getUTCDateString(date) {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
   // ==================== RECEIPTS (polling, etc.) ====================
   let cachedReceipts = null;
   let receiptPollingInterval = null;
@@ -3367,7 +3372,7 @@ function applyCustomDiscount() {
       const today = new Date();
       today.setHours(0,0,0,0);
      if (range === 'today') {
-  from = getLocalDateString(today);
+  from = getUTCDateString(today);
   to = from;
 } else if (range === 'week') {
   const start = new Date(today);
@@ -4153,7 +4158,7 @@ function disableBarcodeScanner() {
   }
 
  async function refreshSettlementTotals(store, silent = false) {
-  const todayStr = getLocalDateString(new Date());
+  const todayStr = getUTCDateString(new Date());  // ✅ Use UTC date
   const report = await fetchSalesReport(store, 'all', todayStr, todayStr, true, silent);
   if (report) {
     // Safely extract values with fallbacks

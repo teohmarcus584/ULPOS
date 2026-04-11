@@ -1653,7 +1653,7 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcolXmQFRaUz4we6HKf44XNfAmpw3bP3HRpnSvsLPWuL2TfewtRcPybNotTrRDBM-tNw/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzuEcnvdniJtysUT7by3W6MsFiQkEAr5ntUzImOeMYClSHUzMSl5pw4CP3dDjiSBOqR6A/exec"; // REPLACE WITH YOUR URL
 
   // ==================== GLOBAL VARIABLES ====================
   let products = [];
@@ -3534,23 +3534,23 @@ renderProductGrid();
     if (rec.discount && rec.discount > 0) {
       discountsHtml += `<div class="receipt-discount-row"><span>🎲 Lucky Draw Discount</span><span>-RM ${rec.discount.toFixed(2)}</span></div>`;
     }
-   if (rec.buy2_free1_discount && rec.buy2_free1_discount > 0) {
-  discountsHtml += `<div class="receipt-discount-row"><span>🚗 Car Aromatic Promo</span><span>-RM ${rec.buy2_free1_discount.toFixed(2)}</span></div>`;
-}
-if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
-  discountsHtml += `<div class="receipt-discount-row"><span>🌸 15ml Perfume EDP Promo</span><span>-RM ${rec.buy3_free1_discount.toFixed(2)}</span></div>`;
-}
+    if (rec.buy2_free1_discount && rec.buy2_free1_discount > 0) {
+      discountsHtml += `<div class="receipt-discount-row"><span>🚗 Car Aromatic Promo</span><span>-RM ${rec.buy2_free1_discount.toFixed(2)}</span></div>`;
+    }
+    if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
+      discountsHtml += `<div class="receipt-discount-row"><span>🌸 15ml Perfume EDP Promo</span><span>-RM ${rec.buy3_free1_discount.toFixed(2)}</span></div>`;
+    }
     if (rec.custom_discount && rec.custom_discount > 0) {
       discountsHtml += `<div class="receipt-discount-row"><span>💰 Custom Discount</span><span>-RM ${rec.custom_discount.toFixed(2)}</span></div>`;
     }
 
     const total = rec.total;
 
-    // Actions: reprint (store only transaction_id) and refund
+    // Actions: reprint + refund (only if not already refunded and not a refund itself)
     const actionsHtml = `
       <div class="receipt-actions">
         <button class="reprint-btn" data-txid="${rec.transaction_id}">🖨️ Reprint</button>
-        ${!isRefund && !isRefundedOriginal ? `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">💰 Refund</button>` : ''}
+        ${!isRefund && !rec.refunded ? `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">💰 Refund</button>` : ''}
       </div>
     `;
 
@@ -3580,7 +3580,6 @@ if (rec.buy3_free1_discount && rec.buy3_free1_discount > 0) {
   document.querySelectorAll('.reprint-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const txId = btn.dataset.txid;
-      // Find receipt in the current cached receipts
       const receipt = cachedReceipts.find(r => r.transaction_id === txId);
       if (receipt) {
         reprintReceipt(receipt);

@@ -1585,118 +1585,7 @@ if (!telegramAccounts) {
   const customerInfoDisplay = document.getElementById('customerInfoDisplay');
   const LOW_STOCK_THRESHOLD = 5;
   let alertedLowStockProducts = new Set();
-  // ==================== INDEXEDDB CACHE FOR REPORTS ====================
-const DB_NAME = 'POS_ReportCache';
-const DB_VERSION = 1;
-const STORE_NAME = 'reports';
-
-let db = null;
-
-function openIndexedDB() {
-  return new Promise((resolve, reject) => {
-    if (db && db.name === DB_NAME) {
-      resolve(db);
-      return;
-    }
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => {
-      db = request.result;
-      resolve(db);
-    };
-    request.onupgradeneeded = (event) => {
-      const dbRef = event.target.result;
-      if (!dbRef.objectStoreNames.contains(STORE_NAME)) {
-        const store = dbRef.createObjectStore(STORE_NAME, { keyPath: 'cacheKey' });
-        store.createIndex('timestamp', 'timestamp', { unique: false });
-      }
-    };
-  });
-}
-
-async function getCachedReport(cacheKey, maxAgeMs = 5 * 60 * 1000) {
-  try {
-    const database = await openIndexedDB();
-    return new Promise((resolve, reject) => {
-      const transaction = database.transaction([STORE_NAME], 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.get(cacheKey);
-      request.onsuccess = () => {
-        const result = request.result;
-        if (result && (Date.now() - result.timestamp) < maxAgeMs) {
-          resolve(result.report);
-        } else {
-          resolve(null);
-        }
-      };
-      request.onerror = () => reject(request.error);
-    });
-  } catch (err) {
-    console.warn('IndexedDB read failed:', err);
-    return null;
-  }
-}
-
-async function setCachedReport(cacheKey, report) {
-  try {
-    const database = await openIndexedDB();
-    return new Promise((resolve, reject) => {
-      const transaction = database.transaction([STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.put({
-        cacheKey: cacheKey,
-        timestamp: Date.now(),
-        report: report
-      });
-      request.onsuccess = () => resolve(true);
-      request.onerror = () => reject(request.error);
-    });
-  } catch (err) {
-    console.warn('IndexedDB write failed:', err);
-    return false;
-  }
-}
-
-async function deleteCachedReport(cacheKey) {
-  try {
-    const database = await openIndexedDB();
-    return new Promise((resolve, reject) => {
-      const transaction = database.transaction([STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.delete(cacheKey);
-      request.onsuccess = () => resolve(true);
-      request.onerror = () => reject(request.error);
-    });
-  } catch (err) {
-    console.warn('IndexedDB delete failed:', err);
-    return false;
-  }
-}
-
-async function clearAllReportCache() {
-  try {
-    const database = await openIndexedDB();
-    return new Promise((resolve, reject) => {
-      const transaction = database.transaction([STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.clear();
-      request.onsuccess = () => resolve(true);
-      request.onerror = () => reject(request.error);
-    });
-  } catch (err) {
-    console.warn('Clear cache failed:', err);
-    return false;
-  }
-}
-
-function getReportCacheKey(store, employeeId, from, to, unsettledOnly) {
-  return `report_${store}_${employeeId}_${from || 'none'}_${to || 'none'}_${unsettledOnly}`;
-}
-
-// Call this after any sale or refund to invalidate all cached reports
-function invalidateAllReportCaches() {
-  clearAllReportCache().catch(console.warn);
-}
+  
 // Category image mapping – replace URLs with actual image links
 const categoryImages = {
   "CAR AROMATIC": "https://i.imgur.com/qb8JmQS.jpeg",
@@ -3221,95 +3110,86 @@ function applyCustomDiscount() {
   }
 
  async function completeCheckout(paymentMethod, cashReceived) {
-  document.getElementById('paymentModal').style.display = 'none';
-  const totalAmount = pendingTransaction.totalAmount;
-
-  const transactionId = getNextTransactionNumber(currentStore);
-  const saleItems = cart.map(item => ({
-    id: item.product.id,
-    category: item.product.category,
-    name: item.product.name,
-    price: item.product.price,
-    quantity: item.quantity,
-    free_quantity: item.freeQuantity,
-    total: (item.quantity - item.freeQuantity) * item.product.price
-  }));
-  const transaction = {
-    transaction_id: transactionId,
-    items: saleItems,
-    total: totalAmount,
-    payment_method: paymentMethod,
-    cash_received: cashReceived,
-    timestamp: new Date().toISOString(),
-    discount: discountAmount,
-    buy2_free1_discount: buy2Free1Discount,
-    buy3_free1_discount: buy3Free1Discount,
-    custom_discount: customDiscount,
-    prize_claimed: claimedReceiptInfo,
-    customer_id: selectedCustomer ? selectedCustomer.id : null
-  };
-  queueSale(transaction);
-  const success = true; // assume success, will sync later
-  const customerIdForLuckyDraw = selectedCustomer ? selectedCustomer.id : null;
-
-  if (success) {
-    // Update local stock and trigger notifications for each sold item
-    for (let item of saleItems) {
-      const product = products.find(p => p.id == item.id);
-      if (product) {
-        const oldStock = product.stock;
-        const newStock = oldStock - item.quantity;
-        product.stock = newStock;
-        checkAndNotifyOutOfStock(product.id, product.name, newStock);
-      }
-    }
-    localStorage.setItem(`products_${currentStore}`, JSON.stringify({
-      timestamp: Date.now(),
-      products: products
+    document.getElementById('paymentModal').style.display = 'none';
+    const totalAmount = pendingTransaction.totalAmount;
+      
+const transactionId = getNextTransactionNumber(currentStore);
+    const saleItems = cart.map(item => ({
+      id: item.product.id,
+      category: item.product.category,
+      name: item.product.name,
+      price: item.product.price,
+      quantity: item.quantity,
+      free_quantity: item.freeQuantity,
+      total: (item.quantity - item.freeQuantity) * item.product.price
     }));
-    renderProductGrid();
-
-    if (selectedCustomer && selectedCustomer.id) {
-      const POINTS_PER_RM = 1;
-      const pointsEarned = Math.floor(totalAmount * POINTS_PER_RM);
-      if (pointsEarned > 0) {
-        selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
-        updateCustomerDisplay();
-      }
-    }
-
-    if (pendingPrize) {
-      await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
-      pendingPrize = null;
-    }
-
-    // ✅ Invalidate all report caches because new sale data exists
-    invalidateAllReportCaches();
-
-    if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
-      const transactionWithName = { ...transaction, employee_name: currentEmployee.name };
-      await window.printerAPI.printReceipt(transactionWithName);
-    } else {
-      await showAlertModal('Receipt', 'Sale recorded. Printer not connected, no receipt printed.');
-    }
-
-    await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
-
-    document.getElementById('luckyTxId').innerText = transactionId;
-    const luckyModal = document.getElementById('luckyDrawModal');
-    luckyModal.style.display = 'flex';
-    document.getElementById('openLuckyDrawBtn').onclick = () => {
-      openLuckyDraw(transactionId, customerIdForLuckyDraw);
-      luckyModal.style.display = 'none';
+    const transaction = {
+      transaction_id: transactionId,
+      items: saleItems,
+      total: totalAmount,
+      payment_method: paymentMethod,
+      cash_received: cashReceived,
+      timestamp: new Date().toISOString(),
+      discount: discountAmount,
+      buy2_free1_discount: buy2Free1Discount,
+      buy3_free1_discount: buy3Free1Discount,
+      custom_discount: customDiscount,
+      prize_claimed: claimedReceiptInfo,
+      customer_id: selectedCustomer ? selectedCustomer.id : null
     };
-    document.getElementById('closeLuckyDrawBtn').onclick = () => luckyModal.style.display = 'none';
-    document.getElementById('closeLuckyDrawModal').onclick = () => luckyModal.style.display = 'none';
-
-    clearCart();
-  } else {
-    await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
+    queueSale(transaction);
+const success = true;  // assume success, will sync later
+    const customerIdForLuckyDraw = selectedCustomer ? selectedCustomer.id : null;
+    if (success) {
+      // Update local stock and trigger notifications for each sold item
+      for (let item of saleItems) {
+        const product = products.find(p => p.id == item.id);
+        if (product) {
+          const oldStock = product.stock;
+          const newStock = oldStock - item.quantity;
+          product.stock = newStock;
+          checkAndNotifyOutOfStock(product.id, product.name, newStock);
+        //  const stockSpan = document.querySelector(`.stock-display[data-id="${product.id}"]`);
+        //  if (stockSpan) stockSpan.innerText = newStock;
+        }
+      }
+       localStorage.setItem(`products_${currentStore}`, JSON.stringify({
+    timestamp: Date.now(),
+    products: products
+  }));
+renderProductGrid();
+     if (selectedCustomer && selectedCustomer.id) {
+  const POINTS_PER_RM = 1;  // Set this to the same value as in your backend
+  const pointsEarned = Math.floor(totalAmount * POINTS_PER_RM);
+  if (pointsEarned > 0) {
+    selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
+    updateCustomerDisplay();
   }
 }
+      if (pendingPrize) {
+        await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
+        pendingPrize = null;
+      }
+    //  localStorage.removeItem(`products_${currentStore}`);
+      if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
+        const transactionWithName = { ...transaction, employee_name: currentEmployee.name };
+        await window.printerAPI.printReceipt(transactionWithName);
+      } else {
+        await showAlertModal('Receipt', 'Sale recorded. Printer not connected, no receipt printed.');
+      }
+      await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
+      document.getElementById('luckyTxId').innerText = transactionId;
+      const luckyModal = document.getElementById('luckyDrawModal');
+      luckyModal.style.display = 'flex';
+      document.getElementById('openLuckyDrawBtn').onclick = () => { openLuckyDraw(transactionId, customerIdForLuckyDraw); luckyModal.style.display = 'none'; };
+      document.getElementById('closeLuckyDrawBtn').onclick = () => luckyModal.style.display = 'none';
+      document.getElementById('closeLuckyDrawModal').onclick = () => luckyModal.style.display = 'none';
+     // await fetchProductsFromSheet();
+      clearCart();
+    } else {
+      await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
+    }
+  }
 
   async function saveTransactionToSheet(transaction) {
     
@@ -3583,7 +3463,7 @@ function applyCustomDiscount() {
     document.getElementById('luckyDrawPrintModal').style.display = 'flex';
   }
 
- async function processRefund(transactionId, store) {
+  async function processRefund(transactionId, store) {
   showLoading('Processing refund...');
   try {
     const formData = new URLSearchParams();
@@ -3593,40 +3473,16 @@ function applyCustomDiscount() {
     formData.append("employee_name", currentEmployee.name);
     const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
     const result = await response.json();
-    
     if (result.success) {
       await showAlertModal('Refund Successful', `Refund ID: ${result.refundId}\nStock restored.`);
       updateReceipts();
       localStorage.removeItem(`products_${currentStore}`);
       await fetchProductsFromSheet();
       
-      // ✅ Invalidate all report caches because refund changed sales data
-      invalidateAllReportCaches();
-
-      // ========== NEW: Update cached receipts and re-render if modal is open ==========
-      if (cachedReceipts) {
-        // Mark the original transaction as refunded
-        const originalReceipt = cachedReceipts.find(r => r.transaction_id === transactionId);
-        if (originalReceipt) {
-          originalReceipt.refunded = true;
-        }
-        // Also add the new refund receipt to the cache (optional, but keeps list complete)
-        // The backend will include it in future fetches, but we can add it now
-        if (result.refundTransaction) {
-          cachedReceipts.unshift(result.refundTransaction);
-        }
-        // If the receipts modal is open, re-render immediately
-        const receiptsModal = document.getElementById('receiptsModal');
-        if (receiptsModal && receiptsModal.style.display === 'flex') {
-          renderReceiptsList(cachedReceipts);
-        }
-      }
-      // ========================================================================
-      
-      // Refresh report modal if open
+      // ✅ Refresh report data if the report modal is open
       const reportModal = document.getElementById('adminReportModal');
       if (reportModal && reportModal.style.display === 'flex') {
-        await updateAdminReport(true); // force refresh
+        await updateAdminReport();
       }
     } else {
       await showAlertModal('Refund Failed', result.error || 'Unknown error');
@@ -3638,50 +3494,51 @@ function applyCustomDiscount() {
     hideLoading();
   }
 }
-  // ==================== REPORTS ====================
-async function fetchSalesReportWithCache(store, employeeId, from, to, unsettledOnly, silent = false, forceRefresh = false) {
-  const cacheKey = getReportCacheKey(store, employeeId, from, to, unsettledOnly);
-  
-  if (!forceRefresh) {
-    const cached = await getCachedReport(cacheKey);
-    if (cached) {
-      // Optionally refresh in background (fire-and-forget)
-      if (!silent) {
-        // Show cached data immediately, then refresh in background
-        refreshReportInBackground(store, employeeId, from, to, unsettledOnly, cacheKey, silent);
-      }
-      return cached;
-    }
-  }
-  
-  // No cache or force refresh: fetch fresh
-  const fresh = await fetchSalesReport(store, employeeId, from, to, unsettledOnly, silent);
-  if (fresh) {
-    await setCachedReport(cacheKey, fresh);
-  }
-  return fresh;
-}
 
-async function refreshReportInBackground(store, employeeId, from, to, unsettledOnly, cacheKey, silent) {
+  // ==================== REPORTS ====================
+async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, silent = false) {
+  if (!silent) showLoading('Loading report...');
   try {
-    const fresh = await fetchSalesReport(store, employeeId, from, to, unsettledOnly, true); // silent fetch
-    if (fresh) {
-      const cached = await getCachedReport(cacheKey);
-      if (JSON.stringify(cached) !== JSON.stringify(fresh)) {
-        await setCachedReport(cacheKey, fresh);
-        // If the report modal is currently open, update the UI
-        const modal = document.getElementById('adminReportModal');
-        if (modal && modal.style.display === 'flex') {
-          await updateAdminReport(true); // true = force refresh from cache (will fetch fresh again? careful)
-          // Better: re-run updateAdminReport with forceRefresh true
-        }
+    let url = `${APPS_SCRIPT_URL}?action=getSalesReport&store=${store}&employeeId=${employeeId}`;
+    if (from) url += `&from=${encodeURIComponent(from)}`;
+    if (to) url += `&to=${encodeURIComponent(to)}`;
+    if (unsettledOnly) url += `&unsettledOnly=true`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      // Only update DOM if not silent (i.e., report modal is open)
+      if (!silent) {
+        const totalSalesEl = document.getElementById('adminReportTotalSales');
+        if (totalSalesEl) totalSalesEl.innerText = `RM ${(result.totalSales || 0).toFixed(2)}`;
+        const cashTotalEl = document.getElementById('adminReportCashTotal');
+        if (cashTotalEl) cashTotalEl.innerText = `RM ${(result.cashTotal || 0).toFixed(2)}`;
+        const cardTotalEl = document.getElementById('adminReportCardTotal');
+        if (cardTotalEl) cardTotalEl.innerText = `RM ${(result.cardTotal || 0).toFixed(2)}`;
+        const qrTotalEl = document.getElementById('adminReportQRTotal');
+        if (qrTotalEl) qrTotalEl.innerText = `RM ${(result.otherTotal || 0).toFixed(2)}`;
+        const alipayTotalEl = document.getElementById('adminReportAlipayTotal');
+        if (alipayTotalEl) alipayTotalEl.innerText = `RM ${(result.alipayTotal || 0).toFixed(2)}`;
+        const refundTotalEl = document.getElementById('adminReportRefundTotal');
+        if (refundTotalEl) refundTotalEl.innerText = `RM ${Math.abs(result.refundTotal || 0).toFixed(2)}`;
+        const refundedBillsEl = document.getElementById('adminReportRefundedBills');
+        if (refundedBillsEl) refundedBillsEl.innerText = result.refundedTransactionCount || 0;
+        const transactionCountEl = document.getElementById('adminReportTransactionCount');
+        if (transactionCountEl) transactionCountEl.innerText = result.transactionCount || 0;
+        const totalItemsEl = document.getElementById('adminReportTotalItems');
+        if (totalItemsEl) totalItemsEl.innerText = result.totalItems || 0;
       }
+      return result;
+    } else {
+      throw new Error(result.error || 'Report data error');
     }
   } catch (err) {
-    console.warn('Background refresh failed:', err);
+    console.error('fetchSalesReport error:', err);
+    if (!silent) await showAlertModal('Error', 'Failed to load report: ' + err.message);
+    return null;
+  } finally {
+    if (!silent) hideLoading();
   }
 }
-
  async function fetchSalesChartData(store, employeeId, from, to) {
   try {
     let url = `${APPS_SCRIPT_URL}?action=getSalesChartData&store=${store}&employeeId=${employeeId}`;
@@ -3743,49 +3600,7 @@ async function refreshReportInBackground(store, employeeId, from, to, unsettledO
     console.error('fetchSalesChartData error:', err);
   }
 }
-async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, silent = false) {
-  if (!silent) showLoading('Loading report...');
-  try {
-    let url = `${APPS_SCRIPT_URL}?action=getSalesReport&store=${store}&employeeId=${employeeId}`;
-    if (from) url += `&from=${encodeURIComponent(from)}`;
-    if (to) url += `&to=${encodeURIComponent(to)}`;
-    if (unsettledOnly) url += `&unsettledOnly=true`;
-    const response = await fetch(url);
-    const result = await response.json();
-    if (result.success) {
-      // Only update DOM if not silent (i.e., report modal is open)
-      if (!silent) {
-        const totalSalesEl = document.getElementById('adminReportTotalSales');
-        if (totalSalesEl) totalSalesEl.innerText = `RM ${(result.totalSales || 0).toFixed(2)}`;
-        const cashTotalEl = document.getElementById('adminReportCashTotal');
-        if (cashTotalEl) cashTotalEl.innerText = `RM ${(result.cashTotal || 0).toFixed(2)}`;
-        const cardTotalEl = document.getElementById('adminReportCardTotal');
-        if (cardTotalEl) cardTotalEl.innerText = `RM ${(result.cardTotal || 0).toFixed(2)}`;
-        const qrTotalEl = document.getElementById('adminReportQRTotal');
-        if (qrTotalEl) qrTotalEl.innerText = `RM ${(result.otherTotal || 0).toFixed(2)}`;
-        const alipayTotalEl = document.getElementById('adminReportAlipayTotal');
-        if (alipayTotalEl) alipayTotalEl.innerText = `RM ${(result.alipayTotal || 0).toFixed(2)}`;
-        const refundTotalEl = document.getElementById('adminReportRefundTotal');
-        if (refundTotalEl) refundTotalEl.innerText = `RM ${Math.abs(result.refundTotal || 0).toFixed(2)}`;
-        const refundedBillsEl = document.getElementById('adminReportRefundedBills');
-        if (refundedBillsEl) refundedBillsEl.innerText = result.refundedTransactionCount || 0;
-        const transactionCountEl = document.getElementById('adminReportTransactionCount');
-        if (transactionCountEl) transactionCountEl.innerText = result.transactionCount || 0;
-        const totalItemsEl = document.getElementById('adminReportTotalItems');
-        if (totalItemsEl) totalItemsEl.innerText = result.totalItems || 0;
-      }
-      return result;
-    } else {
-      throw new Error(result.error || 'Report data error');
-    }
-  } catch (err) {
-    console.error('fetchSalesReport error:', err);
-    if (!silent) await showAlertModal('Error', 'Failed to load report: ' + err.message);
-    return null;
-  } finally {
-    if (!silent) hideLoading();
-  }
-}
+
    async function fetchEmployeeSalesData(store, from, to) {
     try {
       let url = `${APPS_SCRIPT_URL}?action=getEmployeeSalesData&store=${store}`;
@@ -3801,7 +3616,7 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
  async function fetchProductSalesReport(store, employeeId, from, to) { return []; }
   function renderProductDetails(data) {}
 
- async function updateAdminReport(forceRefresh = false) {
+  async function updateAdminReport() {
   // Determine store and employee based on admin rights
   let store, employeeId;
   if (currentEmployee.isAdmin) {
@@ -3846,7 +3661,7 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
   }
 
   // Fetch main totals (silent, no loading overlay)
-const totals = await fetchSalesReportWithCache(store, employeeId, from, to, false, true, forceRefresh);
+  const totals = await fetchSalesReport(store, employeeId, from, to, false, true);
   if (!totals) return;
 
   // Update summary stats at the top
@@ -5083,72 +4898,73 @@ async function openReportsModal() {
     const storeBreakdown = document.getElementById('storeBreakdownContainer');
     if (storeBreakdown) storeBreakdown.style.display = 'none';
 
-    let loadingMsg = document.getElementById('adminReportLoadingMsg');
-    if (!loadingMsg) {
-      loadingMsg = document.createElement('div');
-      loadingMsg.id = 'adminReportLoadingMsg';
-      loadingMsg.style.textAlign = 'center';
-      loadingMsg.style.padding = '20px';
-      loadingMsg.style.background = '#f8fafc';
-      loadingMsg.style.borderRadius = '12px';
-      loadingMsg.style.margin = '10px 0';
-      loadingMsg.style.display = 'flex';
-      loadingMsg.style.alignItems = 'center';
-      loadingMsg.style.justifyContent = 'center';
-      loadingMsg.style.gap = '12px';
-      loadingMsg.innerHTML = `
-        <div class="report-loading-spinner"></div>
-        <span style="font-size: 1rem; color: #334155;">Loading report data...</span>
-      `;
-      const reportStats = document.querySelector('#adminReportModal .report-stats');
-      if (reportStats) reportStats.insertAdjacentElement('beforebegin', loadingMsg);
+   let loadingMsg = document.getElementById('adminReportLoadingMsg');
+if (!loadingMsg) {
+  loadingMsg = document.createElement('div');
+  loadingMsg.id = 'adminReportLoadingMsg';
+  loadingMsg.style.textAlign = 'center';
+  loadingMsg.style.padding = '20px';
+  loadingMsg.style.background = '#f8fafc';
+  loadingMsg.style.borderRadius = '12px';
+  loadingMsg.style.margin = '10px 0';
+  loadingMsg.style.display = 'flex';
+  loadingMsg.style.alignItems = 'center';
+  loadingMsg.style.justifyContent = 'center';
+  loadingMsg.style.gap = '12px';
+  loadingMsg.innerHTML = `
+    <div class="report-loading-spinner"></div>
+    <span style="font-size: 1rem; color: #334155;">Loading report data...</span>
+  `;
+  const reportStats = document.querySelector('#adminReportModal .report-stats');
+  if (reportStats) reportStats.insertAdjacentElement('beforebegin', loadingMsg);
+}
+loadingMsg.style.display = 'flex';
+
+  // 3. Now do async preparation (fetch employees, populate selects) without blocking modal appearance
+  if (currentEmployee?.isAdmin) {
+    const employees = await fetchEmployees();
+    const adminReportEmpSelect = document.getElementById('adminReportEmployeeSelect');
+    const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
+    if (adminReportEmpSelect && receiptsEmpSelect) {
+      adminReportEmpSelect.innerHTML = '<option value="all">All Employees</option>';
+      receiptsEmpSelect.innerHTML = '<option value="all">All Employees</option>';
+      employees.forEach(emp => {
+        const opt1 = document.createElement('option');
+        opt1.value = emp.id;
+        opt1.textContent = `${emp.name} (ID: ${emp.id})`;
+        const opt2 = document.createElement('option');
+        opt2.value = emp.id;
+        opt2.textContent = `${emp.name} (ID: ${emp.id})`;
+        adminReportEmpSelect.appendChild(opt1);
+        receiptsEmpSelect.appendChild(opt2);
+      });
     }
-    loadingMsg.style.display = 'flex';
-
-    // ========== NEW: Show cached report IMMEDIATELY (if any) ==========
-    await updateAdminReport(false); // false = use cache, no force refresh
-    // ========== Background refresh will happen inside fetchSalesReportWithCache ==========
-
-    // 3. Now do async preparation (fetch employees, populate selects) in the background
-    //    This does NOT block the modal appearance because cached data already showed.
-    if (currentEmployee?.isAdmin) {
-      const employees = await fetchEmployees();
-      const adminReportEmpSelect = document.getElementById('adminReportEmployeeSelect');
-      const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
-      if (adminReportEmpSelect && receiptsEmpSelect) {
-        adminReportEmpSelect.innerHTML = '<option value="all">All Employees</option>';
-        receiptsEmpSelect.innerHTML = '<option value="all">All Employees</option>';
-        employees.forEach(emp => {
-          const opt1 = document.createElement('option');
-          opt1.value = emp.id;
-          opt1.textContent = `${emp.name} (ID: ${emp.id})`;
-          const opt2 = document.createElement('option');
-          opt2.value = emp.id;
-          opt2.textContent = `${emp.name} (ID: ${emp.id})`;
-          adminReportEmpSelect.appendChild(opt1);
-          receiptsEmpSelect.appendChild(opt2);
-        });
-      }
-      const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
-      const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
-      if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'flex';
-      if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'flex';
-    } else {
-      const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
-      const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
-      if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'none';
-      if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'none';
-      const receiptsStore = document.getElementById('receiptsStoreSelect');
-      if (receiptsStore) receiptsStore.value = currentStore;
-    }
-
-    populateStoreSelects();
-
-    // 4. Finally, after background tasks, hide the loading message
-    //    (The cached data already showed, so user sees content immediately)
-    const loadingMsgElem = document.getElementById('adminReportLoadingMsg');
-    if (loadingMsgElem) loadingMsgElem.style.display = 'none';
+    const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
+    const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
+    if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'flex';
+    if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'flex';
+  } else {
+    const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
+    const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
+    if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'none';
+    if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'none';
+    const receiptsStore = document.getElementById('receiptsStoreSelect');
+    if (receiptsStore) receiptsStore.value = currentStore;
   }
+
+  populateStoreSelects();
+
+  // 4. Finally load report data (which will update the modal content)
+  try {
+    await updateAdminReport();
+  } catch (err) {
+    console.error('Error loading report:', err);
+    await showAlertModal('Error', 'Failed to load report data.');
+  } finally {
+    const loadingMsg = document.getElementById('adminReportLoadingMsg');
+    if (loadingMsg) loadingMsg.style.display = 'none';
+  }
+}
 }
   if (sideReportBtn) sideReportBtn.addEventListener('click', wrapMenuAction(openReportsModal));
   if (sideSettlementBtn) sideSettlementBtn.addEventListener('click', wrapMenuAction(() => { openSettlementModal(); }));

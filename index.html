@@ -1273,6 +1273,37 @@
   font-size: 0.8rem;
   color: #64748b;
 }
+.store-summary-card {
+  background: white;
+  border-radius: 28px;
+  padding: 20px;
+  flex: 1;
+  min-width: 180px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+  text-align: center;
+  transition: transform 0.2s;
+}
+.store-summary-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+.store-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #0f172a;
+}
+.store-total {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #2c7a4b;
+  margin: 8px 0;
+}
+.store-bills {
+  font-size: 1rem;
+  color: #475569;
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -1519,7 +1550,29 @@
 <button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">🌸 15ML PERFUME EDP PROMO (RM 8)</button>
 <div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">💰 Apply Custom Discount</button></div></div><div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div><div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
-<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option> <option value="year">This Year</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 QR Pay: <span id="adminReportQRTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💸 Alipay: <span id="adminReportAlipayTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">❌ Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div class="chart-container" id="storeChartContainer" style="display: none;"><canvas id="storeChart" width="400" height="200"></canvas></div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead><th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody></table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
+<div id="adminReportModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAdminReportModal">×</span><div class="modal-title">📊 Sales Report</div><div class="report-filters"><div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div><div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option> <option value="year">This Year</option><option value="custom">Custom</option></select></div><div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div></div><div class="report-stats"><div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💵 Cash: <span id="adminReportCashTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💳 Card: <span id="adminReportCardTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📱 QR Pay: <span id="adminReportQRTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">💸 Alipay: <span id="adminReportAlipayTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">❌ Refunds: <span id="adminReportRefundTotal" class="stat-value">RM 0.00</span></div><div class="stat-item breakdown">📄 Refunded Bills: <span id="adminReportRefundedBills" class="stat-value">0</span></div><div class="stat-item">Transactions: <span id="adminReportTransactionCount" class="stat-value">0</span></div><div class="stat-item">Items Sold: <span id="adminReportTotalItems" class="stat-value">0</span></div></div><div id="storeBreakdownContainer" style="margin: 20px 0; display: none;">
+  <h3 style="margin-bottom: 16px;">🏪 Store Breakdown</h3>
+  <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between;">
+    <!-- Queens -->
+    <div class="store-summary-card" data-store="queens">
+      <div class="store-name">🏬 Queens</div>
+      <div class="store-total">RM 0.00</div>
+      <div class="store-bills">🧾 Bills: 0</div>
+    </div>
+    <!-- Sunshine -->
+    <div class="store-summary-card" data-store="sunshine">
+      <div class="store-name">☀️ Sunshine</div>
+      <div class="store-total">RM 0.00</div>
+      <div class="store-bills">🧾 Bills: 0</div>
+    </div>
+    <!-- Gurney Paragon -->
+    <div class="store-summary-card" data-store="gurney_paragon">
+      <div class="store-name">🏙️ Gurney Paragon</div>
+      <div class="store-total">RM 0.00</div>
+      <div class="store-bills">🧾 Bills: 0</div>
+    </div>
+  </div>
+</div><div class="chart-container"><canvas id="dayChart" width="400" height="200"></canvas></div><div class="chart-container" id="employeeChartContainer" style="display: none;"><canvas id="employeeChart" width="400" height="200"></canvas></div><div class="modal-section"><button id="toggleProductDetailsBtn" class="modal-btn modal-btn-secondary" style="margin-bottom: 12px;">📦 Show Product Details</button><div id="productDetailsContainer" style="display: none;"><h3 style="margin: 0 0 12px 0;">Product Sales Breakdown</h3><div id="productDetailsTable" style="max-height: 300px; overflow-y: auto;"><table class="product-details-table"><thead><th>Product</th><th>Category</th><th>Quantity</th><th>Total</th> </thead><tbody id="productDetailsBody"></tbody></table></div></div></div><div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div></div></div>
 
 <div id="settlementModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
@@ -3836,7 +3889,7 @@ async function updateAdminReport() {
     store = document.getElementById('adminReportStoreSelect').value;
     employeeId = document.getElementById('adminReportEmployeeSelect').value;
   } else {
-    store = 'all'; 
+    store = 'all';
     employeeId = currentEmployee.id;
   }
 
@@ -3873,143 +3926,45 @@ async function updateAdminReport() {
     if (!from || !to) return;
   }
 
-  // Check if we have cached data matching the current filters
-  if (preloadedReportCache && 
-      preloadedReportCache.store === store && 
-      preloadedReportCache.employeeId === employeeId &&
-      preloadedReportCache.from === from &&
-      preloadedReportCache.to === to) {
-    // Use cached data
-    const cached = preloadedReportCache;
-    document.getElementById('adminReportTotalSales').innerText = `RM ${cached.totals.totalSales.toFixed(2)}`;
-    document.getElementById('adminReportCashTotal').innerText = `RM ${cached.totals.cashTotal.toFixed(2)}`;
-    document.getElementById('adminReportCardTotal').innerText = `RM ${cached.totals.cardTotal.toFixed(2)}`;
-    document.getElementById('adminReportQRTotal').innerText = `RM ${cached.totals.otherTotal.toFixed(2)}`;
-    document.getElementById('adminReportAlipayTotal').innerText = `RM ${cached.totals.alipayTotal.toFixed(2)}`;
-    document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(cached.totals.refundTotal).toFixed(2)}`;
-    document.getElementById('adminReportRefundedBills').innerText = cached.totals.refundedTransactionCount;
-    document.getElementById('adminReportTransactionCount').innerText = cached.totals.transactionCount;
-    document.getElementById('adminReportTotalItems').innerText = cached.totals.totalItems;
-    lastProductData = cached.productDetails;
-    if (productDetailsVisible) renderProductDetails(lastProductData);
-    // Render charts from cached data
-    if (cached.chartData) {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      if (cached.chartData.salesByStore) {
-        const storeCanvas = document.getElementById('storeChart');
-        if (storeCanvas && currentEmployee.isAdmin) {
-          if (window.storeChart && typeof window.storeChart.destroy === 'function') window.storeChart.destroy();
-          const storeLabels = cached.chartData.salesByStore.labels || [];
-          const storeData = cached.chartData.salesByStore.data || [];
-          if (storeLabels.length > 0) {
-            storeCanvas.style.display = 'block';
-            const ctx = storeCanvas.getContext('2d');
-            window.storeChart = new Chart(ctx, {
-              type: 'bar',
-              data: { labels: storeLabels, datasets: [{ label: 'Sales (RM)', data: storeData, backgroundColor: 'rgba(54,162,235,0.6)', borderColor: 'rgba(54,162,235,1)', borderWidth: 1 }] },
-              options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
-            });
-          } else {
-            storeCanvas.style.display = 'none';
-          }
-        }
-      }
-      if (cached.chartData.salesByDay || cached.chartData.hourly) {
-        const dayCanvas = document.getElementById('dayChart');
-        if (dayCanvas) {
-          if (window.dayChart && typeof window.dayChart.destroy === 'function') window.dayChart.destroy();
-          let labels, data, chartTitle;
-          if (cached.chartData.type === 'hourly') {
-            labels = cached.chartData.hourly.labels;
-            data = cached.chartData.hourly.data;
-            chartTitle = 'Hourly Sales (RM)';
-          } else {
-            labels = cached.chartData.salesByDay?.labels || [];
-            data = cached.chartData.salesByDay?.data || [];
-            chartTitle = 'Sales by Day (RM)';
-          }
-          if (labels.length > 0) {
-            dayCanvas.style.display = 'block';
-            const ctx = dayCanvas.getContext('2d');
-            window.dayChart = new Chart(ctx, {
-              type: 'bar',
-              data: { labels: labels, datasets: [{ label: chartTitle, data: data, backgroundColor: 'rgba(75,192,192,0.6)', borderColor: 'rgba(75,192,192,1)', borderWidth: 1 }] },
-              options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
-            });
-          } else {
-            dayCanvas.style.display = 'none';
-          }
-        }
-      }
-      if (cached.chartData.employeeSales && currentEmployee.isAdmin) {
-        const employeeCanvas = document.getElementById('employeeChart');
-        if (employeeCanvas) {
-          if (window.employeeChart && typeof window.employeeChart.destroy === 'function') window.employeeChart.destroy();
-          const labels = cached.chartData.employeeSales.labels || [];
-          const data = cached.chartData.employeeSales.data || [];
-          if (labels.length > 0) {
-            employeeCanvas.style.display = 'block';
-            const ctx = employeeCanvas.getContext('2d');
-            window.employeeChart = new Chart(ctx, {
-              type: 'bar',
-              data: { labels: labels, datasets: [{ label: 'Sales by Employee (RM)', data: data, backgroundColor: 'rgba(255,99,132,0.6)', borderColor: 'rgba(255,99,132,1)', borderWidth: 1 }] },
-              options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'RM' } } } }
-            });
-          } else {
-            employeeCanvas.style.display = 'none';
-          }
-        }
+  // 1. Fetch main report totals (overall, payment methods, etc.)
+  const totals = await fetchSalesReport(store, employeeId, from, to, false, false);
+  if (!totals) return;
+
+  // 2. Fetch product details (if needed for the "Show Product Details" button)
+  const productData = await fetchProductSalesReport(store, employeeId, from, to);
+  lastProductData = productData;
+  if (productDetailsVisible) renderProductDetails(lastProductData);
+
+  // 3. If admin, fetch per‑store breakdown (ignoring employee filter)
+  const storeBreakdownDiv = document.getElementById('storeBreakdownContainer');
+  if (currentEmployee.isAdmin) {
+    storeBreakdownDiv.style.display = 'block';
+    const stores = ['queens', 'sunshine', 'gurney_paragon'];
+    const storePromises = stores.map(storeName =>
+      fetchSalesReport(storeName, 'all', from, to, false, true) // silent fetch
+    );
+    const storeResults = await Promise.all(storePromises);
+    const storeTotals = {};
+    stores.forEach((storeName, idx) => {
+      const data = storeResults[idx];
+      storeTotals[storeName] = {
+        totalSales: data ? data.totalSales : 0,
+        transactionCount: data ? data.transactionCount : 0
+      };
+    });
+
+    // Update the three cards
+    for (const [storeName, vals] of Object.entries(storeTotals)) {
+      const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
+      if (card) {
+        card.querySelector('.store-total').innerText = `RM ${vals.totalSales.toFixed(2)}`;
+        card.querySelector('.store-bills').innerText = `🧾 Bills: ${vals.transactionCount}`;
       }
     }
-    return;
+  } else {
+    // Non‑admin: hide store breakdown
+    if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
   }
-
-  // Otherwise fetch fresh
-  const promises = [
-    fetchSalesReport(store, employeeId, from, to),
-    fetchSalesChartData(store, employeeId, from, to),
-    fetchProductSalesReport(store, employeeId, from, to)
-  ];
-  if (currentEmployee.isAdmin) {
-    promises.push(fetchEmployeeSalesData(store, from, to));
-  }
-
-  const results = await Promise.all(promises);
-  const totals = results[0];
-  const chartData = results[1];
-  const productData = results[2];
-  const employeeSalesData = results[3] ? { labels: results[3].labels, data: results[3].data } : null;
-
-  if (totals) {
-    // Cache the fresh data
-    preloadedReportCache = {
-      store,
-      employeeId,
-      from,
-      to,
-      totals: {
-        totalSales: totals.totalSales,
-        cashTotal: totals.cashTotal,
-        cardTotal: totals.cardTotal,
-        otherTotal: totals.otherTotal,   // ✅ use otherTotal
-        alipayTotal: totals.alipayTotal,
-        refundTotal: totals.refundTotal,
-        refundedTransactionCount: totals.refundedTransactionCount,
-        transactionCount: totals.transactionCount,
-        totalItems: totals.totalItems
-      }, // ✅ ADDED COMMA – THIS WAS THE MISSING COMMA
-      productDetails: productData,
-      chartData: { ...chartData, employeeSales: employeeSalesData }
-    };
-  }
-
-  if (productData) {
-    lastProductData = productData;
-    if (productDetailsVisible) renderProductDetails(lastProductData);
-  }
-
-  const loadingMsg = document.getElementById('adminReportLoadingMsg');
-  if (loadingMsg) loadingMsg.style.display = 'none';
 }
 // ==================== BARCODE SCANNER ====================
 let barcodeBuffer = '';
@@ -5172,7 +5127,7 @@ async function finishLoginAfterVerification() {
   // Start background sync every 60 seconds
   
 }
-  async function openReportsModal() {
+ async function openReportsModal() {
     if (currentEmployee?.isAdmin) {
       const employees = await fetchEmployees();
       const adminReportEmpSelect = document.getElementById('adminReportEmployeeSelect');
@@ -5208,6 +5163,10 @@ async function finishLoginAfterVerification() {
     const modal = document.getElementById('adminReportModal');
     if (modal) {
       modal.style.display = 'flex';
+      // Hide store breakdown container initially (will be shown if admin by updateAdminReport)
+      const storeBreakdown = document.getElementById('storeBreakdownContainer');
+      if (storeBreakdown) storeBreakdown.style.display = 'none';
+      
       let loadingMsg = document.getElementById('adminReportLoadingMsg');
       if (!loadingMsg) {
         loadingMsg = document.createElement('div');
@@ -5225,8 +5184,7 @@ async function finishLoginAfterVerification() {
       setTimeout(() => updateAdminReport(), 200);
     }
     closeSideMenu();
-  }
-
+}
   if (sideReportBtn) sideReportBtn.addEventListener('click', wrapMenuAction(openReportsModal));
   if (sideSettlementBtn) sideSettlementBtn.addEventListener('click', wrapMenuAction(() => { openSettlementModal(); }));
   if (sideCollectionBtn) sideCollectionBtn.addEventListener('click', wrapMenuAction(() => { openCollectionModal(); }));

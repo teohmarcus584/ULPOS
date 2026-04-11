@@ -2770,16 +2770,20 @@ function loadPendingSales() {
   if (stored) pendingSales = JSON.parse(stored);
 }
 
+// Save a sale to the queue
 function queueSale(transaction) {
   pendingSales.push(transaction);
   localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
-  // Do NOT call syncPendingSales() here – let background interval handle it
+  // Try to sync immediately (if online)
+  syncPendingSales();
 }
 
+// Attempt to send all pending sales
 async function syncPendingSales() {
   if (!navigator.onLine) return;
   if (pendingSales.length === 0) return;
 
+  
   const failed = [];
   for (const sale of pendingSales) {
     const success = await saveTransactionToSheet(sale);
@@ -2788,13 +2792,13 @@ async function syncPendingSales() {
   if (failed.length === 0) {
     pendingSales = [];
     localStorage.removeItem('pendingSales');
-    console.log('All pending sales synced successfully.');
+   
   } else {
     pendingSales = failed;
     localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
-    console.warn(`${failed.length} sale(s) failed to sync. Will retry later.`);
-    // Optional: show a subtle non‑blocking indicator (e.g., update sync status icon)
+    showAlertModal('Sync Partial', `${failed.length} sale(s) failed. Will retry later.`);
   }
+  hideLoading();
 }
 
 // Listen for online events
@@ -3802,7 +3806,6 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
   function renderProductDetails(data) {}
 
  async function updateAdminReport(forceRefresh = false) {
-  // Determine store and employee based on admin rights
   let store, employeeId;
   if (currentEmployee.isAdmin) {
     store = document.getElementById('adminReportStoreSelect').value;
@@ -3812,40 +3815,41 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
     employeeId = currentEmployee.id;
   }
 
-  // Date range logic
   const range = document.getElementById('adminReportDateRangeSelect').value;
   let from = null, to = null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
- if (range === 'today') {
-  from = to = getUTCDateString(today);
-} else if (range === 'week') {
-  const start = new Date(today);
-  const dayOfWeek = today.getDay();
-  const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
-  start.setDate(today.getDate() - diffToMonday);
-  from = getUTCDateString(start);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  to = getUTCDateString(end);
-} else if (range === 'month') {
-  const start = new Date(today.getFullYear(), today.getMonth(), 1);
-  from = getUTCDateString(start);
-  const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-  to = getUTCDateString(end);
-} else if (range === 'year') {
-  const start = new Date(today.getFullYear(), 0, 1);
-  from = getUTCDateString(start);
-  const end = new Date(today.getFullYear(), 11, 31);
-  to = getUTCDateString(end);
-} else if (range === 'custom') {
-  from = document.getElementById('adminReportFromDate').value;
-  to = document.getElementById('adminReportToDate').value;
-  if (!from || !to) return;
-  from = getUTCDateString(new Date(from));
-  to = getUTCDateString(new Date(to));
-}
+  if (range === 'today') {
+    from = to = getUTCDateString(today);           // ✅ Use UTC
+  } else if (range === 'week') {
+    const start = new Date(today);
+    const dayOfWeek = today.getDay();
+    const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+    start.setDate(today.getDate() - diffToMonday);
+    from = getUTCDateString(start);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    to = getUTCDateString(end);
+  } else if (range === 'month') {
+    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+    from = getUTCDateString(start);
+    const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    to = getUTCDateString(end);
+  } else if (range === 'year') {
+    const start = new Date(today.getFullYear(), 0, 1);
+    const end = new Date(today.getFullYear(), 11, 31);
+    from = getUTCDateString(start);
+    to = getUTCDateString(end);
+  } else if (range === 'custom') {
+    from = document.getElementById('adminReportFromDate').value;
+    to = document.getElementById('adminReportToDate').value;
+    if (!from || !to) return;
+    // Convert custom date inputs to UTC strings
+    from = getUTCDateString(new Date(from));
+    to = getUTCDateString(new Date(to));
+  }
+
   // Fetch main totals (silent, no loading overlay)
 const totals = await fetchSalesReportWithCache(store, employeeId, from, to, false, true, forceRefresh);
   if (!totals) return;
@@ -4983,100 +4987,95 @@ function renderProductGrid() {
   document.getElementById('closeTelegramModal')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
   document.getElementById('closeTelegramModalBtn')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
 
- async function finishLoginAfterVerification() {
-  if (window.autoSyncInterval) clearInterval(window.autoSyncInterval);
-  await loadInitialData();
-  soldBySelectCart.value = currentEmployee.id;
+  async function finishLoginAfterVerification() {
+    if (window.autoSyncInterval) clearInterval(window.autoSyncInterval);
+    await loadInitialData();
+    soldBySelectCart.value = currentEmployee.id;
 
-  const sideInventory = document.getElementById('sideInventoryBtn');
-  const sideCollection = document.getElementById('sideCollectionBtn');
-  if (currentEmployee.isAdmin) {
-    if (sideInventory) sideInventory.style.display = 'flex';
-    if (sideCollection) sideCollection.style.display = 'flex';
-    storeSelect.disabled = false;
-  } else {
-    if (sideInventory) sideInventory.style.display = 'none';
-    if (sideCollection) sideCollection.style.display = 'none';
-    storeSelect.disabled = true;
-  }
-
-  const systemTotalsDiv = document.getElementById('systemTotalsDisplay');
-  if (systemTotalsDiv) {
-    if (!currentEmployee.isAdmin) {
-      systemTotalsDiv.style.display = 'block';
-      const breakdownIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund', 'sysAlipay'];
-      breakdownIds.forEach(id => {
-        const el = document.getElementById(id);
-        if (el && el.parentElement) el.parentElement.style.display = 'none';
-      });
-      const netTotalParent = document.getElementById('sysNetTotal')?.parentElement;
-      if (netTotalParent) netTotalParent.style.display = 'block';
+    const sideInventory = document.getElementById('sideInventoryBtn');
+    const sideCollection = document.getElementById('sideCollectionBtn');
+    if (currentEmployee.isAdmin) {
+      if (sideInventory) sideInventory.style.display = 'flex';
+      if (sideCollection) sideCollection.style.display = 'flex';
+      storeSelect.disabled = false;
     } else {
-      systemTotalsDiv.style.display = 'block';
-      const allIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund', 'sysAlipay', 'sysNetTotal'];
-      allIds.forEach(id => {
+      if (sideInventory) sideInventory.style.display = 'none';
+      if (sideCollection) sideCollection.style.display = 'none';
+      storeSelect.disabled = true;
+    }
+
+    const systemTotalsDiv = document.getElementById('systemTotalsDisplay');
+    if (systemTotalsDiv) {
+      if (!currentEmployee.isAdmin) {
+        systemTotalsDiv.style.display = 'block';
+        const breakdownIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund', 'sysAlipay'];
+        breakdownIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el && el.parentElement) el.parentElement.style.display = 'none';
+        });
+        const netTotalParent = document.getElementById('sysNetTotal')?.parentElement;
+        if (netTotalParent) netTotalParent.style.display = 'block';
+      } else {
+        systemTotalsDiv.style.display = 'block';
+        const allIds = ['sysCash', 'sysCard', 'sysQR', 'sysRefund', 'sysAlipay', 'sysNetTotal'];
+        allIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el && el.parentElement) el.parentElement.style.display = 'block';
+        });
+      }
+    }
+
+    const reportStoreFilter = document.getElementById('reportStoreFilterGroup');
+    const employeeFilterGroup = document.getElementById('employeeFilterGroup');
+    const storeChartContainer = document.getElementById('storeChartContainer');
+    const employeeChartContainer = document.getElementById('employeeChartContainer');
+    if (currentEmployee.isAdmin) {
+      if (reportStoreFilter) reportStoreFilter.style.display = 'flex';
+      if (employeeFilterGroup) employeeFilterGroup.style.display = 'flex';
+      if (storeChartContainer) storeChartContainer.style.display = 'block';
+      if (employeeChartContainer) employeeChartContainer.style.display = 'block';
+    } else {
+      if (reportStoreFilter) reportStoreFilter.style.display = 'none';
+      if (employeeFilterGroup) employeeFilterGroup.style.display = 'none';
+      if (storeChartContainer) storeChartContainer.style.display = 'none';
+      if (employeeChartContainer) employeeChartContainer.style.display = 'none';
+      const paymentBreakdownIds = [
+        'adminReportCashTotal',
+        'adminReportCardTotal',
+        'adminReportQRTotal',
+        'adminReportAlipayTotal'
+      ];
+      paymentBreakdownIds.forEach(id => {
         const el = document.getElementById(id);
-        if (el && el.parentElement) el.parentElement.style.display = 'block';
+        if (el && el.parentElement && el.parentElement.classList.contains('stat-item')) {
+          el.parentElement.style.display = 'none';
+        }
       });
     }
-  }
 
-  const reportStoreFilter = document.getElementById('reportStoreFilterGroup');
-  const employeeFilterGroup = document.getElementById('employeeFilterGroup');
-  const storeChartContainer = document.getElementById('storeChartContainer');
-  const employeeChartContainer = document.getElementById('employeeChartContainer');
-  if (currentEmployee.isAdmin) {
-    if (reportStoreFilter) reportStoreFilter.style.display = 'flex';
-    if (employeeFilterGroup) employeeFilterGroup.style.display = 'flex';
-    if (storeChartContainer) storeChartContainer.style.display = 'block';
-    if (employeeChartContainer) employeeChartContainer.style.display = 'block';
-  } else {
-    if (reportStoreFilter) reportStoreFilter.style.display = 'none';
-    if (employeeFilterGroup) employeeFilterGroup.style.display = 'none';
-    if (storeChartContainer) storeChartContainer.style.display = 'none';
-    if (employeeChartContainer) employeeChartContainer.style.display = 'none';
-    const paymentBreakdownIds = [
-      'adminReportCashTotal',
-      'adminReportCardTotal',
-      'adminReportQRTotal',
-      'adminReportAlipayTotal'
-    ];
-    paymentBreakdownIds.forEach(id => {
-      const el = document.getElementById(id);
-      if (el && el.parentElement && el.parentElement.classList.contains('stat-item')) {
-        el.parentElement.style.display = 'none';
+    const settlementStoreSelect = document.getElementById('settlementStoreSelect');
+    if (!currentEmployee.isAdmin) {
+      if (settlementStoreSelect) {
+        settlementStoreSelect.value = initialStore;
+        settlementStoreSelect.disabled = true;
       }
-    });
-  }
-
-  const settlementStoreSelect = document.getElementById('settlementStoreSelect');
-  if (!currentEmployee.isAdmin) {
-    if (settlementStoreSelect) {
-      settlementStoreSelect.value = initialStore;
-      settlementStoreSelect.disabled = true;
+    } else {
+      if (settlementStoreSelect) settlementStoreSelect.disabled = false;
     }
-  } else {
-    if (settlementStoreSelect) settlementStoreSelect.disabled = false;
+
+    startReceiptPolling();
+    updateCartUI();
+    checkNotificationSupport();
+    updateStockAlertButtonUI();
+    loadPendingSales();
+    syncPendingSales();
+    preloadSettlement();
+    preloadReport();
+    enableBarcodeScanner();
+    refreshCategoryHighlighting();
+    if (window.autoSyncInterval) clearInterval(window.autoSyncInterval);
+    window.autoSyncInterval = setInterval(() => backgroundSync(), 60000);
   }
-
-  startReceiptPolling();
-  updateCartUI();
-  checkNotificationSupport();
-  updateStockAlertButtonUI();
-  loadPendingSales();
-  syncPendingSales();
-  preloadSettlement();
-  preloadReport();
-  enableBarcodeScanner();
-  refreshCategoryHighlighting();
-
-  // ✅ FIXED: Background sync now includes both product sync and pending sales upload
-  if (window.autoSyncInterval) clearInterval(window.autoSyncInterval);
-  window.autoSyncInterval = setInterval(() => {
-    backgroundSync();      // check for product changes
-    syncPendingSales();    // upload any pending transactions
-  }, 60000);
-}
 
 async function openReportsModal() {
   // 1. Close side menu IMMEDIATELY

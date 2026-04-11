@@ -1016,6 +1016,47 @@
     .employee-list .employee-row { display: flex; justify-content: space-between; margin: 4px 0; }
     .employee-list .employee-name { font-weight: 500; }
     .employee-list .employee-sales { color: #2c7a4b; }
+    /* Category cards (grid view for categories) */
+.category-card {
+  background: white;
+  border-radius: 20px;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.category-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  border-color: #cbd5e1;
+}
+.category-card-image {
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  background: #f8fafc;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.category-card-image img {
+  max-width: 80px;
+  max-height: 80px;
+  object-fit: contain;
+}
+.category-card-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #0f172a;
+  margin: 6px 0 2px;
+}
+.category-card-count {
+  font-size: 0.7rem;
+  color: #64748b;
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>

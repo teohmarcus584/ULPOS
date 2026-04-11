@@ -3602,6 +3602,26 @@ function applyCustomDiscount() {
       
       // ✅ Invalidate all report caches because refund changed sales data
       invalidateAllReportCaches();
+
+      // ========== NEW: Update cached receipts and re-render if modal is open ==========
+      if (cachedReceipts) {
+        // Mark the original transaction as refunded
+        const originalReceipt = cachedReceipts.find(r => r.transaction_id === transactionId);
+        if (originalReceipt) {
+          originalReceipt.refunded = true;
+        }
+        // Also add the new refund receipt to the cache (optional, but keeps list complete)
+        // The backend will include it in future fetches, but we can add it now
+        if (result.refundTransaction) {
+          cachedReceipts.unshift(result.refundTransaction);
+        }
+        // If the receipts modal is open, re-render immediately
+        const receiptsModal = document.getElementById('receiptsModal');
+        if (receiptsModal && receiptsModal.style.display === 'flex') {
+          renderReceiptsList(cachedReceipts);
+        }
+      }
+      // ========================================================================
       
       // Refresh report modal if open
       const reportModal = document.getElementById('adminReportModal');
@@ -3618,7 +3638,6 @@ function applyCustomDiscount() {
     hideLoading();
   }
 }
-
   // ==================== REPORTS ====================
 async function fetchSalesReportWithCache(store, employeeId, from, to, unsettledOnly, silent = false, forceRefresh = false) {
   const cacheKey = getReportCacheKey(store, employeeId, from, to, unsettledOnly);

@@ -3606,7 +3606,7 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
     else if (range === 'month') { /* compute month */ }
     else if (range === 'year') { /* compute year */ }
     else if (range === 'custom') { from = document.getElementById('adminReportFromDate').value; to = document.getElementById('adminReportToDate').value; if (!from || !to) return; }
-    const totals = await fetchSalesReport(store, employeeId, from, to, false, false);
+    const totals = await fetchSalesReport(store, employeeId, from, to, false, true); // silent = true
     if (!totals) return;
     document.getElementById('adminReportTotalSales').innerText = `RM ${totals.totalSales.toFixed(2)}`;
     document.getElementById('adminReportCashTotal').innerText = `RM ${totals.cashTotal.toFixed(2)}`;
@@ -4778,62 +4778,75 @@ function renderProductGrid() {
     window.autoSyncInterval = setInterval(() => backgroundSync(), 60000);
   }
 
-  async function openReportsModal() {
-    if (currentEmployee?.isAdmin) {
-      const employees = await fetchEmployees();
-      const adminReportEmpSelect = document.getElementById('adminReportEmployeeSelect');
-      const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
-      if (adminReportEmpSelect && receiptsEmpSelect) {
-        adminReportEmpSelect.innerHTML = '<option value="all">All Employees</option>';
-        receiptsEmpSelect.innerHTML = '<option value="all">All Employees</option>';
-        employees.forEach(emp => {
-          const opt1 = document.createElement('option');
-          opt1.value = emp.id;
-          opt1.textContent = `${emp.name} (ID: ${emp.id})`;
-          const opt2 = document.createElement('option');
-          opt2.value = emp.id;
-          opt2.textContent = `${emp.name} (ID: ${emp.id})`;
-          adminReportEmpSelect.appendChild(opt1);
-          receiptsEmpSelect.appendChild(opt2);
-        });
-      }
-      const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
-      const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
-      if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'flex';
-      if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'flex';
-    } else {
-      const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
-      const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
-      if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'none';
-      if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'none';
-      const receiptsStore = document.getElementById('receiptsStoreSelect');
-      if (receiptsStore) receiptsStore.value = currentStore;
+async function openReportsModal() {
+  if (currentEmployee?.isAdmin) {
+    const employees = await fetchEmployees();
+    const adminReportEmpSelect = document.getElementById('adminReportEmployeeSelect');
+    const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
+    if (adminReportEmpSelect && receiptsEmpSelect) {
+      adminReportEmpSelect.innerHTML = '<option value="all">All Employees</option>';
+      receiptsEmpSelect.innerHTML = '<option value="all">All Employees</option>';
+      employees.forEach(emp => {
+        const opt1 = document.createElement('option');
+        opt1.value = emp.id;
+        opt1.textContent = `${emp.name} (ID: ${emp.id})`;
+        const opt2 = document.createElement('option');
+        opt2.value = emp.id;
+        opt2.textContent = `${emp.name} (ID: ${emp.id})`;
+        adminReportEmpSelect.appendChild(opt1);
+        receiptsEmpSelect.appendChild(opt2);
+      });
     }
-    populateStoreSelects();
-
-    const modal = document.getElementById('adminReportModal');
-    if (modal) {
-      modal.style.display = 'flex';
-      const storeBreakdown = document.getElementById('storeBreakdownContainer');
-      if (storeBreakdown) storeBreakdown.style.display = 'none';
-      let loadingMsg = document.getElementById('adminReportLoadingMsg');
-      if (!loadingMsg) {
-        loadingMsg = document.createElement('div');
-        loadingMsg.id = 'adminReportLoadingMsg';
-        loadingMsg.style.textAlign = 'center';
-        loadingMsg.style.padding = '20px';
-        loadingMsg.style.background = '#f8fafc';
-        loadingMsg.style.borderRadius = '12px';
-        loadingMsg.style.margin = '10px 0';
-        loadingMsg.innerText = 'Loading report data...';
-        const reportStats = document.querySelector('#adminReportModal .report-stats');
-        if (reportStats) reportStats.insertAdjacentElement('beforebegin', loadingMsg);
-      }
-      loadingMsg.style.display = 'block';
-      setTimeout(() => updateAdminReport(), 200);
-    }
-    closeSideMenu();
+    const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
+    const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
+    if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'flex';
+    if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'flex';
+  } else {
+    const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
+    const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
+    if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'none';
+    if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'none';
+    const receiptsStore = document.getElementById('receiptsStoreSelect');
+    if (receiptsStore) receiptsStore.value = currentStore;
   }
+  populateStoreSelects();
+
+  const modal = document.getElementById('adminReportModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    const storeBreakdown = document.getElementById('storeBreakdownContainer');
+    if (storeBreakdown) storeBreakdown.style.display = 'none';
+
+    // Show global loading overlay
+    showLoading('Loading report data...');
+
+    let loadingMsg = document.getElementById('adminReportLoadingMsg');
+    if (!loadingMsg) {
+      loadingMsg = document.createElement('div');
+      loadingMsg.id = 'adminReportLoadingMsg';
+      loadingMsg.style.textAlign = 'center';
+      loadingMsg.style.padding = '20px';
+      loadingMsg.style.background = '#f8fafc';
+      loadingMsg.style.borderRadius = '12px';
+      loadingMsg.style.margin = '10px 0';
+      loadingMsg.innerText = 'Loading report data...';
+      const reportStats = document.querySelector('#adminReportModal .report-stats');
+      if (reportStats) reportStats.insertAdjacentElement('beforebegin', loadingMsg);
+    }
+    loadingMsg.style.display = 'block';
+
+    try {
+      await updateAdminReport();
+    } catch (err) {
+      console.error('Error loading report:', err);
+      await showAlertModal('Error', 'Failed to load report data.');
+    } finally {
+      hideLoading();                // hides the global spinner
+      if (loadingMsg) loadingMsg.style.display = 'none';
+    }
+  }
+  closeSideMenu();
+}
 
   if (sideReportBtn) sideReportBtn.addEventListener('click', wrapMenuAction(openReportsModal));
   if (sideSettlementBtn) sideSettlementBtn.addEventListener('click', wrapMenuAction(() => { openSettlementModal(); }));
@@ -4965,7 +4978,24 @@ function renderProductGrid() {
     await loadAllUnsettledCash();
     loadingMsg.style.display = 'none';
   }
-
+function renderProductDetails(productsData) {
+  const tbody = document.getElementById('productDetailsBody');
+  if (!tbody) return;
+  if (!productsData || productsData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No products sold in this period.</td></tr>';
+    return;
+  }
+  let html = '';
+  productsData.forEach(p => {
+    html += `<tr>
+        <td>${escapeHtml(p.name)}</td>
+        <td>${escapeHtml(p.category)}</td>
+        <td style="text-align: right;">${p.quantity}</td>
+        <td style="text-align: right;">RM ${p.total.toFixed(2)}</td>
+      </tr>`;
+  });
+  tbody.innerHTML = html;
+}
   async function loadAllUnsettledCash() {
     showLoading('Loading unsettled cash...');
     try {
@@ -4987,20 +5017,21 @@ function renderProductGrid() {
       hideLoading();
     }
   }
-
-  function updateStoreCashSummary() {
-    const storeTotals = { queens: 0, sunshine: 0, gurney_paragon: 0 };
-    allUnsettledCash.forEach(rec => {
-      if (storeTotals.hasOwnProperty(rec.store)) storeTotals[rec.store] += rec.cash_actual;
-    });
-    for (const [store, total] of Object.entries(storeTotals)) {
-      const card = document.querySelector(`.store-cash-card[data-store="${store}"]`);
-      if (card) {
-        const amountSpan = card.querySelector('.store-cash-amount');
-        if (amountSpan) amountSpan.innerText = `RM ${total.toFixed(2)}`;
-      }
+function updateStoreCashSummary() {
+  const storeTotals = { queens: 0, sunshine: 0, gurney_paragon: 0 };
+  allUnsettledCash.forEach(rec => {
+    if (storeTotals.hasOwnProperty(rec.store)) storeTotals[rec.store] += rec.cash_actual;
+  });
+  for (const [store, total] of Object.entries(storeTotals)) {
+    const card = document.querySelector(`.store-cash-card[data-store="${store}"]`);
+    if (card) {
+      const amountSpan = card.querySelector('.store-cash-amount');
+      if (amountSpan) amountSpan.innerText = `RM ${total.toFixed(2)}`;
     }
   }
+  // Add this line to make cards clickable
+  attachStoreCardClickListeners();
+}
 
   function updateTotalOutstanding() {
     const total = allUnsettledCash.reduce((sum, rec) => sum + rec.cash_actual, 0);
@@ -5184,7 +5215,25 @@ function renderProductGrid() {
       });
     }
   }
-
+// Add click listeners to store cash cards for filtering
+function attachStoreCardClickListeners() {
+  const cards = document.querySelectorAll('.store-cash-card');
+  cards.forEach(card => {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', () => {
+      const store = card.getAttribute('data-store');
+      if (store) {
+        const storeSelect = document.getElementById('collectionStoreSelect');
+        if (storeSelect) {
+          storeSelect.value = store;
+          // Trigger the change event to apply filter
+          const event = new Event('change', { bubbles: true });
+          storeSelect.dispatchEvent(event);
+        }
+      }
+    });
+  });
+}
   function updateReceipts() {
     let store;
     if (currentEmployee?.isAdmin) {

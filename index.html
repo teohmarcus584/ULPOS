@@ -4103,8 +4103,8 @@ if (transaction.buy3_free1_discount > 0) {
       else disconnectPrinter();
     });
     function closeModal() { printerModal.style.display = 'none'; }
-    closePrinterModal.addEventListener('click', closeModal);
-    closePrinterModalBtn.addEventListener('click', closeModal);
+    if (closePrinterModal) closePrinterModal.addEventListener('click', closeModal);
+if (closePrinterModalBtn) closePrinterModalBtn.addEventListener('click', closeModal);
     const savedSize = localStorage.getItem('printerPaperSize') || '80';
     paperSizeSelectModal.value = savedSize;
 

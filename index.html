@@ -4864,6 +4864,10 @@ function renderProductGrid() {
   }
 
 async function openReportsModal() {
+  // 1. Close side menu IMMEDIATELY
+  closeSideMenu();
+  
+  // 2. Prepare employee selects (this is fast, but modal is already open)
   if (currentEmployee?.isAdmin) {
     const employees = await fetchEmployees();
     const adminReportEmpSelect = document.getElementById('adminReportEmployeeSelect');
@@ -4894,17 +4898,17 @@ async function openReportsModal() {
     const receiptsStore = document.getElementById('receiptsStoreSelect');
     if (receiptsStore) receiptsStore.value = currentStore;
   }
+  
   populateStoreSelects();
 
+  // 3. Open modal IMMEDIATELY
   const modal = document.getElementById('adminReportModal');
   if (modal) {
     modal.style.display = 'flex';
     const storeBreakdown = document.getElementById('storeBreakdownContainer');
     if (storeBreakdown) storeBreakdown.style.display = 'none';
 
-    // Show global loading overlay
-    
-
+    // Optional: Remove or keep the loading message inside the modal
     let loadingMsg = document.getElementById('adminReportLoadingMsg');
     if (!loadingMsg) {
       loadingMsg = document.createElement('div');
@@ -4926,11 +4930,9 @@ async function openReportsModal() {
       console.error('Error loading report:', err);
       await showAlertModal('Error', 'Failed to load report data.');
     } finally {
-      hideLoading();                // hides the global spinner
       if (loadingMsg) loadingMsg.style.display = 'none';
     }
   }
-  closeSideMenu();
 }
 
   if (sideReportBtn) sideReportBtn.addEventListener('click', wrapMenuAction(openReportsModal));

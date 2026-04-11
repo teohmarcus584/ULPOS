@@ -4866,8 +4866,31 @@ function renderProductGrid() {
 async function openReportsModal() {
   // 1. Close side menu IMMEDIATELY
   closeSideMenu();
-  
-  // 2. Prepare employee selects (this is fast, but modal is already open)
+
+  // 2. Open modal IMMEDIATELY (before any async work)
+  const modal = document.getElementById('adminReportModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    const storeBreakdown = document.getElementById('storeBreakdownContainer');
+    if (storeBreakdown) storeBreakdown.style.display = 'none';
+
+    let loadingMsg = document.getElementById('adminReportLoadingMsg');
+    if (!loadingMsg) {
+      loadingMsg = document.createElement('div');
+      loadingMsg.id = 'adminReportLoadingMsg';
+      loadingMsg.style.textAlign = 'center';
+      loadingMsg.style.padding = '20px';
+      loadingMsg.style.background = '#f8fafc';
+      loadingMsg.style.borderRadius = '12px';
+      loadingMsg.style.margin = '10px 0';
+      loadingMsg.innerText = 'Loading report data...';
+      const reportStats = document.querySelector('#adminReportModal .report-stats');
+      if (reportStats) reportStats.insertAdjacentElement('beforebegin', loadingMsg);
+    }
+    loadingMsg.style.display = 'block';
+  }
+
+  // 3. Now do async preparation (fetch employees, populate selects) without blocking modal appearance
   if (currentEmployee?.isAdmin) {
     const employees = await fetchEmployees();
     const adminReportEmpSelect = document.getElementById('adminReportEmployeeSelect');
@@ -4898,40 +4921,18 @@ async function openReportsModal() {
     const receiptsStore = document.getElementById('receiptsStoreSelect');
     if (receiptsStore) receiptsStore.value = currentStore;
   }
-  
+
   populateStoreSelects();
 
-  // 3. Open modal IMMEDIATELY
-  const modal = document.getElementById('adminReportModal');
-  if (modal) {
-    modal.style.display = 'flex';
-    const storeBreakdown = document.getElementById('storeBreakdownContainer');
-    if (storeBreakdown) storeBreakdown.style.display = 'none';
-
-    // Optional: Remove or keep the loading message inside the modal
-    let loadingMsg = document.getElementById('adminReportLoadingMsg');
-    if (!loadingMsg) {
-      loadingMsg = document.createElement('div');
-      loadingMsg.id = 'adminReportLoadingMsg';
-      loadingMsg.style.textAlign = 'center';
-      loadingMsg.style.padding = '20px';
-      loadingMsg.style.background = '#f8fafc';
-      loadingMsg.style.borderRadius = '12px';
-      loadingMsg.style.margin = '10px 0';
-      loadingMsg.innerText = 'Loading report data...';
-      const reportStats = document.querySelector('#adminReportModal .report-stats');
-      if (reportStats) reportStats.insertAdjacentElement('beforebegin', loadingMsg);
-    }
-    loadingMsg.style.display = 'block';
-
-    try {
-      await updateAdminReport();
-    } catch (err) {
-      console.error('Error loading report:', err);
-      await showAlertModal('Error', 'Failed to load report data.');
-    } finally {
-      if (loadingMsg) loadingMsg.style.display = 'none';
-    }
+  // 4. Finally load report data (which will update the modal content)
+  try {
+    await updateAdminReport();
+  } catch (err) {
+    console.error('Error loading report:', err);
+    await showAlertModal('Error', 'Failed to load report data.');
+  } finally {
+    const loadingMsg = document.getElementById('adminReportLoadingMsg');
+    if (loadingMsg) loadingMsg.style.display = 'none';
   }
 }
 

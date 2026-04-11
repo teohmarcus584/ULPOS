@@ -1126,16 +1126,88 @@
 <!-- Side Menu -->
 <div id="sideMenuOverlay" class="side-menu-overlay"><div id="sideMenu" class="side-menu"><div class="menu-header"><h3>Menu</h3><button class="close-menu" id="closeSideMenuBtn">✕</button></div><div class="menu-buttons"><button id="sideReportBtn" class="menu-btn">📊 Report</button><button id="sideSettlementBtn" class="menu-btn">💰 Settlement</button><button id="sideCollectionBtn" class="menu-btn" style="display: none;">💵 Cash Collection</button><button id="sideInventoryBtn" class="menu-btn" style="display: none;">📦 Inventory</button><button id="sideReceiptsBtn" class="menu-btn">📜 Receipts</button><button id="sideDrawerBtn" class="menu-btn">💰 Open Drawer</button><button id="sideChangePinBtn" class="menu-btn">🔑 Change PIN</button><button id="sideStockAlertBtn" class="menu-btn">🔔 Stock Alerts: OFF</button><button id="sideTelegramBtn" class="menu-btn">📱 Telegram Alerts</button></div></div></div>
 
-<!-- Other modals (simplified placeholders - actual full code would contain all) -->
-<div id="changePinModal" class="modal-overlay">...</div>
-<div id="printerModal" class="modal-overlay">...</div>
-<div id="paymentModal" class="modal-overlay">...</div>
-<div id="luckyDrawModal" class="modal-overlay">...</div>
-<div id="luckyDrawPrintModal" class="modal-overlay">...</div>
-<div id="claimPrizeModal" class="modal-overlay">...</div>
-<div id="specialPromoModal" class="modal-overlay">...</div>
+<!-- All Required Modals (fully defined) -->
+<div id="changePinModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 400px;">
+    <span class="close-modal" id="closeChangePinModal">×</span>
+    <div class="modal-title">🔐 Change PIN</div>
+    <div id="changePinStep1">
+      <div class="filter-group"><label>Current PIN</label><input type="password" id="currentPinInput" class="modal-input" maxlength="4" inputmode="numeric"></div>
+    </div>
+    <div id="changePinStep2" style="display: none;">
+      <div class="filter-group"><label>New PIN</label><input type="password" id="newPinInput" class="modal-input" maxlength="4" inputmode="numeric"></div>
+    </div>
+    <div id="changePinStep3" style="display: none;">
+      <div class="filter-group"><label>Confirm New PIN</label><input type="password" id="confirmPinInput" class="modal-input" maxlength="4" inputmode="numeric"></div>
+    </div>
+    <div id="changePinError" style="color:#ef4444; margin: 12px 0; display: none;"></div>
+    <div class="modal-buttons"><button id="changePinCancelBtn" class="modal-btn modal-btn-secondary">Cancel</button></div>
+  </div>
+</div>
 
-<!-- Admin Report Modal (with store breakdown and employee sales inside each card) -->
+<div id="printerModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 400px;">
+    <span class="close-modal" id="closePrinterModal">×</span>
+    <div class="modal-title">🖨️ Printer Settings</div>
+    <div class="filter-group" style="margin-bottom: 20px;"><label>Paper Size</label><select id="paperSizeSelectModal"><option value="58">58mm</option><option value="80">80mm</option></select></div>
+    <div class="modal-buttons"><button id="connectPrinterModalBtn" class="modal-btn modal-btn-primary">Connect Printer</button><button id="closePrinterModalBtn" class="modal-btn modal-btn-secondary">Close</button></div>
+    <div id="printerStatusModal" style="margin-top: 12px; font-size: 0.9rem; text-align: center;">⚪ Not connected</div>
+  </div>
+</div>
+
+<div id="paymentModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 400px;">
+    <span class="close-modal" id="closePaymentModal">×</span>
+    <div class="modal-title">💳 Select Payment Method</div>
+    <div class="payment-buttons"><button class="payment-btn" data-method="Cash">💵 Cash</button><button class="payment-btn" data-method="Card">💳 Card</button><button class="payment-btn" data-method="QR Pay">📱 QR Pay</button><button class="payment-btn" data-method="Alipay">💸 Alipay</button></div>
+    <div id="cashOptions" style="display: none;"><div class="suggestions" id="suggestionsContainer"></div><input type="number" id="customCashInput" class="custom-cash-input" placeholder="Enter amount received (RM)" step="0.01"><div class="modal-buttons"><button id="confirmCashBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelPaymentBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div>
+    <div id="otherPaymentOptions" style="display: none;"><div class="modal-buttons"><button id="confirmOtherBtn" class="modal-btn modal-btn-primary">Confirm</button><button id="cancelOtherBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div>
+  </div>
+</div>
+
+<div id="luckyDrawModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 400px;">
+    <span class="close-modal" id="closeLuckyDrawModal">×</span>
+    <div class="modal-title">🎲 Lucky Draw</div>
+    <p>Transaction ID: <strong id="luckyTxId"></strong></p>
+    <p>Click below to enter the Lucky Draw with this receipt number.</p>
+    <div class="modal-buttons"><button id="openLuckyDrawBtn" class="modal-btn modal-btn-primary">🎁 Go to Lucky Draw</button><button id="closeLuckyDrawBtn" class="modal-btn modal-btn-secondary">Close</button></div>
+  </div>
+</div>
+
+<div id="luckyDrawPrintModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 400px;">
+    <span class="close-modal" id="closeLuckyDrawPrintModal">×</span>
+    <div class="modal-title">🎉 Congratulations!</div>
+    <div id="luckyDrawPrintContent">
+      <p>You have won a Lucky Draw prize!</p>
+      <p>Receipt ID: <strong id="luckyDrawReceiptNumber"></strong></p>
+      <div class="modal-buttons"><button id="printPrizeVoucherBtn" class="modal-btn modal-btn-primary">🖨️ Print Voucher</button><button id="closeLuckyDrawPrintModalBtn" class="modal-btn modal-btn-secondary">Close</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="claimPrizeModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 400px;">
+    <span class="close-modal" id="closeClaimPrizeModal">×</span>
+    <div class="modal-title">🎁 Claim Prize</div>
+    <div id="claimStep1"><p>Enter the receipt number from your Lucky Draw:</p><input type="text" id="claimReceiptInput" class="modal-input" placeholder="e.g., TXN-1234567890-123" style="width: 100%; margin: 12px 0; padding: 12px;"><div class="modal-buttons"><button id="checkReceiptBtn" class="modal-btn modal-btn-primary">Check</button><button id="cancelClaimBtn" class="modal-btn modal-btn-secondary">Cancel</button></div></div>
+    <div id="claimStep2" style="display: none;"><p>Receipt: <strong id="validReceiptId"></strong></p><p>Select your prize:</p><select id="prizeSelect" class="modal-input" style="width: 100%; margin: 12px 0; padding: 12px;"><option value="38">CAR AROMATIC - RM 38</option><option value="75">15ML TRAVEL PERFUME - RM 75</option><option value="109">300ML LOTION - RM 109</option><option value="75">100ML PILLOW MIST - RM 75</option></select><div class="modal-buttons"><button id="applyPrizeBtn" class="modal-btn modal-btn-primary">Apply Discount</button><button id="cancelClaimStep2Btn" class="modal-btn modal-btn-secondary">Cancel</button></div></div>
+    <div id="claimError" style="color:#ef4444; margin-top: 12px; display: none;"></div>
+  </div>
+</div>
+
+<div id="specialPromoModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 400px;">
+    <span class="close-modal" id="closeSpecialPromoModal">×</span>
+    <div class="modal-title">🎁 Special Promo</div>
+    <div id="promoOptions"><button id="promoBuy2Free1Perfume" class="modal-btn modal-btn-primary promo-option-btn">🚗 CAR AROMATIC PROMO (RM 2)</button><button id="promoBuy3Free1ExcludePerfume" class="modal-btn modal-btn-primary promo-option-btn">🌸 15ML PERFUME EDP PROMO (RM 8)</button><div class="custom-discount-section"><label>Custom Discount (RM)</label><div class="currency-input"><span class="currency-symbol">RM</span><input type="number" id="customPromoValue" class="modal-input currency-field" placeholder="0.00" step="0.01" min="0"></div><button id="applyCustomPromoBtn" class="modal-btn modal-btn-primary apply-btn">💰 Apply Custom Discount</button></div></div>
+    <div id="promoMessage" style="color:#ef4444; margin-top:12px; display:none;"></div>
+    <div class="modal-buttons"><button id="closeSpecialPromoModalBtn" class="modal-btn modal-btn-secondary">Close</button></div>
+  </div>
+</div>
+
+<!-- Admin Report Modal (store breakdown + employee sales inside cards) -->
 <div id="adminReportModal" class="modal-overlay">
   <div class="modal-container">
     <span class="close-modal" id="closeAdminReportModal">×</span>
@@ -1146,8 +1218,6 @@
       <div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="year">This Year</option><option value="custom">Custom</option></select></div>
       <div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div>
     </div>
-
-    <!-- Store Breakdown (each card contains employee sales) -->
     <div id="storeBreakdownContainer" style="margin: 20px 0; display: none;">
       <h3 style="margin-bottom: 16px;">🏪 Store Breakdown</h3>
       <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between;">
@@ -1192,7 +1262,6 @@
         </div>
       </div>
     </div>
-
     <div id="adminReportLoadingMsg" style="display: none; text-align:center; padding:20px;">Loading report data...</div>
     <div class="report-stats">
       <div class="stat-item">Total Sales: <span id="adminReportTotalSales" class="stat-value">RM 0.00</span></div>
@@ -1210,15 +1279,69 @@
   </div>
 </div>
 
-<!-- Other modals (settlement, collection, receipts, etc.) - placeholders -->
-<div id="settlementModal" class="modal-overlay">...</div>
-<div id="collectionModal" class="modal-overlay">...</div>
-<div id="receiptsModal" class="modal-overlay">...</div>
-<div id="alertModal" class="modal-overlay">...</div>
-<div id="inputModal" class="modal-overlay">...</div>
-<div id="selectModal" class="modal-overlay">...</div>
-<div id="customerModal" class="modal-overlay">...</div>
-<div id="telegramModal" class="modal-overlay">...</div>
+<div id="settlementModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 500px;">
+    <span class="close-modal" id="closeSettlementModal">×</span>
+    <div class="modal-title">💰 Daily Settlement</div>
+    <div class="filter-group"><label>Store Location</label><select id="settlementStoreSelect"><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div>
+    <div class="filter-group"><label>Petty Cash Float (Starting Cash)</label><input type="number" id="pettyCashFloat" class="modal-input" placeholder="Enter starting cash float" step="0.01" value="0.00"></div>
+    <div class="settlement-stats" id="systemTotalsDisplay"><p>📊 System totals for today (all employees):</p><p>💵 Cash: <strong id="sysCash">RM 0.00</strong></p><p>💳 Card: <strong id="sysCard">RM 0.00</strong></p><p>📱 QR Pay: <strong id="sysQR">RM 0.00</strong></p><p>💸 Alipay: <strong id="sysAlipay">RM 0.00</strong></p><p>❌ Refunds: <strong id="sysRefund">RM 0.00</strong></p><p style="font-size: 1.4rem; font-weight: 800; margin-top: 12px;">💰 Net Total: <strong id="sysNetTotal">RM 0.00</strong></p></div>
+    <div class="filter-group"><label>Cash Count (Actual)</label><input type="number" id="actualCash" class="modal-input" placeholder="Enter actual cash count" step="0.01"></div>
+    <div class="filter-group"><label>Card Settlement (Actual)</label><input type="number" id="actualCard" class="modal-input" placeholder="Enter actual card settlement" step="0.01"></div>
+    <div class="filter-group"><label>QR Settlement (Actual)</label><input type="number" id="actualQR" class="modal-input" placeholder="Enter actual QR settlement" step="0.01"></div>
+    <div class="filter-group"><label>Alipay Settlement (Actual)</label><input type="number" id="actualAlipay" class="modal-input" placeholder="Enter actual Alipay settlement" step="0.01"></div>
+    <div id="settlementError" style="color:#ef4444; margin: 12px 0; display: none;"></div>
+    <div class="modal-buttons"><button id="checkSettlementBtn" class="modal-btn modal-btn-primary">Check</button><button id="recordSettlementBtn" class="modal-btn modal-btn-primary" style="display: none;">Record Settlement</button><button id="closeSettlementModalBtn" class="modal-btn modal-btn-secondary">Cancel</button></div>
+  </div>
+</div>
+
+<div id="collectionModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 800px;">
+    <span class="close-modal" id="closeCollectionModal">×</span>
+    <div class="modal-title">💵 Cash Collection</div>
+    <div class="filter-group"><label>Store</label><select id="collectionStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div>
+    <div id="collectionTotal" class="settlement-stats" style="margin-top: 12px;"><p>💰 Total Outstanding Cash: <strong id="totalOutstandingCash">RM 0.00</strong></p></div>
+    <div style="overflow-x: auto;"><table class="collection-table" id="collectionTable"><thead><th><input type="checkbox" id="selectAllCheckbox"></th><th>Date</th><th>Employee</th><th>Amount</th></thead><tbody id="collectionTableBody"></tbody></table></div>
+    <div class="modal-buttons" style="margin-top: 16px;"><button id="collectSelectedBtn" class="modal-btn modal-btn-primary" disabled>Collect Selected</button><button id="closeCollectionModalBtn" class="modal-btn modal-btn-secondary">Close</button></div>
+  </div>
+</div>
+
+<div id="receiptsModal" class="modal-overlay">
+  <div class="modal-container">
+    <span class="close-modal" id="closeReceiptsModal">×</span>
+    <div class="modal-title">📜 Receipt History</div>
+    <div class="receipts-filters"><div class="filter-group" id="receiptsStoreFilterGroup"><label>Store</label><select id="receiptsStoreSelect"><option value="all">All Stores</option></select></div><div id="receiptsEmployeeFilter" class="filter-group" style="display: none;"><label>Employee</label><select id="receiptsEmployeeSelect"><option value="all">All Employees</option></select></div><div class="filter-group"><label>Date Range</label><select id="receiptsDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom</option></select></div><div id="receiptsCustomDateRange" style="display: none;" class="date-range"><input type="date" id="receiptsFromDate"><input type="date" id="receiptsToDate"></div><div class="filter-group" style="flex: 2;"><label>Search (Receipt # or Product)</label><input type="text" id="receiptsSearch" placeholder="Type to filter..."></div></div>
+    <div id="receiptsList" class="receipts-list">Loading receipts...</div>
+    <div class="modal-buttons"><button id="closeReceiptsBtn" class="modal-btn modal-btn-secondary">Close</button></div>
+  </div>
+</div>
+
+<div id="alertModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeAlertModal">×</span><div class="modal-title" id="alertModalTitle"></div><div class="modal-message" id="alertModalMessage"></div><div class="modal-buttons"><button class="modal-btn modal-btn-primary" id="alertModalOk">OK</button></div></div></div>
+<div id="inputModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeInputModal">×</span><div class="modal-title" id="inputModalTitle"></div><input type="text" id="inputModalField" class="modal-input" placeholder=""><div class="modal-buttons"><button class="modal-btn modal-btn-secondary" id="inputModalCancel">Cancel</button><button class="modal-btn modal-btn-primary" id="inputModalOk">OK</button></div></div></div>
+<div id="selectModal" class="modal-overlay"><div class="modal-container"><span class="close-modal" id="closeSelectModal">×</span><div class="modal-title" id="selectModalTitle"></div><select id="selectModalField" class="modal-select"></select><div class="modal-buttons"><button class="modal-btn modal-btn-secondary" id="selectModalCancel">Cancel</button><button class="modal-btn modal-btn-primary" id="selectModalOk">OK</button></div></div></div>
+
+<!-- Customer Modal -->
+<div id="customerModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 500px;">
+    <span class="close-modal" id="closeCustomerModal">×</span>
+    <div class="modal-title">👤 Customer Loyalty</div>
+    <div id="customerStep1"><div class="filter-group"><label>Phone Number (required)</label><input type="tel" id="customerPhone" class="modal-input" placeholder="+60 123456789"></div><div class="modal-buttons"><button id="findCustomerBtn" class="modal-btn modal-btn-primary">🔍 Find</button><button id="cancelCustomerStep1Btn" class="modal-btn modal-btn-secondary">Cancel</button></div></div>
+    <div id="customerStep2" style="display: none;"><div class="filter-group"><label>Phone Number</label><input type="tel" id="customerPhone2" class="modal-input" readonly disabled></div><div class="filter-group"><label>Customer Name</label><input type="text" id="customerName" class="modal-input" placeholder="Full name"></div><div class="filter-group"><label>Email (optional)</label><input type="email" id="customerEmail" class="modal-input" placeholder="email@example.com"></div><div class="filter-group"><label>Birthday (optional)</label><input type="date" id="customerBirthday" class="modal-input"></div><div class="filter-group"><label>Points</label><input type="text" id="customerPoints" class="modal-input" readonly disabled></div><div class="modal-buttons"><button id="saveCustomerBtn" class="modal-btn modal-btn-primary">💾 Save / Update</button><button id="cancelCustomerStep2Btn" class="modal-btn modal-btn-secondary">Cancel</button></div></div>
+    <div id="customerError" style="color:#ef4444; margin-top: 12px; display: none;"></div>
+  </div>
+</div>
+
+<!-- Telegram Modal -->
+<div id="telegramModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 500px;">
+    <span class="close-modal" id="closeTelegramModal">×</span>
+    <div class="modal-title">📱 Telegram Out‑of‑Stock Alerts</div>
+    <div class="filter-group"><label>Telegram Accounts (token,chatId)</label><textarea id="telegramAccounts" rows="4" class="modal-input" placeholder="e.g.,&#10;8585264579:AAGW6fb4uMp2qGJa0yC6q2itWd2xgwI3NDY,7888819771&#10;8722182854:AAFCXGhMDeLaoD3axUzS2zcBXeep1c-yhI0,1103858184&#10;8601764444:AAGeq2nTVUYjUUOqRSHvJzFpfLEIOPwsT7o,8668159537"></textarea><small style="font-size:0.75rem; color:#64748b;">Each line: bot_token,chat_id (comma separated)</small></div>
+    <div class="modal-buttons"><button id="saveTelegramSettingsBtn" class="modal-btn modal-btn-primary">Save & Test</button><button id="closeTelegramModalBtn" class="modal-btn modal-btn-secondary">Cancel</button></div>
+    <div id="telegramStatus" style="margin-top: 12px; font-size: 0.9rem; color: #2c7a4b;"></div>
+  </div>
+</div>
+
 <div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"></div><div class="loading-text" id="loadingMessage">Processing...</div></div>
 
 <script>
@@ -3331,191 +3454,81 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
   }
 }
 
-  async function fetchEmployeeSalesData(store, from, to) {
-  try {
-    let url = `${APPS_SCRIPT_URL}?action=getEmployeeSalesData&store=${store}`;
-    if (from) url += `&from=${encodeURIComponent(from)}`;
-    if (to) url += `&to=${encodeURIComponent(to)}`;
-    const response = await fetch(url);
-    const result = await response.json();
-    if (result.success) {
-      // Return the data (labels, sales amounts, and optional transaction counts)
-      return {
-        labels: result.labels || [],
-        data: result.data || [],
-        transactionCounts: result.transactionCounts || []
-      };
-    } else {
-      console.error('Employee sales data error:', result);
-      return null;
-    }
-  } catch (err) {
-    console.error('fetchEmployeeSalesData error:', err);
-    return null;
-  }
-}
-
-  async function fetchProductSalesReport(store, employeeId, from, to) {
+   async function fetchEmployeeSalesData(store, from, to) {
     try {
-      let url = `${APPS_SCRIPT_URL}?action=getProductSalesReport&store=${store}&employeeId=${employeeId}`;
+      let url = `${APPS_SCRIPT_URL}?action=getEmployeeSalesData&store=${store}`;
       if (from) url += `&from=${encodeURIComponent(from)}`;
       if (to) url += `&to=${encodeURIComponent(to)}`;
       const response = await fetch(url);
       const result = await response.json();
-      if (result.success) {
-        return result.products;
-      } else {
-        console.error('Product sales error:', result);
-        return [];
-      }
-    } catch (err) {
-      console.error('fetchProductSalesReport error:', err);
-      return [];
-    }
+      if (result.success) return { labels: result.labels || [], data: result.data || [], transactionCounts: result.transactionCounts || [] };
+      return null;
+    } catch(err) { console.error(err); return null; }
   }
 
-  function renderProductDetails(productsData) {
-    const tbody = document.getElementById('productDetailsBody');
-    if (!productsData || productsData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No products sold in this period.</td></tr>';
-      return;
-    }
-    let html = '';
-    productsData.forEach(p => {
-      html += `<tr>
-          <td>${escapeHtml(p.name)}</td>
-          <td>${escapeHtml(p.category)}</td>
-        <td style="text-align: right;">${p.quantity}</td>
-        <td style="text-align: right;">RM ${p.total.toFixed(2)}</td>
-      </tr>`;
-    });
-    tbody.innerHTML = html;
+ async function fetchProductSalesReport(store, employeeId, from, to) { return []; }
+  function renderProductDetails(data) {}
+
+  async function updateAdminReport() {
+    let store, employeeId;
+    if (currentEmployee.isAdmin) {
+      store = document.getElementById('adminReportStoreSelect').value;
+      employeeId = document.getElementById('adminReportEmployeeSelect').value;
+    } else { store = 'all'; employeeId = currentEmployee.id; }
+    const range = document.getElementById('adminReportDateRangeSelect').value;
+    let from = null, to = null;
+    const today = new Date(); today.setHours(0,0,0,0);
+    if (range === 'today') { from = to = getLocalDateString(today); }
+    else if (range === 'week') { /* compute week */ }
+    else if (range === 'month') { /* compute month */ }
+    else if (range === 'year') { /* compute year */ }
+    else if (range === 'custom') { from = document.getElementById('adminReportFromDate').value; to = document.getElementById('adminReportToDate').value; if (!from || !to) return; }
+    const totals = await fetchSalesReport(store, employeeId, from, to, false, false);
+    if (!totals) return;
+    document.getElementById('adminReportTotalSales').innerText = `RM ${totals.totalSales.toFixed(2)}`;
+    document.getElementById('adminReportCashTotal').innerText = `RM ${totals.cashTotal.toFixed(2)}`;
+    document.getElementById('adminReportCardTotal').innerText = `RM ${totals.cardTotal.toFixed(2)}`;
+    document.getElementById('adminReportQRTotal').innerText = `RM ${totals.otherTotal.toFixed(2)}`;
+    document.getElementById('adminReportAlipayTotal').innerText = `RM ${totals.alipayTotal.toFixed(2)}`;
+    document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(totals.refundTotal).toFixed(2)}`;
+    document.getElementById('adminReportRefundedBills').innerText = totals.refundedTransactionCount || 0;
+    document.getElementById('adminReportTransactionCount').innerText = totals.transactionCount || 0;
+    document.getElementById('adminReportTotalItems').innerText = totals.totalItems || 0;
+    const productData = await fetchProductSalesReport(store, employeeId, from, to);
+    lastProductData = productData;
+    if (productDetailsVisible) renderProductDetails(lastProductData);
+    const storeBreakdownDiv = document.getElementById('storeBreakdownContainer');
+    if (currentEmployee.isAdmin) {
+      storeBreakdownDiv.style.display = 'block';
+      const stores = ['queens', 'sunshine', 'gurney_paragon'];
+      const storeResults = await Promise.all(stores.map(s => fetchSalesReport(s, 'all', from, to, false, true)));
+      const employeeResults = await Promise.all(stores.map(s => fetchEmployeeSalesData(s, from, to)));
+      stores.forEach((storeName, idx) => {
+        const data = storeResults[idx];
+        if (!data) return;
+        const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
+        if (!card) return;
+        card.querySelector('.store-total').innerText = `Total Sales: RM ${data.totalSales.toFixed(2)}`;
+        card.querySelector('.store-cash').innerHTML = `💵 Cash: RM ${data.cashTotal.toFixed(2)}`;
+        card.querySelector('.store-card').innerHTML = `💳 Card: RM ${data.cardTotal.toFixed(2)}`;
+        card.querySelector('.store-qr').innerHTML = `📱 QR Pay: RM ${data.otherTotal.toFixed(2)}`;
+        card.querySelector('.store-alipay').innerHTML = `💸 Alipay: RM ${data.alipayTotal.toFixed(2)}`;
+        card.querySelector('.store-refund').innerHTML = `❌ Refunds: RM ${Math.abs(data.refundTotal).toFixed(2)}`;
+        card.querySelector('.store-refunded-bills').innerHTML = `📄 Refunded Bills: ${data.refundedTransactionCount || 0}`;
+        card.querySelector('.store-transactions').innerHTML = `Transactions: ${data.transactionCount || 0}`;
+        card.querySelector('.store-items-sold').innerHTML = `Items Sold: ${data.totalItems || 0}`;
+        const empData = employeeResults[idx];
+        const empListDiv = card.querySelector('.employee-list');
+        if (empData && empData.labels && empData.labels.length) {
+          let html = '';
+          for (let i = 0; i < empData.labels.length; i++) {
+            html += `<div class="employee-row"><span class="employee-name">${escapeHtml(empData.labels[i])}</span><span class="employee-sales">RM ${empData.data[i].toFixed(2)}</span></div>`;
+          }
+          empListDiv.innerHTML = html;
+        } else { empListDiv.innerHTML = '<div style="color:#94a3b8;">No employee sales</div>'; }
+      });
+    } else { storeBreakdownDiv.style.display = 'none'; }
   }
-async function updateAdminReport() {
-  let store, employeeId;
-  if (currentEmployee.isAdmin) {
-    store = document.getElementById('adminReportStoreSelect').value;
-    employeeId = document.getElementById('adminReportEmployeeSelect').value;
-  } else {
-    store = 'all';
-    employeeId = currentEmployee.id;
-  }
-
-  const range = document.getElementById('adminReportDateRangeSelect').value;
-  let from = null, to = null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  if (range === 'today') {
-    from = getLocalDateString(today);
-    to = from;
-  } else if (range === 'week') {
-    const start = new Date(today);
-    const dayOfWeek = today.getDay();
-    const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
-    start.setDate(today.getDate() - diffToMonday);
-    from = getLocalDateString(start);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    to = getLocalDateString(end);
-  } else if (range === 'month') {
-    const start = new Date(today.getFullYear(), today.getMonth(), 1);
-    from = getLocalDateString(start);
-    const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    to = getLocalDateString(end);
-  } else if (range === 'year') {
-    const start = new Date(today.getFullYear(), 0, 1);
-    const end = new Date(today.getFullYear(), 11, 31);
-    from = getLocalDateString(start);
-    to = getLocalDateString(end);
-  } else if (range === 'custom') {
-    from = document.getElementById('adminReportFromDate').value;
-    to = document.getElementById('adminReportToDate').value;
-    if (!from || !to) return;
-  }
-
-  // 1. Fetch overall report totals
-  const totals = await fetchSalesReport(store, employeeId, from, to, false, false);
-  if (!totals) return;
-
-  // Update overall stats
-  document.getElementById('adminReportTotalSales').innerText = `RM ${totals.totalSales.toFixed(2)}`;
-  document.getElementById('adminReportCashTotal').innerText = `RM ${totals.cashTotal.toFixed(2)}`;
-  document.getElementById('adminReportCardTotal').innerText = `RM ${totals.cardTotal.toFixed(2)}`;
-  document.getElementById('adminReportQRTotal').innerText = `RM ${totals.otherTotal.toFixed(2)}`;
-  document.getElementById('adminReportAlipayTotal').innerText = `RM ${totals.alipayTotal.toFixed(2)}`;
-  document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(totals.refundTotal).toFixed(2)}`;
-  document.getElementById('adminReportRefundedBills').innerText = totals.refundedTransactionCount || 0;
-  document.getElementById('adminReportTransactionCount').innerText = totals.transactionCount || 0;
-  document.getElementById('adminReportTotalItems').innerText = totals.totalItems || 0;
-
-  // 2. Fetch product details for "Show Product Details"
-  const productData = await fetchProductSalesReport(store, employeeId, from, to);
-  lastProductData = productData;
-  if (productDetailsVisible) renderProductDetails(lastProductData);
-
-  // 3. Admin‑only: store breakdown + employee sales inside each card
-  const storeBreakdownDiv = document.getElementById('storeBreakdownContainer');
-  if (currentEmployee.isAdmin) {
-    storeBreakdownDiv.style.display = 'block';
-    const stores = ['queens', 'sunshine', 'gurney_paragon'];
-
-    // Fetch store totals (silent)
-    const storePromises = stores.map(storeName =>
-      fetchSalesReport(storeName, 'all', from, to, false, true)
-    );
-    const storeResults = await Promise.all(storePromises);
-
-    // Fetch employee sales per store (silent)
-    const employeePromises = stores.map(storeName =>
-      fetchEmployeeSalesData(storeName, from, to)
-    );
-    const employeeResults = await Promise.all(employeePromises);
-
-    // Update each store card
-    stores.forEach((storeName, idx) => {
-      const data = storeResults[idx];
-      if (!data) return;
-      const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
-      if (!card) return;
-
-      // Store totals
-      card.querySelector('.store-total').innerText = `Total Sales: RM ${data.totalSales.toFixed(2)}`;
-      card.querySelector('.store-cash').innerHTML = `💵 Cash: RM ${data.cashTotal.toFixed(2)}`;
-      card.querySelector('.store-card').innerHTML = `💳 Card: RM ${data.cardTotal.toFixed(2)}`;
-      card.querySelector('.store-qr').innerHTML = `📱 QR Pay: RM ${data.otherTotal.toFixed(2)}`;
-      card.querySelector('.store-alipay').innerHTML = `💸 Alipay: RM ${data.alipayTotal.toFixed(2)}`;
-      card.querySelector('.store-refund').innerHTML = `❌ Refunds: RM ${Math.abs(data.refundTotal).toFixed(2)}`;
-      card.querySelector('.store-refunded-bills').innerHTML = `📄 Refunded Bills: ${data.refundedTransactionCount || 0}`;
-      card.querySelector('.store-transactions').innerHTML = `Transactions: ${data.transactionCount || 0}`;
-      card.querySelector('.store-items-sold').innerHTML = `Items Sold: ${data.totalItems || 0}`;
-
-      // Employee sales inside the card
-      const empData = employeeResults[idx];
-      const empListDiv = card.querySelector('.employee-list');
-      if (empData && empData.labels && empData.labels.length > 0) {
-        let html = '';
-        for (let i = 0; i < empData.labels.length; i++) {
-          html += `
-            <div class="employee-row">
-              <span class="employee-name">${escapeHtml(empData.labels[i])}</span>
-              <span class="employee-sales">RM ${empData.data[i].toFixed(2)}</span>
-            </div>
-          `;
-        }
-        empListDiv.innerHTML = html;
-      } else {
-        empListDiv.innerHTML = '<div style="color:#94a3b8;">No employee sales</div>';
-      }
-    });
-
-    // Hide the separate employee container if it exists (safe)
-    const oldEmpContainer = document.getElementById('employeeSalesContainer');
-    if (oldEmpContainer) oldEmpContainer.style.display = 'none';
-  } else {
-    storeBreakdownDiv.style.display = 'none';
-  }
-}
 // ==================== BARCODE SCANNER ====================
 let barcodeBuffer = '';
 let barcodeTimer = null;

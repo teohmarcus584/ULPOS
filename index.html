@@ -3220,11 +3220,11 @@ function applyCustomDiscount() {
     document.getElementById('closePaymentModal').onclick = () => modal.style.display = 'none';
   }
 
- async function completeCheckout(paymentMethod, cashReceived) {
+async function completeCheckout(paymentMethod, cashReceived) {
   document.getElementById('paymentModal').style.display = 'none';
   const totalAmount = pendingTransaction.totalAmount;
 
-  const transactionId = await getNextTransactionNumber(currentStore); // ✅ added await
+  const transactionId = await getNextTransactionNumber(currentStore);
 
   const saleItems = cart.map(item => ({
     id: item.product.id,
@@ -3289,6 +3289,33 @@ function applyCustomDiscount() {
 
     // ✅ Invalidate all report caches because new sale data exists
     invalidateAllReportCaches();
+
+    // ✅ IMMEDIATELY add the new receipt to the local cache so it appears in the modal
+    const fakeReceipt = {
+      transaction_id: transaction.transaction_id,
+      timestamp: transaction.timestamp,
+      items: transaction.items,
+      total: transaction.total,
+      payment_method: transaction.payment_method,
+      store: currentStore,
+      employee_id: currentEmployee.id,
+      refunded: false,
+      discount: discountAmount,
+      buy2_free1_discount: buy2Free1Discount,
+      buy3_free1_discount: buy3Free1Discount,
+      custom_discount: customDiscount
+    };
+    if (!cachedReceipts) cachedReceipts = [];
+    cachedReceipts.unshift(fakeReceipt);   // newest first
+
+    // If receipts modal is open, re-render immediately
+    const receiptsModal = document.getElementById('receiptsModal');
+    if (receiptsModal && receiptsModal.style.display === 'flex') {
+      renderReceiptsList(cachedReceipts);
+    }
+
+    // ✅ Force a background refresh of the receipt cache (will replace fake with real data after sync)
+    fetchAndCacheReceipts();
 
     if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
       const transactionWithName = { ...transaction, employee_name: currentEmployee.name };

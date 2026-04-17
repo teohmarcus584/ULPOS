@@ -1492,7 +1492,7 @@
 
 <script>
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyaGl1UL_DxMjRQZASxR1GPKaJGHcL-bd5erJPQ_FRo1qEK3koM9sr3zv6R0VMiZpNiEw/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxiVoapnunn-M-f8SIjhLc3QxbPfd9J6_47UkgjwXTJVzqn28XW8lY5onhd2e5DNdnoXw/exec"; // REPLACE WITH YOUR URL
 
   // ==================== GLOBAL VARIABLES ====================
   let products = [];
@@ -5568,6 +5568,7 @@ function attachStoreCardClickListeners() {
     });
   });
 }
+
 async function getNextTransactionNumber(store) {
   try {
     const response = await fetch(`${APPS_SCRIPT_URL}?action=getNextTransactionNumber&store=${store}`);
@@ -5591,7 +5592,16 @@ async function getNextTransactionNumber(store) {
     return `${prefix}-${timestamp}-${random}`;
   }
 }
- function updateReceipts() {
+// Helper: get local date string YYYY-MM-DD
+function getLocalDateString(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Full updateReceipts function with local date fix
+function updateReceipts() {
   let store;
   if (currentEmployee?.isAdmin) {
     const receiptsStore = document.getElementById('receiptsStoreSelect');
@@ -5599,52 +5609,52 @@ async function getNextTransactionNumber(store) {
   } else {
     store = currentStore;
   }
+
   let employeeId = 'all';
   if (currentEmployee?.isAdmin) {
     const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
     employeeId = receiptsEmpSelect ? receiptsEmpSelect.value : 'all';
   }
+
   const rangeSelect = document.getElementById('receiptsDateRangeSelect');
   const range = rangeSelect ? rangeSelect.value : 'today';
   const search = document.getElementById('receiptsSearch').value;
+
   let from = null, to = null;
   const today = new Date();
-  today.setHours(0,0,0,0);
-  
+  today.setHours(0, 0, 0, 0);   // local midnight
+
   if (range === 'today') {
-    // ✅ Use UTC date
-    from = getUTCDateString(today);
+    from = getLocalDateString(today);
     to = from;
   } else if (range === 'week') {
     const start = new Date(today);
     const dayOfWeek = today.getDay();
     const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
     start.setDate(today.getDate() - diffToMonday);
-    from = getUTCDateString(start);
+    from = getLocalDateString(start);
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
-    to = getUTCDateString(end);
+    to = getLocalDateString(end);
   } else if (range === 'month') {
     const start = new Date(today.getFullYear(), today.getMonth(), 1);
-    from = getUTCDateString(start);
+    from = getLocalDateString(start);
     const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    to = getUTCDateString(end);
+    to = getLocalDateString(end);
   } else if (range === 'year') {
     const start = new Date(today.getFullYear(), 0, 1);
+    from = getLocalDateString(start);
     const end = new Date(today.getFullYear(), 11, 31);
-    from = getUTCDateString(start);
-    to = getUTCDateString(end);
+    to = getLocalDateString(end);
   } else if (range === 'custom') {
     from = document.getElementById('receiptsFromDate')?.value;
     to = document.getElementById('receiptsToDate')?.value;
     if (!from || !to) return;
-    // ✅ Convert custom date inputs to UTC strings as well
-    if (from) from = getUTCDateString(new Date(from));
-    if (to) to = getUTCDateString(new Date(to));
+    // No conversion – user already selected local dates in YYYY-MM-DD
   }
+
   fetchReceipts(store, employeeId, from, to, search);
 }
-
   const toggleBtn = document.getElementById('toggleProductDetailsBtn');
   const productDetailsContainer = document.getElementById('productDetailsContainer');
   if (toggleBtn && productDetailsContainer) {

@@ -1402,27 +1402,36 @@
   font-size: 1rem;
   padding: 10px 14px;
 }
-/* Make the PIN modal container wider */
+/* 1. Modal container – much wider */
 #loginModal .modal-container {
-  max-width: 600px;   /* Change from 400px to 600px or 700px */
-  width: 90%;
+  max-width: 800px;     /* was 400px / 600px – now very wide */
+  width: 95%;
+  padding: 40px;        /* increase inner spacing */
 }
 
-/* Optionally enlarge the PIN input and buttons for better proportion */
+/* 2. PIN input – larger and more prominent */
 #loginModal .pin-input {
-  font-size: 2.5rem;
-  padding: 20px;
-  letter-spacing: 12px;
+  font-size: 3.5rem;    /* bigger digits */
+  padding: 24px 20px;
+  letter-spacing: 16px;
 }
 
+/* 3. Keypad buttons – large and touch‑friendly */
 #loginModal .keypad-btn {
-  padding: 24px;
-  font-size: 2rem;
-  border-radius: 80px;
+  padding: 32px;        /* big tap area */
+  font-size: 2.5rem;
+  border-radius: 100px;
 }
 
+/* 4. Button grid – more gap */
 #loginModal .pin-keypad {
-  gap: 16px;
+  gap: 20px;
+}
+
+/* 5. Modal title – larger text */
+#loginModal .modal-title {
+  font-size: 2rem;
+  margin-bottom: 24px;
 }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>

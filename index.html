@@ -5722,7 +5722,19 @@ function getLocalDateString(date) {
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
-
+async function fetchReceiptById(txId) {
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=getReceipts&search=${encodeURIComponent(txId)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.success && data.receipts.length) {
+      return data.receipts[0];
+    }
+  } catch (err) {
+    console.error(err);
+  }
+  return null;
+}
 // Full updateReceipts function with local date fix
 function updateReceipts() {
   let store;

@@ -1402,30 +1402,27 @@
   font-size: 1rem;
   padding: 10px 14px;
 }
-/* around line 170–190 */
+/* Make the PIN modal container wider */
 #loginModal .modal-container {
-  max-width: 900px;   /* ← change to 500px or 600px */
-    width: 90%;
+  max-width: 600px;   /* Change from 400px to 600px or 700px */
+  width: 90%;
 }
 
-/* around line 130–150 */
-.pin-input {
-  width: 100%;
-  text-align: center;
-  font-size: 2rem;     /* ← increase to 2.5rem or 3rem */
-  letter-spacing: 8px;
-  padding: 20px;       /* ← increase to 16px 20px */
-  border-radius: 60px;
+/* Optionally enlarge the PIN input and buttons for better proportion */
+#loginModal .pin-input {
+  font-size: 2.5rem;
+  padding: 20px;
+  letter-spacing: 12px;
 }
 
-/* around line 140–155 */
-.keypad-btn {
-  background: #f1f5f9;
-  border: none;
-  padding: 25px;       /* ← increase to 20px or 24px */
-  border-radius: 60px;
-  font-size: 3rem;   /* ← increase to 1.8rem or 2rem */
-  font-weight: 600;
+#loginModal .keypad-btn {
+  padding: 24px;
+  font-size: 2rem;
+  border-radius: 80px;
+}
+
+#loginModal .pin-keypad {
+  gap: 16px;
 }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>

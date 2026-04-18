@@ -4867,20 +4867,42 @@ if (transaction.buy3_free1_discount > 0) {
       }
     }
 
+let savedDevice = null;  // Store the device object globally (outside the IIFE)
+
 async function connectPrinter() {
   try {
     connectBtnModal.disabled = true;
-    printerStatusModal.innerText = '🔍 Connecting to printer...';
+    printerStatusModal.innerText = '🔍 Connecting...';
 
-    // Request device – browser will remember the choice after first selection
-    const device = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
-      optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
-    });
+    let device = savedDevice;
 
-    // Connect to GATT server
-    gattServer = await device.gatt.connect();
+    // If we have a saved device reference, try to reconnect directly
+    if (device) {
+      try {
+        // Check if still connected
+        if (device.gatt.connected) {
+          gattServer = device.gatt;
+        } else {
+          gattServer = await device.gatt.connect();
+        }
+      } catch (err) {
+        console.warn('Reconnect failed, will request new device', err);
+        device = null;  // Fall through to requestDevice
+      }
+    }
 
+    // No valid device – request a new one (picker shown only first time)
+    if (!device) {
+      printerStatusModal.innerText = '🔍 Please select your printer...';
+      device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+      });
+      savedDevice = device;  // Save for future reconnects
+      gattServer = await device.gatt.connect();
+    }
+
+    // Find writable characteristic (same as before)
     const services = await gattServer.getPrimaryServices();
     let foundChar = null;
     for (const service of services) {
@@ -4908,6 +4930,7 @@ async function connectPrinter() {
   } catch (err) {
     console.error(err);
     printerStatusModal.innerText = `❌ ${err.message}`;
+    savedDevice = null;  // Reset on error
   } finally {
     connectBtnModal.disabled = false;
   }

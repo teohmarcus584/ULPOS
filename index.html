@@ -4870,36 +4870,17 @@ if (transaction.buy3_free1_discount > 0) {
 async function connectPrinter() {
   try {
     connectBtnModal.disabled = true;
-    printerStatusModal.innerText = '🔍 Searching for saved printer...';
+    printerStatusModal.innerText = '🔍 Connecting to printer...';
 
-    let device;
-    const savedDeviceId = localStorage.getItem('printerDeviceId');
-
-    // 1. Try to reuse a previously paired printer (no picker)
-    if (savedDeviceId && navigator.bluetooth.getDevices) {
-      const devices = await navigator.bluetooth.getDevices();
-      device = devices.find(d => d.id === savedDeviceId);
-      if (device) {
-        console.log('Reusing saved printer:', device.name);
-      }
-    }
-
-    // 2. If not found, request a new device (picker shown only once)
-    if (!device) {
-      printerStatusModal.innerText = '🔍 Please select your printer...';
-      device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
-      });
-      // Save the ID for future automatic connections
-      localStorage.setItem('printerDeviceId', device.id);
-    }
+    // Request device – browser will remember the choice after first selection
+    const device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+    });
 
     // Connect to GATT server
-    printerStatusModal.innerText = '🔌 Connecting...';
     gattServer = await device.gatt.connect();
 
-    // Find writable characteristic
     const services = await gattServer.getPrimaryServices();
     let foundChar = null;
     for (const service of services) {
@@ -4927,8 +4908,6 @@ async function connectPrinter() {
   } catch (err) {
     console.error(err);
     printerStatusModal.innerText = `❌ ${err.message}`;
-    // Clear saved ID on failure to avoid stuck state
-    localStorage.removeItem('printerDeviceId');
   } finally {
     connectBtnModal.disabled = false;
   }

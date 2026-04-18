@@ -4872,17 +4872,14 @@ async function connectPrinter() {
     connectBtnModal.disabled = true;
     printerStatusModal.innerText = '🔍 Scanning...';
 
-    // Request device – browser will show picker only the first time
     const device = await navigator.bluetooth.requestDevice({
       acceptAllDevices: true,
       optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
     });
 
-    // Connect to GATT server
     gattServer = await device.gatt.connect();
-    localStorage.setItem('printerDeviceId', device.id);  // Save for future (optional)
+    localStorage.setItem('printerDeviceId', device.id);
 
-    // Find writable characteristic
     const services = await gattServer.getPrimaryServices();
     let foundChar = null;
     for (const service of services) {
@@ -4914,7 +4911,9 @@ async function connectPrinter() {
     connectBtnModal.disabled = false;
   }
 }
- 
+
+// ✅ Expose connectPrinter globally so ensurePrinterConnected can call it
+window.connectPrinter = connectPrinter;
  
 
     function disconnectPrinter() {
@@ -5117,6 +5116,19 @@ function renderProductGrid() {
       }
     });
   }
+}
+// Helper: ensure printer is connected before proceeding
+async function ensurePrinterConnected() {
+  if (window.printerAPI && window.printerAPI.isConnected) {
+    return true;
+  }
+  // Attempt to connect using the globally exposed function
+  if (typeof window.connectPrinter === 'function') {
+    await window.connectPrinter();
+    // After connection attempt, check again
+    return window.printerAPI && window.printerAPI.isConnected;
+  }
+  return false;
 }
   // ==================== VIEW TOGGLE ====================
   function setViewMode(mode) {
@@ -6058,19 +6070,7 @@ function attachStoreCardClickListeners() {
     });
   });
 }
- // Helper: ensure printer is connected before proceeding
-async function ensurePrinterConnected() {
-  if (window.printerAPI && window.printerAPI.isConnected) {
-    return true;
-  }
-  // Attempt to connect
-  if (typeof window.connectPrinter === 'function') {
-    await window.connectPrinter();
-    // After connection attempt, check again
-    return window.printerAPI && window.printerAPI.isConnected;
-  }
-  return false;
-}
+
 async function getNextTransactionNumber(store) {
   try {
     const response = await fetch(`${APPS_SCRIPT_URL}?action=getNextTransactionNumber&store=${store}`);

@@ -5611,9 +5611,8 @@ async function openReportsModal() {
   });
 
  // Settlement Check button - validate actual amounts against system totals
-// Settlement Check button - validate actual amounts against system totals
 document.getElementById('checkSettlementBtn')?.addEventListener('click', async () => {
-  // First, clear any previous error highlighting
+  // Clear previous error highlighting
   const errorFields = ['actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
   errorFields.forEach(id => {
     const el = document.getElementById(id);
@@ -5625,14 +5624,12 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
   const actualQR = parseFloat(document.getElementById('actualQR').value);
   const actualAlipay = parseFloat(document.getElementById('actualAlipay').value);
 
-  // Validate inputs
   if (isNaN(actualCash) || isNaN(actualCard) || isNaN(actualQR) || isNaN(actualAlipay)) {
     document.getElementById('settlementError').innerHTML = '❌ Please fill in all actual settlement amounts.';
     document.getElementById('settlementError').style.display = 'block';
     return;
   }
 
-  // Get system totals (already displayed in modal, may be hidden for non‑admin)
   const sysCash = parseFloat(document.getElementById('sysCash').innerText.replace('RM ', '')) || 0;
   const sysCard = parseFloat(document.getElementById('sysCard').innerText.replace('RM ', '')) || 0;
   const sysQR = parseFloat(document.getElementById('sysQR').innerText.replace('RM ', '')) || 0;
@@ -5642,7 +5639,6 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
   let wrongFields = [];
 
   if (currentEmployee.isAdmin) {
-    // Admin: show exact discrepancies
     if (Math.abs(actualCash - sysCash) > 0.01) {
       errors.push(`Cash: system RM ${sysCash.toFixed(2)} vs actual RM ${actualCash.toFixed(2)}`);
       wrongFields.push('actualCash');
@@ -5660,7 +5656,6 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
       wrongFields.push('actualAlipay');
     }
   } else {
-    // Non‑admin: only show "WRONG , COUNT AGAIN" without system values, and highlight fields
     if (Math.abs(actualCash - sysCash) > 0.01) {
       errors.push('Cash: WRONG , COUNT AGAIN');
       wrongFields.push('actualCash');
@@ -5679,7 +5674,6 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
     }
   }
 
-  // Apply red highlighting to wrong fields
   wrongFields.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('error-field');
@@ -5693,17 +5687,10 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
     return;
   }
 
-  // All values match – show record button (admin only) and hide check button
+  // All match – show record button for everyone (no permission check)
   document.getElementById('settlementError').style.display = 'none';
   document.getElementById('checkSettlementBtn').style.display = 'none';
-  
-  if (currentEmployee.isAdmin) {
-    document.getElementById('recordSettlementBtn').style.display = 'block';
-  } else {
-    document.getElementById('recordSettlementBtn').style.display = 'none';
-    await showAlertModal('Permission Denied', 'Only administrators can record settlements. Please ask an admin to complete this.');
-    document.getElementById('settlementModal').style.display = 'none';
-  }
+  document.getElementById('recordSettlementBtn').style.display = 'block';
 });
 // Record Settlement button - save to Google Sheet
 document.getElementById('recordSettlementBtn')?.addEventListener('click', async () => {
@@ -5714,7 +5701,6 @@ document.getElementById('recordSettlementBtn')?.addEventListener('click', async 
   const actualQR = parseFloat(document.getElementById('actualQR').value);
   const actualAlipay = parseFloat(document.getElementById('actualAlipay').value);
 
-  // Get system totals again (they may have been refreshed)
   const sysCash = parseFloat(document.getElementById('sysCash').innerText.replace('RM ', '')) || 0;
   const sysCard = parseFloat(document.getElementById('sysCard').innerText.replace('RM ', '')) || 0;
   const sysQR = parseFloat(document.getElementById('sysQR').innerText.replace('RM ', '')) || 0;
@@ -5746,7 +5732,6 @@ document.getElementById('recordSettlementBtn')?.addEventListener('click', async 
     if (result.success) {
       await showAlertModal('Settlement Recorded', `Settlement for ${store} on ${todayStr} has been saved.`);
       document.getElementById('settlementModal').style.display = 'none';
-      // Refresh totals (they will now show as settled)
       await refreshSettlementTotals(store);
     } else {
       throw new Error(result.error || 'Unknown error');

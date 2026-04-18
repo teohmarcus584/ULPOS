@@ -4867,75 +4867,101 @@ if (transaction.buy3_free1_discount > 0) {
       }
     }
 
-let savedDevice = null;  // Store the device object globally (outside the IIFE)
+// Place this at the top of your script (global scope)
+let cachedDevice = null;
 
 async function connectPrinter() {
   try {
     connectBtnModal.disabled = true;
     printerStatusModal.innerText = '🔍 Connecting...';
 
-    let device = null;
+    let device = cachedDevice;
     const savedId = localStorage.getItem('printerDeviceId');
 
-    // 1. Try to get already paired devices (no user gesture needed)
+    // 1. If we already have a device object in memory, try to reconnect
+    if (device) {
+      try {
+        if (!device.gatt.connected) {
+          await device.gatt.connect();
+        }
+        // Reuse existing connection
+        await finishPrinterConnection(device);
+        return;
+      } catch (err) {
+        console.warn('Cached device reconnect failed', err);
+        device = null;
+      }
+    }
+
+    // 2. Try to get already paired devices (no picker)
     if (navigator.bluetooth.getDevices) {
       const devices = await navigator.bluetooth.getDevices();
       if (savedId) {
         device = devices.find(d => d.id === savedId);
       }
       if (!device && devices.length > 0) {
-        // If no saved ID, use the first paired device (or let user choose)
+        // Optionally let user choose, but we'll take the first one
         device = devices[0];
       }
-    }
-
-    // 2. If no device found, request a new one (picker appears)
-    if (!device) {
-      printerStatusModal.innerText = '📱 Please select your printer...';
-      device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
-      });
-      localStorage.setItem('printerDeviceId', device.id);
-    }
-
-    // 3. Connect to the device
-    printerStatusModal.innerText = '🔌 Connecting to printer...';
-    const server = await device.gatt.connect();
-    const services = await server.getPrimaryServices();
-
-    let foundChar = null;
-    for (const service of services) {
-      const chars = await service.getCharacteristics();
-      for (const char of chars) {
-        if (char.properties.write || char.properties.writeWithoutResponse) {
-          foundChar = char;
-          break;
-        }
+      if (device) {
+        // Connect without picker
+        await device.gatt.connect();
+        localStorage.setItem('printerDeviceId', device.id);
+        cachedDevice = device;
+        await finishPrinterConnection(device);
+        return;
       }
-      if (foundChar) break;
     }
-    if (!foundChar) throw new Error('No writable characteristic');
 
-    // Save references (these variables must be defined in the outer scope)
-    gattServer = server;
-    printerCharacteristic = foundChar;
-    isConnected = true;
-    window.printerAPI = {
-      isConnected: true,
-      printReceipt: printReceipt,
-      openDrawer: openCashDrawer,
-      printPrizeVoucher: printPrizeVoucher
-    };
-    updatePrinterStatusUI();
-    await showAlertModal('Printer Connected', 'Bluetooth printer is ready.');
+    // 3. Fallback: request a new device (shows picker – only once per session)
+    printerStatusModal.innerText = '📱 Select your printer...';
+    device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+    });
+    await device.gatt.connect();
+    localStorage.setItem('printerDeviceId', device.id);
+    cachedDevice = device;
+    await finishPrinterConnection(device);
+
   } catch (err) {
     console.error(err);
     printerStatusModal.innerText = `❌ ${err.message}`;
     localStorage.removeItem('printerDeviceId');
+    cachedDevice = null;
   } finally {
     connectBtnModal.disabled = false;
   }
+}
+
+// Helper to set up the printer after connection
+async function finishPrinterConnection(device) {
+  const server = device.gatt;
+  const services = await server.getPrimaryServices();
+  let foundChar = null;
+  for (const service of services) {
+    const chars = await service.getCharacteristics();
+    for (const char of chars) {
+      if (char.properties.write || char.properties.writeWithoutResponse) {
+        foundChar = char;
+        break;
+      }
+    }
+    if (foundChar) break;
+  }
+  if (!foundChar) throw new Error('No writable characteristic');
+
+  gattServer = server;
+  printerCharacteristic = foundChar;
+  isConnected = true;
+  window.printerAPI = {
+    isConnected: true,
+    printReceipt: printReceipt,
+    openDrawer: openCashDrawer,
+    printPrizeVoucher: printPrizeVoucher
+  };
+  updatePrinterStatusUI();
+  await showAlertModal('Printer Connected', 'Bluetooth printer is ready.');
 }
 
 // ✅ Expose connectPrinter globally so ensurePrinterConnected can call it

@@ -3955,7 +3955,7 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
  async function fetchProductSalesReport(store, employeeId, from, to) { return []; }
   function renderProductDetails(data) {}
 
- async function updateAdminReport(forceRefresh = false) {
+async function updateAdminReport(forceRefresh = false) {
   let store, employeeId;
   if (currentEmployee.isAdmin) {
     store = document.getElementById('adminReportStoreSelect').value;
@@ -3968,40 +3968,38 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
   const range = document.getElementById('adminReportDateRangeSelect').value;
   let from = null, to = null;
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);   // local midnight
 
   if (range === 'today') {
-    from = to = getUTCDateString(today);           // ✅ Use UTC
+    from = to = getLocalDateString(today);           // ✅ local date
   } else if (range === 'week') {
     const start = new Date(today);
     const dayOfWeek = today.getDay();
     const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
     start.setDate(today.getDate() - diffToMonday);
-    from = getUTCDateString(start);
+    from = getLocalDateString(start);
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
-    to = getUTCDateString(end);
+    to = getLocalDateString(end);
   } else if (range === 'month') {
     const start = new Date(today.getFullYear(), today.getMonth(), 1);
-    from = getUTCDateString(start);
+    from = getLocalDateString(start);
     const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    to = getUTCDateString(end);
+    to = getLocalDateString(end);
   } else if (range === 'year') {
     const start = new Date(today.getFullYear(), 0, 1);
+    from = getLocalDateString(start);
     const end = new Date(today.getFullYear(), 11, 31);
-    from = getUTCDateString(start);
-    to = getUTCDateString(end);
+    to = getLocalDateString(end);
   } else if (range === 'custom') {
     from = document.getElementById('adminReportFromDate').value;
     to = document.getElementById('adminReportToDate').value;
     if (!from || !to) return;
-    // Convert custom date inputs to UTC strings
-    from = getUTCDateString(new Date(from));
-    to = getUTCDateString(new Date(to));
+    // Keep custom dates as entered (local YYYY-MM-DD)
   }
 
   // Fetch main totals (silent, no loading overlay)
-const totals = await fetchSalesReportWithCache(store, employeeId, from, to, false, true, forceRefresh);
+  const totals = await fetchSalesReportWithCache(store, employeeId, from, to, false, true, forceRefresh);
   if (!totals) return;
 
   // Update summary stats at the top
@@ -4026,7 +4024,7 @@ const totals = await fetchSalesReportWithCache(store, employeeId, from, to, fals
     storeBreakdownDiv.style.display = 'block';
     const stores = ['queens', 'sunshine', 'gurney_paragon'];
 
-    // ========== 1. SHOW LOADING PLACEHOLDERS ON ALL STORE CARDS ==========
+    // Show loading placeholders
     stores.forEach(storeName => {
       const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
       if (card) {
@@ -4053,32 +4051,27 @@ const totals = await fetchSalesReportWithCache(store, employeeId, from, to, fals
       }
     });
 
-    // 2. Fetch real data in parallel
+    // Fetch real data in parallel
     const storeResults = await Promise.all(stores.map(s => fetchSalesReport(s, 'all', from, to, false, true)));
     const employeeResults = await Promise.all(stores.map(s => fetchEmployeeSalesData(s, from, to)));
 
-    // 3. Update each card with real data
+    // Update each card with real data
     stores.forEach((storeName, idx) => {
       const data = storeResults[idx];
       if (!data) return;
       const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
       if (!card) return;
 
-      // Total sales
       card.querySelector('.store-total').innerText = `Total Sales: RM ${data.totalSales.toFixed(2)}`;
-      // Payment methods
       card.querySelector('.store-cash').innerHTML = `💵 Cash: RM ${data.cashTotal.toFixed(2)}`;
       card.querySelector('.store-card').innerHTML = `💳 Card: RM ${data.cardTotal.toFixed(2)}`;
       card.querySelector('.store-qr').innerHTML = `📱 QR Pay: RM ${data.otherTotal.toFixed(2)}`;
       card.querySelector('.store-alipay').innerHTML = `💸 Alipay: RM ${data.alipayTotal.toFixed(2)}`;
-      // Refunds
       card.querySelector('.store-refund').innerHTML = `❌ Refunds: RM ${Math.abs(data.refundTotal).toFixed(2)}`;
       card.querySelector('.store-refunded-bills').innerHTML = `📄 Refunded Bills: ${data.refundedTransactionCount || 0}`;
-      // Counters
       card.querySelector('.store-transactions').innerHTML = `Transactions: ${data.transactionCount || 0}`;
       card.querySelector('.store-items-sold').innerHTML = `Items Sold: ${data.totalItems || 0}`;
 
-      // Employee sales list
       const empData = employeeResults[idx];
       const empListDiv = card.querySelector('.employee-list');
       if (empData && empData.labels && empData.labels.length) {

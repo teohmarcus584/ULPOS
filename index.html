@@ -4638,7 +4638,7 @@ async function openSettlementModal() {
     const printerIconBtn = document.getElementById('printerIconBtn');
     const closePrinterModal = document.getElementById('closePrinterModal');
     const closePrinterModalBtn = document.getElementById('closePrinterModalBtn');
-
+window.connectPrinter = connectPrinter;
     function updatePrinterStatusUI() {
       if (isConnected) {
         printerStatusModal.innerText = '✅ Printer connected';
@@ -4914,20 +4914,9 @@ async function connectPrinter() {
     connectBtnModal.disabled = false;
   }
 }
- window.connectPrinter = connectPrinter;
- // Helper: ensure printer is connected before proceeding
-async function ensurePrinterConnected() {
-  if (window.printerAPI && window.printerAPI.isConnected) {
-    return true;
-  }
-  // Attempt to connect
-  if (typeof window.connectPrinter === 'function') {
-    await window.connectPrinter();
-    // After connection attempt, check again
-    return window.printerAPI && window.printerAPI.isConnected;
-  }
-  return false;
-}
+ 
+ 
+
     function disconnectPrinter() {
       if (gattServer) { gattServer.disconnect(); gattServer = null; printerCharacteristic = null; }
       isConnected = false;
@@ -6069,7 +6058,19 @@ function attachStoreCardClickListeners() {
     });
   });
 }
-
+ // Helper: ensure printer is connected before proceeding
+async function ensurePrinterConnected() {
+  if (window.printerAPI && window.printerAPI.isConnected) {
+    return true;
+  }
+  // Attempt to connect
+  if (typeof window.connectPrinter === 'function') {
+    await window.connectPrinter();
+    // After connection attempt, check again
+    return window.printerAPI && window.printerAPI.isConnected;
+  }
+  return false;
+}
 async function getNextTransactionNumber(store) {
   try {
     const response = await fetch(`${APPS_SCRIPT_URL}?action=getNextTransactionNumber&store=${store}`);

@@ -3453,25 +3453,29 @@ function getUTCDateString(date) {
     cachedReceipts = null;
   }
 
-  async function fetchReceipts(store, employeeId, from, to, search) {
-    showLoading('Loading receipts...');
-    try {
-      let url = `${APPS_SCRIPT_URL}?action=getReceipts&store=${store}&employeeId=${employeeId}`;
-      if (from) url += `&from=${encodeURIComponent(from)}`;
-      if (to) url += `&to=${encodeURIComponent(to)}`;
-      if (search) url += `&search=${encodeURIComponent(search)}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) renderReceiptsList(result.receipts);
-      else throw new Error('Receipts data error');
-    } catch (err) {
-      console.error(err);
-      await showAlertModal('Error', 'Failed to load receipts.');
-    } finally {
-      hideLoading();
+ async function fetchReceipts(store, employeeId, from, to, search) {
+  showLoading('Loading receipts...');
+  try {
+    let url = `${APPS_SCRIPT_URL}?action=getReceipts&store=${store}&employeeId=${employeeId}`;
+    if (from) url += `&from=${encodeURIComponent(from)}`;
+    if (to) url += `&to=${encodeURIComponent(to)}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      // ✅ Update the global cache with fresh data
+      cachedReceipts = result.receipts;
+      renderReceiptsList(cachedReceipts);
+    } else {
+      throw new Error('Receipts data error');
     }
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Error', 'Failed to load receipts.');
+  } finally {
+    hideLoading();
   }
-
+}
   // ========== UPDATED RECEIPT RENDERING WITH DETAILED ITEMS, DISCOUNTS, FREE GIFTS ==========
  function renderReceiptsList(receipts) {
   const container = document.getElementById('receiptsList');
@@ -3568,18 +3572,31 @@ function getUTCDateString(date) {
   container.innerHTML = html;
 
   // Attach event listeners for reprint and refund
-  document.querySelectorAll('.reprint-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const txId = btn.dataset.txid;
-      const receipt = cachedReceipts.find(r => r.transaction_id === txId);
-      if (receipt) {
-        reprintReceipt(receipt);
-      } else {
-        showAlertModal('Error', 'Receipt data not found. Please refresh.');
+ document.querySelectorAll('.reprint-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const txId = btn.dataset.txid;
+    // First try cache
+    let receipt = cachedReceipts ? cachedReceipts.find(r => r.transaction_id === txId) : null;
+    // Fallback: find receipt in the currently rendered list (the receipt element)
+    if (!receipt) {
+      const receiptElement = btn.closest('.receipt-item');
+      if (receiptElement) {
+        // Extract data from DOM (only as last resort)
+        const txIdSpan = receiptElement.querySelector('.receipt-id');
+        if (txIdSpan) {
+          const text = txIdSpan.innerText.replace(/\[REFUND\]\s*/, '');
+          // If still not found, try to fetch from server directly
+          fetchReceiptById(txId).then(r => { if(r) reprintReceipt(r); });
+          return;
+        }
       }
-      e.stopPropagation();
-    });
+      showAlertModal('Error', 'Receipt data not found. Please refresh.');
+      return;
+    }
+    reprintReceipt(receipt);
+    e.stopPropagation();
   });
+});
 
   document.querySelectorAll('.refund-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {

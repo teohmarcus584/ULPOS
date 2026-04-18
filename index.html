@@ -5378,8 +5378,7 @@ if (inventoryMode) {
   document.getElementById('saveTelegramSettingsBtn')?.addEventListener('click', saveTelegramSettings);
   document.getElementById('closeTelegramModal')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
   document.getElementById('closeTelegramModalBtn')?.addEventListener('click', () => document.getElementById('telegramModal').style.display = 'none');
-
- async function finishLoginAfterVerification() {
+async function finishLoginAfterVerification() {
   if (window.autoSyncInterval) clearInterval(window.autoSyncInterval);
   await loadInitialData();
   soldBySelectCart.value = currentEmployee.id;
@@ -5467,54 +5466,8 @@ if (inventoryMode) {
   refreshCategoryHighlighting();
   if (window.autoSyncInterval) clearInterval(window.autoSyncInterval);
   window.autoSyncInterval = setInterval(() => backgroundSync(), 60000);
-}
-  // ========== AUTO‑RECONNECT PRINTER (ADD THIS BLOCK) ==========
-  // ========== AUTO‑RECONNECT PRINTER (FIXED) ==========
-(async function autoReconnectPrinter() {
-  const savedDeviceId = localStorage.getItem('printerDeviceId');
-  if (!savedDeviceId || !navigator.bluetooth) return;
-  try {
-    // Get list of already paired devices (no user gesture required)
-    const devices = await navigator.bluetooth.getDevices();
-    const device = devices.find(d => d.id === savedDeviceId);
-    if (!device) {
-      console.log('Previously paired printer not found – manual connection required.');
-      return;
-    }
-    // Attempt to reconnect
-    const server = await device.gatt.connect();
-    const services = await server.getPrimaryServices();
-    let foundChar = null;
-    for (const service of services) {
-      const chars = await service.getCharacteristics();
-      for (const char of chars) {
-        if (char.properties.write || char.properties.writeWithoutResponse) {
-          foundChar = char;
-          break;
-        }
-      }
-      if (foundChar) break;
-    }
-    if (foundChar) {
-      // IMPORTANT: The printer module uses internal closure variables (gattServer, printerCharacteristic).
-      // This code cannot directly modify them. However, we can store references globally.
-      // For full functionality, you need to either:
-      //   1. Refactor the printer module to expose these variables, or
-      //   2. Keep the manual button as the only connection method (but with saved ID for quick reconnect).
-      // The following lines update the UI status only – printing may still fail.
-      window.printerAPI.isConnected = true;
-      window.printerCharacteristic = foundChar;
-      const statusSpan = document.getElementById('printerStatusModal');
-      if (statusSpan) statusSpan.innerText = '✅ Printer connected (auto)';
-      console.log('Auto-reconnected to printer');
-    } else {
-      console.warn('No writable characteristic found on auto-reconnected printer');
-    }
-  } catch (err) {
-    console.warn('Auto-reconnect failed:', err);
-    // Silent fail – user can still use the manual connect button
-  }
-})();
+}   // ← Closing brace – function ends here
+ 
 
 async function openReportsModal() {
   // 1. Close side menu IMMEDIATELY

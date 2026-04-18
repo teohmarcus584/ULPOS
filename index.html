@@ -4399,86 +4399,90 @@ function disableBarcodeScanner() {
 // Call enableBarcodeScanner() inside finishLoginAfterVerification()
 // and disableBarcodeScanner() inside logout handler.
   // ==================== SETTLEMENT & COLLECTION ====================
-  async function openSettlementModal() {
-    const modal = document.getElementById('settlementModal');
-    modal.style.display = 'flex';
+async function openSettlementModal() {
+  const modal = document.getElementById('settlementModal');
+  modal.style.display = 'flex';
 
-    document.getElementById('recordSettlementBtn').style.display = 'none';
-    document.getElementById('checkSettlementBtn').style.display = 'block';
-    document.getElementById('settlementError').style.display = 'none';
-    document.getElementById('settlementError').innerHTML = '';
-    document.getElementById('actualCash').value = '';
-    document.getElementById('actualCard').value = '';
-    document.getElementById('actualQR').value = '';
-    document.getElementById('actualAlipay').value = '';
-    document.getElementById('pettyCashFloat').value = '0.00';
-    document.getElementById('actualCash').classList.remove('error-field');
-    document.getElementById('actualCard').classList.remove('error-field');
-    document.getElementById('actualQR').classList.remove('error-field');
-    document.getElementById('actualAlipay').classList.remove('error-field');
+  document.getElementById('recordSettlementBtn').style.display = 'none';
+  document.getElementById('checkSettlementBtn').style.display = 'block';
+  document.getElementById('settlementError').style.display = 'none';
+  document.getElementById('settlementError').innerHTML = '';
+  document.getElementById('actualCash').value = '';
+  document.getElementById('actualCard').value = '';
+  document.getElementById('actualQR').value = '';
+  document.getElementById('actualAlipay').value = '';
+  document.getElementById('pettyCashFloat').value = '0.00';
+  document.getElementById('actualCash').classList.remove('error-field');
+  document.getElementById('actualCard').classList.remove('error-field');
+  document.getElementById('actualQR').classList.remove('error-field');
+  document.getElementById('actualAlipay').classList.remove('error-field');
 
-    const fieldsToDisable = ['actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
-    fieldsToDisable.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.disabled = true;
-    });
-    const checkBtn = document.getElementById('checkSettlementBtn');
-    if (checkBtn) checkBtn.disabled = true;
+  const fieldsToDisable = ['actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
+  fieldsToDisable.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = true;
+  });
+  const checkBtn = document.getElementById('checkSettlementBtn');
+  if (checkBtn) checkBtn.disabled = true;
 
-    const totalsContainer = document.getElementById('systemTotalsDisplay');
-    if (totalsContainer) totalsContainer.style.display = 'none';
+  const totalsContainer = document.getElementById('systemTotalsDisplay');
+  if (totalsContainer) totalsContainer.style.display = 'none';
 
-    let loadingMsg = document.getElementById('settlementLoadingMsg');
-    if (!loadingMsg) {
-      loadingMsg = document.createElement('div');
-      loadingMsg.id = 'settlementLoadingMsg';
-      loadingMsg.style.textAlign = 'center';
-      loadingMsg.style.padding = '20px';
-      loadingMsg.style.background = '#f8fafc';
-      loadingMsg.style.borderRadius = '12px';
-      loadingMsg.style.margin = '10px 0';
-      loadingMsg.innerHTML = `
-        <div class="settlement-loading-spinner"></div>
-        <span style="vertical-align: middle;">Loading settlement data...</span>
-      `;
-      if (totalsContainer) totalsContainer.insertAdjacentElement('afterend', loadingMsg);
-    }
-    loadingMsg.style.display = 'block';
-
-    try {
-      let store;
-      if (!currentEmployee.isAdmin) {
-        store = initialStore;
-        document.getElementById('settlementStoreSelect').value = store;
-        document.getElementById('settlementStoreSelect').disabled = true;
-      } else {
-        store = document.getElementById('settlementStoreSelect').value;
-        document.getElementById('settlementStoreSelect').disabled = false;
-      }
-
-      const todayStr = getLocalDateString(new Date());
-      const alreadySettled = await checkSettlementStatus(store, todayStr);
-
-      if (alreadySettled) {
-        loadingMsg.style.display = 'none';
-        if (totalsContainer) totalsContainer.style.display = 'block';
-        await showAlertModal('Settlement Already Done', 'Settlement has already been recorded for today. No further settlement allowed.');
-        modal.style.display = 'none';
-        return;
-      }
-
-      await refreshSettlementTotals(store);
-      loadingMsg.style.display = 'none';
-      if (totalsContainer) totalsContainer.style.display = 'block';
-    } catch (err) {
-      console.error(err);
-      loadingMsg.style.display = 'none';
-      if (totalsContainer) totalsContainer.style.display = 'block';
-      await showAlertModal('Error', 'Failed to load settlement data.');
-      modal.style.display = 'none';
-    }
+  let loadingMsg = document.getElementById('settlementLoadingMsg');
+  if (!loadingMsg) {
+    loadingMsg = document.createElement('div');
+    loadingMsg.id = 'settlementLoadingMsg';
+    loadingMsg.style.textAlign = 'center';
+    loadingMsg.style.padding = '20px';
+    loadingMsg.style.background = '#f8fafc';
+    loadingMsg.style.borderRadius = '12px';
+    loadingMsg.style.margin = '10px 0';
+    loadingMsg.innerHTML = `
+      <div class="settlement-loading-spinner"></div>
+      <span style="vertical-align: middle;">Loading settlement data...</span>
+    `;
+    if (totalsContainer) totalsContainer.insertAdjacentElement('afterend', loadingMsg);
   }
+  loadingMsg.style.display = 'block';
 
+  try {
+    let store;
+    if (!currentEmployee.isAdmin) {
+      store = initialStore;
+      document.getElementById('settlementStoreSelect').value = store;
+      document.getElementById('settlementStoreSelect').disabled = true;
+      // Hide system totals for non‑admin
+      if (totalsContainer) totalsContainer.style.display = 'none';
+    } else {
+      store = document.getElementById('settlementStoreSelect').value;
+      document.getElementById('settlementStoreSelect').disabled = false;
+      // Show system totals for admin
+      if (totalsContainer) totalsContainer.style.display = 'block';
+    }
+
+    const todayStr = getLocalDateString(new Date());
+    const alreadySettled = await checkSettlementStatus(store, todayStr);
+
+    if (alreadySettled) {
+      loadingMsg.style.display = 'none';
+      if (totalsContainer) totalsContainer.style.display = 'block';
+      await showAlertModal('Settlement Already Done', 'Settlement has already been recorded for today. No further settlement allowed.');
+      modal.style.display = 'none';
+      return;
+    }
+
+    await refreshSettlementTotals(store);
+    loadingMsg.style.display = 'none';
+    if (totalsContainer && currentEmployee.isAdmin) totalsContainer.style.display = 'block';
+    else if (totalsContainer && !currentEmployee.isAdmin) totalsContainer.style.display = 'none';
+  } catch (err) {
+    console.error(err);
+    loadingMsg.style.display = 'none';
+    if (totalsContainer) totalsContainer.style.display = 'block';
+    await showAlertModal('Error', 'Failed to load settlement data.');
+    modal.style.display = 'none';
+  }
+}
   async function checkSettlementStatus(store, date) {
     try {
       const url = `${APPS_SCRIPT_URL}?action=getSettlementStatus&store=${store}&date=${date}`;
@@ -5593,9 +5597,8 @@ async function openReportsModal() {
   });
 
  // Settlement Check button - validate actual amounts against system totals
+// Settlement Check button - validate actual amounts against system totals
 document.getElementById('checkSettlementBtn')?.addEventListener('click', async () => {
-  const store = document.getElementById('settlementStoreSelect').value;
-  const pettyCash = parseFloat(document.getElementById('pettyCashFloat').value) || 0;
   const actualCash = parseFloat(document.getElementById('actualCash').value);
   const actualCard = parseFloat(document.getElementById('actualCard').value);
   const actualQR = parseFloat(document.getElementById('actualQR').value);
@@ -5608,33 +5611,64 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
     return;
   }
 
-  // Get system totals (already displayed in modal)
+  // Get system totals (already displayed in modal, may be hidden for non‑admin)
   const sysCash = parseFloat(document.getElementById('sysCash').innerText.replace('RM ', '')) || 0;
   const sysCard = parseFloat(document.getElementById('sysCard').innerText.replace('RM ', '')) || 0;
   const sysQR = parseFloat(document.getElementById('sysQR').innerText.replace('RM ', '')) || 0;
   const sysAlipay = parseFloat(document.getElementById('sysAlipay').innerText.replace('RM ', '')) || 0;
 
-  // Check if any discrepancy
   let errors = [];
-  if (Math.abs(actualCash - sysCash) > 0.01) errors.push(`Cash: system RM ${sysCash.toFixed(2)} vs actual RM ${actualCash.toFixed(2)}`);
-  if (Math.abs(actualCard - sysCard) > 0.01) errors.push(`Card: system RM ${sysCard.toFixed(2)} vs actual RM ${actualCard.toFixed(2)}`);
-  if (Math.abs(actualQR - sysQR) > 0.01) errors.push(`QR Pay: system RM ${sysQR.toFixed(2)} vs actual RM ${actualQR.toFixed(2)}`);
-  if (Math.abs(actualAlipay - sysAlipay) > 0.01) errors.push(`Alipay: system RM ${sysAlipay.toFixed(2)} vs actual RM ${actualAlipay.toFixed(2)}`);
+
+  if (currentEmployee.isAdmin) {
+    // Admin: show exact discrepancies
+    if (Math.abs(actualCash - sysCash) > 0.01) {
+      errors.push(`Cash: system RM ${sysCash.toFixed(2)} vs actual RM ${actualCash.toFixed(2)}`);
+    }
+    if (Math.abs(actualCard - sysCard) > 0.01) {
+      errors.push(`Card: system RM ${sysCard.toFixed(2)} vs actual RM ${actualCard.toFixed(2)}`);
+    }
+    if (Math.abs(actualQR - sysQR) > 0.01) {
+      errors.push(`QR Pay: system RM ${sysQR.toFixed(2)} vs actual RM ${actualQR.toFixed(2)}`);
+    }
+    if (Math.abs(actualAlipay - sysAlipay) > 0.01) {
+      errors.push(`Alipay: system RM ${sysAlipay.toFixed(2)} vs actual RM ${actualAlipay.toFixed(2)}`);
+    }
+  } else {
+    // Non‑admin: only show "WRONG , COUNT AGAIN" without system values
+    if (Math.abs(actualCash - sysCash) > 0.01) {
+      errors.push('Cash: WRONG , COUNT AGAIN');
+    }
+    if (Math.abs(actualCard - sysCard) > 0.01) {
+      errors.push('Card: WRONG , COUNT AGAIN');
+    }
+    if (Math.abs(actualQR - sysQR) > 0.01) {
+      errors.push('QR Pay: WRONG , COUNT AGAIN');
+    }
+    if (Math.abs(actualAlipay - sysAlipay) > 0.01) {
+      errors.push('Alipay: WRONG , COUNT AGAIN');
+    }
+  }
 
   if (errors.length > 0) {
-    document.getElementById('settlementError').innerHTML = `⚠️ Discrepancies found:<br>${errors.join('<br>')}<br>Please verify counts.`;
+    document.getElementById('settlementError').innerHTML = errors.join('<br>');
     document.getElementById('settlementError').style.display = 'block';
     document.getElementById('recordSettlementBtn').style.display = 'none';
     document.getElementById('checkSettlementBtn').style.display = 'block';
     return;
   }
 
-  // All match – show record button and hide check button
+  // All values match – show record button (admin only) and hide check button
   document.getElementById('settlementError').style.display = 'none';
   document.getElementById('checkSettlementBtn').style.display = 'none';
-  document.getElementById('recordSettlementBtn').style.display = 'block';
+  
+  if (currentEmployee.isAdmin) {
+    document.getElementById('recordSettlementBtn').style.display = 'block';
+  } else {
+    document.getElementById('recordSettlementBtn').style.display = 'none';
+    await showAlertModal('Permission Denied', 'Only administrators can record settlements. Please ask an admin to complete this.');
+    document.getElementById('settlementModal').style.display = 'none';
+  }
 });
-
 // Record Settlement button - save to Google Sheet
 document.getElementById('recordSettlementBtn')?.addEventListener('click', async () => {
   const store = document.getElementById('settlementStoreSelect').value;

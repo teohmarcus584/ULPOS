@@ -4451,13 +4451,24 @@ async function openSettlementModal() {
       store = initialStore;
       document.getElementById('settlementStoreSelect').value = store;
       document.getElementById('settlementStoreSelect').disabled = true;
-      // Hide system totals for non‑admin
-      if (totalsContainer) totalsContainer.style.display = 'none';
+      // For non‑admin: show totals container but hide breakdown rows
+      if (totalsContainer) totalsContainer.style.display = 'block';
+      // Hide breakdown rows
+      const breakdownIds = ['sysCash', 'sysCard', 'sysQR', 'sysAlipay', 'sysRefund'];
+      breakdownIds.forEach(id => {
+        const row = document.getElementById(id)?.parentElement;
+        if (row) row.style.display = 'none';
+      });
     } else {
       store = document.getElementById('settlementStoreSelect').value;
       document.getElementById('settlementStoreSelect').disabled = false;
-      // Show system totals for admin
       if (totalsContainer) totalsContainer.style.display = 'block';
+      // Show all rows
+      const allRows = ['sysCash', 'sysCard', 'sysQR', 'sysAlipay', 'sysRefund', 'sysNetTotal'];
+      allRows.forEach(id => {
+        const row = document.getElementById(id)?.parentElement;
+        if (row) row.style.display = 'block';
+      });
     }
 
     const todayStr = getLocalDateString(new Date());
@@ -4473,8 +4484,11 @@ async function openSettlementModal() {
 
     await refreshSettlementTotals(store);
     loadingMsg.style.display = 'none';
-    if (totalsContainer && currentEmployee.isAdmin) totalsContainer.style.display = 'block';
-    else if (totalsContainer && !currentEmployee.isAdmin) totalsContainer.style.display = 'none';
+    // Ensure net total is visible for non‑admin
+    if (!currentEmployee.isAdmin) {
+      const netTotalRow = document.getElementById('sysNetTotal')?.parentElement;
+      if (netTotalRow) netTotalRow.style.display = 'block';
+    }
   } catch (err) {
     console.error(err);
     loadingMsg.style.display = 'none';

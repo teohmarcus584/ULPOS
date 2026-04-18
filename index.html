@@ -5613,6 +5613,13 @@ async function openReportsModal() {
  // Settlement Check button - validate actual amounts against system totals
 // Settlement Check button - validate actual amounts against system totals
 document.getElementById('checkSettlementBtn')?.addEventListener('click', async () => {
+  // First, clear any previous error highlighting
+  const errorFields = ['actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
+  errorFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('error-field');
+  });
+
   const actualCash = parseFloat(document.getElementById('actualCash').value);
   const actualCard = parseFloat(document.getElementById('actualCard').value);
   const actualQR = parseFloat(document.getElementById('actualQR').value);
@@ -5632,36 +5639,51 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
   const sysAlipay = parseFloat(document.getElementById('sysAlipay').innerText.replace('RM ', '')) || 0;
 
   let errors = [];
+  let wrongFields = [];
 
   if (currentEmployee.isAdmin) {
     // Admin: show exact discrepancies
     if (Math.abs(actualCash - sysCash) > 0.01) {
       errors.push(`Cash: system RM ${sysCash.toFixed(2)} vs actual RM ${actualCash.toFixed(2)}`);
+      wrongFields.push('actualCash');
     }
     if (Math.abs(actualCard - sysCard) > 0.01) {
       errors.push(`Card: system RM ${sysCard.toFixed(2)} vs actual RM ${actualCard.toFixed(2)}`);
+      wrongFields.push('actualCard');
     }
     if (Math.abs(actualQR - sysQR) > 0.01) {
       errors.push(`QR Pay: system RM ${sysQR.toFixed(2)} vs actual RM ${actualQR.toFixed(2)}`);
+      wrongFields.push('actualQR');
     }
     if (Math.abs(actualAlipay - sysAlipay) > 0.01) {
       errors.push(`Alipay: system RM ${sysAlipay.toFixed(2)} vs actual RM ${actualAlipay.toFixed(2)}`);
+      wrongFields.push('actualAlipay');
     }
   } else {
-    // Non‑admin: only show "WRONG , COUNT AGAIN" without system values
+    // Non‑admin: only show "WRONG , COUNT AGAIN" without system values, and highlight fields
     if (Math.abs(actualCash - sysCash) > 0.01) {
       errors.push('Cash: WRONG , COUNT AGAIN');
+      wrongFields.push('actualCash');
     }
     if (Math.abs(actualCard - sysCard) > 0.01) {
       errors.push('Card: WRONG , COUNT AGAIN');
+      wrongFields.push('actualCard');
     }
     if (Math.abs(actualQR - sysQR) > 0.01) {
       errors.push('QR Pay: WRONG , COUNT AGAIN');
+      wrongFields.push('actualQR');
     }
     if (Math.abs(actualAlipay - sysAlipay) > 0.01) {
       errors.push('Alipay: WRONG , COUNT AGAIN');
+      wrongFields.push('actualAlipay');
     }
   }
+
+  // Apply red highlighting to wrong fields
+  wrongFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('error-field');
+  });
 
   if (errors.length > 0) {
     document.getElementById('settlementError').innerHTML = errors.join('<br>');

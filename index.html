@@ -3382,9 +3382,15 @@ function getUTCDateString(date) {
   let cachedReceipts = null;
   let receiptPollingInterval = null;
 
-  async function fetchAndCacheReceipts() {
-    try {
-      let store, employeeId;
+async function fetchAndCacheReceipts() {
+  try {
+    const receiptsModal = document.getElementById('receiptsModal');
+    const isModalOpen = receiptsModal && receiptsModal.style.display === 'flex';
+    
+    let store, employeeId, range, search, from, to;
+    
+    if (isModalOpen) {
+      // Use current UI selections
       if (currentEmployee?.isAdmin) {
         store = document.getElementById('receiptsStoreSelect')?.value || 'all';
         employeeId = document.getElementById('receiptsEmployeeSelect')?.value || 'all';
@@ -3392,52 +3398,72 @@ function getUTCDateString(date) {
         store = currentStore;
         employeeId = 'all';
       }
-      const rangeSelect = document.getElementById('receiptsDateRangeSelect');
-      const range = rangeSelect ? rangeSelect.value : 'today';
-      const search = document.getElementById('receiptsSearch')?.value || '';
-      let from = null, to = null;
+      range = document.getElementById('receiptsDateRangeSelect')?.value || 'today';
+      search = document.getElementById('receiptsSearch')?.value || '';
+      
+      // Compute dates using local time (same as updateReceipts)
       const today = new Date();
-      today.setHours(0,0,0,0);
-    if (range === 'today') {
-  from = getUTCDateString(today);
-  to = from;
-} else if (range === 'week') {
-  const start = new Date(today);
-  const dayOfWeek = today.getDay();
-  const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
-  start.setDate(today.getDate() - diffToMonday);
-  from = getUTCDateString(start);        // ✅ use UTC
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  to = getUTCDateString(end);            // ✅ use UTC
-} else if (range === 'month') {
-  const start = new Date(today.getFullYear(), today.getMonth(), 1);
-  from = getUTCDateString(start);        // ✅ use UTC
-  const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-  to = getUTCDateString(end);            // ✅ use UTC
-} else if (range === 'year') {
-  const start = new Date(today.getFullYear(), 0, 1);
-  from = getUTCDateString(start);        // ✅ use UTC
-  const end = new Date(today.getFullYear(), 11, 31);
-  to = getUTCDateString(end);            // ✅ use UTC
-}
-      let url = `${APPS_SCRIPT_URL}?action=getReceipts&store=${store}&employeeId=${employeeId}`;
-      if (from) url += `&from=${encodeURIComponent(from)}`;
-      if (to) url += `&to=${encodeURIComponent(to)}`;
-      if (search) url += `&search=${encodeURIComponent(search)}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) {
-        cachedReceipts = result.receipts;
-        const receiptsModal = document.getElementById('receiptsModal');
-        if (receiptsModal && receiptsModal.style.display === 'flex') {
-          renderReceiptsList(cachedReceipts);
-        }
+      today.setHours(0, 0, 0, 0);
+      if (range === 'today') {
+        from = getLocalDateString(today);
+        to = from;
+      } else if (range === 'week') {
+        const start = new Date(today);
+        const dayOfWeek = today.getDay();
+        const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+        start.setDate(today.getDate() - diffToMonday);
+        from = getLocalDateString(start);
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        to = getLocalDateString(end);
+      } else if (range === 'month') {
+        const start = new Date(today.getFullYear(), today.getMonth(), 1);
+        from = getLocalDateString(start);
+        const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        to = getLocalDateString(end);
+      } else if (range === 'year') {
+        const start = new Date(today.getFullYear(), 0, 1);
+        from = getLocalDateString(start);
+        const end = new Date(today.getFullYear(), 11, 31);
+        to = getLocalDateString(end);
+      } else if (range === 'custom') {
+        from = document.getElementById('receiptsFromDate')?.value;
+        to = document.getElementById('receiptsToDate')?.value;
+        if (!from || !to) return;
       }
-    } catch (err) {
-      console.error('Background receipt fetch failed:', err);
+    } else {
+      // Modal closed – default to today's local date (keep cache fresh)
+      if (currentEmployee?.isAdmin) {
+        store = 'all';
+        employeeId = 'all';
+      } else {
+        store = currentStore;
+        employeeId = 'all';
+      }
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      from = getLocalDateString(today);
+      to = from;
+      search = '';
     }
+    
+    let url = `${APPS_SCRIPT_URL}?action=getReceipts&store=${store}&employeeId=${employeeId}`;
+    if (from) url += `&from=${encodeURIComponent(from)}`;
+    if (to) url += `&to=${encodeURIComponent(to)}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      cachedReceipts = result.receipts;
+      if (isModalOpen) {
+        renderReceiptsList(cachedReceipts);
+      }
+    }
+  } catch (err) {
+    console.error('Background receipt fetch failed:', err);
   }
+}
 
   function startReceiptPolling() {
     if (receiptPollingInterval) clearInterval(receiptPollingInterval);

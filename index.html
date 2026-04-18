@@ -4914,12 +4914,11 @@ filtered.forEach(prod => {
     // Normal mode: add to cart – whole card clickable
     const stockStatus = `📦 Stock: ${prod.stock}`;
     html += `<div class="product-card ${lowStockClass}" data-id="${prod.id}">
-      <div class="product-name">${escapeHtml(prod.name)}</div>
-      <div class="product-category">${escapeHtml(prod.category)}</div>
-      <div class="product-price">RM ${prod.price.toFixed(2)}</div>
-      <div class="product-stock">${stockStatus}</div>
-     // <button class="add-btn" data-id="${prod.id}">+ Add to cart</button>
-    </div>`;
+  <div class="product-name">${escapeHtml(prod.name)}</div>
+  <div class="product-category">${escapeHtml(prod.category)}</div>
+  <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+  <div class="product-stock">${stockStatus}</div>
+</div>`;
   }
 });
 

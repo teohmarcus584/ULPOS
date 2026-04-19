@@ -4639,16 +4639,31 @@ async function openSettlementModal() {
     const closePrinterModal = document.getElementById('closePrinterModal');
     const closePrinterModalBtn = document.getElementById('closePrinterModalBtn');
 window.connectPrinter = connectPrinter;
-    function updatePrinterStatusUI() {
-      if (isConnected) {
-        printerStatusModal.innerText = '✅ Printer connected';
-        printerStatusModal.style.color = '#2c7a4b';
-      } else {
-        printerStatusModal.innerText = '⚪ Not connected';
-        printerStatusModal.style.color = '#64748b';
-      }
+  function updatePrinterStatusUI() {
+  const statusSpan = document.getElementById('printerStatusModal');
+  if (window.isPrinterConnected) {
+    statusSpan.innerText = '✅ Printer connected';
+    statusSpan.style.color = '#2c7a4b';
+  } else {
+    statusSpan.innerText = '⚪ Not connected';
+    statusSpan.style.color = '#64748b';
+  }
+}
+async function checkSavedPrinter() {
+  const savedId = localStorage.getItem('printerDeviceId');
+  if (!savedId) return;
+  if (navigator.bluetooth.getDevices) {
+    const devices = await navigator.bluetooth.getDevices();
+    const device = devices.find(d => d.id === savedId);
+    if (device) {
+      // Show a hint in the printer modal that a printer is remembered
+      const statusSpan = document.getElementById('printerStatusModal');
+      if (statusSpan) statusSpan.innerText = '🔌 Saved printer found. Click "Connect Printer" to reconnect.';
     }
-
+  }
+}
+// Call this inside finishLoginAfterVerification()
+checkSavedPrinter();
     async function sendChunkedData(data, chunkSize = 500) {
       if (!printerCharacteristic) return false;
       let offset = 0;
@@ -4868,12 +4883,16 @@ if (transaction.buy3_free1_discount > 0) {
     }
 
 // Place this at the top of your script (global scope)
+// Replace your existing connectPrinter function with this one
 let cachedDevice = null;
 
 async function connectPrinter() {
+  const connectBtn = document.getElementById('connectPrinterModalBtn');
+  const statusSpan = document.getElementById('printerStatusModal');
+
   try {
-    connectBtnModal.disabled = true;
-    printerStatusModal.innerText = '🔍 Connecting...';
+    connectBtn.disabled = true;
+    statusSpan.innerText = '🔍 Connecting...';
 
     let device = cachedDevice;
     const savedId = localStorage.getItem('printerDeviceId');
@@ -4884,7 +4903,6 @@ async function connectPrinter() {
         if (!device.gatt.connected) {
           await device.gatt.connect();
         }
-        // Reuse existing connection
         await finishPrinterConnection(device);
         return;
       } catch (err) {
@@ -4893,18 +4911,16 @@ async function connectPrinter() {
       }
     }
 
-    // 2. Try to get already paired devices (no picker)
+    // 2. Try to get already paired devices (no picker) using saved ID
     if (navigator.bluetooth.getDevices) {
       const devices = await navigator.bluetooth.getDevices();
       if (savedId) {
         device = devices.find(d => d.id === savedId);
       }
       if (!device && devices.length > 0) {
-        // Optionally let user choose, but we'll take the first one
-        device = devices[0];
+        device = devices[0]; // optionally let user choose, but auto-pick first
       }
       if (device) {
-        // Connect without picker
         await device.gatt.connect();
         localStorage.setItem('printerDeviceId', device.id);
         cachedDevice = device;
@@ -4914,7 +4930,7 @@ async function connectPrinter() {
     }
 
     // 3. Fallback: request a new device (shows picker – only once per session)
-    printerStatusModal.innerText = '📱 Select your printer...';
+    statusSpan.innerText = '📱 Select your printer...';
     device = await navigator.bluetooth.requestDevice({
       acceptAllDevices: true,
       optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
@@ -4926,11 +4942,11 @@ async function connectPrinter() {
 
   } catch (err) {
     console.error(err);
-    printerStatusModal.innerText = `❌ ${err.message}`;
+    statusSpan.innerText = `❌ ${err.message}`;
     localStorage.removeItem('printerDeviceId');
     cachedDevice = null;
   } finally {
-    connectBtnModal.disabled = false;
+    connectBtn.disabled = false;
   }
 }
 
@@ -4951,9 +4967,11 @@ async function finishPrinterConnection(device) {
   }
   if (!foundChar) throw new Error('No writable characteristic');
 
-  gattServer = server;
-  printerCharacteristic = foundChar;
-  isConnected = true;
+  // These variables must be accessible in the printer module
+  window.gattServer = server;
+  window.printerCharacteristic = foundChar;
+  window.isPrinterConnected = true;
+
   window.printerAPI = {
     isConnected: true,
     printReceipt: printReceipt,
@@ -4964,16 +4982,21 @@ async function finishPrinterConnection(device) {
   await showAlertModal('Printer Connected', 'Bluetooth printer is ready.');
 }
 
-// ✅ Expose connectPrinter globally so ensurePrinterConnected can call it
+// Expose the function globally so other parts can call it
 window.connectPrinter = connectPrinter;
- 
 
-    function disconnectPrinter() {
-      if (gattServer) { gattServer.disconnect(); gattServer = null; printerCharacteristic = null; }
-      isConnected = false;
-      window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer, printPrizeVoucher: printPrizeVoucher };
-      updatePrinterStatusUI();
-    }
+  function disconnectPrinter() {
+  if (window.gattServer) {
+    window.gattServer.disconnect();
+    window.gattServer = null;
+    window.printerCharacteristic = null;
+  }
+  window.isPrinterConnected = false;
+  window.printerAPI = { isConnected: false, ... };
+  localStorage.removeItem('printerDeviceId');   // ← clear saved ID
+  cachedDevice = null;
+  updatePrinterStatusUI();
+}
 
     printerIconBtn.addEventListener('click', () => {
       printerModal.style.display = 'flex';

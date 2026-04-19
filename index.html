@@ -4985,15 +4985,20 @@ async function finishPrinterConnection(device) {
 // Expose the function globally so other parts can call it
 window.connectPrinter = connectPrinter;
 
-  function disconnectPrinter() {
+ function disconnectPrinter() {
   if (window.gattServer) {
     window.gattServer.disconnect();
     window.gattServer = null;
     window.printerCharacteristic = null;
   }
   window.isPrinterConnected = false;
-  window.printerAPI = { isConnected: false, ... };
-  localStorage.removeItem('printerDeviceId');   // ← clear saved ID
+  window.printerAPI = { 
+    isConnected: false, 
+    printReceipt: printReceipt, 
+    openDrawer: openCashDrawer, 
+    printPrizeVoucher: printPrizeVoucher 
+  };
+  localStorage.removeItem('printerDeviceId');
   cachedDevice = null;
   updatePrinterStatusUI();
 }

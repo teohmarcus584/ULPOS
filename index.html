@@ -1427,7 +1427,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -3747,7 +3747,7 @@ async function completeCheckout(paymentMethod, cashReceived) {
 
     fetchAndCacheReceipts();
 
-   if (window.printerAPI?.isConnected() && window.printerAPI.printReceipt) {
+   if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
   const transactionWithName = { ...transaction, employee_name: currentEmployee.name };
   await window.printerAPI.printReceipt(transactionWithName);
 } else {

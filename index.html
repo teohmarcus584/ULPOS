@@ -1446,7 +1446,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -4390,8 +4390,55 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
     } catch(err) { console.error(err); return null; }
   }
 
- async function fetchProductSalesReport(store, employeeId, from, to) { return []; }
-  function renderProductDetails(data) {}
+ async function fetchProductSalesReport(store, employeeId, from, to) {
+  try {
+    let url = `${APPS_SCRIPT_URL}?action=getReceipts&store=${store}&employeeId=${employeeId}`;
+    if (from) url += `&from=${encodeURIComponent(from)}`;
+    if (to) url += `&to=${encodeURIComponent(to)}`;
+    const response = await fetch(url);
+    const result = await response.json();
+
+    if (!result.success || !result.receipts) return [];
+
+    const productMap = new Map(); // key: product id
+
+    for (const receipt of result.receipts) {
+      for (const item of receipt.items) {
+        const id = item.id;
+        // paid quantity = (quantity - free_quantity) – this works even for negative refund quantities
+        const paidQty = item.quantity - (item.free_quantity || 0);
+        if (paidQty === 0) continue;
+
+        const itemTotal = paidQty * item.price;
+
+        if (productMap.has(id)) {
+          const existing = productMap.get(id);
+          existing.quantity += paidQty;
+          existing.total += itemTotal;
+        } else {
+          productMap.set(id, {
+            name: item.name,
+            category: item.category || "Uncategorized",
+            quantity: paidQty,
+            total: itemTotal
+          });
+        }
+      }
+    }
+
+    // Convert map to array and filter out products with zero or negative net quantity (optional)
+    const productsArray = Array.from(productMap.values())
+      .filter(p => p.quantity > 0);   // show only products with net positive sales
+
+    // Sort by net quantity sold (most sellable first)
+    productsArray.sort((a, b) => b.quantity - a.quantity);
+
+    return productsArray;
+  } catch (err) {
+    console.error("fetchProductSalesReport error:", err);
+    return [];
+  }
+}
 
 async function updateAdminReport(forceRefresh = false) {
   let store, employeeId;
@@ -5977,18 +6024,22 @@ document.getElementById('recordSettlementBtn')?.addEventListener('click', async 
 function renderProductDetails(productsData) {
   const tbody = document.getElementById('productDetailsBody');
   if (!tbody) return;
-  if (!productsData || productsData.length === 0) {
+  
+  const sortedData = [...(productsData || [])].sort((a, b) => b.quantity - a.quantity);
+  
+  if (sortedData.length === 0) {
     tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No products sold in this period.</td></tr>';
     return;
   }
+  
   let html = '';
-  productsData.forEach(p => {
+  sortedData.forEach(p => {
     html += `<tr>
-        <td>${escapeHtml(p.name)}</td>
-        <td>${escapeHtml(p.category)}</td>
-        <td style="text-align: right;">${p.quantity}</td>
-        <td style="text-align: right;">RM ${p.total.toFixed(2)}</td>
-       </tr>`;
+      <td>${escapeHtml(p.name)}</td>
+      <td>${escapeHtml(p.category)}</td>
+      <td style="text-align: right;">${p.quantity}</td>
+      <td style="text-align: right;">RM ${p.total.toFixed(2)}</td>
+    </tr>`;
   });
   tbody.innerHTML = html;
 }

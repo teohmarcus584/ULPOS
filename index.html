@@ -1471,7 +1471,8 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icon-192.png">
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -5153,14 +5154,22 @@ async function printReceipt(transaction) {
 
     for (const item of transaction.items) {
       const paidQty = item.quantity - (item.free_quantity || 0);
+      const freeQty = item.free_quantity || 0;
+
+      // Paid items (normal price)
       if (paidQty > 0) {
         const itemTotal = paidQty * item.price;
         const [nameLine, qtyLine] = formatProductLine(item.name, item.price, paidQty, itemTotal);
         lines.push(nameLine);
         lines.push(qtyLine);
       }
-      if (item.free_quantity > 0) {
-       lines.push(`🎁 FREE GIFT: ${item.free_quantity} x ${item.name}`);
+
+      // Free items – show as normal product line with price 0
+      if (freeQty > 0) {
+        const itemTotal = 0;
+        const [nameLine, qtyLine] = formatProductLine(item.name, 0, freeQty, itemTotal);
+        lines.push(nameLine);
+        lines.push(qtyLine);
       }
     }
 
@@ -5244,6 +5253,17 @@ async function printReceipt(transaction) {
     }
     commands.push(0x1B, 0x61, 0x00);
     commands.push(0x0A);
+
+    // Barcode for receipt ID
+    const barcodeData = encoder.encode(transaction.transaction_id);
+    const barcodeLen = barcodeData.length;
+    commands.push(0x1D, 0x68, 0x32);
+    commands.push(0x1D, 0x77, 0x01);
+    commands.push(0x1B, 0x61, 0x01);
+    commands.push(0x1D, 0x6B, 0x49, barcodeLen);
+    for (let i = 0; i < barcodeLen; i++) commands.push(barcodeData[i]);
+    commands.push(0x0A, 0x0A);
+    commands.push(0x1B, 0x61, 0x00);
 
     commands.push(...encoder.encode(txnLine));
     commands.push(0x0A);
@@ -6733,7 +6753,15 @@ function updateReceipts() {
     categorySelect.value = 'all';
     renderProductGrid();
   });
-
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(reg => console.log('SW registered:', reg))
+        .catch(err => console.error('SW registration failed:', err));
+    });
+  }
 </script>
 </body>
 </html>

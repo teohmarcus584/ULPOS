@@ -1446,7 +1446,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -1995,6 +1995,8 @@ function openIndexedDB() {
 }
 // Automatically select closest store when the modal appears
 (async function autoSelectOnLoad() {
+ loadAndCacheEmployees().catch(console.warn);
+  preloadAllStoresData(); // 👈 add this line
   const storeDisplaySpan = document.getElementById('selectedStoreDisplay');
   const storeValueHidden = document.getElementById('initialStoreValue');
   const retryBtn = document.getElementById('retryLocationBtn');
@@ -2013,9 +2015,11 @@ function openIndexedDB() {
     currentStore = storeId;
     storeSelect.value = storeId; // if dropdown exists (keep for compatibility)
     document.getElementById('storeSelectModal').style.display = 'none';
-    
+    // ✅ Show login modal IMMEDIATELY
+  document.getElementById('loginModal').style.display = 'flex';
+  document.getElementById('pinInput').focus();
     // Load employees and show login modal
-    await loadAndCacheEmployees().catch(console.warn);
+    loadAndCacheEmployees().catch(console.warn);
     const preloaded = preloadedDataMap[storeId];
     if (preloaded && preloaded.products && preloaded.products.length > 0) {
       products = preloaded.products;
@@ -2066,7 +2070,7 @@ function openIndexedDB() {
     storeValueHidden.value = closest;
     console.log(`📍 Auto-selected store: ${closest}`);
     // Auto-proceed after a short delay (so user sees the store name briefly)
-    setTimeout(() => proceedToLogin(closest), 500);
+    setTimeout(() => proceedToLogin(closest), 2000);
   } else {
     storeDisplaySpan.innerText = '❌ Could not detect location. Please allow GPS and retry.';
     if (retryBtn) retryBtn.style.display = 'inline-block';
@@ -2081,7 +2085,7 @@ function openIndexedDB() {
       if (newClosest && storeNames[newClosest]) {
         storeDisplaySpan.innerText = storeNames[newClosest];
         storeValueHidden.value = newClosest;
-        setTimeout(() => proceedToLogin(newClosest), 500);
+        setTimeout(() => proceedToLogin(newClosest), 2000);
       } else {
         storeDisplaySpan.innerText = '❌ Still failed. Please check GPS.';
         retryBtn.style.display = 'inline-block';

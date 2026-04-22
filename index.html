@@ -1471,7 +1471,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -1893,7 +1893,7 @@
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzos6M0GcX47v_zgm_Rt2ofQVWaPJq-gnnH-6yMt2OlpnxHUWS9E3_a0jakGKLNZhhu-w/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxo7betXKhH8WbFBuSdbdfgpZZNtjniD1jOBazzLYkkFUvbi1t0aZNVlFAk53ZtOO3ShA/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -4775,6 +4775,51 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
     return [];
   }
 }
+async function fetchMultiStoreReport(from, to, forceRefresh = false) {
+  const cacheKey = `multiStore_${from}_${to}`;
+  
+  if (!forceRefresh) {
+    const cached = await getCachedReport(cacheKey);
+    if (cached) {
+      return cached;
+    }
+  }
+  
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=getMultiStoreReport&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&_=${Date.now()}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      await setCachedReport(cacheKey, result.stores);
+      return result.stores;
+    }
+    return null;
+  } catch (err) {
+    console.error('Multi-store fetch failed:', err);
+    return null;
+  }
+}
+// ==================== MULTI-STORE CACHE HELPERS ====================
+// These should be placed near your other cache variables (e.g., after storeReportCache declaration)
+
+async function getCachedMultiStoreReport(from, to) {
+  const key = `multistore_${from}_${to}`;
+  const cached = storeReportCache[key];
+  if (cached && (Date.now() - cached.timestamp) < 30000) { // 30 seconds TTL
+    return cached.data;
+  }
+  return null;
+}
+
+function setCachedMultiStoreReport(from, to, data) {
+  const key = `multistore_${from}_${to}`;
+  storeReportCache[key] = {
+    timestamp: Date.now(),
+    data: data
+  };
+}
+
+// ==================== FULL updateAdminReport FUNCTION ====================
 
 async function updateAdminReport(forceRefresh = false) {
   let store, employeeId;
@@ -4818,7 +4863,7 @@ async function updateAdminReport(forceRefresh = false) {
     to = new Date(to + 'T00:00:00Z').toISOString().split('T')[0];
   }
 
-  // --- Totals (fast, already cached) ---
+  // --- Totals (fast, using IndexedDB cache) ---
   const totals = await fetchSalesReportWithCache(store, employeeId, from, to, false, true, forceRefresh);
   if (!totals) return;
 
@@ -4843,92 +4888,93 @@ async function updateAdminReport(forceRefresh = false) {
     storeBreakdownDiv.style.display = 'block';
     const stores = ['queens', 'sunshine', 'gurney_paragon'];
 
-    // Show loading placeholders
-    stores.forEach(storeName => {
-      const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
-      if (card) {
-        card.querySelector('.store-total').innerHTML = '<span class="report-loading-spinner" style="width:16px;height:16px;"></span> Loading...';
-        card.querySelector('.store-cash').innerHTML = '💵 Loading...';
-        card.querySelector('.store-card').innerHTML = '💳 Loading...';
-        card.querySelector('.store-qr').innerHTML = '📱 Loading...';
-        card.querySelector('.store-alipay').innerHTML = '💸 Loading...';
-        card.querySelector('.store-refund').innerHTML = '❌ Loading...';
-        card.querySelector('.store-refunded-bills').innerHTML = '📄 Loading...';
-        card.querySelector('.store-transactions').innerHTML = 'Loading...';
-        card.querySelector('.store-items-sold').innerHTML = 'Loading...';
-        card.querySelector('.employee-list').innerHTML = '<div class="report-loading-spinner" style="width:16px;height:16px;"></div>';
-      }
-    });
+    // Show loading spinners if we need to fetch fresh data
+    let needFetch = forceRefresh;
+    for (const storeName of stores) {
+      const cached = await getCachedStoreReport(storeName, from, to);
+      if (!cached) needFetch = true;
+    }
 
-    // Helper to fetch store data with caching
-    const fetchStoreData = async (storeName) => {
-      const cacheKey = getCacheKey(storeName, from, to);
-      let data = forceRefresh ? null : await getCachedStoreReport(storeName, from, to);
-      if (!data) {
-        const [salesReport, empData] = await Promise.all([
-          fetchSalesReport(storeName, 'all', from, to, false, true),
-          fetchEmployeeSalesData(storeName, from, to)
-        ]);
-        data = { salesReport, empData };
-        setCachedStoreReport(storeName, from, to, data);
-      } else {
-        // Refresh in background (don't await)
-        Promise.all([
-          fetchSalesReport(storeName, 'all', from, to, false, true),
-          fetchEmployeeSalesData(storeName, from, to)
-        ]).then(([newSales, newEmp]) => {
-          const newData = { salesReport: newSales, empData: newEmp };
-          setCachedStoreReport(storeName, from, to, newData);
-          // Update UI if the modal is still open
-          if (document.getElementById('adminReportModal').style.display === 'flex') {
-            updateStoreCard(storeName, newSales, newEmp);
-          }
-        }).catch(console.warn);
-      }
-      return data;
-    };
-
-    const updateStoreCard = (storeName, salesReport, empData) => {
-      const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
-      if (!card || !salesReport) return;
-      card.querySelector('.store-total').innerHTML = `Total Sales: RM ${salesReport.totalSales.toFixed(2)}`;
-      card.querySelector('.store-cash').innerHTML = `💵 Cash: RM ${salesReport.cashTotal.toFixed(2)}`;
-      card.querySelector('.store-card').innerHTML = `💳 Card: RM ${salesReport.cardTotal.toFixed(2)}`;
-      card.querySelector('.store-qr').innerHTML = `📱 QR Pay: RM ${salesReport.otherTotal.toFixed(2)}`;
-      card.querySelector('.store-alipay').innerHTML = `💸 Alipay: RM ${salesReport.alipayTotal.toFixed(2)}`;
-      card.querySelector('.store-refund').innerHTML = `❌ Refunds: RM ${Math.abs(salesReport.refundTotal).toFixed(2)}`;
-      card.querySelector('.store-refunded-bills').innerHTML = `📄 Refunded Bills: ${salesReport.refundedTransactionCount || 0}`;
-      card.querySelector('.store-transactions').innerHTML = `Transactions: ${salesReport.transactionCount || 0}`;
-      card.querySelector('.store-items-sold').innerHTML = `Items Sold: ${salesReport.totalItems || 0}`;
-
-      const empListDiv = card.querySelector('.employee-list');
-      if (empData && empData.labels && empData.labels.length) {
-        let html = '';
-        for (let i = 0; i < empData.labels.length; i++) {
-          html += `<div class="employee-row">
-                      <span class="employee-name">${escapeHtml(empData.labels[i])}</span>
-                      <span class="employee-sales">RM ${empData.data[i].toFixed(2)}</span>
-                    </div>`;
+    if (needFetch) {
+      // Show spinners
+      stores.forEach(storeName => {
+        const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
+        if (card) {
+          card.querySelector('.store-total').innerHTML = '<span class="report-loading-spinner" style="width:16px;height:16px;"></span> Loading...';
+          card.querySelector('.store-cash').innerHTML = '💵 Loading...';
+          card.querySelector('.store-card').innerHTML = '💳 Loading...';
+          card.querySelector('.store-qr').innerHTML = '📱 Loading...';
+          card.querySelector('.store-alipay').innerHTML = '💸 Loading...';
+          card.querySelector('.store-refund').innerHTML = '❌ Loading...';
+          card.querySelector('.store-refunded-bills').innerHTML = '📄 Loading...';
+          card.querySelector('.store-transactions').innerHTML = 'Loading...';
+          card.querySelector('.store-items-sold').innerHTML = 'Loading...';
+          card.querySelector('.employee-list').innerHTML = '<div class="report-loading-spinner" style="width:16px;height:16px;"></div>';
         }
-        empListDiv.innerHTML = html;
-      } else {
-        empListDiv.innerHTML = '<div style="color:#94a3b8;">No employee sales</div>';
+      });
+    } else {
+      // Cache hit – render immediately from cache
+      for (const storeName of stores) {
+        const cached = await getCachedStoreReport(storeName, from, to);
+        if (cached) {
+          updateStoreCard(storeName, cached.salesReport, cached.employeeData);
+        }
       }
+    }
+
+    // Fetch fresh data for all stores in parallel (using existing per‑store functions)
+    const fetchStoreData = async (storeName) => {
+      const [salesReport, empData] = await Promise.all([
+        fetchSalesReport(storeName, 'all', from, to, false, true),
+        fetchEmployeeSalesData(storeName, from, to)
+      ]);
+      return { storeName, salesReport, empData };
     };
 
-    // Fetch all stores in parallel and update cards as they arrive
-    const storePromises = stores.map(storeName => fetchStoreData(storeName));
-    const results = await Promise.all(storePromises);
-    results.forEach((result, idx) => {
-      updateStoreCard(stores[idx], result.salesReport, result.empData);
-    });
+    const results = await Promise.all(stores.map(fetchStoreData));
+    for (const { storeName, salesReport, empData } of results) {
+      updateStoreCard(storeName, salesReport, empData);
+      // Cache the result for next time
+      setCachedStoreReport(storeName, from, to, { salesReport, employeeData: empData });
+    }
   } else {
     storeBreakdownDiv.style.display = 'none';
   }
 
-  // Refresh charts (optional, unchanged)
+  // Refresh charts (unchanged)
   await fetchSalesChartData(store, employeeId, from, to);
 }
+
+// Helper function to update a single store card (must be defined globally)
+function updateStoreCard(storeName, salesReport, empData) {
+  const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
+  if (!card || !salesReport) return;
+  card.querySelector('.store-total').innerHTML = `Total Sales: RM ${salesReport.totalSales.toFixed(2)}`;
+  card.querySelector('.store-cash').innerHTML = `💵 Cash: RM ${salesReport.cashTotal.toFixed(2)}`;
+  card.querySelector('.store-card').innerHTML = `💳 Card: RM ${salesReport.cardTotal.toFixed(2)}`;
+  card.querySelector('.store-qr').innerHTML = `📱 QR Pay: RM ${salesReport.otherTotal.toFixed(2)}`;
+  card.querySelector('.store-alipay').innerHTML = `💸 Alipay: RM ${salesReport.alipayTotal.toFixed(2)}`;
+  card.querySelector('.store-refund').innerHTML = `❌ Refunds: RM ${Math.abs(salesReport.refundTotal).toFixed(2)}`;
+  card.querySelector('.store-refunded-bills').innerHTML = `📄 Refunded Bills: ${salesReport.refundedTransactionCount || 0}`;
+  card.querySelector('.store-transactions').innerHTML = `Transactions: ${salesReport.transactionCount || 0}`;
+  card.querySelector('.store-items-sold').innerHTML = `Items Sold: ${salesReport.totalItems || 0}`;
+
+  const empListDiv = card.querySelector('.employee-list');
+  if (empData && empData.labels && empData.labels.length) {
+    let html = '';
+    for (let i = 0; i < empData.labels.length; i++) {
+      html += `<div class="employee-row">
+                  <span class="employee-name">${escapeHtml(empData.labels[i])}</span>
+                  <span class="employee-sales">RM ${empData.data[i].toFixed(2)}</span>
+                </div>`;
+    }
+    empListDiv.innerHTML = html;
+  } else {
+    empListDiv.innerHTML = '<div style="color:#94a3b8;">No employee sales</div>';
+  }
+}
+
+    
 // ==================== BARCODE SCANNER ====================
 let barcodeBuffer = '';
 let barcodeTimer = null;
@@ -5002,7 +5048,22 @@ document.addEventListener('keydown', (e) => {
     }, 100);
   }
 });
+async function getCachedMultiStoreReport(from, to) {
+  const key = `multistore_${from}_${to}`;
+  const cached = storeReportCache[key];
+  if (cached && (Date.now() - cached.timestamp) < 30000) { // 30 sec TTL
+    return cached.data;
+  }
+  return null;
+}
 
+function setCachedMultiStoreReport(from, to, data) {
+  const key = `multistore_${from}_${to}`;
+  storeReportCache[key] = {
+    timestamp: Date.now(),
+    data: data
+  };
+}
 function enableBarcodeScanner() {
   scannerActive = true;
   const statusSpan = document.getElementById('barcodeStatus');

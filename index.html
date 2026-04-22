@@ -1471,7 +1471,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2065,6 +2065,29 @@ function openIndexedDB() {
       }
     };
   });
+}
+// Cache for per-store reports (store, from, to)
+let storeReportCache = {};
+
+function getCacheKey(store, from, to) {
+  return `store_${store}_${from}_${to}`;
+}
+
+async function getCachedStoreReport(store, from, to) {
+  const key = getCacheKey(store, from, to);
+  const cached = storeReportCache[key];
+  if (cached && (Date.now() - cached.timestamp) < 30000) { // 30 seconds TTL
+    return cached.data;
+  }
+  return null;
+}
+
+function setCachedStoreReport(store, from, to, data) {
+  const key = getCacheKey(store, from, to);
+  storeReportCache[key] = {
+    timestamp: Date.now(),
+    data: data
+  };
 }
 // Automatically select closest store when the modal appears
 (async function autoSelectOnLoad() {
@@ -4275,35 +4298,29 @@ function renderReceiptsList(receipts) {
     return;
   }
 
-  // Filter out receipts with invalid timestamps
-  const validReceipts = receipts.filter(rec => {
-    const ts = rec.timestamp;
-    if (!ts) return false;
-    const date = new Date(ts);
-    return !isNaN(date.getTime());
-  });
-
-  if (validReceipts.length === 0) {
-    container.innerHTML = '<div style="text-align:center; padding:30px;">No valid receipts found.</div>';
-    return;
-  }
-
-  // Group receipts by date (YYYY-MM-DD)
+  // ----- SAFE GROUPING: skip invalid timestamps -----
   const grouped = {};
-  validReceipts.forEach(rec => {
-    const dateObj = new Date(rec.timestamp);
-    const dateKey = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
+  receipts.forEach(rec => {
+    const ts = rec.timestamp;
+    if (!ts) return; // skip if no timestamp
+    const dateObj = new Date(ts);
+    if (isNaN(dateObj.getTime())) return; // skip invalid date
+    const dateKey = dateObj.toISOString().split('T')[0];
     if (!grouped[dateKey]) grouped[dateKey] = [];
     grouped[dateKey].push(rec);
   });
 
-  // Sort date keys descending (newest first)
   const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+
+  if (sortedDates.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:30px;">No valid receipts found.</div>';
+    return;
+  }
 
   let html = '';
   for (const dateKey of sortedDates) {
     const dayReceipts = grouped[dateKey];
-    // Format date for display
+    // Use the first receipt's timestamp for display (already validated)
     const sampleDate = new Date(dayReceipts[0].timestamp);
     const formattedDate = sampleDate.toLocaleDateString(undefined, {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
@@ -4319,7 +4336,7 @@ function renderReceiptsList(receipts) {
       </div>
     `;
 
-    // Render each receipt for this day
+    // Render each receipt in this day
     for (const rec of dayReceipts) {
       const date = new Date(rec.timestamp).toLocaleString();
       const employeeName = getEmployeeName(rec.employee_id);
@@ -4329,19 +4346,15 @@ function renderReceiptsList(receipts) {
         ? `<span class="receipt-id">[REFUND] ${rec.transaction_id}</span>`
         : `<span class="receipt-id">${rec.transaction_id}</span>`;
 
-      // Build detailed items list
+      // Items list
       let itemsHtml = '<div class="receipt-items-list">';
-      let subtotal = 0;
       for (const item of rec.items) {
         const price = parseFloat(item.price) || 0;
         const quantity = parseInt(item.quantity) || 0;
         const freeQuantity = parseInt(item.free_quantity) || 0;
         const paidQty = quantity - freeQuantity;
         if (paidQty <= 0) continue;
-
         const itemTotal = paidQty * price;
-        subtotal += itemTotal;
-
         itemsHtml += `
           <div class="receipt-item-row">
             <span class="receipt-item-name">${escapeHtml(item.name)}</span>
@@ -4413,7 +4426,7 @@ function renderReceiptsList(receipts) {
 
   container.innerHTML = html;
 
-  // Re-attach event listeners
+  // Re-attach event listeners (reprint & refund)
   document.querySelectorAll('.reprint-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const txId = btn.dataset.txid;
@@ -4447,26 +4460,6 @@ function renderReceiptsList(receipts) {
     });
   });
 }
-  async function reprintReceipt(receipt) {
-    if (!window.printerAPI || !window.printerAPI.isConnected) {
-      await showAlertModal('Printer required', 'Connect Bluetooth printer first.');
-      return;
-    }
-    const success = await window.printerAPI.printReceipt(receipt);
-    if (success) await showAlertModal('Reprint', `Receipt ${receipt.transaction_id} sent to printer.`);
-    else await showAlertModal('Error', 'Print failed.');
-  }
-
-  function openLuckyDraw(transactionId, customerId = null) {
-    let url = `https://teohmarcus584.github.io/salesanalysis/?receipt=${encodeURIComponent(transactionId)}`;
-    if (customerId) {
-      url += `&customer_id=${encodeURIComponent(customerId)}`;
-    }
-    window.open(url, '_blank');
-    document.getElementById('luckyDrawModal').style.display = 'none';
-    document.getElementById('luckyDrawReceiptNumber').innerText = transactionId;
-    document.getElementById('luckyDrawPrintModal').style.display = 'flex';
-  }
 
  async function processRefund(transactionId, store) {
   showLoading('Processing refund...');
@@ -4696,35 +4689,85 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
     const productMap = new Map(); // key: product id
 
     for (const receipt of result.receipts) {
+      // Get discount amounts
+      const buy2Free1Discount = parseFloat(receipt.buy2_free1_discount) || 0;
+      const buy3Free1Discount = parseFloat(receipt.buy3_free1_discount) || 0;
+      const otherDiscounts = (parseFloat(receipt.discount) || 0) +
+                             (parseFloat(receipt.custom_discount) || 0) +
+                             (parseFloat(receipt.staff_discount) || 0);
+
+      // Build list of items with original totals
+      const itemsWithOrig = [];
+      let originalSubtotal = 0;
       for (const item of receipt.items) {
+        const price = parseFloat(item.price) || 0;
+        const quantity = parseInt(item.quantity) || 0;
+        const freeQuantity = parseInt(item.free_quantity) || 0;
+        const paidQty = quantity - freeQuantity;
+        if (paidQty <= 0) continue;
+        const origTotal = paidQty * price;
+        originalSubtotal += origTotal;
+        itemsWithOrig.push({
+          id: item.id,
+          name: item.name,
+          category: item.category || "Uncategorized",
+          paidQty: paidQty,
+          origTotal: origTotal,
+          price: price
+        });
+      }
+
+      if (itemsWithOrig.length === 0) continue;
+
+      // --- Apply Car Aromatic promo (RM 2 fixed price) ---
+      if (buy2Free1Discount > 0) {
+        const targetItem = itemsWithOrig.find(i => i.category === "CAR AROMATIC");
+        if (targetItem) {
+          // Reduce its total by the discount amount (original price - 2)
+          const newTotal = Math.max(0, targetItem.origTotal - buy2Free1Discount);
+          targetItem.origTotal = newTotal;
+        }
+      }
+
+      // --- Apply 15ml Perfume EDP promo (RM 8 fixed price) ---
+      if (buy3Free1Discount > 0) {
+        const targetItem = itemsWithOrig.find(i => i.category === "15ML PERFUME EDP");
+        if (targetItem) {
+          const newTotal = Math.max(0, targetItem.origTotal - buy3Free1Discount);
+          targetItem.origTotal = newTotal;
+        }
+      }
+
+      // --- Apply remaining discounts proportionally ---
+      if (otherDiscounts > 0 && originalSubtotal > 0) {
+        const ratio = 1 - (otherDiscounts / originalSubtotal);
+        for (const item of itemsWithOrig) {
+          item.origTotal = item.origTotal * ratio;
+        }
+      }
+
+      // Aggregate into productMap
+      for (const item of itemsWithOrig) {
         const id = item.id;
-        // paid quantity = (quantity - free_quantity) – this works even for negative refund quantities
-        const paidQty = item.quantity - (item.free_quantity || 0);
-        if (paidQty === 0) continue;
-
-        const itemTotal = paidQty * item.price;
-
         if (productMap.has(id)) {
           const existing = productMap.get(id);
-          existing.quantity += paidQty;
-          existing.total += itemTotal;
+          existing.quantity += item.paidQty;
+          existing.total += item.origTotal;
         } else {
           productMap.set(id, {
             name: item.name,
-            category: item.category || "Uncategorized",
-            quantity: paidQty,
-            total: itemTotal
+            category: item.category,
+            quantity: item.paidQty,
+            total: item.origTotal
           });
         }
       }
     }
 
-    // Convert map to array and filter out products with zero or negative net quantity (optional)
+    // Convert map to array and sort by quantity sold
     const productsArray = Array.from(productMap.values())
-      .filter(p => p.quantity > 0);   // show only products with net positive sales
-
-    // Sort by net quantity sold (most sellable first)
-    productsArray.sort((a, b) => b.quantity - a.quantity);
+      .filter(p => p.quantity > 0)
+      .sort((a, b) => b.quantity - a.quantity);
 
     return productsArray;
   } catch (err) {
@@ -4752,7 +4795,6 @@ async function updateAdminReport(forceRefresh = false) {
   if (range === 'today') {
     from = to = getUTCDateString(todayUTC);
   } else if (range === 'week') {
-    // Rolling 7 days including today
     const end = new Date(todayUTC);
     const start = new Date(todayUTC);
     start.setUTCDate(start.getUTCDate() - 6);
@@ -4776,11 +4818,10 @@ async function updateAdminReport(forceRefresh = false) {
     to = new Date(to + 'T00:00:00Z').toISOString().split('T')[0];
   }
 
-  // Fetch totals (silent, using cache if available)
+  // --- Totals (fast, already cached) ---
   const totals = await fetchSalesReportWithCache(store, employeeId, from, to, false, true, forceRefresh);
   if (!totals) return;
 
-  // Update summary stats
   document.getElementById('adminReportTotalSales').innerText = `RM ${totals.totalSales.toFixed(2)}`;
   document.getElementById('adminReportCashTotal').innerText = `RM ${totals.cashTotal.toFixed(2)}`;
   document.getElementById('adminReportCardTotal').innerText = `RM ${totals.cardTotal.toFixed(2)}`;
@@ -4791,12 +4832,12 @@ async function updateAdminReport(forceRefresh = false) {
   document.getElementById('adminReportTransactionCount').innerText = totals.transactionCount || 0;
   document.getElementById('adminReportTotalItems').innerText = totals.totalItems || 0;
 
-  // Product details (if visible)
+  // --- Product details (if visible) ---
   const productData = await fetchProductSalesReport(store, employeeId, from, to);
   lastProductData = productData;
   if (productDetailsVisible) renderProductDetails(lastProductData);
 
-  // Store breakdown (only for admin)
+  // --- Store breakdown (only for admin) ---
   const storeBreakdownDiv = document.getElementById('storeBreakdownContainer');
   if (currentEmployee.isAdmin) {
     storeBreakdownDiv.style.display = 'block';
@@ -4806,7 +4847,7 @@ async function updateAdminReport(forceRefresh = false) {
     stores.forEach(storeName => {
       const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
       if (card) {
-        card.querySelector('.store-total').innerText = 'Loading...';
+        card.querySelector('.store-total').innerHTML = '<span class="report-loading-spinner" style="width:16px;height:16px;"></span> Loading...';
         card.querySelector('.store-cash').innerHTML = '💵 Loading...';
         card.querySelector('.store-card').innerHTML = '💳 Loading...';
         card.querySelector('.store-qr').innerHTML = '📱 Loading...';
@@ -4815,31 +4856,51 @@ async function updateAdminReport(forceRefresh = false) {
         card.querySelector('.store-refunded-bills').innerHTML = '📄 Loading...';
         card.querySelector('.store-transactions').innerHTML = 'Loading...';
         card.querySelector('.store-items-sold').innerHTML = 'Loading...';
-        card.querySelector('.employee-list').innerHTML = '<div>Loading employees...</div>';
+        card.querySelector('.employee-list').innerHTML = '<div class="report-loading-spinner" style="width:16px;height:16px;"></div>';
       }
     });
 
-    // Fetch real data in parallel
-    const storeResults = await Promise.all(stores.map(s => fetchSalesReport(s, 'all', from, to, false, true)));
-    const employeeResults = await Promise.all(stores.map(s => fetchEmployeeSalesData(s, from, to)));
+    // Helper to fetch store data with caching
+    const fetchStoreData = async (storeName) => {
+      const cacheKey = getCacheKey(storeName, from, to);
+      let data = forceRefresh ? null : await getCachedStoreReport(storeName, from, to);
+      if (!data) {
+        const [salesReport, empData] = await Promise.all([
+          fetchSalesReport(storeName, 'all', from, to, false, true),
+          fetchEmployeeSalesData(storeName, from, to)
+        ]);
+        data = { salesReport, empData };
+        setCachedStoreReport(storeName, from, to, data);
+      } else {
+        // Refresh in background (don't await)
+        Promise.all([
+          fetchSalesReport(storeName, 'all', from, to, false, true),
+          fetchEmployeeSalesData(storeName, from, to)
+        ]).then(([newSales, newEmp]) => {
+          const newData = { salesReport: newSales, empData: newEmp };
+          setCachedStoreReport(storeName, from, to, newData);
+          // Update UI if the modal is still open
+          if (document.getElementById('adminReportModal').style.display === 'flex') {
+            updateStoreCard(storeName, newSales, newEmp);
+          }
+        }).catch(console.warn);
+      }
+      return data;
+    };
 
-    stores.forEach((storeName, idx) => {
-      const data = storeResults[idx];
-      if (!data) return;
+    const updateStoreCard = (storeName, salesReport, empData) => {
       const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
-      if (!card) return;
+      if (!card || !salesReport) return;
+      card.querySelector('.store-total').innerHTML = `Total Sales: RM ${salesReport.totalSales.toFixed(2)}`;
+      card.querySelector('.store-cash').innerHTML = `💵 Cash: RM ${salesReport.cashTotal.toFixed(2)}`;
+      card.querySelector('.store-card').innerHTML = `💳 Card: RM ${salesReport.cardTotal.toFixed(2)}`;
+      card.querySelector('.store-qr').innerHTML = `📱 QR Pay: RM ${salesReport.otherTotal.toFixed(2)}`;
+      card.querySelector('.store-alipay').innerHTML = `💸 Alipay: RM ${salesReport.alipayTotal.toFixed(2)}`;
+      card.querySelector('.store-refund').innerHTML = `❌ Refunds: RM ${Math.abs(salesReport.refundTotal).toFixed(2)}`;
+      card.querySelector('.store-refunded-bills').innerHTML = `📄 Refunded Bills: ${salesReport.refundedTransactionCount || 0}`;
+      card.querySelector('.store-transactions').innerHTML = `Transactions: ${salesReport.transactionCount || 0}`;
+      card.querySelector('.store-items-sold').innerHTML = `Items Sold: ${salesReport.totalItems || 0}`;
 
-      card.querySelector('.store-total').innerText = `Total Sales: RM ${data.totalSales.toFixed(2)}`;
-      card.querySelector('.store-cash').innerHTML = `💵 Cash: RM ${data.cashTotal.toFixed(2)}`;
-      card.querySelector('.store-card').innerHTML = `💳 Card: RM ${data.cardTotal.toFixed(2)}`;
-      card.querySelector('.store-qr').innerHTML = `📱 QR Pay: RM ${data.otherTotal.toFixed(2)}`;
-      card.querySelector('.store-alipay').innerHTML = `💸 Alipay: RM ${data.alipayTotal.toFixed(2)}`;
-      card.querySelector('.store-refund').innerHTML = `❌ Refunds: RM ${Math.abs(data.refundTotal).toFixed(2)}`;
-      card.querySelector('.store-refunded-bills').innerHTML = `📄 Refunded Bills: ${data.refundedTransactionCount || 0}`;
-      card.querySelector('.store-transactions').innerHTML = `Transactions: ${data.transactionCount || 0}`;
-      card.querySelector('.store-items-sold').innerHTML = `Items Sold: ${data.totalItems || 0}`;
-
-      const empData = employeeResults[idx];
       const empListDiv = card.querySelector('.employee-list');
       if (empData && empData.labels && empData.labels.length) {
         let html = '';
@@ -4853,12 +4914,19 @@ async function updateAdminReport(forceRefresh = false) {
       } else {
         empListDiv.innerHTML = '<div style="color:#94a3b8;">No employee sales</div>';
       }
+    };
+
+    // Fetch all stores in parallel and update cards as they arrive
+    const storePromises = stores.map(storeName => fetchStoreData(storeName));
+    const results = await Promise.all(storePromises);
+    results.forEach((result, idx) => {
+      updateStoreCard(stores[idx], result.salesReport, result.empData);
     });
   } else {
     storeBreakdownDiv.style.display = 'none';
   }
 
-  // Refresh charts (if you have them – the function already exists)
+  // Refresh charts (optional, unchanged)
   await fetchSalesChartData(store, employeeId, from, to);
 }
 // ==================== BARCODE SCANNER ====================

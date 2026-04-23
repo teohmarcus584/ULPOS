@@ -1559,7 +1559,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -4262,8 +4262,6 @@ async function completeCheckout(paymentMethod, cashReceived) {
 }
   async function saveTransactionToSheet(transaction) {
   try {
-    const selectedEmployeeId = soldBySelectCart.value;
-    const employeeIdForRecord = selectedEmployeeId || currentEmployee.id;
     const formData = new URLSearchParams();
     formData.append("action", "saveSale");
     formData.append("transaction_id", transaction.transaction_id);
@@ -4273,7 +4271,8 @@ async function completeCheckout(paymentMethod, cashReceived) {
     formData.append("cash_received", transaction.cash_received || '');
     formData.append("timestamp", transaction.timestamp);
     formData.append("store", currentStore);
-    formData.append("employee_id", employeeIdForRecord);
+    // ✅ Use the logged‑in cashier's ID (from transaction)
+    formData.append("employee_id", transaction.employee_id);
     formData.append("discount", transaction.discount || 0);
     formData.append("buy2_free1_discount", transaction.buy2_free1_discount || 0);
     formData.append("buy3_free1_discount", transaction.buy3_free1_discount || 0);
@@ -4281,8 +4280,7 @@ async function completeCheckout(paymentMethod, cashReceived) {
     formData.append("staff_discount", transaction.staff_discount || 0);
     formData.append("prize_claimed", transaction.prize_claimed ? JSON.stringify(transaction.prize_claimed) : '');
     if (transaction.customer_id) formData.append("customer_id", transaction.customer_id);
-
-    // ✅ ADD THESE TWO LINES
+    // ✅ Send sales person fields separately
     formData.append("sales_person_name", transaction.sales_person_name || '');
     formData.append("sales_person_id", transaction.sales_person_id || '');
 

@@ -1559,7 +1559,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -5678,80 +5678,90 @@ async function printReceipt(transaction, copies = 1) {
     const separator = '-'.repeat(maxChars);
 
     // Helper to build the receipt content for one copy
-    function buildReceiptContent(copyLabel) {
-      const lines = [];
-      lines.push(`STORE LOCATION : ${storeLocation}`);
-      lines.push(`EMPLOYEE : ${employeeName}`);
-      lines.push(separator);
+ // Inside printReceipt function, replace the buildReceiptContent function with this:
+function buildReceiptContent(copyLabel) {
+  const lines = [];
+  lines.push(`STORE LOCATION : ${storeLocation}`);
+  lines.push(`EMPLOYEE : ${employeeName}`);
+  lines.push(separator);
 
-      for (const item of transaction.items) {
-        const paidQty = item.quantity - (item.free_quantity || 0);
-        const freeQty = item.free_quantity || 0;
+  for (const item of transaction.items) {
+    const paidQty = item.quantity - (item.free_quantity || 0);
+    const freeQty = item.free_quantity || 0;
 
-        if (paidQty > 0) {
-          const itemTotal = paidQty * item.price;
-          const [nameLine, qtyLine] = formatProductLine(item.name, item.price, paidQty, itemTotal);
-          lines.push(nameLine);
-          lines.push(qtyLine);
-        }
-
-        if (freeQty > 0) {
-          const itemTotal = 0;
-          const [nameLine, qtyLine] = formatProductLine(item.name, 0, freeQty, itemTotal);
-          lines.push(nameLine);
-          lines.push(qtyLine);
-        }
-      }
-
-      lines.push(separator);
-
-      if (transaction.discount > 0) lines.push(`Lucky Draw Discount : -RM ${transaction.discount.toFixed(2)}`);
-      if (transaction.buy2_free1_discount > 0) lines.push(`Car Aromatic Promo : -RM ${transaction.buy2_free1_discount.toFixed(2)}`);
-      if (transaction.buy3_free1_discount > 0) lines.push(`15ml Perfume EDP Promo : -RM ${transaction.buy3_free1_discount.toFixed(2)}`);
-      if (transaction.custom_discount > 0) lines.push(`Custom Discount     : -RM ${transaction.custom_discount.toFixed(2)}`);
-      if (transaction.staff_discount > 0) lines.push(`Staff 10% Discount  : -RM ${transaction.staff_discount.toFixed(2)}`);
-
-      const paymentLines = [];
-      paymentLines.push(`PAYMENT METHOD : ${transaction.payment_method}`);
-      if (transaction.cash_received && transaction.payment_method === 'Cash') {
-        const change = transaction.cash_received - transaction.total;
-        paymentLines.push(`CHANGE : RM ${change.toFixed(2)}`);
-      }
-
-      const footerLines = [
-        'THANK YOU FOR YOUR PURCHASE',
-        'ANY ENQUIRY PLEASE CONTACT',
-        '+60134665831 ( MARCUS )',
-        'GOODS SOLD ARE NOT REFUNDABLE'
-      ];
-
-      const date = new Date(transaction.timestamp);
-      const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-      const txnLine = `TXN   : ${transaction.transaction_id}`;
-      const dateLine = `DATE  : ${formattedDate}`;
-
-      // Build final text
-      let text = '';
-      text += `${copyLabel}\n`;
-      text += lines.join('\n') + '\n';
-      const totalAmount = transaction.total;
-      const totalLabel = "TOTAL";
-      const totalValueStr = `RM ${totalAmount.toFixed(2)}`;
-      let totalLine = totalLabel;
-      const availableSpace = maxChars - totalValueStr.length;
-      if (totalLabel.length < availableSpace) {
-        totalLine = totalLabel.padEnd(availableSpace);
-      } else {
-        totalLine = totalLabel.substring(0, availableSpace - 3) + '...';
-      }
-      totalLine += totalValueStr;
-      text += totalLine + '\n';
-      text += paymentLines.join('\n') + '\n';
-      text += separator + '\n';
-      text += footerLines.join('\n') + '\n';
-      text += txnLine + '\n' + dateLine + '\n\n';
-      return text;
+    if (paidQty > 0) {
+      const itemTotal = paidQty * item.price;
+      const [nameLine, qtyLine] = formatProductLine(item.name, item.price, paidQty, itemTotal);
+      lines.push(nameLine);
+      lines.push(qtyLine);
     }
+
+    if (freeQty > 0) {
+      const itemTotal = 0;
+      const [nameLine, qtyLine] = formatProductLine(item.name, 0, freeQty, itemTotal);
+      lines.push(nameLine);
+      lines.push(qtyLine);
+    }
+  }
+
+  lines.push(separator);
+
+  if (transaction.discount > 0) lines.push(`Lucky Draw Discount : -RM ${transaction.discount.toFixed(2)}`);
+  if (transaction.buy2_free1_discount > 0) lines.push(`Car Aromatic Promo : -RM ${transaction.buy2_free1_discount.toFixed(2)}`);
+  if (transaction.buy3_free1_discount > 0) lines.push(`15ml Perfume EDP Promo : -RM ${transaction.buy3_free1_discount.toFixed(2)}`);
+  if (transaction.custom_discount > 0) lines.push(`Custom Discount     : -RM ${transaction.custom_discount.toFixed(2)}`);
+  if (transaction.staff_discount > 0) lines.push(`Staff 10% Discount  : -RM ${transaction.staff_discount.toFixed(2)}`);
+
+  const paymentLines = [];
+  paymentLines.push(`PAYMENT METHOD : ${transaction.payment_method}`);
+  if (transaction.cash_received && transaction.payment_method === 'Cash') {
+    const change = transaction.cash_received - transaction.total;
+    paymentLines.push(`CHANGE : RM ${change.toFixed(2)}`);
+  }
+
+  // ------------------------- MODIFIED FOOTER -------------------------
+  // Wrap footer lines with center alignment commands
+  const footerLines = [
+    'THANK YOU FOR YOUR PURCHASE',
+    'ANY ENQUIRY PLEASE CONTACT',
+    '+60134665831 ( MARCUS )',
+    'GOODS SOLD ARE NOT REFUNDABLE'
+  ];
+  const centeredFooter = `\x1B\x61\x01${footerLines.join('\n')}\x1B\x61\x00`;
+
+  const date = new Date(transaction.timestamp);
+  const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  const txnLine = `TXN   : ${transaction.transaction_id}`;
+  const dateLine = `DATE  : ${formattedDate}`;
+
+  // Build final text – copy label already bold, now make TOTAL bold + double size
+  let text = '';
+  text += `\x1B\x45\x01${copyLabel}\x1B\x45\x00\n`;
+  text += lines.join('\n') + '\n';
+
+  // TOTAL line with bold and double width/height
+  const totalAmount = transaction.total;
+  const totalLabel = "TOTAL";
+  const totalValueStr = `RM ${totalAmount.toFixed(2)}`;
+  let totalLine = totalLabel;
+  const availableSpace = maxChars - totalValueStr.length;
+  if (totalLabel.length < availableSpace) {
+    totalLine = totalLabel.padEnd(availableSpace);
+  } else {
+    totalLine = totalLabel.substring(0, availableSpace - 3) + '...';
+  }
+  totalLine += totalValueStr;
+
+  // Apply emphasis commands: bold + double height + double width
+  text += `\x1B\x45\x01\x1D\x21\x11${totalLine}\x1D\x21\x00\x1B\x45\x00\n`;
+
+  text += paymentLines.join('\n') + '\n';
+  text += separator + '\n';
+  text += centeredFooter + '\n';
+  text += txnLine + '\n' + dateLine + '\n\n';
+
+  return text;
+}
 
     // Prepare commands for all copies
     let allCommands = [];

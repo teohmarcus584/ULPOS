@@ -1571,7 +1571,8 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icon-192.png">
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2008,7 +2009,7 @@
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzAFtcqOveWCnwPNARvCYIkbA7lKhq30V3wI4IFqpAK8HNobXUjN8ohzMLnEIJnPLnMNQ/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMTbltQln9nPj5na9OcSirFDq5qQ-1HEQKh47VpjPgdE4wL73EXVa8XEnbEu5GSB-EBw/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -4468,7 +4469,12 @@ async function fetchReceipts(store, employeeId, from, to, search) {
     const result = await response.json();
     if (result.success) {
       cachedReceipts = result.receipts;
-      // ✅ Always render – if empty, the function will show "No receipts found"
+      // ✅ Save to localStorage
+      localStorage.setItem('cachedReceipts', JSON.stringify({
+        timestamp: Date.now(),
+        receipts: cachedReceipts,
+        store, employeeId, from, to, search
+      }));
       renderReceiptsList(cachedReceipts);
     } else {
       throw new Error('Receipts data error');
@@ -6614,6 +6620,23 @@ async function openReportsModal() {
     const modal = document.getElementById('receiptsModal');
     if (modal) {
       modal.style.display = 'flex';
+	   // ========== ✅ INSERT LOCALSTORAGE CACHE HERE ==========
+      const cached = localStorage.getItem('cachedReceipts');
+      if (cached) {
+        try {
+          const { timestamp, receipts, store, employeeId, from, to, search } = JSON.parse(cached);
+          // Optional: also check if filters match current selection (store, employee, range, search)
+          if (Date.now() - timestamp < 5 * 60 * 1000) { // 5 minutes
+            cachedReceipts = receipts;
+            renderReceiptsList(cachedReceipts);
+            // Hide loading message if already rendered
+            const msg = document.getElementById('receiptsLoadingMsg');
+            if (msg) msg.style.display = 'none';
+          }
+        } catch(e) { console.warn(e); }
+      }
+      // =====================================================
+
       let loadingMsg = document.getElementById('receiptsLoadingMsg');
       if (!loadingMsg) {
         loadingMsg = document.createElement('div');
@@ -7402,7 +7425,15 @@ function updateReceipts() {
     categorySelect.value = 'all';
     renderProductGrid();
   });
-
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(reg => console.log('SW registered:', reg))
+        .catch(err => console.error('SW registration failed:', err));
+    });
+  }
 </script>
 </body>
 </html>

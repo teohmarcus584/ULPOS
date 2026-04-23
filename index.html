@@ -6788,6 +6788,7 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
 });
 // Record Settlement button
 document.getElementById('recordSettlementBtn')?.addEventListener('click', async () => {
+showLoading('Recording settlement...');
   const store = document.getElementById('settlementStoreSelect').value;
   const pettyCash = parseFloat(document.getElementById('pettyCashFloat').value) || 0;
   const actualCash = parseFloat(document.getElementById('actualCash').value);
@@ -6802,7 +6803,7 @@ document.getElementById('recordSettlementBtn')?.addEventListener('click', async 
 const sysRefund = parseFloat(document.getElementById('sysRefund').innerText.replace('RM ', '')) || 0;
   const todayStr = getLocalDateString(new Date());
 
-  showLoading('Recording settlement...');
+  
   try {
     const formData = new URLSearchParams();
     formData.append('action', 'recordSettlement');

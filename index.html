@@ -1559,7 +1559,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -4131,6 +4131,12 @@ async function completeCheckout(paymentMethod, cashReceived) {
 
   const transactionId = await getNextTransactionNumber(currentStore);
 
+  // ✅ NEW: Get selected sales person from dropdown
+  const salesPersonSelect = document.getElementById('soldBySelectCart');
+  const selectedOption = salesPersonSelect.options[salesPersonSelect.selectedIndex];
+  const salesPersonName = selectedOption ? selectedOption.text.split(' (ID:')[0] : '';
+  const salesPersonId = salesPersonSelect.value;
+
   const saleItems = cart.map(item => ({
     id: item.product.id,
     category: item.product.category,
@@ -4152,12 +4158,15 @@ async function completeCheckout(paymentMethod, cashReceived) {
     buy2_free1_discount: buy2Free1Discount,
     buy3_free1_discount: buy3Free1Discount,
     custom_discount: customDiscount,
-    staff_discount: staffDiscount,                // ✅ NEW
+    staff_discount: staffDiscount,
     prize_claimed: claimedReceiptInfo,
     customer_id: selectedCustomer ? selectedCustomer.id : null,
     store: currentStore,
-    employee_name: currentEmployee.name,
-    employee_id: currentEmployee.id
+    employee_name: currentEmployee.name,           // Cashier (logged‑in)
+    employee_id: currentEmployee.id,              // Cashier ID
+    // ✅ NEW: Sales Person fields
+    sales_person_name: salesPersonName,
+    sales_person_id: salesPersonId,
   };
 
   queueSale(transaction);
@@ -4211,7 +4220,10 @@ async function completeCheckout(paymentMethod, cashReceived) {
       buy2_free1_discount: buy2Free1Discount,
       buy3_free1_discount: buy3Free1Discount,
       custom_discount: customDiscount,
-      staff_discount: staffDiscount               // ✅ NEW
+      staff_discount: staffDiscount,
+      // ✅ NEW: Also store sales person in local receipt cache (optional)
+      sales_person_name: salesPersonName,
+      sales_person_id: salesPersonId,
     };
     if (!cachedReceipts) cachedReceipts = [];
     cachedReceipts.unshift(fakeReceipt);
@@ -4230,7 +4242,8 @@ async function completeCheckout(paymentMethod, cashReceived) {
       await showAlertModal('Receipt', 'Sale recorded. Printer not connected, no receipt printed.');
     }
 
-    await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
+    // ✅ Success alert removed as requested earlier
+    // await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
 
     document.getElementById('luckyTxId').innerText = transactionId;
     const luckyModal = document.getElementById('luckyDrawModal');
@@ -5682,7 +5695,8 @@ async function printReceipt(transaction, copies = 1) {
 function buildReceiptContent(copyLabel) {
   const lines = [];
   lines.push(`STORE LOCATION : ${storeLocation}`);
-  lines.push(`EMPLOYEE : ${employeeName}`);
+  lines.push(`CASHIER ID : ${employeeName}`);              // NEW: logged‑in cashier
+  lines.push(`SALES PERSON : ${transaction.sales_person_name || 'N/A'}`);  // NEW: selected person
   lines.push(separator);
 
   for (const item of transaction.items) {

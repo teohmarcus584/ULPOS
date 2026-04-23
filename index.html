@@ -1559,7 +1559,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -4261,37 +4261,41 @@ async function completeCheckout(paymentMethod, cashReceived) {
   }
 }
   async function saveTransactionToSheet(transaction) {
-    
-    try {
-      const selectedEmployeeId = soldBySelectCart.value;
-      const employeeIdForRecord = selectedEmployeeId || currentEmployee.id;
-      const formData = new URLSearchParams();
-      formData.append("action", "saveSale");
-      formData.append("transaction_id", transaction.transaction_id);
-      formData.append("items", JSON.stringify(transaction.items));
-      formData.append("total", transaction.total);
-      formData.append("payment_method", transaction.payment_method);
-      formData.append("cash_received", transaction.cash_received || '');
-      formData.append("timestamp", transaction.timestamp);
-      formData.append("store", currentStore);
-      formData.append("employee_id", employeeIdForRecord);
-      formData.append("discount", transaction.discount || 0);
-      formData.append("buy2_free1_discount", transaction.buy2_free1_discount || 0);
-      formData.append("buy3_free1_discount", transaction.buy3_free1_discount || 0);
-      formData.append("custom_discount", transaction.custom_discount || 0);
-	  formData.append("staff_discount", transaction.staff_discount || 0);   // ✅ NEW
-      formData.append("prize_claimed", transaction.prize_claimed ? JSON.stringify(transaction.prize_claimed) : '');
-      if (transaction.customer_id) formData.append("customer_id", transaction.customer_id);
-      const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
-      const result = await response.json();
-      return result.success === true;
-    } catch (err) {
-      console.error(err);
-      return false;
-    } finally {
-      hideLoading();
-    }
+  try {
+    const selectedEmployeeId = soldBySelectCart.value;
+    const employeeIdForRecord = selectedEmployeeId || currentEmployee.id;
+    const formData = new URLSearchParams();
+    formData.append("action", "saveSale");
+    formData.append("transaction_id", transaction.transaction_id);
+    formData.append("items", JSON.stringify(transaction.items));
+    formData.append("total", transaction.total);
+    formData.append("payment_method", transaction.payment_method);
+    formData.append("cash_received", transaction.cash_received || '');
+    formData.append("timestamp", transaction.timestamp);
+    formData.append("store", currentStore);
+    formData.append("employee_id", employeeIdForRecord);
+    formData.append("discount", transaction.discount || 0);
+    formData.append("buy2_free1_discount", transaction.buy2_free1_discount || 0);
+    formData.append("buy3_free1_discount", transaction.buy3_free1_discount || 0);
+    formData.append("custom_discount", transaction.custom_discount || 0);
+    formData.append("staff_discount", transaction.staff_discount || 0);
+    formData.append("prize_claimed", transaction.prize_claimed ? JSON.stringify(transaction.prize_claimed) : '');
+    if (transaction.customer_id) formData.append("customer_id", transaction.customer_id);
+
+    // ✅ ADD THESE TWO LINES
+    formData.append("sales_person_name", transaction.sales_person_name || '');
+    formData.append("sales_person_id", transaction.sales_person_id || '');
+
+    const response = await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
+    const result = await response.json();
+    return result.success === true;
+  } catch (err) {
+    console.error(err);
+    return false;
+  } finally {
+    hideLoading();
   }
+}
 function getUTCDateString(date) {
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');

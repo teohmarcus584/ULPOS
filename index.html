@@ -1559,7 +1559,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -4300,6 +4300,37 @@ function getUTCDateString(date) {
   const day = String(date.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
+async function reprintLuckyDraw(txId) {
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=get&receipt=${encodeURIComponent(txId)}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (!result.success) {
+      await showAlertModal('Error', result.error || 'Lucky draw record not found or invalid.');
+      return;
+    }
+    const transaction = result.data;
+    // Check if the lucky draw has already been claimed
+    if (transaction.claimed === true) {
+      await showAlertModal('Already Claimed', 'This lucky draw prize has already been claimed and cannot be reprinted.');
+      return;
+    }
+    const prizeLabel = transaction.prize_label || transaction.prize || 'RM 38 FREE GIFT';
+    if (!window.printerAPI || !window.printerAPI.printPrizeVoucher) {
+      await showAlertModal('Printer Error', 'Printer not connected or print function unavailable.');
+      return;
+    }
+    const success = await window.printerAPI.printPrizeVoucher(prizeLabel, txId);
+    if (success) {
+      await showAlertModal('Reprinted', 'Lucky draw voucher reprinted successfully.');
+    } else {
+      await showAlertModal('Print Failed', 'Could not print voucher. Check printer connection.');
+    }
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Error', 'Failed to reprint lucky draw: ' + err.message);
+  }
+}
   // ==================== RECEIPTS (polling, etc.) ====================
   let cachedReceipts = null;
   let receiptPollingInterval = null;
@@ -4467,7 +4498,6 @@ function renderReceiptsList(receipts) {
   let html = '';
   for (const dateKey of sortedDates) {
     const dayReceipts = grouped[dateKey];
-    // Use the first receipt's timestamp for display (already validated)
     const sampleDate = new Date(dayReceipts[0].timestamp);
     const formattedDate = sampleDate.toLocaleDateString(undefined, {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
@@ -4537,9 +4567,11 @@ function renderReceiptsList(receipts) {
 
       const total = parseFloat(rec.total) || 0;
 
+      // ✅ MODIFIED: Added "Reprint Lucky Draw" button (only for non‑refunded, non‑refund receipts)
       const actionsHtml = `
         <div class="receipt-actions">
           <button class="reprint-btn" data-txid="${rec.transaction_id}">🖨️ Reprint</button>
+          ${!isRefund && !rec.refunded ? `<button class="lucky-reprint-btn" data-txid="${rec.transaction_id}">🎲 Reprint Lucky Draw</button>` : ''}
           ${!isRefund && !rec.refunded ? `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">💰 Refund</button>` : ''}
         </div>
       `;
@@ -4557,10 +4589,10 @@ function renderReceiptsList(receipts) {
             </div>
           </div>
           <div class="receipt-details">
-  <div>Store: ${rec.store}</div>
-  <div>Cashier ID: ${employeeName}</div>
-  <div>Sales Person: ${rec.sales_person_name || 'N/A'}</div>
-</div>
+            <div>Store: ${rec.store}</div>
+            <div>Cashier ID: ${employeeName}</div>
+            <div>Sales Person: ${rec.sales_person_name || 'N/A'}</div>
+          </div>
           ${itemsHtml}
           ${discountsHtml ? `<div class="receipt-items-list" style="margin-top:4px;">${discountsHtml}</div>` : ''}
           <div class="receipt-item-row total-row" style="margin-top:8px; padding-top:6px; border-top:1px dashed #cbd5e1;">
@@ -4575,7 +4607,7 @@ function renderReceiptsList(receipts) {
 
   container.innerHTML = html;
 
-  // Re-attach event listeners (reprint & refund)
+  // Re-attach event listeners for reprint & refund
   document.querySelectorAll('.reprint-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const txId = btn.dataset.txid;
@@ -4594,6 +4626,15 @@ function renderReceiptsList(receipts) {
       }
       reprintReceipt(receipt);
       e.stopPropagation();
+    });
+  });
+
+  // ✅ NEW: Event listeners for the "Reprint Lucky Draw" button
+  document.querySelectorAll('.lucky-reprint-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const txId = btn.dataset.txid;
+      e.stopPropagation();
+      await reprintLuckyDraw(txId);
     });
   });
 

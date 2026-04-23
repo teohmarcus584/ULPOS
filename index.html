@@ -1571,7 +1571,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -4458,7 +4458,7 @@ async function fetchAndCacheReceipts() {
   }
 
 async function fetchReceipts(store, employeeId, from, to, search) {
-  showLoading('Loading receipts...');
+  
   try {
     let url = `${APPS_SCRIPT_URL}?action=getReceipts&store=${store}&employeeId=${employeeId}`;
     if (from) url += `&from=${encodeURIComponent(from)}`;
@@ -6550,6 +6550,33 @@ async function openReportsModal() {
     const storeBreakdown = document.getElementById('storeBreakdownContainer');
     if (storeBreakdown) storeBreakdown.style.display = 'none';
 
+    // ========== INSTANT CACHE DISPLAY ==========
+    const rangeSelect = document.getElementById('adminReportDateRangeSelect');
+    const currentRange = rangeSelect ? rangeSelect.value : 'today';
+    // If the cached report is for today and the current range is today
+    if (preloadedReportCache && preloadedReportCache.from === getLocalDateString(new Date()) && currentRange === 'today') {
+      // Populate totals from cache instantly
+      const totals = preloadedReportCache.totals;
+      document.getElementById('adminReportTotalSales').innerText = `RM ${totals.totalSales.toFixed(2)}`;
+      document.getElementById('adminReportCashTotal').innerText = `RM ${totals.cashTotal.toFixed(2)}`;
+      document.getElementById('adminReportCardTotal').innerText = `RM ${totals.cardTotal.toFixed(2)}`;
+      document.getElementById('adminReportQRTotal').innerText = `RM ${totals.otherTotal.toFixed(2)}`;
+      document.getElementById('adminReportAlipayTotal').innerText = `RM ${totals.alipayTotal.toFixed(2)}`;
+      document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(totals.refundTotal).toFixed(2)}`;
+      document.getElementById('adminReportRefundedBills').innerText = totals.refundedTransactionCount || 0;
+      document.getElementById('adminReportTransactionCount').innerText = totals.transactionCount || 0;
+      document.getElementById('adminReportTotalItems').innerText = totals.totalItems || 0;
+
+      // If product details are cached and should be visible, render them
+      if (productDetailsVisible && preloadedReportCache.productDetails) {
+        renderProductDetails(preloadedReportCache.productDetails);
+      }
+      // Optionally, you could also pre‑fill store breakdown if cached
+      // (but it's better to refresh in background)
+    }
+    // ==========================================
+
+    // Show loading spinner and fetch fresh data in background
     let loadingMsg = document.getElementById('adminReportLoadingMsg');
     if (!loadingMsg) {
       loadingMsg = document.createElement('div');
@@ -6572,6 +6599,7 @@ async function openReportsModal() {
     }
     loadingMsg.style.display = 'flex';
 
+    // Always refresh in the background
     await updateAdminReport(false);
 
     if (currentEmployee?.isAdmin) {

@@ -5719,8 +5719,7 @@ function buildReceiptContent(copyLabel) {
     paymentLines.push(`CHANGE : RM ${change.toFixed(2)}`);
   }
 
-  // ------------------------- MODIFIED FOOTER -------------------------
-  // Wrap footer lines with center alignment commands
+  // Footer lines – centered
   const footerLines = [
     'THANK YOU FOR YOUR PURCHASE',
     'ANY ENQUIRY PLEASE CONTACT',
@@ -5734,26 +5733,19 @@ function buildReceiptContent(copyLabel) {
   const txnLine = `TXN   : ${transaction.transaction_id}`;
   const dateLine = `DATE  : ${formattedDate}`;
 
-  // Build final text – copy label already bold, now make TOTAL bold + double size
+  // Build final text
   let text = '';
   text += `\x1B\x45\x01${copyLabel}\x1B\x45\x00\n`;
   text += lines.join('\n') + '\n';
 
-  // TOTAL line with bold and double width/height
+  // ---------- TOTAL LINE: label and amount on the SAME line, without right‑alignment ----------
   const totalAmount = transaction.total;
-  const totalLabel = "TOTAL";
-  const totalValueStr = `RM ${totalAmount.toFixed(2)}`;
-  let totalLine = totalLabel;
-  const availableSpace = maxChars - totalValueStr.length;
-  if (totalLabel.length < availableSpace) {
-    totalLine = totalLabel.padEnd(availableSpace);
-  } else {
-    totalLine = totalLabel.substring(0, availableSpace - 3) + '...';
-  }
-  totalLine += totalValueStr;
+  // Simple format: "TOTAL : RM X.XX" (all on one line, no extra padding)
+  const totalLine = `TOTAL : RM ${totalAmount.toFixed(2)}`;
 
-  // Apply emphasis commands: bold + double height + double width
+  // Apply bold + double height + double width to the entire TOTAL line
   text += `\x1B\x45\x01\x1D\x21\x11${totalLine}\x1D\x21\x00\x1B\x45\x00\n`;
+  // ------------------------------------------------------------------------------------------
 
   text += paymentLines.join('\n') + '\n';
   text += separator + '\n';

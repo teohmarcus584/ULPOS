@@ -4570,7 +4570,7 @@ function renderReceiptsList(receipts) {
       const actionsHtml = `
   <div class="receipt-actions">
     <button class="reprint-btn" data-txid="${rec.transaction_id}">🖨️ Reprint</button>
-    <button class="lucky-reprint-btn" data-txid="${rec.transaction_id}">🎲 Reprint Lucky Draw</button>
+   ${(!isRefund && !rec.refunded && !rec.transaction_id?.startsWith('REF-')) ? `<button class="lucky-reprint-btn" data-txid="${rec.transaction_id}">🎲 Reprint Lucky Draw</button>` : ''}
     ${!isRefund && !rec.refunded ? `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">💰 Refund</button>` : ''}
   </div>
 `;

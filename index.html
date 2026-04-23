@@ -1571,7 +1571,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -6215,51 +6215,71 @@ if (inventoryMode) {
     }
   }
 
-  async function preloadReport() {
-    if (!currentEmployee) return;
-    try {
-      const todayStr = getLocalDateString(new Date());
-      let store, employeeId;
-      if (currentEmployee.isAdmin) {
-        store = 'all';
-        employeeId = 'all';
-      } else {
-        store = 'all';
-        employeeId = currentEmployee.id;
-      }
-      const totals = await fetchSalesReport(store, employeeId, todayStr, todayStr, false, true);
-      if (!totals) return;
-      const chartData = await fetchSalesChartData(store, employeeId, todayStr, todayStr);
-      const productData = await fetchProductSalesReport(store, employeeId, todayStr, todayStr);
-      let employeeSalesData = null;
-      if (currentEmployee.isAdmin) {
-        const empData = await fetchEmployeeSalesData(store, todayStr, todayStr);
-        if (empData) employeeSalesData = empData;
-      }
-      preloadedReportCache = {
-        store,
-        employeeId,
-        from: todayStr,
-        to: todayStr,
-        totals: {
-          totalSales: totals.totalSales,
-          cashTotal: totals.cashTotal,
-          cardTotal: totals.cardTotal,
-          otherTotal: totals.otherTotal,
-          alipayTotal: totals.alipayTotal,
-          refundTotal: totals.refundTotal,
-          refundedTransactionCount: totals.refundedTransactionCount,
-          transactionCount: totals.transactionCount,
-          totalItems: totals.totalItems
-        },
-        productDetails: productData,
-        chartData: { ...chartData, employeeSales: employeeSalesData }
-      };
-      lastProductData = productData;
-    } catch (err) {
-      console.error('Preload report failed:', err);
+async function preloadReport() {
+  if (!currentEmployee) return;
+  try {
+    const todayStr = getLocalDateString(new Date());
+    let store, employeeId;
+    if (currentEmployee.isAdmin) {
+      store = 'all';
+      employeeId = 'all';
+    } else {
+      store = 'all';
+      employeeId = currentEmployee.id;
     }
+    const totals = await fetchSalesReport(store, employeeId, todayStr, todayStr, false, true);
+    if (!totals) return;
+    const chartData = await fetchSalesChartData(store, employeeId, todayStr, todayStr);
+    const productData = await fetchProductSalesReport(store, employeeId, todayStr, todayStr);
+    let employeeSalesData = null;
+    if (currentEmployee.isAdmin) {
+      const empData = await fetchEmployeeSalesData(store, todayStr, todayStr);
+      if (empData) employeeSalesData = empData;
+    }
+    preloadedReportCache = {
+      store,
+      employeeId,
+      from: todayStr,
+      to: todayStr,
+      totals: {
+        totalSales: totals.totalSales,
+        cashTotal: totals.cashTotal,
+        cardTotal: totals.cardTotal,
+        otherTotal: totals.otherTotal,
+        alipayTotal: totals.alipayTotal,
+        refundTotal: totals.refundTotal,
+        refundedTransactionCount: totals.refundedTransactionCount,
+        transactionCount: totals.transactionCount,
+        totalItems: totals.totalItems
+      },
+      productDetails: productData,
+      chartData: { ...chartData, employeeSales: employeeSalesData }
+    };
+    lastProductData = productData;
+
+    // ✅ ADD THIS BLOCK – Preload store breakdown for today (only for admin)
+    if (currentEmployee.isAdmin) {
+      try {
+        const stores = ['queens', 'sunshine', 'gurney_paragon'];
+        for (const storeName of stores) {
+          const [salesReport, empData] = await Promise.all([
+            fetchSalesReport(storeName, 'all', todayStr, todayStr, false, true),
+            fetchEmployeeSalesData(storeName, todayStr, todayStr)
+          ]);
+          if (salesReport) {
+            setCachedStoreReport(storeName, todayStr, todayStr, { salesReport, employeeData: empData });
+          }
+        }
+      } catch (err) {
+        console.warn('Preload store breakdown failed:', err);
+      }
+    }
+    // =========================================
+
+  } catch (err) {
+    console.error('Preload report failed:', err);
   }
+}
 
   // ==================== EVENT LISTENERS ====================
   // confirmStoreBtn event listener REMOVED because the button no longer exists
@@ -6547,14 +6567,13 @@ async function openReportsModal() {
   const modal = document.getElementById('adminReportModal');
   if (modal) {
     modal.style.display = 'flex';
-    const storeBreakdown = document.getElementById('storeBreakdownContainer');
-    if (storeBreakdown) storeBreakdown.style.display = 'none';
+    const storeBreakdownDiv = document.getElementById('storeBreakdownContainer');
+    if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
 
-    // ========== ⚡ CACHE INSTANT: Show cached "Today" report immediately ==========
+    // ==================== INSTANT TOTALS (from cache) ====================
     const todayStr = getLocalDateString(new Date());
     if (preloadedReportCache && preloadedReportCache.from === todayStr) {
       const totals = preloadedReportCache.totals;
-      // Update all total fields instantly
       document.getElementById('adminReportTotalSales').innerText = `RM ${totals.totalSales.toFixed(2)}`;
       document.getElementById('adminReportCashTotal').innerText = `RM ${totals.cashTotal.toFixed(2)}`;
       document.getElementById('adminReportCardTotal').innerText = `RM ${totals.cardTotal.toFixed(2)}`;
@@ -6564,44 +6583,79 @@ async function openReportsModal() {
       document.getElementById('adminReportRefundedBills').innerText = totals.refundedTransactionCount || 0;
       document.getElementById('adminReportTransactionCount').innerText = totals.transactionCount || 0;
       document.getElementById('adminReportTotalItems').innerText = totals.totalItems || 0;
+    }
 
-      // If product details were cached and the toggle is on, render them
-      if (productDetailsVisible && preloadedReportCache.productDetails) {
-        renderProductDetails(preloadedReportCache.productDetails);
+    // ==================== INSTANT STORE CARDS (from cache) ====================
+    if (currentEmployee?.isAdmin) {
+      const todayUTC = new Date();
+      todayUTC.setUTCHours(0, 0, 0, 0);
+      const from = getUTCDateString(todayUTC);
+      const to = from;
+
+      const stores = ['queens', 'sunshine', 'gurney_paragon'];
+      let anyMissing = false;
+      for (const storeName of stores) {
+        const cached = await getCachedStoreReport(storeName, from, to);
+        if (cached) {
+          updateStoreCard(storeName, cached.salesReport, cached.employeeData);
+        } else {
+          anyMissing = true;
+          // Show loading spinner in the card
+          const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
+          if (card) {
+            card.querySelector('.store-total').innerHTML = '<span class="report-loading-spinner" style="width:16px;height:16px;"></span> Loading...';
+            card.querySelector('.store-cash').innerHTML = '💵 Loading...';
+            card.querySelector('.store-card').innerHTML = '💳 Loading...';
+            card.querySelector('.store-qr').innerHTML = '📱 Loading...';
+            card.querySelector('.store-alipay').innerHTML = '💸 Loading...';
+            card.querySelector('.store-refund').innerHTML = '❌ Loading...';
+            card.querySelector('.store-refunded-bills').innerHTML = '📄 Loading...';
+            card.querySelector('.store-transactions').innerHTML = 'Loading...';
+            card.querySelector('.store-items-sold').innerHTML = 'Loading...';
+            card.querySelector('.employee-list').innerHTML = '<div class="report-loading-spinner" style="width:16px;height:16px;"></div>';
+          }
+        }
       }
-      // Hide the loading spinner immediately (since we already have data)
-      const existingSpinner = document.getElementById('adminReportLoadingMsg');
-      if (existingSpinner) existingSpinner.style.display = 'none';
+      // If all cards were cached, hide the main loading message (if any)
+      if (!anyMissing) {
+        const loadingMsgElem = document.getElementById('adminReportLoadingMsg');
+        if (loadingMsgElem) loadingMsgElem.style.display = 'none';
+      }
+    }
+
+    // ==================== SHOW LOADING SPINNER (if no cache) ====================
+    let loadingMsg = document.getElementById('adminReportLoadingMsg');
+    if (!loadingMsg) {
+      loadingMsg = document.createElement('div');
+      loadingMsg.id = 'adminReportLoadingMsg';
+      loadingMsg.style.textAlign = 'center';
+      loadingMsg.style.padding = '20px';
+      loadingMsg.style.background = '#f8fafc';
+      loadingMsg.style.borderRadius = '12px';
+      loadingMsg.style.margin = '10px 0';
+      loadingMsg.style.display = 'flex';
+      loadingMsg.style.alignItems = 'center';
+      loadingMsg.style.justifyContent = 'center';
+      loadingMsg.style.gap = '12px';
+      loadingMsg.innerHTML = `
+        <div class="report-loading-spinner"></div>
+        <span style="font-size: 1rem; color: #334155;">Loading report data...</span>
+      `;
+      const reportStats = document.querySelector('#adminReportModal .report-stats');
+      if (reportStats) reportStats.insertAdjacentElement('beforebegin', loadingMsg);
+    }
+
+    // Hide main loading message if we already displayed cached data
+    if (preloadedReportCache && preloadedReportCache.from === todayStr) {
+      loadingMsg.style.display = 'none';
     } else {
-      // No cache – show loading spinner as before
-      let loadingMsg = document.getElementById('adminReportLoadingMsg');
-      if (!loadingMsg) {
-        loadingMsg = document.createElement('div');
-        loadingMsg.id = 'adminReportLoadingMsg';
-        loadingMsg.style.textAlign = 'center';
-        loadingMsg.style.padding = '20px';
-        loadingMsg.style.background = '#f8fafc';
-        loadingMsg.style.borderRadius = '12px';
-        loadingMsg.style.margin = '10px 0';
-        loadingMsg.style.display = 'flex';
-        loadingMsg.style.alignItems = 'center';
-        loadingMsg.style.justifyContent = 'center';
-        loadingMsg.style.gap = '12px';
-        loadingMsg.innerHTML = `
-          <div class="report-loading-spinner"></div>
-          <span style="font-size: 1rem; color: #334155;">Loading report data...</span>
-        `;
-        const reportStats = document.querySelector('#adminReportModal .report-stats');
-        if (reportStats) reportStats.insertAdjacentElement('beforebegin', loadingMsg);
-      }
       loadingMsg.style.display = 'flex';
     }
-    // =======================================================================
 
-    // Always refresh in the background (will update cache and UI if new data arrives)
+    // ==================== REFRESH IN BACKGROUND ====================
     await updateAdminReport(false);
 
-    // ... rest of your existing code (employee dropdowns, store selects, etc.) ...
+    // ==================== EMPLOYEE DROPDOWNS (admin only) ====================
     if (currentEmployee?.isAdmin) {
       const employees = await fetchEmployees();
       const adminReportEmpSelect = document.getElementById('adminReportEmployeeSelect');
@@ -6633,11 +6687,12 @@ async function openReportsModal() {
       if (receiptsStore) receiptsStore.value = currentStore;
     }
 
+    // ==================== POPULATE STORE SELECTS ====================
     populateStoreSelects();
 
-    // Hide loading spinner (if it was shown and not hidden by the cache branch)
-    const loadingMsgElem = document.getElementById('adminReportLoadingMsg');
-    if (loadingMsgElem) loadingMsgElem.style.display = 'none';
+    // Ensure any leftover loading message is hidden
+    const finalLoadingMsg = document.getElementById('adminReportLoadingMsg');
+    if (finalLoadingMsg) finalLoadingMsg.style.display = 'none';
   }
 }
   if (sideReportBtn) sideReportBtn.addEventListener('click', wrapMenuAction(openReportsModal));

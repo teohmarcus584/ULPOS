@@ -1559,7 +1559,8 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icon-192.png">
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -7214,7 +7215,7 @@ function updateReceipts() {
         const result = await response.json();
         if (!result.success) throw new Error('Transaction not found');
         const transaction = result.data;
-        let prizeLabel = 'RM 38 FREE GIFT';
+        let prizeLabel = transaction.prize_label || 'RM 38 FREE GIFT';
         if (!window.printerAPI || !window.printerAPI.printPrizeVoucher) {
           await showAlertModal('Printer Error', 'Printer API not available. Please connect printer first.');
           return;
@@ -7282,7 +7283,15 @@ function updateReceipts() {
     categorySelect.value = 'all';
     renderProductGrid();
   });
-
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(reg => console.log('SW registered:', reg))
+        .catch(err => console.error('SW registration failed:', err));
+    });
+  }
 </script>
 </body>
 </html>

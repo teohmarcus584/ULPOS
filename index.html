@@ -1559,7 +1559,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -7215,41 +7215,73 @@ function updateReceipts() {
   if (closeLuckyDrawPrintModal) closeLuckyDrawPrintModal.addEventListener('click', closeLuckyDrawPrintModalFunc);
   if (closeLuckyDrawPrintModalBtn) closeLuckyDrawPrintModalBtn.addEventListener('click', closeLuckyDrawPrintModalFunc);
 
-  if (printPrizeVoucherBtn) {
-    printPrizeVoucherBtn.addEventListener('click', async () => {
-      const receiptNumber = document.getElementById('luckyDrawReceiptNumber').innerText;
-      if (!receiptNumber) {
-        await showAlertModal('Error', 'No receipt number found.');
-        return;
-      }
-      showLoading('Printing voucher...');
-      try {
-        const url = `${APPS_SCRIPT_URL}?action=get&receipt=${encodeURIComponent(receiptNumber)}`;
-        const response = await fetch(url);
-        const result = await response.json();
-        if (!result.success) throw new Error('Transaction not found');
-        const transaction = result.data;
-        let prizeLabel = transaction.prize_label || 'RM 38 FREE GIFT';
-        if (!window.printerAPI || !window.printerAPI.printPrizeVoucher) {
-          await showAlertModal('Printer Error', 'Printer API not available. Please connect printer first.');
+ if (printPrizeVoucherBtn) {
+  printPrizeVoucherBtn.addEventListener('click', async () => {
+    const receiptNumber = document.getElementById('luckyDrawReceiptNumber').innerText;
+    if (!receiptNumber) {
+      await showAlertModal('Error', 'No receipt number found.');
+      return;
+    }
+    showLoading('Printing voucher...');
+    try {
+      const url = `${APPS_SCRIPT_URL}?action=get&receipt=${encodeURIComponent(receiptNumber)}`;
+      const response = await fetch(url);
+      const result = await response.json();
+      if (!result.success) throw new Error('Transaction not found');
+      const transaction = result.data;
+
+      // Get the prize text directly from the sheet (the "prize" column)
+      let prizeLabel = transaction.prize || transaction.prize_label;
+
+      // If still empty, fallback to manual input
+      if (!prizeLabel) {
+        const prizeAmount = await showInputModal('Enter Prize Amount (RM)', 'e.g., 38, 75, 109');
+        if (!prizeAmount) {
+          hideLoading();
           return;
         }
-        const success = await window.printerAPI.printPrizeVoucher(prizeLabel, receiptNumber);
-        if (success) {
-          await showAlertModal('Printed', 'Prize voucher printed successfully.');
-          closeLuckyDrawPrintModalFunc();
-        } else {
-          await showAlertModal('Print Failed', 'Could not print voucher. Check printer connection.');
+        const amount = parseFloat(prizeAmount);
+        if (isNaN(amount)) {
+          await showAlertModal('Invalid', 'Please enter a valid number.');
+          hideLoading();
+          return;
         }
-      } catch (err) {
-        console.error(err);
-        await showAlertModal('Error', 'Failed to fetch transaction details: ' + err.message);
-      } finally {
-        hideLoading();
+        if (amount === 38) prizeLabel = 'CAR AROMATIC - RM 38';
+        else if (amount === 75) prizeLabel = '15ML PERFUME EDP - RM 75';
+        else if (amount === 109) prizeLabel = '300ML LOTION - RM 109';
+        else prizeLabel = `FREE GIFT - RM ${amount.toFixed(2)}`;
       }
-    });
-  }
 
+      // ✅ Show an alert with the prize label before printing (for debugging)
+      const confirmPrint = await showConfirmModal(
+        'Verify Prize',
+        `The prize from the sheet is:\n\n"${prizeLabel}"\n\nDo you want to print this voucher?`
+      );
+      if (!confirmPrint) {
+        hideLoading();
+        return;
+      }
+
+      if (!window.printerAPI || !window.printerAPI.printPrizeVoucher) {
+        await showAlertModal('Printer Error', 'Printer API not available. Please connect printer first.');
+        return;
+      }
+
+      const success = await window.printerAPI.printPrizeVoucher(prizeLabel, receiptNumber);
+      if (success) {
+        await showAlertModal('Printed', 'Prize voucher printed successfully.');
+        closeLuckyDrawPrintModalFunc();
+      } else {
+        await showAlertModal('Print Failed', 'Could not print voucher. Check printer connection.');
+      }
+    } catch (err) {
+      console.error(err);
+      await showAlertModal('Error', 'Failed to fetch transaction details: ' + err.message);
+    } finally {
+      hideLoading();
+    }
+  });
+}
   document.getElementById('customerBtn').addEventListener('click', showCustomerModal);
   document.getElementById('findCustomerBtn').addEventListener('click', findCustomer);
   document.getElementById('saveCustomerBtn').addEventListener('click', saveCustomerFromModal);

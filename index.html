@@ -1556,6 +1556,18 @@
   font-size: 1.3rem !important;
   line-height: 1.5 !important;
 }
+.lucky-reprint-btn {
+  background: #f59e0b;  /* amber/gold background */
+  border: none;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 30px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.lucky-reprint-btn:hover {
+  background: #d97706;
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -4567,11 +4579,11 @@ function renderReceiptsList(receipts) {
 
       const total = parseFloat(rec.total) || 0;
 
-      const actionsHtml = `
+     const actionsHtml = `
   <div class="receipt-actions">
     <button class="reprint-btn" data-txid="${rec.transaction_id}">🖨️ Reprint</button>
-   ${(!isRefund && !rec.refunded && !rec.transaction_id?.startsWith('REF-')) ? `<button class="lucky-reprint-btn" data-txid="${rec.transaction_id}">🎲 Reprint Lucky Draw</button>` : ''}
-    ${!isRefund && !rec.refunded ? `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">💰 Refund</button>` : ''}
+    ${(!isRefund && !rec.refunded && !rec.transaction_id?.startsWith('REF-')) ? `<button class="lucky-reprint-btn" data-txid="${rec.transaction_id}">🎲 Reprint Lucky Draw</button>` : ''}
+    ${(!isRefund && !rec.refunded) ? `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">💰 Refund</button>` : ''}
   </div>
 `;
 

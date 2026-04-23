@@ -1559,7 +1559,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -3955,11 +3955,13 @@ function applyCustomDiscount() {
 }
 // --------------------- LUCKY DRAW & REPRINT ---------------------
 function openLuckyDraw(transactionId, customerId) {
-  // Replace with your actual lucky draw URL
-   const url = `https://teohmarcus584.github.io/salesanalysis/?receipt=${encodeURIComponent(transactionId)}&customer=${encodeURIComponent(customerId || '')}`;
+  // 1. Open the external Lucky Draw page
+  const url = `https://teohmarcus584.github.io/salesanalysis/?receipt=${encodeURIComponent(transactionId)}&customer=${encodeURIComponent(customerId || '')}`;
   window.open(url, '_blank');
-  // If you don't have a lucky draw page, just show an alert:
-  // showAlertModal('Lucky Draw', `Receipt ${transactionId} – please visit the lucky draw counter.`);
+
+  // 2. Show the print voucher modal and set the receipt number
+  document.getElementById('luckyDrawReceiptNumber').innerText = transactionId;
+  document.getElementById('luckyDrawPrintModal').style.display = 'flex';
 }
 
 async function reprintReceipt(receipt) {

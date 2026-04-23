@@ -2008,7 +2008,7 @@
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMTbltQln9nPj5na9OcSirFDq5qQ-1HEQKh47VpjPgdE4wL73EXVa8XEnbEu5GSB-EBw/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzAFtcqOveWCnwPNARvCYIkbA7lKhq30V3wI4IFqpAK8HNobXUjN8ohzMLnEIJnPLnMNQ/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -5751,24 +5751,57 @@ async function printReceipt(transaction, copies = 1) {
 function buildReceiptContent(copyLabel) {
   const lines = [];
   lines.push(`STORE LOCATION : ${storeLocation}`);
-  lines.push(`CASHIER ID : ${employeeName}`);              // NEW: logged‑in cashier
-  lines.push(`SALES PERSON : ${transaction.sales_person_name || 'N/A'}`);  // NEW: selected person
+  lines.push(`CASHIER ID : ${employeeName}`);
+  lines.push(`SALES PERSON : ${transaction.sales_person_name || 'N/A'}`);
   lines.push(separator);
 
+  // Add bold REFUND header for refund transactions
+  if (transaction.total < 0) {
+    lines.push(`\x1B\x45\x01********** REFUND **********\x1B\x45\x00`);
+    lines.push(separator);
+  }
+
+  // ✅ Modified formatProductLine with sign support
+  function formatProductLine(name, price, qty, total, isNegative = false) {
+    const nameLine = name;
+    const sign = isNegative ? '-' : '';
+    const qtyStr = `${qty} x RM ${price.toFixed(2)}`;
+    const totalStr = `${sign} RM ${Math.abs(total).toFixed(2)}`;
+    let spaceNeeded = maxChars - totalStr.length;
+    let qtyLine = qtyStr;
+    if (qtyLine.length > spaceNeeded) {
+      qtyLine = qtyLine.substring(0, spaceNeeded - 3) + '...';
+    } else {
+      qtyLine = qtyLine.padEnd(spaceNeeded);
+    }
+    qtyLine += `\x1B\x45\x01${totalStr}\x1B\x45\x00`;
+    return [nameLine, qtyLine];
+  }
+
   for (const item of transaction.items) {
-    const paidQty = item.quantity - (item.free_quantity || 0);
-    const freeQty = item.free_quantity || 0;
+    let paidQty = item.quantity - (item.free_quantity || 0);
+    let freeQty = item.free_quantity || 0;
+    const isRefund = transaction.total < 0;
+
+    if (isRefund) {
+      paidQty = Math.abs(paidQty);
+      freeQty = 0;
+    }
 
     if (paidQty > 0) {
       const itemTotal = paidQty * item.price;
-      const [nameLine, qtyLine] = formatProductLine(item.name, item.price, paidQty, itemTotal);
-      lines.push(nameLine);
+      const [nameLine, qtyLine] = formatProductLine(item.name, item.price, paidQty, itemTotal, isRefund);
+      if (isRefund) {
+        lines.push(`[REFUND] ${nameLine}`);
+      } else {
+        lines.push(nameLine);
+      }
       lines.push(qtyLine);
     }
 
-    if (freeQty > 0) {
+    if (freeQty > 0 && !isRefund) {
       const itemTotal = 0;
-      const [nameLine, qtyLine] = formatProductLine(item.name, 0, freeQty, itemTotal);
+      const [nameLine, qtyLine] = formatProductLine(item.name, 0, freeQty, itemTotal, false);
       lines.push(nameLine);
       lines.push(qtyLine);
     }
@@ -5808,14 +5841,9 @@ function buildReceiptContent(copyLabel) {
   text += `\x1B\x45\x01${copyLabel}\x1B\x45\x00\n`;
   text += lines.join('\n') + '\n';
 
-  // ---------- TOTAL LINE: label and amount on the SAME line, without right‑alignment ----------
   const totalAmount = transaction.total;
-  // Simple format: "TOTAL : RM X.XX" (all on one line, no extra padding)
   const totalLine = `TOTAL : RM ${totalAmount.toFixed(2)}`;
-
-  // Apply bold + double height + double width to the entire TOTAL line
   text += `\x1B\x45\x01\x1D\x21\x11${totalLine}\x1D\x21\x00\x1B\x45\x00\n`;
-  // ------------------------------------------------------------------------------------------
 
   text += paymentLines.join('\n') + '\n';
   text += separator + '\n';

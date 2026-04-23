@@ -1559,7 +1559,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -1996,7 +1996,7 @@
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxo7betXKhH8WbFBuSdbdfgpZZNtjniD1jOBazzLYkkFUvbi1t0aZNVlFAk53ZtOO3ShA/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzAFtcqOveWCnwPNARvCYIkbA7lKhq30V3wI4IFqpAK8HNobXUjN8ohzMLnEIJnPLnMNQ/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -4555,8 +4555,10 @@ function renderReceiptsList(receipts) {
             </div>
           </div>
           <div class="receipt-details">
-            <div>Store: ${rec.store} | Employee: ${employeeName}</div>
-          </div>
+  <div>Store: ${rec.store}</div>
+  <div>Cashier ID: ${employeeName}</div>
+  <div>Sales Person: ${rec.sales_person_name || 'N/A'}</div>
+</div>
           ${itemsHtml}
           ${discountsHtml ? `<div class="receipt-items-list" style="margin-top:4px;">${discountsHtml}</div>` : ''}
           <div class="receipt-item-row total-row" style="margin-top:8px; padding-top:6px; border-top:1px dashed #cbd5e1;">

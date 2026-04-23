@@ -3785,10 +3785,10 @@ function applyStaffDiscount() {
     buy2Free1Discount = 0;
     buy3Free1Discount = 0;
     customDiscount = 0;
-    // DO NOT reset staffDiscountActive or staffDiscount here
+    staffDiscountActive = false;   // <-- wipes staff discount!
+    staffDiscount = 0;             // <-- wipes staff discount!
     updateCartUI();
 }
-
   function toggleFreeCount(index) {
     const item = cart[index];
     if (!item) return;
@@ -3959,13 +3959,20 @@ function applyCustomDiscount() {
     await showAlertModal('Empty Cart', 'No items to checkout.');
     return;
   }
- 
+
   let subtotal = 0;
   for (let item of cart) {
     const paidQty = item.quantity - item.freeQuantity;
     subtotal += paidQty * item.product.price;
   }
-  const totalAmount = subtotal - discountAmount - (buy2Free1Discount + buy3Free1Discount + customDiscount);
+
+ // Inside completeCheckout(), after recalculating subtotal
+// Inside completeCheckout(), after recalculating subtotal
+let effectiveStaffDiscount = 0;
+if (staffDiscountActive) {
+  effectiveStaffDiscount = subtotal * 0.10;
+}
+const totalAmount = subtotal - discountAmount - (buy2Free1Discount + buy3Free1Discount + customDiscount + effectiveStaffDiscount);
   pendingTransaction = { totalAmount };
   showPaymentModal(totalAmount);
 }

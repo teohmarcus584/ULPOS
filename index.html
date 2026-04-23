@@ -1501,77 +1501,65 @@
   max-height: 200px;
   overflow-y: auto;
 }
-/* Force employee rows to be very readable */
-.employee-row {
-  display: flex !important;
-  justify-content: space-between !important;
-  padding: 20px 0 !important;
-  border-bottom: 2px solid #e2e8f0 !important;
-  font-size: 1.5rem !important;
+/* Force the swipeable modal to fill the screen with large text */
+#storeCardModal {
+  align-items: center !important;
+  justify-content: center !important;
 }
-.employee-name {
-  font-weight: 700 !important;
-  font-size: 1.5rem !important;
-}
-.employee-sales {
-  font-weight: 800 !important;
-  color: #2c7a4b !important;
-  font-size: 1.5rem !important;
-}
-
-/* Force employee rows to be very large and readable */
-.employee-row {
-  display: flex !important;
-  justify-content: space-between !important;
-  padding: 24px 0 !important;
-  border-bottom: 2px solid #e2e8f0 !important;
-  font-size: 1.8rem !important;
-}
-.employee-name {
-  font-weight: 700 !important;
-  font-size: 1.8rem !important;
-}
-.employee-sales {
-  font-weight: 800 !important;
-  color: #2c7a4b !important;
-  font-size: 1.8rem !important;
-}
-
-/* Ensure the modal container is as large as possible */
 #storeCardModal .modal-container {
   max-width: 95% !important;
   width: 95% !important;
-  height: 94% !important;
-  max-height: 94% !important;
+  height: 90% !important;
+  max-height: 90% !important;
   padding: 0 !important;
   background: #f8fafc !important;
-  border-radius: 48px !important;
+  border-radius: 32px !important;
+  overflow: hidden !important;
 }
-
-/* Make navigation buttons even larger */
+#cardModalContent {
+  padding: 20px !important;
+  overflow-y: auto !important;
+  height: 100% !important;
+}
+/* Make employee rows much larger */
+.employee-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  padding: 16px 0 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  font-size: 1.3rem !important;
+}
+.employee-name {
+  font-weight: 600 !important;
+  font-size: 1.3rem !important;
+}
+.employee-sales {
+  font-weight: 700 !important;
+  color: #2c7a4b !important;
+  font-size: 1.3rem !important;
+}
+/* Navigation buttons larger */
 #prevCardBtn, #nextCardBtn {
-  width: 80px !important;
-  height: 80px !important;
-  font-size: 3.5rem !important;
+  width: 60px !important;
+  height: 60px !important;
+  font-size: 2.8rem !important;
   background: rgba(0,0,0,0.7) !important;
+  color: white !important;
   border-radius: 50% !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  z-index: 20 !important;
+  z-index: 10 !important;
 }
-
-/* Increase scroll area height */
-.employee-swipe-list {
-  max-height: 500px !important;
-  overflow-y: auto !important;
+/* Ensure text doesn't wrap weirdly */
+.card-detail-item div, .store-cash, .store-card, .store-qr, .store-alipay, .store-refund {
+  font-size: 1.3rem !important;
+  line-height: 1.5 !important;
 }
-
-
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -3793,7 +3781,7 @@ function applyStaffDiscount() {
   updateCartUI();
 }
 
-  function clearPromo() {
+ function clearPromo() {
     buy2Free1Discount = 0;
     buy3Free1Discount = 0;
     customDiscount = 0;
@@ -3966,7 +3954,7 @@ function applyCustomDiscount() {
   document.getElementById('specialPromoModal').style.display = 'none';
 }
   // ==================== CHECKOUT ====================
-async function startCheckout() {
+ async function startCheckout() {
   if (cart.length === 0) {
     await showAlertModal('Empty Cart', 'No items to checkout.');
     return;
@@ -3977,8 +3965,7 @@ async function startCheckout() {
     const paidQty = item.quantity - item.freeQuantity;
     subtotal += paidQty * item.product.price;
   }
-  // Include staffDiscount in total calculation
-  const totalAmount = subtotal - discountAmount - (buy2Free1Discount + buy3Free1Discount + customDiscount + staffDiscount);
+  const totalAmount = subtotal - discountAmount - (buy2Free1Discount + buy3Free1Discount + customDiscount);
   pendingTransaction = { totalAmount };
   showPaymentModal(totalAmount);
 }
@@ -4110,14 +4097,7 @@ async function loadCollectionHistory(fromDate = null, toDate = null) {
 }
 async function completeCheckout(paymentMethod, cashReceived) {
   document.getElementById('paymentModal').style.display = 'none';
-
-  // Recalculate total directly from cart and discounts
-  let subtotal = 0;
-  for (let item of cart) {
-    const paidQty = item.quantity - item.freeQuantity;
-    subtotal += paidQty * item.product.price;
-  }
-  const totalAmount = subtotal - discountAmount - (buy2Free1Discount + buy3Free1Discount + customDiscount + staffDiscount);
+  const totalAmount = pendingTransaction.totalAmount;
 
   const transactionId = await getNextTransactionNumber(currentStore);
 
@@ -4142,7 +4122,7 @@ async function completeCheckout(paymentMethod, cashReceived) {
     buy2_free1_discount: buy2Free1Discount,
     buy3_free1_discount: buy3Free1Discount,
     custom_discount: customDiscount,
-    staff_discount: staffDiscount,
+    staff_discount: staffDiscount,                // ✅ NEW
     prize_claimed: claimedReceiptInfo,
     customer_id: selectedCustomer ? selectedCustomer.id : null,
     store: currentStore,
@@ -4151,86 +4131,91 @@ async function completeCheckout(paymentMethod, cashReceived) {
   };
 
   queueSale(transaction);
+  const success = true; // assume success, will sync later
   const customerIdForLuckyDraw = selectedCustomer ? selectedCustomer.id : null;
 
-  // Update local stock and trigger notifications for each sold item
-  for (let item of saleItems) {
-    const product = products.find(p => p.id == item.id);
-    if (product) {
-      const oldStock = product.stock;
-      const newStock = oldStock - item.quantity;
-      product.stock = newStock;
-      checkAndNotifyOutOfStock(product.id, product.name, newStock);
+  if (success) {
+    // Update local stock and trigger notifications for each sold item
+    for (let item of saleItems) {
+      const product = products.find(p => p.id == item.id);
+      if (product) {
+        const oldStock = product.stock;
+        const newStock = oldStock - item.quantity;
+        product.stock = newStock;
+        checkAndNotifyOutOfStock(product.id, product.name, newStock);
+      }
     }
-  }
 
-  localStorage.setItem(`products_${currentStore}`, JSON.stringify({
-    timestamp: Date.now(),
-    products: products
-  }));
-  renderProductGrid();
+    localStorage.setItem(`products_${currentStore}`, JSON.stringify({
+      timestamp: Date.now(),
+      products: products
+    }));
+    renderProductGrid();
 
-  if (selectedCustomer && selectedCustomer.id) {
-    const POINTS_PER_RM = 1;
-    const pointsEarned = Math.floor(totalAmount * POINTS_PER_RM);
-    if (pointsEarned > 0) {
-      selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
-      updateCustomerDisplay();
+    if (selectedCustomer && selectedCustomer.id) {
+      const POINTS_PER_RM = 1;
+      const pointsEarned = Math.floor(totalAmount * POINTS_PER_RM);
+      if (pointsEarned > 0) {
+        selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
+        updateCustomerDisplay();
+      }
     }
-  }
 
-  if (pendingPrize) {
-    await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
-    pendingPrize = null;
-  }
+    if (pendingPrize) {
+      await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
+      pendingPrize = null;
+    }
 
-  invalidateAllReportCaches();
+    invalidateAllReportCaches();
 
-  const fakeReceipt = {
-    transaction_id: transaction.transaction_id,
-    timestamp: transaction.timestamp,
-    items: transaction.items,
-    total: transaction.total,
-    payment_method: transaction.payment_method,
-    store: currentStore,
-    employee_id: currentEmployee.id,
-    refunded: false,
-    discount: discountAmount,
-    buy2_free1_discount: buy2Free1Discount,
-    buy3_free1_discount: buy3Free1Discount,
-    custom_discount: customDiscount,
-    staff_discount: staffDiscount
-  };
-  if (!cachedReceipts) cachedReceipts = [];
-  cachedReceipts.unshift(fakeReceipt);
+    const fakeReceipt = {
+      transaction_id: transaction.transaction_id,
+      timestamp: transaction.timestamp,
+      items: transaction.items,
+      total: transaction.total,
+      payment_method: transaction.payment_method,
+      store: currentStore,
+      employee_id: currentEmployee.id,
+      refunded: false,
+      discount: discountAmount,
+      buy2_free1_discount: buy2Free1Discount,
+      buy3_free1_discount: buy3Free1Discount,
+      custom_discount: customDiscount,
+      staff_discount: staffDiscount               // ✅ NEW
+    };
+    if (!cachedReceipts) cachedReceipts = [];
+    cachedReceipts.unshift(fakeReceipt);
 
-  const receiptsModal = document.getElementById('receiptsModal');
-  if (receiptsModal && receiptsModal.style.display === 'flex') {
-    renderReceiptsList(cachedReceipts);
-  }
+    const receiptsModal = document.getElementById('receiptsModal');
+    if (receiptsModal && receiptsModal.style.display === 'flex') {
+      renderReceiptsList(cachedReceipts);
+    }
 
-  fetchAndCacheReceipts();
+    fetchAndCacheReceipts();
 
-  if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
-    const transactionWithName = { ...transaction, employee_name: currentEmployee.name };
-    await window.printerAPI.printReceipt(transactionWithName, 2);
+    if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
+      const transactionWithName = { ...transaction, employee_name: currentEmployee.name };
+       await window.printerAPI.printReceipt(transactionWithName, 2);   // ✅ print 2 copies
+    } else {
+      await showAlertModal('Receipt', 'Sale recorded. Printer not connected, no receipt printed.');
+    }
+
+    await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
+
+    document.getElementById('luckyTxId').innerText = transactionId;
+    const luckyModal = document.getElementById('luckyDrawModal');
+    luckyModal.style.display = 'flex';
+    document.getElementById('openLuckyDrawBtn').onclick = () => {
+      openLuckyDraw(transactionId, customerIdForLuckyDraw);
+      luckyModal.style.display = 'none';
+    };
+    document.getElementById('closeLuckyDrawBtn').onclick = () => luckyModal.style.display = 'none';
+    document.getElementById('closeLuckyDrawModal').onclick = () => luckyModal.style.display = 'none';
+
+    clearCart();
   } else {
-    await showAlertModal('Receipt', 'Sale recorded. Printer not connected, no receipt printed.');
+    await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
   }
-
-  await showAlertModal('✅ Success', `Sale #${transactionId} completed.\nTotal: RM ${totalAmount.toFixed(2)}`);
-
-  document.getElementById('luckyTxId').innerText = transactionId;
-  const luckyModal = document.getElementById('luckyDrawModal');
-  luckyModal.style.display = 'flex';
-  document.getElementById('openLuckyDrawBtn').onclick = () => {
-    openLuckyDraw(transactionId, customerIdForLuckyDraw);
-    luckyModal.style.display = 'none';
-  };
-  document.getElementById('closeLuckyDrawBtn').onclick = () => luckyModal.style.display = 'none';
-  document.getElementById('closeLuckyDrawModal').onclick = () => luckyModal.style.display = 'none';
-
-  clearCart();
 }
   async function saveTransactionToSheet(transaction) {
     
@@ -5109,40 +5094,41 @@ function renderCardModalContent(index) {
   const container = document.getElementById('cardModalContent');
   if (!container) return;
   
+  // Force the container to use full width
   container.style.width = '100%';
-  container.style.padding = '16px';
+  container.style.padding = '20px';
   
   container.innerHTML = `
-    <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-radius: 32px; padding: 40px 20px; margin-bottom: 24px; text-align: center;">
-      <div style="font-size: 2.5rem; font-weight: 800; margin-bottom: 16px;">🏪 ${data.storeNameDisplay}</div>
-      <div style="font-size: 3.5rem; font-weight: 900; color: #2c7a4b;">${data.totalSales}</div>
+    <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-radius: 32px; padding: 28px 20px; margin-bottom: 24px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+      <div style="font-size: 2rem; font-weight: 700; margin-bottom: 12px;">🏪 ${data.storeNameDisplay}</div>
+      <div style="font-size: 2.8rem; font-weight: 800; color: #2c7a4b;">${data.totalSales}</div>
     </div>
-    <div style="background: white; border-radius: 32px; padding: 32px 28px; margin-bottom: 24px;">
-      <div style="font-size: 2rem; font-weight: 800; margin-bottom: 28px; border-bottom: 3px solid #e2e8f0; padding-bottom: 18px;">💵 Payment Breakdown</div>
-      <div style="font-size: 1.8rem; margin: 24px 0; display: flex; justify-content: space-between; flex-wrap: wrap; font-weight: 600;">${data.cash}</div>
-      <div style="font-size: 1.8rem; margin: 24px 0; display: flex; justify-content: space-between; flex-wrap: wrap; font-weight: 600;">${data.cardPayment}</div>
-      <div style="font-size: 1.8rem; margin: 24px 0; display: flex; justify-content: space-between; flex-wrap: wrap; font-weight: 600;">${data.qr}</div>
-      <div style="font-size: 1.8rem; margin: 24px 0; display: flex; justify-content: space-between; flex-wrap: wrap; font-weight: 600;">${data.alipay}</div>
-      <div style="font-size: 1.8rem; margin: 24px 0; display: flex; justify-content: space-between; flex-wrap: wrap; font-weight: 600; color: #dc2626;">${data.refund}</div>
+    <div style="background: white; border-radius: 32px; padding: 24px 20px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+      <div style="font-size: 1.6rem; font-weight: 700; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px;">💵 Payment Breakdown</div>
+      <div style="font-size: 1.3rem; margin: 16px 0; display: flex; justify-content: space-between; flex-wrap: wrap;">${data.cash}</div>
+      <div style="font-size: 1.3rem; margin: 16px 0; display: flex; justify-content: space-between; flex-wrap: wrap;">${data.cardPayment}</div>
+      <div style="font-size: 1.3rem; margin: 16px 0; display: flex; justify-content: space-between; flex-wrap: wrap;">${data.qr}</div>
+      <div style="font-size: 1.3rem; margin: 16px 0; display: flex; justify-content: space-between; flex-wrap: wrap;">${data.alipay}</div>
+      <div style="font-size: 1.3rem; margin: 16px 0; display: flex; justify-content: space-between; flex-wrap: wrap; color: #dc2626;">${data.refund}</div>
     </div>
-    <div style="background: white; border-radius: 32px; padding: 32px 28px; margin-bottom: 24px;">
-      <div style="font-size: 2rem; font-weight: 800; margin-bottom: 28px; border-bottom: 3px solid #e2e8f0; padding-bottom: 18px;">📊 Statistics</div>
-      <div style="font-size: 1.7rem; margin: 20px 0; font-weight: 500;">${data.refundedBills}</div>
-      <div style="font-size: 1.7rem; margin: 20px 0; font-weight: 500;">${data.transactions}</div>
-      <div style="font-size: 1.7rem; margin: 20px 0; font-weight: 500;">${data.itemsSold}</div>
+    <div style="background: white; border-radius: 32px; padding: 24px 20px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+      <div style="font-size: 1.6rem; font-weight: 700; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px;">📊 Statistics</div>
+      <div style="font-size: 1.3rem; margin: 16px 0;">${data.refundedBills}</div>
+      <div style="font-size: 1.3rem; margin: 16px 0;">${data.transactions}</div>
+      <div style="font-size: 1.3rem; margin: 16px 0;">${data.itemsSold}</div>
     </div>
-    <div style="background: white; border-radius: 32px; padding: 32px 28px; margin-bottom: 24px;">
-      <div style="font-size: 2rem; font-weight: 800; margin-bottom: 28px; border-bottom: 3px solid #e2e8f0; padding-bottom: 18px;">👥 Employee Sales</div>
-      <div class="employee-swipe-list" style="max-height: 500px; overflow-y: auto; font-size: 1.6rem;">${data.employeeList}</div>
+    <div style="background: white; border-radius: 32px; padding: 24px 20px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+      <div style="font-size: 1.6rem; font-weight: 700; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px;">👥 Employee Sales</div>
+      <div class="employee-swipe-list" style="max-height: 400px; overflow-y: auto; font-size: 1.2rem;">${data.employeeList}</div>
     </div>
   `;
   
   const indicator = document.getElementById('cardIndicator');
   if (indicator) {
     indicator.innerText = `${index + 1} / ${storeOrder.length}`;
-    indicator.style.fontSize = '1.8rem';
-    indicator.style.fontWeight = '700';
-    indicator.style.padding = '18px';
+    indicator.style.fontSize = '1.4rem';
+    indicator.style.fontWeight = '600';
+    indicator.style.padding = '12px';
   }
 }
 
@@ -5663,79 +5649,134 @@ async function printReceipt(transaction, copies = 1) {
     const separator = '-'.repeat(maxChars);
 
     // Helper to build the receipt content for one copy
-  function buildReceiptContent(copyLabel) {
-  const lines = [];
-  lines.push(`STORE LOCATION : ${storeLocation}`);
-  lines.push(`EMPLOYEE : ${employeeName}`);
-  lines.push(separator);
+    function buildReceiptContent(copyLabel) {
+      const lines = [];
+      lines.push(`STORE LOCATION : ${storeLocation}`);
+      lines.push(`EMPLOYEE : ${employeeName}`);
+      lines.push(separator);
 
-  for (const item of transaction.items) {
-    const paidQty = item.quantity - (item.free_quantity || 0);
-    const freeQty = item.free_quantity || 0;
+      for (const item of transaction.items) {
+        const paidQty = item.quantity - (item.free_quantity || 0);
+        const freeQty = item.free_quantity || 0;
 
-    if (paidQty > 0) {
-      const itemTotal = paidQty * item.price;
-      const [nameLine, qtyLine] = formatProductLine(item.name, item.price, paidQty, itemTotal);
-      lines.push(nameLine);
-      lines.push(qtyLine);
+        if (paidQty > 0) {
+          const itemTotal = paidQty * item.price;
+          const [nameLine, qtyLine] = formatProductLine(item.name, item.price, paidQty, itemTotal);
+          lines.push(nameLine);
+          lines.push(qtyLine);
+        }
+
+        if (freeQty > 0) {
+          const itemTotal = 0;
+          const [nameLine, qtyLine] = formatProductLine(item.name, 0, freeQty, itemTotal);
+          lines.push(nameLine);
+          lines.push(qtyLine);
+        }
+      }
+
+      lines.push(separator);
+
+      if (transaction.discount > 0) lines.push(`Lucky Draw Discount : -RM ${transaction.discount.toFixed(2)}`);
+      if (transaction.buy2_free1_discount > 0) lines.push(`Car Aromatic Promo : -RM ${transaction.buy2_free1_discount.toFixed(2)}`);
+      if (transaction.buy3_free1_discount > 0) lines.push(`15ml Perfume EDP Promo : -RM ${transaction.buy3_free1_discount.toFixed(2)}`);
+      if (transaction.custom_discount > 0) lines.push(`Custom Discount     : -RM ${transaction.custom_discount.toFixed(2)}`);
+      if (transaction.staff_discount > 0) lines.push(`Staff 10% Discount  : -RM ${transaction.staff_discount.toFixed(2)}`);
+
+      const paymentLines = [];
+      paymentLines.push(`PAYMENT METHOD : ${transaction.payment_method}`);
+      if (transaction.cash_received && transaction.payment_method === 'Cash') {
+        const change = transaction.cash_received - transaction.total;
+        paymentLines.push(`CHANGE : RM ${change.toFixed(2)}`);
+      }
+
+      const footerLines = [
+        'THANK YOU FOR YOUR PURCHASE',
+        'ANY ENQUIRY PLEASE CONTACT',
+        '+60134665831 ( MARCUS )',
+        'GOODS SOLD ARE NOT REFUNDABLE'
+      ];
+
+      const date = new Date(transaction.timestamp);
+      const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+      const txnLine = `TXN   : ${transaction.transaction_id}`;
+      const dateLine = `DATE  : ${formattedDate}`;
+
+      // Build final text
+      let text = '';
+      text += `${copyLabel}\n`;
+      text += lines.join('\n') + '\n';
+      const totalAmount = transaction.total;
+      const totalLabel = "TOTAL";
+      const totalValueStr = `RM ${totalAmount.toFixed(2)}`;
+      let totalLine = totalLabel;
+      const availableSpace = maxChars - totalValueStr.length;
+      if (totalLabel.length < availableSpace) {
+        totalLine = totalLabel.padEnd(availableSpace);
+      } else {
+        totalLine = totalLabel.substring(0, availableSpace - 3) + '...';
+      }
+      totalLine += totalValueStr;
+      text += totalLine + '\n';
+      text += paymentLines.join('\n') + '\n';
+      text += separator + '\n';
+      text += footerLines.join('\n') + '\n';
+      text += txnLine + '\n' + dateLine + '\n\n';
+      return text;
     }
 
-    if (freeQty > 0) {
-      const itemTotal = 0;
-      const [nameLine, qtyLine] = formatProductLine(item.name, 0, freeQty, itemTotal);
-      lines.push(nameLine);
-      lines.push(qtyLine);
+    // Prepare commands for all copies
+    let allCommands = [];
+
+    for (let i = 0; i < copies; i++) {
+      const copyLabel = (copies === 2 && i === 0) ? "CUSTOMER COPY" : (copies === 2 && i === 1) ? "MERCHANT COPY" : "";
+      const receiptText = buildReceiptContent(copyLabel);
+      let commands = [];
+      commands.push(0x1B, 0x40); // init
+      commands.push(0x1B, 0x61, 0x01); // center align
+      commands.push(0x1B, 0x45, 0x01);
+      commands.push(0x1D, 0x21, 0x11);
+      const titleText = "UL PERFUMERY";
+      for (let c of titleText) commands.push(c.charCodeAt(0));
+      commands.push(0x0A);
+      commands.push(0x1B, 0x45, 0x00);
+      commands.push(0x1D, 0x21, 0x00);
+      commands.push(0x1B, 0x61, 0x00);
+      commands.push(0x0A);
+
+      // receipt body
+      for (let c of receiptText) commands.push(c.charCodeAt(0));
+
+      // barcode
+      const barcodeData = encoder.encode(transaction.transaction_id);
+      const barcodeLen = barcodeData.length;
+      commands.push(0x1D, 0x68, 0x32);
+      commands.push(0x1D, 0x77, 0x01);
+      commands.push(0x1B, 0x61, 0x01);
+      commands.push(0x1D, 0x6B, 0x49, barcodeLen);
+      for (let j = 0; j < barcodeLen; j++) commands.push(barcodeData[j]);
+      commands.push(0x0A, 0x0A);
+      commands.push(0x1B, 0x61, 0x00);
+
+      // cut after each copy except the last one? Actually we want cut after each copy.
+      // For the last copy, cut as well. Use partial cut.
+      commands.push(0x1D, 0x56, 0x41, 0x00); // partial cut
+
+      // Open drawer only for the first copy if payment is Cash
+      if (i === 0 && transaction.payment_method === 'Cash') {
+        const drawerCommand = [0x1B, 0x70, 0x00, 0x19, 0xFA];
+        // Insert drawer command before the cut
+        commands = commands.slice(0, -4).concat(drawerCommand, commands.slice(-4));
+      }
+
+      allCommands = allCommands.concat(commands);
     }
+
+    await sendChunkedData(new Uint8Array(allCommands), 500);
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
   }
-
-  lines.push(separator);
-
-  if (transaction.discount > 0) lines.push(`Lucky Draw Discount : -RM ${transaction.discount.toFixed(2)}`);
-  if (transaction.buy2_free1_discount > 0) lines.push(`Car Aromatic Promo : -RM ${transaction.buy2_free1_discount.toFixed(2)}`);
-  if (transaction.buy3_free1_discount > 0) lines.push(`15ml Perfume EDP Promo : -RM ${transaction.buy3_free1_discount.toFixed(2)}`);
-  if (transaction.custom_discount > 0) lines.push(`Custom Discount     : -RM ${transaction.custom_discount.toFixed(2)}`);
-  if (transaction.staff_discount > 0) lines.push(`Staff 10% Discount  : -RM ${transaction.staff_discount.toFixed(2)}`);
-
-  const paymentLines = [];
-  paymentLines.push(`PAYMENT METHOD : ${transaction.payment_method}`);
-  if (transaction.cash_received && transaction.payment_method === 'Cash') {
-    const change = transaction.cash_received - transaction.total;
-    paymentLines.push(`CHANGE : RM ${change.toFixed(2)}`);
-  }
-
-  const footerLines = [
-    'THANK YOU FOR YOUR PURCHASE',
-    'ANY ENQUIRY PLEASE CONTACT',
-    '+60134665831 ( MARCUS )',
-    'GOODS SOLD ARE NOT REFUNDABLE'
-  ];
-
-  const date = new Date(transaction.timestamp);
-  const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  const txnLine = `TXN   : ${transaction.transaction_id}`;
-  const dateLine = `DATE  : ${formattedDate}`;
-
-  // Build final text – wrap copyLabel with bold commands
-  let text = '';
-  text += `\x1B\x45\x01${copyLabel}\x1B\x45\x00\n`;  // Bold ON, label, Bold OFF
-  text += lines.join('\n') + '\n';
-  const totalAmount = transaction.total;
-  const totalLabel = "TOTAL";
-  const totalValueStr = `RM ${totalAmount.toFixed(2)}`;
-  let totalLine = totalLabel;
-  const availableSpace = maxChars - totalValueStr.length;
-  if (totalLabel.length < availableSpace) {
-    totalLine = totalLabel.padEnd(availableSpace);
-  } else {
-    totalLine = totalLabel.substring(0, availableSpace - 3) + '...';
-  }
-  totalLine += totalValueStr;
-  text += totalLine + '\n';
-  text += paymentLines.join('\n') + '\n';
-  text += separator + '\n';
-  text += footerLines.join('\n') + '\n';
-  text += txnLine + '\n' + dateLine + '\n\n';
-  return text;
 }
 
 async function printPrizeVoucher(prizeLabel, receiptNumber, spinDate = new Date()) {

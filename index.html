@@ -1571,7 +1571,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -6550,13 +6550,11 @@ async function openReportsModal() {
     const storeBreakdown = document.getElementById('storeBreakdownContainer');
     if (storeBreakdown) storeBreakdown.style.display = 'none';
 
-    // ========== INSTANT CACHE DISPLAY ==========
-    const rangeSelect = document.getElementById('adminReportDateRangeSelect');
-    const currentRange = rangeSelect ? rangeSelect.value : 'today';
-    // If the cached report is for today and the current range is today
-    if (preloadedReportCache && preloadedReportCache.from === getLocalDateString(new Date()) && currentRange === 'today') {
-      // Populate totals from cache instantly
+    // ========== ⚡ CACHE INSTANT: Show cached "Today" report immediately ==========
+    const todayStr = getLocalDateString(new Date());
+    if (preloadedReportCache && preloadedReportCache.from === todayStr) {
       const totals = preloadedReportCache.totals;
+      // Update all total fields instantly
       document.getElementById('adminReportTotalSales').innerText = `RM ${totals.totalSales.toFixed(2)}`;
       document.getElementById('adminReportCashTotal').innerText = `RM ${totals.cashTotal.toFixed(2)}`;
       document.getElementById('adminReportCardTotal').innerText = `RM ${totals.cardTotal.toFixed(2)}`;
@@ -6567,41 +6565,43 @@ async function openReportsModal() {
       document.getElementById('adminReportTransactionCount').innerText = totals.transactionCount || 0;
       document.getElementById('adminReportTotalItems').innerText = totals.totalItems || 0;
 
-      // If product details are cached and should be visible, render them
+      // If product details were cached and the toggle is on, render them
       if (productDetailsVisible && preloadedReportCache.productDetails) {
         renderProductDetails(preloadedReportCache.productDetails);
       }
-      // Optionally, you could also pre‑fill store breakdown if cached
-      // (but it's better to refresh in background)
-    }
-    // ==========================================
-
-    // Show loading spinner and fetch fresh data in background
-    let loadingMsg = document.getElementById('adminReportLoadingMsg');
-    if (!loadingMsg) {
-      loadingMsg = document.createElement('div');
-      loadingMsg.id = 'adminReportLoadingMsg';
-      loadingMsg.style.textAlign = 'center';
-      loadingMsg.style.padding = '20px';
-      loadingMsg.style.background = '#f8fafc';
-      loadingMsg.style.borderRadius = '12px';
-      loadingMsg.style.margin = '10px 0';
+      // Hide the loading spinner immediately (since we already have data)
+      const existingSpinner = document.getElementById('adminReportLoadingMsg');
+      if (existingSpinner) existingSpinner.style.display = 'none';
+    } else {
+      // No cache – show loading spinner as before
+      let loadingMsg = document.getElementById('adminReportLoadingMsg');
+      if (!loadingMsg) {
+        loadingMsg = document.createElement('div');
+        loadingMsg.id = 'adminReportLoadingMsg';
+        loadingMsg.style.textAlign = 'center';
+        loadingMsg.style.padding = '20px';
+        loadingMsg.style.background = '#f8fafc';
+        loadingMsg.style.borderRadius = '12px';
+        loadingMsg.style.margin = '10px 0';
+        loadingMsg.style.display = 'flex';
+        loadingMsg.style.alignItems = 'center';
+        loadingMsg.style.justifyContent = 'center';
+        loadingMsg.style.gap = '12px';
+        loadingMsg.innerHTML = `
+          <div class="report-loading-spinner"></div>
+          <span style="font-size: 1rem; color: #334155;">Loading report data...</span>
+        `;
+        const reportStats = document.querySelector('#adminReportModal .report-stats');
+        if (reportStats) reportStats.insertAdjacentElement('beforebegin', loadingMsg);
+      }
       loadingMsg.style.display = 'flex';
-      loadingMsg.style.alignItems = 'center';
-      loadingMsg.style.justifyContent = 'center';
-      loadingMsg.style.gap = '12px';
-      loadingMsg.innerHTML = `
-        <div class="report-loading-spinner"></div>
-        <span style="font-size: 1rem; color: #334155;">Loading report data...</span>
-      `;
-      const reportStats = document.querySelector('#adminReportModal .report-stats');
-      if (reportStats) reportStats.insertAdjacentElement('beforebegin', loadingMsg);
     }
-    loadingMsg.style.display = 'flex';
+    // =======================================================================
 
-    // Always refresh in the background
+    // Always refresh in the background (will update cache and UI if new data arrives)
     await updateAdminReport(false);
 
+    // ... rest of your existing code (employee dropdowns, store selects, etc.) ...
     if (currentEmployee?.isAdmin) {
       const employees = await fetchEmployees();
       const adminReportEmpSelect = document.getElementById('adminReportEmployeeSelect');
@@ -6635,6 +6635,7 @@ async function openReportsModal() {
 
     populateStoreSelects();
 
+    // Hide loading spinner (if it was shown and not hidden by the cache branch)
     const loadingMsgElem = document.getElementById('adminReportLoadingMsg');
     if (loadingMsgElem) loadingMsgElem.style.display = 'none';
   }

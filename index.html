@@ -7230,10 +7230,8 @@ function updateReceipts() {
       if (!result.success) throw new Error('Transaction not found');
       const transaction = result.data;
 
-      // Get the prize text directly from the sheet (the "prize" column)
-      let prizeLabel = transaction.prize || transaction.prize_label;
-
-      // If still empty, fallback to manual input
+      // Get prize label – first from prize_label, then from prize, else ask
+      let prizeLabel = transaction.prize_label || transaction.prize;
       if (!prizeLabel) {
         const prizeAmount = await showInputModal('Enter Prize Amount (RM)', 'e.g., 38, 75, 109');
         if (!prizeAmount) {
@@ -7250,16 +7248,6 @@ function updateReceipts() {
         else if (amount === 75) prizeLabel = '15ML PERFUME EDP - RM 75';
         else if (amount === 109) prizeLabel = '300ML LOTION - RM 109';
         else prizeLabel = `FREE GIFT - RM ${amount.toFixed(2)}`;
-      }
-
-      // ✅ Show an alert with the prize label before printing (for debugging)
-      const confirmPrint = await showConfirmModal(
-        'Verify Prize',
-        `The prize from the sheet is:\n\n"${prizeLabel}"\n\nDo you want to print this voucher?`
-      );
-      if (!confirmPrint) {
-        hideLoading();
-        return;
       }
 
       if (!window.printerAPI || !window.printerAPI.printPrizeVoucher) {

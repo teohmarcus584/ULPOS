@@ -3953,6 +3953,27 @@ function applyCustomDiscount() {
   updateCartUI();
   document.getElementById('specialPromoModal').style.display = 'none';
 }
+// --------------------- LUCKY DRAW & REPRINT ---------------------
+function openLuckyDraw(transactionId, customerId) {
+  // Replace with your actual lucky draw URL
+   const url = `https://teohmarcus584.github.io/salesanalysis/?receipt=${encodeURIComponent(transactionId)}&customer=${encodeURIComponent(customerId || '')}`;
+  window.open(url, '_blank');
+  // If you don't have a lucky draw page, just show an alert:
+  // showAlertModal('Lucky Draw', `Receipt ${transactionId} – please visit the lucky draw counter.`);
+}
+
+async function reprintReceipt(receipt) {
+  if (!window.printerAPI || !window.printerAPI.printReceipt) {
+    await showAlertModal('Printer Error', 'Printer not connected or print function unavailable.');
+    return;
+  }
+  const success = await window.printerAPI.printReceipt(receipt, 1);
+  if (success) {
+    await showAlertModal('Reprint', 'Receipt reprinted successfully.');
+  } else {
+    await showAlertModal('Error', 'Failed to reprint. Check printer connection.');
+  }
+}
   // ==================== CHECKOUT ====================
  async function startCheckout() {
   if (cart.length === 0) {

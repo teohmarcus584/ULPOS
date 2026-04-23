@@ -4567,14 +4567,13 @@ function renderReceiptsList(receipts) {
 
       const total = parseFloat(rec.total) || 0;
 
-      // ✅ MODIFIED: Added "Reprint Lucky Draw" button (only for non‑refunded, non‑refund receipts)
       const actionsHtml = `
-        <div class="receipt-actions">
-          <button class="reprint-btn" data-txid="${rec.transaction_id}">🖨️ Reprint</button>
-          ${!isRefund && !rec.refunded ? `<button class="lucky-reprint-btn" data-txid="${rec.transaction_id}">🎲 Reprint Lucky Draw</button>` : ''}
-          ${!isRefund && !rec.refunded ? `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">💰 Refund</button>` : ''}
-        </div>
-      `;
+  <div class="receipt-actions">
+    <button class="reprint-btn" data-txid="${rec.transaction_id}">🖨️ Reprint</button>
+    <button class="lucky-reprint-btn" data-txid="${rec.transaction_id}">🎲 Reprint Lucky Draw</button>
+    ${!isRefund && !rec.refunded ? `<button class="refund-btn" data-txid="${rec.transaction_id}" data-store="${rec.store}">💰 Refund</button>` : ''}
+  </div>
+`;
 
       html += `
         <div class="receipt-item ${refundClass}" data-txid="${rec.transaction_id}">

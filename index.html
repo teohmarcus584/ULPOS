@@ -1568,10 +1568,22 @@
 .lucky-reprint-btn:hover {
   background: #d97706;
 }
+/* For the store cards inside the report modal */
+.store-summary-card .employee-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+
+/* For the swipeable store card modal */
+.employee-swipe-list {
+  max-height: 500px !important;
+  overflow-y: auto !important;
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">

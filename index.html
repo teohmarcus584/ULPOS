@@ -1583,7 +1583,8 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icon-192.png">
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -3489,7 +3490,6 @@ async function printSettlementReport(store, date, totals) {
     const totalActual = totals.cashActual + totals.cardActual + totals.qrActual + totals.alipayActual;
     lines.push(`TOTAL SALES : RM ${totalActual.toFixed(2)}`);
     lines.push(separator);
-	lines.push(separator);
     lines.push('SIGNATURE');
     lines.push('_________________');
     lines.push('Cashier / Manager');
@@ -5817,11 +5817,13 @@ function buildReceiptContent(copyLabel) {
       lines.push(qtyLine);
     }
 
-   if (freeQty > 0 && !isRefund) {
-  lines.push(item.name);
-  const freeLine = `${freeQty} x FREE`.padEnd(maxChars - 4) + 'FREE';
-  lines.push(freeLine);
-}
+    if (freeQty > 0 && !isRefund) {
+      const itemTotal = 0;
+      const [nameLine, qtyLine] = formatProductLine(item.name, 0, freeQty, itemTotal, false);
+      lines.push(nameLine);
+      lines.push(qtyLine);
+    }
+  }
 
   lines.push(separator);
 
@@ -7519,7 +7521,15 @@ function updateReceipts() {
     categorySelect.value = 'all';
     renderProductGrid();
   });
-
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(reg => console.log('SW registered:', reg))
+        .catch(err => console.error('SW registration failed:', err));
+    });
+  }
 </script>
 </body>
 </html>

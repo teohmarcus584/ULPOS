@@ -1583,7 +1583,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -3487,7 +3487,7 @@ async function printSettlementReport(store, date, totals) {
     lines.push('COLLECTED AMOUNT');
     lines.push(dash);
     const totalActual = totals.cashActual + totals.cardActual + totals.qrActual + totals.alipayActual;
-    lines.push(`Total Cash In Hand : RM ${totalActual.toFixed(2)}`);
+   lines.push(`TOTAL SALES : RM ${totalActual.toFixed(2)}`);
     lines.push(separator);
     lines.push('SIGNATURE');
     lines.push('_________________');
@@ -6899,7 +6899,7 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
     document.getElementById('checkSettlementBtn').style.display = 'block';
     return;
   }
-
+  setSettlementFieldsEnabled(false);
   document.getElementById('settlementError').style.display = 'none';
   document.getElementById('checkSettlementBtn').style.display = 'none';
   document.getElementById('recordSettlementBtn').style.display = 'block';

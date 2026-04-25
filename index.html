@@ -1890,22 +1890,18 @@
       <div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div>
     </div>
  <!-- Non‑admin simplified stats (hidden by default) -->
-<div id="nonAdminReportStats" style="display: none; margin: 20px 0;">
+<div id="nonAdminStatsCards" style="display: none; margin: 20px 0;">
   <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;">
-    <div class="stats-card" style="flex:1; background: white; border-radius: 28px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-      <div class="stats-label" style="font-size: 0.9rem; color: #64748b;">🏪 Store Sales</div>
-      <div class="stats-value" id="nonAdminStoreTotal" style="font-size: 2rem; font-weight: 800; color: #2c7a4b;">RM 0.00</div>
-      <div class="stats-store-name" id="nonAdminStoreName" style="font-size: 0.8rem;"></div>
-    </div>
-    <div class="stats-card" style="flex:1; background: white; border-radius: 28px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-      <div class="stats-label" style="font-size: 0.9rem; color: #64748b;">👤 My Sales</div>
-      <div class="stats-value" id="nonAdminEmployeeTotal" style="font-size: 2rem; font-weight: 800; color: #2c7a4b;">RM 0.00</div>
-      <div class="stats-employee-name" id="nonAdminEmployeeName" style="font-size: 0.8rem;"></div>
-    </div>
-    <div class="filter-group" style="min-width: 160px;">
-      <label>📅 Select Date</label>
-      <input type="date" id="nonAdminStatsDate" style="padding: 10px 16px; border-radius: 60px; border: 1px solid #cbd5e1; font-size: 0.9rem;">
-    </div>
+    <div class="stats-card">... Store Sales ...</div>
+    <div class="stats-card">... My Sales ...</div>
+  </div>
+</div>
+
+<!-- Date picker stays visible for everyone, but is only relevant for non‑admin -->
+<div id="nonAdminDatePicker" style="margin: 15px 0; text-align: right;">
+  <div class="filter-group" style="display: inline-flex; gap: 10px; align-items: center;">
+    <label>📅 Select Date</label>
+    <input type="date" id="nonAdminStatsDate">
   </div>
 </div>
     <div id="storeBreakdownContainer" style="margin: 20px 0; display: none;">
@@ -6914,33 +6910,40 @@ async function openReportsModal() {
       if (reportFiltersDiv) reportFiltersDiv.style.display = 'flex';
       if (productToggle) productToggle.style.display = 'block';
       if (nonAdminStatsDiv) nonAdminStatsDiv.style.display = 'none';
-        } else {
-      // Non‑admin view: hide store breakdown and filters, show simplified stats
-      if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
-      if (reportFiltersDiv) reportFiltersDiv.style.display = 'none';
-      if (nonAdminStatsDiv) nonAdminStatsDiv.style.display = 'block';
+       } else {
+  // Non‑admin view: hide store breakdown, filters, and the two stat cards
+  if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
+  if (reportFiltersDiv) reportFiltersDiv.style.display = 'none';
+  const nonAdminCardsDiv = document.getElementById('nonAdminStatsCards');
+  if (nonAdminCardsDiv) nonAdminCardsDiv.style.display = 'none';   // Hide the store/employee cards
 
-      // Show the product details button (always visible for non‑admin)
-      if (productToggle) productToggle.style.display = 'block';
+  // Show the product details button (always visible for non‑admin)
+  if (productToggle) productToggle.style.display = 'block';
 
-      // Hide the payment method breakdown rows (Cash, Card, QR, Alipay)
-      const paymentRows = document.querySelectorAll('#adminReportModal .stat-item.breakdown');
-      paymentRows.forEach(row => row.style.display = 'none');
+  // Make sure the date picker is visible (it is now outside the hidden div)
+  const datePickerDiv = document.getElementById('nonAdminDatePicker');
+  if (datePickerDiv) datePickerDiv.style.display = 'block';
 
-      // Keep the total sales, refunds, refunded bills, transactions, items sold rows visible
-      // (they are already inside .report-stats, we don't hide the whole container)
+  // Hide the payment method breakdown rows (Cash, Card, QR, Alipay)
+  const paymentRows = document.querySelectorAll('#adminReportModal .stat-item.breakdown');
+  paymentRows.forEach(row => row.style.display = 'none');
 
-      // Load stats for the currently selected date (from date picker)
-      const datePicker = document.getElementById('nonAdminStatsDate');
-      let selectedDate = datePicker ? datePicker.value : null;
-      if (selectedDate) {
-        await updateNonAdminReportStats(selectedDate);
-        await updateAdminReportForDate(selectedDate);
-      } else {
-        await updateNonAdminReportStats();
-        await updateAdminReportForDate();
-      }
-    }
+  // Load report for the selected date using the existing function that updates
+  // totalSales, refunds, refundedBills, transactions, itemsSold.
+  const datePicker = document.getElementById('nonAdminStatsDate');
+  let selectedDate = datePicker ? datePicker.value : null;
+  if (selectedDate) {
+    await updateAdminReportForDate(selectedDate);
+  } else {
+    await updateAdminReportForDate();
+  }
+
+  // (Optional) Also update the product details table if visible
+  if (productDetailsVisible) {
+    const productData = await fetchProductSalesReport(currentStore, currentEmployee.id, selectedDate, selectedDate);
+    renderProductDetails(productData);
+  }
+}
     // -------------------------------------------------
 
     // ==================== INSTANT TOTALS (from cache) ====================

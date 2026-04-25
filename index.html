@@ -2582,12 +2582,12 @@ function applyRoleBasedUI() {
     storeSelect.disabled = true;
   }
 
-  // --- Report modal filter groups & charts (these elements are inside the modal) ---
+  // --- Report modal filter groups & charts ---
   const reportStoreFilter = document.getElementById('reportStoreFilterGroup');
   const employeeFilterGroup = document.getElementById('employeeFilterGroup');
   const storeChartContainer = document.getElementById('storeChartContainer');
   const employeeChartContainer = document.getElementById('employeeChartContainer');
-  
+
   if (currentEmployee.isAdmin) {
     if (reportStoreFilter) reportStoreFilter.style.display = 'flex';
     if (employeeFilterGroup) employeeFilterGroup.style.display = 'flex';
@@ -2600,7 +2600,7 @@ function applyRoleBasedUI() {
     if (employeeChartContainer) employeeChartContainer.style.display = 'none';
   }
 
-  // --- Hide payment breakdown rows for non‑admin (they remain visible for admin) ---
+  // --- Payment breakdown rows (Cash, Card, QR, Alipay) ---
   const paymentRows = document.querySelectorAll('#adminReportModal .stat-item.breakdown');
   if (currentEmployee.isAdmin) {
     paymentRows.forEach(row => row.style.display = 'flex');
@@ -2619,7 +2619,7 @@ function applyRoleBasedUI() {
     }
   }
 
-  // --- System totals display in settlement modal (non‑admin sees only net total) ---
+  // --- System totals display in settlement modal ---
   const systemTotalsDiv = document.getElementById('systemTotalsDisplay');
   if (systemTotalsDiv) {
     if (!currentEmployee.isAdmin) {
@@ -2641,12 +2641,17 @@ function applyRoleBasedUI() {
     }
   }
 
-  // --- If the report modal is open, refresh its content immediately ---
+  // --- If the report modal is open, force a full refresh (close + reopen) ---
   const reportModal = document.getElementById('adminReportModal');
   if (reportModal && reportModal.style.display === 'flex') {
-    // Close and re‑open to force a full re‑render with new role
+    // Clear any cached report data for the current role
+    if (window.preloadedReportCache) window.preloadedReportCache = null;
+    if (window.storeReportCache) window.storeReportCache = {};
+    // Close and reopen after a tiny delay to ensure clean state
     reportModal.style.display = 'none';
-    openReportsModal(); // don't await, let it run async
+    setTimeout(() => {
+      openReportsModal();
+    }, 50);
   }
 }
 async function setCachedReport(cacheKey, report) {

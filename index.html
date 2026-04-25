@@ -3015,27 +3015,41 @@ let nonAdminStatsCache = null;
 async function updateNonAdminStats() {
   if (!currentEmployee || currentEmployee.isAdmin) return;
 
+  const container = document.getElementById('nonAdminStatsContainer');
+  if (!container) return;
+
+  // Always show the container, even while loading or if data fails
+  container.style.display = 'flex';
+
   const todayStr = getLocalDateString(new Date()); // YYYY-MM-DD (local)
   const store = currentStore;
 
-  // Fetch store total (all employees)
-  const storeReport = await fetchSalesReport(store, 'all', todayStr, todayStr, false, true);
-  // Fetch employee's own sales
-  const empReport = await fetchSalesReport(store, currentEmployee.id, todayStr, todayStr, false, true);
+  try {
+    // Fetch store total (all employees) and employee's own sales
+    const [storeReport, empReport] = await Promise.all([
+      fetchSalesReport(store, 'all', todayStr, todayStr, false, true),
+      fetchSalesReport(store, currentEmployee.id, todayStr, todayStr, false, true)
+    ]);
 
-  if (storeReport && empReport) {
-    const storeTotal = storeReport.totalSales || 0;
-    const empTotal = empReport.totalSales || 0;
+    const storeTotal = (storeReport && storeReport.totalSales) ? storeReport.totalSales : 0;
+    const empTotal = (empReport && empReport.totalSales) ? empReport.totalSales : 0;
 
     document.getElementById('storeTotalSales').innerText = `RM ${storeTotal.toFixed(2)}`;
     document.getElementById('employeeTotalSales').innerText = `RM ${empTotal.toFixed(2)}`;
     document.getElementById('statsStoreName').innerText = store.charAt(0).toUpperCase() + store.slice(1).replace('_', ' ');
     document.getElementById('statsEmployeeName').innerText = currentEmployee.name;
 
-    // Show the container
-    document.getElementById('nonAdminStatsContainer').style.display = 'flex';
-  } else {
-    console.warn('Failed to load non‑admin stats');
+    // If data is zero, you might add a subtle hint (optional)
+    if (storeTotal === 0 && empTotal === 0) {
+      console.log('Non‑admin stats: no sales today for this store or employee.');
+    }
+  } catch (err) {
+    console.error('Failed to load non‑admin stats:', err);
+    // Show fallback values
+    document.getElementById('storeTotalSales').innerText = 'RM 0.00';
+    document.getElementById('employeeTotalSales').innerText = 'RM 0.00';
+    document.getElementById('statsStoreName').innerText = store.charAt(0).toUpperCase() + store.slice(1).replace('_', ' ');
+    document.getElementById('statsEmployeeName').innerText = currentEmployee.name;
   }
 }
   // ==================== CUSTOMER LOYALTY FUNCTIONS ====================

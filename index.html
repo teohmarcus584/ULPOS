@@ -1632,7 +1632,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -6874,7 +6874,8 @@ if (applyHistoryBtn) {
     preloadReport();
     enableBarcodeScanner();
     refreshCategoryHighlighting();
-	  const nonAdminDateInput = document.getElementById('nonAdminStatsDate');
+
+   const nonAdminDateInput = document.getElementById('nonAdminStatsDate');
   if (nonAdminDateInput) {
     const today = new Date();
     const yyyy = today.getFullYear();
@@ -6882,10 +6883,11 @@ if (applyHistoryBtn) {
     const dd = String(today.getDate()).padStart(2, '0');
     nonAdminDateInput.value = `${yyyy}-${mm}-${dd}`;
     nonAdminDateInput.max = `${yyyy}-${mm}-${dd}`;
-    nonAdminDateInput.addEventListener('change', () => {
+    nonAdminDateInput.addEventListener('change', async () => {
       const selectedDate = nonAdminDateInput.value;
       if (selectedDate) {
-        updateNonAdminReportStats(selectedDate);
+        await updateNonAdminReportStats(selectedDate);
+        await updateAdminReportForDate(selectedDate);
       }
     });
   }
@@ -6912,18 +6914,32 @@ async function openReportsModal() {
       if (reportFiltersDiv) reportFiltersDiv.style.display = 'flex';
       if (productToggle) productToggle.style.display = 'block';
       if (nonAdminStatsDiv) nonAdminStatsDiv.style.display = 'none';
-    } else {
-      // Non‑admin view: hide admin elements, show simplified stats
+        } else {
+      // Non‑admin view: hide store breakdown and filters, show simplified stats
       if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
       if (reportFiltersDiv) reportFiltersDiv.style.display = 'none';
-      if (productToggle) productToggle.style.display = 'none';
       if (nonAdminStatsDiv) nonAdminStatsDiv.style.display = 'block';
 
-      // Hide the detailed payment breakdown (optional but cleaner)
-      const reportStatsDiv = document.querySelector('#adminReportModal .report-stats');
-      if (reportStatsDiv) reportStatsDiv.style.display = 'none';
+      // Show the product details button (always visible for non‑admin)
+      if (productToggle) productToggle.style.display = 'block';
 
-      await updateNonAdminReportStats(); // loads today's stats
+      // Hide the payment method breakdown rows (Cash, Card, QR, Alipay)
+      const paymentRows = document.querySelectorAll('#adminReportModal .stat-item.breakdown');
+      paymentRows.forEach(row => row.style.display = 'none');
+
+      // Keep the total sales, refunds, refunded bills, transactions, items sold rows visible
+      // (they are already inside .report-stats, we don't hide the whole container)
+
+      // Load stats for the currently selected date (from date picker)
+      const datePicker = document.getElementById('nonAdminStatsDate');
+      let selectedDate = datePicker ? datePicker.value : null;
+      if (selectedDate) {
+        await updateNonAdminReportStats(selectedDate);
+        await updateAdminReportForDate(selectedDate);
+      } else {
+        await updateNonAdminReportStats();
+        await updateAdminReportForDate();
+      }
     }
     // -------------------------------------------------
 
@@ -7344,6 +7360,37 @@ const sysRefund = parseFloat(document.getElementById('sysRefund').innerText.repl
 
   // ✅ Load collection history
   await loadCollectionHistory();
+}
+async function updateAdminReportForDate(dateStr = null) {
+  if (!currentEmployee) return;
+
+  let from, to;
+  if (dateStr) {
+    from = to = dateStr;
+  } else {
+    // Default to today
+    const today = new Date();
+    from = to = getLocalDateString(today);
+  }
+
+  const store = currentStore;          // non‑admin sees only their store
+  const employeeId = currentEmployee.id;
+
+  // Fetch the report (silent, no loading overlay)
+  const totals = await fetchSalesReport(store, employeeId, from, to, false, true);
+  if (!totals) return;
+
+  // Update the totals in .report-stats (these elements exist in the modal)
+  document.getElementById('adminReportTotalSales').innerText = `RM ${totals.totalSales.toFixed(2)}`;
+  document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(totals.refundTotal || 0).toFixed(2)}`;
+  document.getElementById('adminReportRefundedBills').innerText = totals.refundedTransactionCount || 0;
+  document.getElementById('adminReportTransactionCount').innerText = totals.transactionCount || 0;
+  document.getElementById('adminReportTotalItems').innerText = totals.totalItems || 0;
+
+  // Fetch and render product details (if visible)
+  const productData = await fetchProductSalesReport(store, employeeId, from, to);
+  lastProductData = productData;
+  if (productDetailsVisible) renderProductDetails(lastProductData);
 }
 function renderProductDetails(productsData) {
   const tbody = document.getElementById('productDetailsBody');

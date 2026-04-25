@@ -2567,7 +2567,18 @@ async function switchToEmployee(newEmployee) {
     storeSelect.disabled = true;
   }
 
- await showAccountSwitchModal(currentEmployee.name);
+  await showAccountSwitchModal(currentEmployee.name);
+
+  // ✅ NEW: If the admin report modal is open, refresh it to show correct admin/non‑admin view
+  const reportModal = document.getElementById('adminReportModal');
+  if (reportModal && reportModal.style.display === 'flex') {
+    // Option 1: Close and reopen (most reliable)
+    reportModal.style.display = 'none';
+    await openReportsModal();
+    
+    // Option 2: Just refresh the content without closing (if you prefer, but reopening is simpler)
+    // await updateAdminReport(true); // would need role-specific logic, so reopen is easier
+  }
 }
 async function setCachedReport(cacheKey, report) {
   try {

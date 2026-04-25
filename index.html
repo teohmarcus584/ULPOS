@@ -1632,7 +1632,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -3990,40 +3990,72 @@ function applyStaffDiscount() {
   }
 
   async function checkReceiptForClaim() {
-    const receipt = document.getElementById('claimReceiptInput').value.trim();
-    if (!receipt) {
-      showClaimError('Please enter a receipt number.');
-      return;
-    }
-    showLoading('Checking receipt...');
-    try {
-      const url = `${APPS_SCRIPT_URL}?action=get&receipt=${encodeURIComponent(receipt)}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) {
-        const data = result.data;
-        if (data.claimed) {
-          showClaimError('This prize has already been claimed.');
-          return;
-        }
-        if (data.is_expired) {
-          showClaimError('This prize has expired (30 days after creation).');
-          return;
-        }
-        window.pendingClaimReceipt = data;
-        document.getElementById('validReceiptId').innerText = data.receipt;
-        document.getElementById('claimStep1').style.display = 'none';
-        document.getElementById('claimStep2').style.display = 'block';
-      } else {
-        showClaimError(result.error || 'Receipt not found.');
-      }
-    } catch (err) {
-      console.error(err);
-      showClaimError('Connection error. Please try again.');
-    } finally {
-      hideLoading();
-    }
+  const receipt = document.getElementById('claimReceiptInput').value.trim();
+  if (!receipt) {
+    showClaimError('Please enter a receipt number.');
+    return;
   }
+  showLoading('Checking receipt...');
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=get&receipt=${encodeURIComponent(receipt)}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      const data = result.data;
+      if (data.claimed) {
+        showClaimError('This prize has already been claimed.');
+        return;
+      }
+      if (data.is_expired) {
+        showClaimError('This prize has expired (30 days after creation).');
+        return;
+      }
+      window.pendingClaimReceipt = data;
+      document.getElementById('validReceiptId').innerText = data.receipt;
+
+      // --- Auto‑detect prize value and pre‑select dropdown ---
+      let prizeValue = data.value; // may be stored as number
+      if (!prizeValue && data.prize_label) {
+        // Extract RM amount from prize_label, e.g., "CAR AROMATIC - RM 38" → 38
+        const match = data.prize_label.match(/RM\s*(\d+(?:\.\d+)?)/);
+        if (match) prizeValue = parseFloat(match[1]);
+      }
+      if (prizeValue) {
+        const prizeSelect = document.getElementById('prizeSelect');
+        let matched = false;
+        for (let i = 0; i < prizeSelect.options.length; i++) {
+          if (parseFloat(prizeSelect.options[i].value) === prizeValue) {
+            prizeSelect.selectedIndex = i;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          // If no exact match, add a temporary option (should not happen with standard prizes)
+          const newOption = document.createElement('option');
+          newOption.value = prizeValue;
+          newOption.text = `Auto-detected prize - RM ${prizeValue}`;
+          prizeSelect.appendChild(newOption);
+          prizeSelect.value = prizeValue;
+        }
+      } else {
+        // Fallback: select first option
+        const prizeSelect = document.getElementById('prizeSelect');
+        if (prizeSelect.options.length) prizeSelect.selectedIndex = 0;
+      }
+
+      document.getElementById('claimStep1').style.display = 'none';
+      document.getElementById('claimStep2').style.display = 'block';
+    } else {
+      showClaimError(result.error || 'Receipt not found.');
+    }
+  } catch (err) {
+    console.error(err);
+    showClaimError('Connection error. Please try again.');
+  } finally {
+    hideLoading();
+  }
+}
 
   function applyPrizeToCart() {
     const receiptData = window.pendingClaimReceipt;
@@ -4705,24 +4737,23 @@ function renderReceiptsList(receipts) {
 
       // Items list
       let itemsHtml = '<div class="receipt-items-list">';
-      for (const item of rec.items) {
+     for (const item of rec.items) {
   const price = parseFloat(item.price) || 0;
   const quantity = parseInt(item.quantity) || 0;
   const freeQuantity = parseInt(item.free_quantity) || 0;
   const paidQty = quantity - freeQuantity;
 
-  // Show free gift line if any free units exist
+  // Free gift line (if any free units)
   if (freeQuantity > 0) {
     itemsHtml += `
       <div class="receipt-item-row" style="color:#10b981; font-style:italic;">
-        <span class="receipt-item-name">🎁 FREE GIFT</span>
-        <span class="receipt-item-detail">${freeQuantity} x ${escapeHtml(item.name)}</span>
+        <span class="receipt-item-name">🎁 ${escapeHtml(item.name)} (Free)</span>
         <span class="receipt-item-detail">RM 0.00</span>
       </div>
     `;
   }
 
-  // Show paid portion if any
+  // Paid portion (if any)
   if (paidQty > 0) {
     const itemTotal = paidQty * price;
     itemsHtml += `

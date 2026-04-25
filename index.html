@@ -1632,7 +1632,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -4513,21 +4513,27 @@ async function reprintLuckyDraw(txId) {
     const url = `${APPS_SCRIPT_URL}?action=get&receipt=${encodeURIComponent(txId)}`;
     const response = await fetch(url);
     const result = await response.json();
+    
     if (!result.success) {
-      await showAlertModal('Error', result.error || 'Lucky draw record not found or invalid.');
+      // No lucky draw record found – open the spin page
+      await showAlertModal('No Lucky Draw Record', 'This receipt has not been entered into the lucky draw. Opening the lucky draw page to spin now.');
+      openLuckyDraw(txId, null);
       return;
     }
+    
     const transaction = result.data;
     // Check if the lucky draw has already been claimed
     if (transaction.claimed === true) {
       await showAlertModal('Already Claimed', 'This lucky draw prize has already been claimed and cannot be reprinted.');
       return;
     }
+    
     const prizeLabel = transaction.prize_label || transaction.prize || 'RM 38 FREE GIFT';
     if (!window.printerAPI || !window.printerAPI.printPrizeVoucher) {
       await showAlertModal('Printer Error', 'Printer not connected or print function unavailable.');
       return;
     }
+    
     const success = await window.printerAPI.printPrizeVoucher(prizeLabel, txId);
     if (success) {
       await showAlertModal('Reprinted', 'Lucky draw voucher reprinted successfully.');

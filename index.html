@@ -2569,7 +2569,7 @@ async function switchToEmployee(newEmployee) {
 
   await showAccountSwitchModal(currentEmployee.name);
 
-  // ✅ CRITICAL FIX: Refresh the admin report modal if it is currently open
+  // ✅ CRITICAL: Refresh the admin report modal if it is currently open
   const reportModal = document.getElementById('adminReportModal');
   if (reportModal && reportModal.style.display === 'flex') {
     // Close then re-open to force a complete re-render with new permissions

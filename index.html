@@ -1628,11 +1628,43 @@
   transform: translateY(-1px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
-
+/* Non‑admin stats cards */
+.non-admin-stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.stats-card {
+  flex: 1;
+  min-width: 200px;
+  background: white;
+  border-radius: 28px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+}
+.stats-label {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+.stats-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #2c7a4b;
+  margin-bottom: 8px;
+}
+.stats-store-name,
+.stats-employee-name {
+  font-size: 0.8rem;
+  color: #1e293b;
+  font-weight: 500;
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -1682,6 +1714,19 @@
       <button id="printerIconBtn" class="printer-icon-btn">🖨️</button>
     </div>
   </div>
+  <!-- Non‑admin stats container (hidden by default) -->
+<div id="nonAdminStatsContainer" class="non-admin-stats" style="display: none; margin-bottom: 20px;">
+  <div class="stats-card">
+    <div class="stats-label">🏪 Store Sales (Today)</div>
+    <div class="stats-value" id="storeTotalSales">RM 0.00</div>
+    <div class="stats-store-name" id="statsStoreName"></div>
+  </div>
+  <div class="stats-card">
+    <div class="stats-label">👤 My Sales (Today)</div>
+    <div class="stats-value" id="employeeTotalSales">RM 0.00</div>
+    <div class="stats-employee-name" id="statsEmployeeName"></div>
+  </div>
+</div>
   <div class="pos-dashboard">
     <div class="products-panel">
       <div class="filter-bar">
@@ -2502,7 +2547,11 @@ async function switchToEmployee(newEmployee) {
     if (sideCollection) sideCollection.style.display = 'none';
     storeSelect.disabled = true;
   }
-
+ if (!currentEmployee.isAdmin) {
+    await updateNonAdminStats();
+  } else {
+    document.getElementById('nonAdminStatsContainer').style.display = 'none';
+  }
  await showAccountSwitchModal(currentEmployee.name);
 }
 async function setCachedReport(cacheKey, report) {
@@ -2960,7 +3009,35 @@ async function saveTelegramSettings() {
     alertedOutOfStockProducts.delete(productId);
   }
 }
+// Non‑admin stats: today's store total + logged‑in employee's total
+let nonAdminStatsCache = null;
 
+async function updateNonAdminStats() {
+  if (!currentEmployee || currentEmployee.isAdmin) return;
+
+  const todayStr = getLocalDateString(new Date()); // YYYY-MM-DD (local)
+  const store = currentStore;
+
+  // Fetch store total (all employees)
+  const storeReport = await fetchSalesReport(store, 'all', todayStr, todayStr, false, true);
+  // Fetch employee's own sales
+  const empReport = await fetchSalesReport(store, currentEmployee.id, todayStr, todayStr, false, true);
+
+  if (storeReport && empReport) {
+    const storeTotal = storeReport.totalSales || 0;
+    const empTotal = empReport.totalSales || 0;
+
+    document.getElementById('storeTotalSales').innerText = `RM ${storeTotal.toFixed(2)}`;
+    document.getElementById('employeeTotalSales').innerText = `RM ${empTotal.toFixed(2)}`;
+    document.getElementById('statsStoreName').innerText = store.charAt(0).toUpperCase() + store.slice(1).replace('_', ' ');
+    document.getElementById('statsEmployeeName').innerText = currentEmployee.name;
+
+    // Show the container
+    document.getElementById('nonAdminStatsContainer').style.display = 'flex';
+  } else {
+    console.warn('Failed to load non‑admin stats');
+  }
+}
   // ==================== CUSTOMER LOYALTY FUNCTIONS ====================
   async function fetchCustomerByPhone(phone) {
     try {
@@ -4487,6 +4564,10 @@ async function completeCheckout(paymentMethod, cashReceived) {
     document.getElementById('closeLuckyDrawModal').onclick = () => luckyModal.style.display = 'none';
 
     clearCart();
+	    // Refresh non‑admin stats if needed
+    if (!currentEmployee.isAdmin) {
+      await updateNonAdminStats();
+    }
   } else {
     await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
   }
@@ -4909,7 +4990,10 @@ function renderReceiptsList(receipts) {
     
     if (result.success) {
       await showAlertModal('Refund Successful', `Refund ID: ${result.refundId}\nStock restored.`);
-
+      // Refresh non‑admin stats
+      if (!currentEmployee.isAdmin) {
+        await updateNonAdminStats();
+      }
       // ✅ Auto‑print refund receipt if printer is connected
       if (window.printerAPI?.isConnected && result.refundTransaction) {
         // Ensure employee_name is set (fallback to current employee)
@@ -6744,7 +6828,11 @@ if (applyHistoryBtn) {
     if (window.autoSyncInterval) clearInterval(window.autoSyncInterval);
     await loadInitialData();
     soldBySelectCart.value = currentEmployee.id;
-
+ if (!currentEmployee.isAdmin) {
+    await updateNonAdminStats();
+  } else {
+    document.getElementById('nonAdminStatsContainer').style.display = 'none';
+  }
     const sideInventory = document.getElementById('sideInventoryBtn');
     const sideCollection = document.getElementById('sideCollectionBtn');
     if (currentEmployee.isAdmin) {

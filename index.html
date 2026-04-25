@@ -1632,7 +1632,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2405,17 +2405,10 @@ function setCachedStoreReport(store, from, to, data) {
 async function updateNonAdminReportStats(selectedDate = null) {
   if (!currentEmployee || currentEmployee.isAdmin) return;
 
-  // Use selected date or today's date
-  let targetDate;
-  if (selectedDate) {
-    targetDate = new Date(selectedDate);
-  } else {
-    targetDate = new Date();
-  }
-  const dateStr = getLocalDateString(targetDate); // YYYY-MM-DD (local)
+  let targetDate = selectedDate ? new Date(selectedDate) : new Date();
+  const dateStr = getLocalDateString(targetDate);
   const store = currentStore;
 
-  // Show a temporary loading state on the cards
   document.getElementById('nonAdminStoreTotal').innerHTML = '<span class="report-loading-spinner" style="width:20px;height:20px;"></span>';
   document.getElementById('nonAdminEmployeeTotal').innerHTML = '<span class="report-loading-spinner" style="width:20px;height:20px;"></span>';
 
@@ -6881,7 +6874,7 @@ if (applyHistoryBtn) {
     preloadReport();
     enableBarcodeScanner();
     refreshCategoryHighlighting();
-	 const nonAdminDateInput = document.getElementById('nonAdminStatsDate');
+	  const nonAdminDateInput = document.getElementById('nonAdminStatsDate');
   if (nonAdminDateInput) {
     const today = new Date();
     const yyyy = today.getFullYear();
@@ -6919,20 +6912,19 @@ async function openReportsModal() {
       if (reportFiltersDiv) reportFiltersDiv.style.display = 'flex';
       if (productToggle) productToggle.style.display = 'block';
       if (nonAdminStatsDiv) nonAdminStatsDiv.style.display = 'none';
-   } else {
-  // Non‑admin view: hide admin elements, show simplified stats
-  if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
-  if (reportFiltersDiv) reportFiltersDiv.style.display = 'none';
-  if (productToggle) productToggle.style.display = 'none';
-  if (nonAdminStatsDiv) nonAdminStatsDiv.style.display = 'block';
+    } else {
+      // Non‑admin view: hide admin elements, show simplified stats
+      if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
+      if (reportFiltersDiv) reportFiltersDiv.style.display = 'none';
+      if (productToggle) productToggle.style.display = 'none';
+      if (nonAdminStatsDiv) nonAdminStatsDiv.style.display = 'block';
 
-  // Hide the detailed payment breakdown
-  const reportStatsDiv = document.querySelector('#adminReportModal .report-stats');
-  if (reportStatsDiv) reportStatsDiv.style.display = 'none';
+      // Hide the detailed payment breakdown (optional but cleaner)
+      const reportStatsDiv = document.querySelector('#adminReportModal .report-stats');
+      if (reportStatsDiv) reportStatsDiv.style.display = 'none';
 
-  // Load stats for the currently selected date (today initially)
-  await updateNonAdminReportStats();
-}
+      await updateNonAdminReportStats(); // loads today's stats
+    }
     // -------------------------------------------------
 
     // ==================== INSTANT TOTALS (from cache) ====================

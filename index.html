@@ -6966,7 +6966,14 @@ if (nonAdminCardsDiv) nonAdminCardsDiv.style.display = 'block';
         }
       }
     });
-
+// Change "Total Sales" to "My Total Sales" for non-admin
+const totalSalesStatItem = document.querySelector('#adminReportModal .stat-item:first-child');
+if (totalSalesStatItem) {
+  const labelSpan = totalSalesStatItem.querySelector('span:first-child');
+  if (labelSpan) {
+    labelSpan.innerText = 'My Total Sales:';
+  }
+}
     // --- Set up non‑admin date range controls ---
     const rangeSelect = document.getElementById('nonAdminDateRangeSelect');
     const customDiv = document.getElementById('nonAdminCustomDateRange');

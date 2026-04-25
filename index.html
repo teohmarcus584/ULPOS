@@ -1632,7 +1632,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2151,6 +2151,8 @@ async function autoSelectStoreByLocation() {
 let lowStockFilterActive = false;   // track filter state
 let staffDiscountActive = false;   // whether 10% discount is active
 let staffDiscount = 0;             // computed amount (10% of subtotal)
+let claimBarcodeBuffer = '';
+let claimBarcodeTimer = null;
 // Login modal barcode scanner variables
 let loginBarcodeBuffer = '';
 let loginBarcodeTimer = null;
@@ -2407,6 +2409,23 @@ function showAccountSwitchModal(employeeName) {
     // Optional: auto‑close after 2.5 seconds (can be removed for stricter bank feel)
     setTimeout(closeModal, 3000);
   });
+}
+function resetClaimBarcodeBuffer() {
+  claimBarcodeBuffer = '';
+  if (claimBarcodeTimer) {
+    clearTimeout(claimBarcodeTimer);
+    claimBarcodeTimer = null;
+  }
+}
+
+function processClaimBarcode() {
+  const code = claimBarcodeBuffer.trim();
+  if (code === '') return;
+  const inputField = document.getElementById('claimReceiptInput');
+  if (inputField) inputField.value = code;
+  // Auto-trigger check
+  checkReceiptForClaim();
+  resetClaimBarcodeBuffer();
 }
 async function getCachedReport(cacheKey, maxAgeMs = 5 * 60 * 1000) {
   try {
@@ -3989,7 +4008,7 @@ function applyStaffDiscount() {
     errorDiv.style.display = 'block';
   }
 
- async function checkReceiptForClaim() {
+async function checkReceiptForClaim() {
   const receipt = document.getElementById('claimReceiptInput').value.trim();
   if (!receipt) {
     showClaimError('Please enter a receipt number.');
@@ -4028,6 +4047,9 @@ function applyStaffDiscount() {
       window.pendingPrizeValue = prizeValue;
       window.pendingPrizeLabel = prizeLabel;
 
+      // ✅ Reset barcode buffer after successful fetch
+      resetClaimBarcodeBuffer();
+
       // Replace step2 content with prize info (no dropdown)
       const step2Div = document.getElementById('claimStep2');
       step2Div.innerHTML = `
@@ -4047,6 +4069,7 @@ function applyStaffDiscount() {
       document.getElementById('applyPrizeBtn').addEventListener('click', applyPrizeToCart);
       document.getElementById('cancelClaimStep2Btn').addEventListener('click', () => {
         document.getElementById('claimPrizeModal').style.display = 'none';
+        resetClaimBarcodeBuffer();   // Also reset on cancel
       });
     } else {
       showClaimError(result.error || 'Receipt not found.');
@@ -5625,19 +5648,34 @@ document.addEventListener('keydown', (e) => {
   // --- LOGIN MODE BARCODE HANDLING (always active when modal is open) ---
   const loginModal = document.getElementById('loginModal');
   if (loginModal && loginModal.style.display === 'flex') {
-    // Enter key finishes the barcode
     if (e.key === 'Enter') {
       e.preventDefault();
       processLoginBarcode();
       return;
     }
-    // Accumulate alphanumeric characters (typical barcode characters)
     if (e.key.length === 1 && /[a-zA-Z0-9-]/.test(e.key)) {
       if (loginBarcodeTimer) clearTimeout(loginBarcodeTimer);
       loginBarcodeBuffer += e.key;
       loginBarcodeTimer = setTimeout(() => resetLoginBarcodeBuffer(), 100);
     }
-    return; // Do not process product barcode while login modal is open
+    return;
+  }
+
+  // --- CLAIM PRIZE MODAL (step1) BARCODE HANDLING ---
+  const claimModal = document.getElementById('claimPrizeModal');
+  const claimStep1 = document.getElementById('claimStep1');
+  if (claimModal && claimModal.style.display === 'flex' && claimStep1 && claimStep1.style.display !== 'none') {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      processClaimBarcode();
+      return;
+    }
+    if (e.key.length === 1 && /[a-zA-Z0-9-]/.test(e.key)) {
+      if (claimBarcodeTimer) clearTimeout(claimBarcodeTimer);
+      claimBarcodeBuffer += e.key;
+      claimBarcodeTimer = setTimeout(() => resetClaimBarcodeBuffer(), 100);
+    }
+    return; // Don't process product barcode while claiming
   }
 
   // --- PRODUCT SCANNER MODE (only after login) ---
@@ -7606,15 +7644,27 @@ function updateReceipts() {
   }
 
   const closeClaimPrizeModal = document.getElementById('closeClaimPrizeModal');
-  if (closeClaimPrizeModal) closeClaimPrizeModal.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');
-  const cancelClaimBtn = document.getElementById('cancelClaimBtn');
-  if (cancelClaimBtn) cancelClaimBtn.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');
-  const cancelClaimStep2Btn = document.getElementById('cancelClaimStep2Btn');
-  if (cancelClaimStep2Btn) cancelClaimStep2Btn.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');
-  const checkReceiptBtn = document.getElementById('checkReceiptBtn');
-  if (checkReceiptBtn) checkReceiptBtn.addEventListener('click', checkReceiptForClaim);
-  const applyPrizeBtn = document.getElementById('applyPrizeBtn');
-  if (applyPrizeBtn) applyPrizeBtn.addEventListener('click', applyPrizeToCart);
+if (closeClaimPrizeModal) {
+  closeClaimPrizeModal.addEventListener('click', () => {
+    document.getElementById('claimPrizeModal').style.display = 'none';
+    resetClaimBarcodeBuffer();
+  });
+}
+const cancelClaimBtn = document.getElementById('cancelClaimBtn');
+if (cancelClaimBtn) {
+  cancelClaimBtn.addEventListener('click', () => {
+    document.getElementById('claimPrizeModal').style.display = 'none';
+    resetClaimBarcodeBuffer();
+  });
+}
+const cancelClaimStep2Btn = document.getElementById('cancelClaimStep2Btn');
+if (cancelClaimStep2Btn) {
+  cancelClaimStep2Btn.addEventListener('click', () => {
+    document.getElementById('claimPrizeModal').style.display = 'none';
+    resetClaimBarcodeBuffer();
+  });
+}
+  document.getElementById('applyPrizeBtn')?.addEventListener('click', applyPrizeToCart);
 
   const closeSpecialPromoModal = document.getElementById('closeSpecialPromoModal');
   if (closeSpecialPromoModal) closeSpecialPromoModal.addEventListener('click', () => document.getElementById('specialPromoModal').style.display = 'none');

@@ -1889,11 +1889,18 @@
       <div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="year">This Year</option><option value="custom">Custom</option></select></div>
       <div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div>
     </div>
- <!-- Non‑admin simplified stats (hidden by default) -->
-<div id="nonAdminStatsCards" style="display: none; margin: 20px 0;">
+ <div id="nonAdminStatsCards" style="margin: 20px 0; display: none;">
   <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;">
-    <div class="stats-card">... Store Sales ...</div>
-    <div class="stats-card">... My Sales ...</div>
+    <div class="stats-card" style="flex:1; background: white; border-radius: 28px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+      <div class="stats-label" style="font-size: 0.9rem; color: #64748b;">🏪 Store Total Sales</div>
+      <div class="stats-value" id="nonAdminStoreTotal" style="font-size: 2rem; font-weight: 800; color: #2c7a4b;">RM 0.00</div>
+      <div class="stats-store-name" id="nonAdminStoreName" style="font-size: 0.8rem;"></div>
+    </div>
+    <div class="stats-card" style="flex:1; background: white; border-radius: 28px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+      <div class="stats-label" style="font-size: 0.9rem; color: #64748b;">👤 My Sales</div>
+      <div class="stats-value" id="nonAdminEmployeeTotal" style="font-size: 2rem; font-weight: 800; color: #2c7a4b;">RM 0.00</div>
+      <div class="stats-employee-name" id="nonAdminEmployeeName" style="font-size: 0.8rem;"></div>
+    </div>
   </div>
 </div>
 
@@ -4138,7 +4145,26 @@ async function checkReceiptForClaim() {
     hideLoading();
   }
 }
+async function updateNonAdminStatsCards(from, to) {
+  if (!currentEmployee || currentEmployee.isAdmin) return;
 
+  const store = currentStore;
+  const employeeId = currentEmployee.id;
+
+  // Fetch store total (all employees in this store)
+  const storeReport = await fetchSalesReport(store, 'all', from, to, false, true);
+  // Fetch employee total (only this employee)
+  const empReport = await fetchSalesReport(store, employeeId, from, to, false, true);
+
+  if (storeReport) {
+    document.getElementById('nonAdminStoreTotal').innerText = `RM ${storeReport.totalSales.toFixed(2)}`;
+    document.getElementById('nonAdminStoreName').innerText = store.charAt(0).toUpperCase() + store.slice(1).replace('_', ' ');
+  }
+  if (empReport) {
+    document.getElementById('nonAdminEmployeeTotal').innerText = `RM ${empReport.totalSales.toFixed(2)}`;
+    document.getElementById('nonAdminEmployeeName').innerText = currentEmployee.name;
+  }
+}
  function applyPrizeToCart() {
   if (!window.pendingClaimReceipt) return;
   const prizeValue = window.pendingPrizeValue || 38;
@@ -6921,7 +6947,7 @@ async function openReportsModal() {
     if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
     if (reportFiltersDiv) reportFiltersDiv.style.display = 'none';
     const nonAdminCardsDiv = document.getElementById('nonAdminStatsCards');
-    if (nonAdminCardsDiv) nonAdminCardsDiv.style.display = 'none';
+if (nonAdminCardsDiv) nonAdminCardsDiv.style.display = 'block';
     if (productToggle) productToggle.style.display = 'block';
 
     // Show the new date range selector
@@ -6986,6 +7012,7 @@ async function openReportsModal() {
       const range = getDateRange();
       if (!range) return;
       await updateNonAdminReport(range.from, range.to);
+	  await updateNonAdminStatsCards(range.from, range.to);   // <-- add this line
     }
 
     // Event: show/hide custom range inputs
@@ -7000,7 +7027,9 @@ async function openReportsModal() {
 
     // Initial load: Today
     const todayStr = getLocalDateString(new Date());
-    await updateNonAdminReport(todayStr, todayStr);
+await updateNonAdminReport(todayStr, todayStr);
+await updateNonAdminStatsCards(todayStr, todayStr);
+
   }
 
   // ========== 2. Instant totals from cache (if available) – works for both ==========

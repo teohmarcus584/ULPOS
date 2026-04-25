@@ -1632,7 +1632,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -7799,8 +7799,8 @@ if (cancelClaimStep2Btn) {
     resetClaimBarcodeBuffer();
   });
 }
-  if (applyPrizeBtn) applyPrizeBtn.addEventListener('click', applyPrizeToCart);
-  document.getElementById('checkReceiptBtn').addEventListener('click', checkReceiptForClaim);
+document.getElementById('applyPrizeBtn').addEventListener('click', applyPrizeToCart);
+document.getElementById('checkReceiptBtn').addEventListener('click', checkReceiptForClaim);
 
   const closeSpecialPromoModal = document.getElementById('closeSpecialPromoModal');
   if (closeSpecialPromoModal) closeSpecialPromoModal.addEventListener('click', () => document.getElementById('specialPromoModal').style.display = 'none');

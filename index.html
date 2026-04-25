@@ -4231,10 +4231,13 @@ async function checkReceiptForClaim() {
   }
 }
 async function updateNonAdminStatsCards(from, to) {
+  // Guard: ensure currentEmployee exists and is not admin
   if (!currentEmployee || currentEmployee.isAdmin) return;
-
+  
+  // Additional safety: ensure currentStore is defined
   const store = currentStore;
   const employeeId = currentEmployee.id;
+  if (!store || !employeeId) return;
 
   // Fetch store total (all employees in this store)
   const storeReport = await fetchSalesReport(store, 'all', from, to, false, true);
@@ -4242,12 +4245,16 @@ async function updateNonAdminStatsCards(from, to) {
   const empReport = await fetchSalesReport(store, employeeId, from, to, false, true);
 
   if (storeReport) {
-    document.getElementById('nonAdminStoreTotal').innerText = `RM ${storeReport.totalSales.toFixed(2)}`;
-    document.getElementById('nonAdminStoreName').innerText = store.charAt(0).toUpperCase() + store.slice(1).replace('_', ' ');
+    const storeTotalElem = document.getElementById('nonAdminStoreTotal');
+    const storeNameElem = document.getElementById('nonAdminStoreName');
+    if (storeTotalElem) storeTotalElem.innerText = `RM ${storeReport.totalSales.toFixed(2)}`;
+    if (storeNameElem) storeNameElem.innerText = store.charAt(0).toUpperCase() + store.slice(1).replace('_', ' ');
   }
-  if (empReport) {
-    document.getElementById('nonAdminEmployeeTotal').innerText = `RM ${empReport.totalSales.toFixed(2)}`;
-    document.getElementById('nonAdminEmployeeName').innerText = currentEmployee.name;
+  if (empReport && currentEmployee) {  // ✅ Re-check currentEmployee
+    const empTotalElem = document.getElementById('nonAdminEmployeeTotal');
+    const empNameElem = document.getElementById('nonAdminEmployeeName');
+    if (empTotalElem) empTotalElem.innerText = `RM ${empReport.totalSales.toFixed(2)}`;
+    if (empNameElem) empNameElem.innerText = currentEmployee.name;
   }
 }
  function applyPrizeToCart() {
@@ -6934,7 +6941,7 @@ if (applyHistoryBtn) {
 
 async function openReportsModal() {
   closeSideMenu();
-
+if (!currentEmployee) return;   // ✅ Add this line
   const modal = document.getElementById('adminReportModal');
   if (!modal) return;
   modal.style.display = 'flex';
@@ -7033,6 +7040,7 @@ if (totalSalesStatItem) {
     }
 
     async function refreshNonAdminReport() {
+	 if (!currentEmployee) return;   // ✅ Add this line
       const range = getDateRange();
       if (!range) return;
       await updateNonAdminReport(range.from, range.to);

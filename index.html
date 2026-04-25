@@ -1632,7 +1632,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -7755,25 +7755,28 @@ function updateReceipts() {
 
   fetchReceipts(store, employeeId, from, to, search);
 }
-  const toggleBtn = document.getElementById('toggleProductDetailsBtn');
-  const productDetailsContainer = document.getElementById('productDetailsContainer');
-  if (toggleBtn && productDetailsContainer) {
-    toggleBtn.addEventListener('click', async () => {
-      productDetailsVisible = !productDetailsVisible;
-      if (productDetailsVisible) {
-        productDetailsContainer.style.display = 'block';
-        toggleBtn.innerText = '📦 Hide Product Details';
-        if (!lastProductData || lastProductData.length === 0) {
-          await updateAdminReport();
-        } else {
-          renderProductDetails(lastProductData);
-        }
+ const toggleBtn = document.getElementById('toggleProductDetailsBtn');
+const productDetailsContainer = document.getElementById('productDetailsContainer');
+if (toggleBtn && productDetailsContainer) {
+  toggleBtn.addEventListener('click', async () => {
+    productDetailsVisible = !productDetailsVisible;
+    if (productDetailsVisible) {
+      productDetailsContainer.style.display = 'block';
+      toggleBtn.innerText = '📦 Hide Product Details';
+      if (currentEmployee && !currentEmployee.isAdmin) {
+        // Use date picker for non‑admin
+        const datePicker = document.getElementById('nonAdminStatsDate');
+        const selectedDate = datePicker ? datePicker.value : null;
+        await updateAdminReportForDate(selectedDate);
       } else {
-        productDetailsContainer.style.display = 'none';
-        toggleBtn.innerText = '📦 Show Product Details';
+        await updateAdminReport();
       }
-    });
-  }
+    } else {
+      productDetailsContainer.style.display = 'none';
+      toggleBtn.innerText = '📦 Show Product Details';
+    }
+  });
+}
 
   const closeClaimPrizeModal = document.getElementById('closeClaimPrizeModal');
 if (closeClaimPrizeModal) {

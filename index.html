@@ -1889,17 +1889,25 @@
       <div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="year">This Year</option><option value="custom">Custom</option></select></div>
       <div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div>
     </div>
- <!-- ✅ Non‑admin stats moved OUTSIDE filters -->
-    <div id="nonAdminReportStats" style="display: none; margin: 20px 0;">
-      <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;">
-        <div class="stats-card">🏪 Store Sales ...</div>
-        <div class="stats-card">👤 My Sales ...</div>
-        <div class="filter-group" style="min-width: 160px;">
-          <label>📅 Select Date</label>
-          <input type="date" id="nonAdminStatsDate" ...>
-        </div>
-      </div>
+ <!-- Non‑admin simplified stats (hidden by default) -->
+<div id="nonAdminReportStats" style="display: none; margin: 20px 0;">
+  <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;">
+    <div class="stats-card" style="flex:1; background: white; border-radius: 28px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+      <div class="stats-label" style="font-size: 0.9rem; color: #64748b;">🏪 Store Sales</div>
+      <div class="stats-value" id="nonAdminStoreTotal" style="font-size: 2rem; font-weight: 800; color: #2c7a4b;">RM 0.00</div>
+      <div class="stats-store-name" id="nonAdminStoreName" style="font-size: 0.8rem;"></div>
     </div>
+    <div class="stats-card" style="flex:1; background: white; border-radius: 28px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+      <div class="stats-label" style="font-size: 0.9rem; color: #64748b;">👤 My Sales</div>
+      <div class="stats-value" id="nonAdminEmployeeTotal" style="font-size: 2rem; font-weight: 800; color: #2c7a4b;">RM 0.00</div>
+      <div class="stats-employee-name" id="nonAdminEmployeeName" style="font-size: 0.8rem;"></div>
+    </div>
+    <div class="filter-group" style="min-width: 160px;">
+      <label>📅 Select Date</label>
+      <input type="date" id="nonAdminStatsDate" style="padding: 10px 16px; border-radius: 60px; border: 1px solid #cbd5e1; font-size: 0.9rem;">
+    </div>
+  </div>
+</div>
     <div id="storeBreakdownContainer" style="margin: 20px 0; display: none;">
       <h3 style="margin-bottom: 16px;">🏪 Store Breakdown</h3>
       <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between;">

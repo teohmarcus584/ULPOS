@@ -1632,7 +1632,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -5869,6 +5869,21 @@ document.addEventListener('keydown', (e) => {
     }, 100);
   }
 });
+async function verifyAndSwitchEmployee(pin) {
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=verifyByPin&pin=${encodeURIComponent(pin)}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success && result.employee) {
+      await switchToEmployee(result.employee);
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.error('Employee verification failed:', err);
+    return false;
+  }
+}
 async function getCachedMultiStoreReport(from, to) {
   const key = `multistore_${from}_${to}`;
   const cached = storeReportCache[key];

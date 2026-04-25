@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1609,6 +1608,9 @@
   color: #0b2b44;
   font-family: 'Segoe UI', 'Roboto', sans-serif;
 }
+.corporate-modal .modal-buttons {
+  justify-content: center;
+}
 .corporate-modal .modal-btn-primary {
   background: #0b2b44;
   border: none;
@@ -1626,10 +1628,11 @@
   transform: translateY(-1px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
+
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -1881,26 +1884,31 @@
     <span class="close-modal" id="closeAdminReportModal">×</span>
     <div class="modal-title">📊 Sales Report</div>
     <div class="report-filters">
+	<!-- Non‑admin simplified stats (hidden by default) -->
+<!-- Non‑admin simplified stats (hidden by default) -->
+<div id="nonAdminReportStats" style="display: none; margin: 20px 0;">
+  <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;">
+    <div class="stats-card" style="flex:1; background: white; border-radius: 28px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+      <div class="stats-label" style="font-size: 0.9rem; color: #64748b;">🏪 Store Sales</div>
+      <div class="stats-value" id="nonAdminStoreTotal" style="font-size: 2rem; font-weight: 800; color: #2c7a4b;">RM 0.00</div>
+      <div class="stats-store-name" id="nonAdminStoreName" style="font-size: 0.8rem;"></div>
+    </div>
+    <div class="stats-card" style="flex:1; background: white; border-radius: 28px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+      <div class="stats-label" style="font-size: 0.9rem; color: #64748b;">👤 My Sales</div>
+      <div class="stats-value" id="nonAdminEmployeeTotal" style="font-size: 2rem; font-weight: 800; color: #2c7a4b;">RM 0.00</div>
+      <div class="stats-employee-name" id="nonAdminEmployeeName" style="font-size: 0.8rem;"></div>
+    </div>
+    <div class="filter-group" style="min-width: 160px;">
+      <label>📅 Select Date</label>
+      <input type="date" id="nonAdminStatsDate" style="padding: 10px 16px; border-radius: 60px; border: 1px solid #cbd5e1; font-size: 0.9rem;">
+    </div>
+  </div>
+</div>
       <div class="filter-group" id="reportStoreFilterGroup" style="display: none;"><label>Store</label><select id="adminReportStoreSelect"><option value="all">All Stores</option><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select></div>
       <div class="filter-group" id="employeeFilterGroup" style="display: none;"><label>Employee</label><select id="adminReportEmployeeSelect"><option value="all">All Employees</option></select></div>
       <div class="filter-group"><label>Date Range</label><select id="adminReportDateRangeSelect"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="year">This Year</option><option value="custom">Custom</option></select></div>
       <div id="adminReportCustomDateRange" style="display: none;" class="date-range"><input type="date" id="adminReportFromDate"><input type="date" id="adminReportToDate"></div>
     </div>
-	<!-- Non‑admin simplified stats (hidden by default) -->
-<div id="nonAdminReportStats" style="display: none; margin: 20px 0;">
-  <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-    <div class="stats-card" style="flex:1; background: white; border-radius: 28px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-      <div class="stats-label" style="font-size: 0.9rem; color: #64748b;">🏪 Store Sales (Today)</div>
-      <div class="stats-value" id="nonAdminStoreTotal" style="font-size: 2rem; font-weight: 800; color: #2c7a4b;">RM 0.00</div>
-      <div class="stats-store-name" id="nonAdminStoreName" style="font-size: 0.8rem;"></div>
-    </div>
-    <div class="stats-card" style="flex:1; background: white; border-radius: 28px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-      <div class="stats-label" style="font-size: 0.9rem; color: #64748b;">👤 My Sales (Today)</div>
-      <div class="stats-value" id="nonAdminEmployeeTotal" style="font-size: 2rem; font-weight: 800; color: #2c7a4b;">RM 0.00</div>
-      <div class="stats-employee-name" id="nonAdminEmployeeName" style="font-size: 0.8rem;"></div>
-    </div>
-  </div>
-</div>
     <div id="storeBreakdownContainer" style="margin: 20px 0; display: none;">
       <h3 style="margin-bottom: 16px;">🏪 Store Breakdown</h3>
       <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between;">
@@ -2081,7 +2089,7 @@
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKFPDC3YGziA24eBGm3wFxCm_SIdVYLOUAz0alrzBejEgo9vuGGkphFGKbSVwi5ntOww/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxEpeOAl41EjAxVnyEab3tJKOJFw4H9kYb5VfhiuFrJgmDEeLX54ILXOp0zh0ER8uJOeA/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -2163,6 +2171,8 @@ async function autoSelectStoreByLocation() {
 let lowStockFilterActive = false;   // track filter state
 let staffDiscountActive = false;   // whether 10% discount is active
 let staffDiscount = 0;             // computed amount (10% of subtotal)
+let claimBarcodeBuffer = '';
+let claimBarcodeTimer = null;
 // Login modal barcode scanner variables
 let loginBarcodeBuffer = '';
 let loginBarcodeTimer = null;
@@ -2393,16 +2403,27 @@ function setCachedStoreReport(store, from, to, data) {
     };
   }
 })();
-async function updateNonAdminReportStats() {
+async function updateNonAdminReportStats(selectedDate = null) {
   if (!currentEmployee || currentEmployee.isAdmin) return;
 
-  const todayStr = getLocalDateString(new Date());
+  // Use selected date or today's date
+  let targetDate;
+  if (selectedDate) {
+    targetDate = new Date(selectedDate);
+  } else {
+    targetDate = new Date();
+  }
+  const dateStr = getLocalDateString(targetDate); // YYYY-MM-DD (local)
   const store = currentStore;
+
+  // Show a temporary loading state on the cards
+  document.getElementById('nonAdminStoreTotal').innerHTML = '<span class="report-loading-spinner" style="width:20px;height:20px;"></span>';
+  document.getElementById('nonAdminEmployeeTotal').innerHTML = '<span class="report-loading-spinner" style="width:20px;height:20px;"></span>';
 
   try {
     const [storeReport, empReport] = await Promise.all([
-      fetchSalesReport(store, 'all', todayStr, todayStr, false, true),
-      fetchSalesReport(store, currentEmployee.id, todayStr, todayStr, false, true)
+      fetchSalesReport(store, 'all', dateStr, dateStr, false, true),
+      fetchSalesReport(store, currentEmployee.id, dateStr, dateStr, false, true)
     ]);
 
     const storeTotal = storeReport?.totalSales || 0;
@@ -2444,6 +2465,23 @@ function showAccountSwitchModal(employeeName) {
     // Optional: auto‑close after 2.5 seconds (can be removed for stricter bank feel)
     setTimeout(closeModal, 3000);
   });
+}
+function resetClaimBarcodeBuffer() {
+  claimBarcodeBuffer = '';
+  if (claimBarcodeTimer) {
+    clearTimeout(claimBarcodeTimer);
+    claimBarcodeTimer = null;
+  }
+}
+
+function processClaimBarcode() {
+  const code = claimBarcodeBuffer.trim();
+  if (code === '') return;
+  const inputField = document.getElementById('claimReceiptInput');
+  if (inputField) inputField.value = code;
+  // Auto-trigger check
+  checkReceiptForClaim();
+  resetClaimBarcodeBuffer();
 }
 async function getCachedReport(cacheKey, maxAgeMs = 5 * 60 * 1000) {
   try {
@@ -4026,56 +4064,93 @@ function applyStaffDiscount() {
     errorDiv.style.display = 'block';
   }
 
-  async function checkReceiptForClaim() {
-    const receipt = document.getElementById('claimReceiptInput').value.trim();
-    if (!receipt) {
-      showClaimError('Please enter a receipt number.');
-      return;
-    }
-    showLoading('Checking receipt...');
-    try {
-      const url = `${APPS_SCRIPT_URL}?action=get&receipt=${encodeURIComponent(receipt)}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) {
-        const data = result.data;
-        if (data.claimed) {
-          showClaimError('This prize has already been claimed.');
-          return;
-        }
-        if (data.is_expired) {
-          showClaimError('This prize has expired (30 days after creation).');
-          return;
-        }
-        window.pendingClaimReceipt = data;
-        document.getElementById('validReceiptId').innerText = data.receipt;
-        document.getElementById('claimStep1').style.display = 'none';
-        document.getElementById('claimStep2').style.display = 'block';
-      } else {
-        showClaimError(result.error || 'Receipt not found.');
+async function checkReceiptForClaim() {
+  const receipt = document.getElementById('claimReceiptInput').value.trim();
+  if (!receipt) {
+    showClaimError('Please enter a receipt number.');
+    return;
+  }
+  showLoading('Checking receipt...');
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=get&receipt=${encodeURIComponent(receipt)}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      const data = result.data;
+      if (data.claimed) {
+        showClaimError('This prize has already been claimed.');
+        return;
       }
-    } catch (err) {
-      console.error(err);
-      showClaimError('Connection error. Please try again.');
-    } finally {
-      hideLoading();
+      if (data.is_expired) {
+        showClaimError('This prize has expired (30 days after creation).');
+        return;
+      }
+      window.pendingClaimReceipt = data;
+
+      // Extract prize label and value
+      let prizeLabel = data.prize_label || data.prize || '';
+      let prizeValue = data.value;
+      if (!prizeValue && prizeLabel) {
+        const match = prizeLabel.match(/RM\s*(\d+(?:\.\d+)?)/);
+        if (match) prizeValue = parseFloat(match[1]);
+      }
+      if (!prizeValue) {
+        prizeValue = 38;
+        prizeLabel = prizeLabel || `RM ${prizeValue} FREE GIFT`;
+      }
+
+      // Store for later use
+      window.pendingPrizeValue = prizeValue;
+      window.pendingPrizeLabel = prizeLabel;
+
+      // ✅ Reset barcode buffer after successful fetch
+      resetClaimBarcodeBuffer();
+
+      // Replace step2 content with prize info (no dropdown)
+      const step2Div = document.getElementById('claimStep2');
+      step2Div.innerHTML = `
+        <p>Receipt: <strong id="validReceiptId">${escapeHtml(data.receipt)}</strong></p>
+        <p>Prize won: <strong>${escapeHtml(prizeLabel)}</strong></p>
+        <p>Discount amount: <strong>RM ${prizeValue.toFixed(2)}</strong></p>
+        <div class="modal-buttons">
+          <button id="applyPrizeBtn" class="modal-btn modal-btn-primary">Apply Discount</button>
+          <button id="cancelClaimStep2Btn" class="modal-btn modal-btn-secondary">Cancel</button>
+        </div>
+      `;
+
+      document.getElementById('claimStep1').style.display = 'none';
+      step2Div.style.display = 'block';
+
+      // Re-attach event listeners
+      document.getElementById('applyPrizeBtn').addEventListener('click', applyPrizeToCart);
+      document.getElementById('cancelClaimStep2Btn').addEventListener('click', () => {
+        document.getElementById('claimPrizeModal').style.display = 'none';
+        resetClaimBarcodeBuffer();   // Also reset on cancel
+      });
+    } else {
+      showClaimError(result.error || 'Receipt not found.');
     }
+  } catch (err) {
+    console.error(err);
+    showClaimError('Connection error. Please try again.');
+  } finally {
+    hideLoading();
   }
+}
 
-  function applyPrizeToCart() {
-    const receiptData = window.pendingClaimReceipt;
-    if (!receiptData) return;
-    const prizeValue = parseFloat(document.getElementById('prizeSelect').value);
-    const prizeText = document.getElementById('prizeSelect').selectedOptions[0].text;
+ function applyPrizeToCart() {
+  if (!window.pendingClaimReceipt) return;
+  const prizeValue = window.pendingPrizeValue || 38;
+  const prizeText = window.pendingPrizeLabel || `RM ${prizeValue} FREE GIFT`;
 
-    pendingPrize = { receipt: receiptData.receipt, value: prizeValue, name: prizeText };
-    discountAmount = prizeValue;
-    claimedReceiptInfo = pendingPrize;
-    updateCartUI();
+  pendingPrize = { receipt: window.pendingClaimReceipt.receipt, value: prizeValue, name: prizeText };
+  discountAmount = prizeValue;
+  claimedReceiptInfo = pendingPrize;
+  updateCartUI();
 
-    showAlertModal('Prize Applied', `Discount of RM ${prizeValue.toFixed(2)} has been applied to this sale.\nThe prize will be marked as claimed only after successful payment.`);
-    document.getElementById('claimPrizeModal').style.display = 'none';
-  }
+  showAlertModal('Prize Applied', `Discount of RM ${prizeValue.toFixed(2)} has been applied to this sale.\nThe prize will be marked as claimed only after successful payment.`);
+  document.getElementById('claimPrizeModal').style.display = 'none';
+}
 
   async function claimPrizeAfterSale(receipt, prizeValue, finalTotal) {
     try {
@@ -4517,21 +4592,27 @@ async function reprintLuckyDraw(txId) {
     const url = `${APPS_SCRIPT_URL}?action=get&receipt=${encodeURIComponent(txId)}`;
     const response = await fetch(url);
     const result = await response.json();
+    
     if (!result.success) {
-      await showAlertModal('Error', result.error || 'Lucky draw record not found or invalid.');
+      // No lucky draw record found – open the spin page
+      await showAlertModal('No Lucky Draw Record', 'This receipt has not been entered into the lucky draw. Opening the lucky draw page to spin now.');
+      openLuckyDraw(txId, null);
       return;
     }
+    
     const transaction = result.data;
     // Check if the lucky draw has already been claimed
     if (transaction.claimed === true) {
       await showAlertModal('Already Claimed', 'This lucky draw prize has already been claimed and cannot be reprinted.');
       return;
     }
+    
     const prizeLabel = transaction.prize_label || transaction.prize || 'RM 38 FREE GIFT';
     if (!window.printerAPI || !window.printerAPI.printPrizeVoucher) {
       await showAlertModal('Printer Error', 'Printer not connected or print function unavailable.');
       return;
     }
+    
     const success = await window.printerAPI.printPrizeVoucher(prizeLabel, txId);
     if (success) {
       await showAlertModal('Reprinted', 'Lucky draw voucher reprinted successfully.');
@@ -4742,30 +4823,34 @@ function renderReceiptsList(receipts) {
 
       // Items list
       let itemsHtml = '<div class="receipt-items-list">';
-      for (const item of rec.items) {
-        const price = parseFloat(item.price) || 0;
-        const quantity = parseInt(item.quantity) || 0;
-        const freeQuantity = parseInt(item.free_quantity) || 0;
-        const paidQty = quantity - freeQuantity;
-        if (paidQty <= 0) continue;
-        const itemTotal = paidQty * price;
-        itemsHtml += `
-          <div class="receipt-item-row">
-            <span class="receipt-item-name">${escapeHtml(item.name)}</span>
-            <span class="receipt-item-detail">${paidQty} x RM ${price.toFixed(2)}</span>
-            <span class="receipt-item-detail">RM ${itemTotal.toFixed(2)}</span>
-          </div>
-        `;
-        if (freeQuantity > 0) {
-          itemsHtml += `
-            <div class="receipt-item-row" style="color:#10b981; font-style:italic;">
-              <span class="receipt-item-name">🎁 FREE GIFT</span>
-              <span class="receipt-item-detail">${freeQuantity} x ${escapeHtml(item.name)}</span>
-              <span class="receipt-item-detail">RM 0.00</span>
-            </div>
-          `;
-        }
-      }
+     for (const item of rec.items) {
+  const price = parseFloat(item.price) || 0;
+  const quantity = parseInt(item.quantity) || 0;
+  const freeQuantity = parseInt(item.free_quantity) || 0;
+  const paidQty = quantity - freeQuantity;
+
+  // Free gift line (if any free units)
+  if (freeQuantity > 0) {
+    itemsHtml += `
+      <div class="receipt-item-row" style="color:#10b981; font-style:italic;">
+        <span class="receipt-item-name">🎁 ${escapeHtml(item.name)} (Free)</span>
+        <span class="receipt-item-detail">RM 0.00</span>
+      </div>
+    `;
+  }
+
+  // Paid portion (if any)
+  if (paidQty > 0) {
+    const itemTotal = paidQty * price;
+    itemsHtml += `
+      <div class="receipt-item-row">
+        <span class="receipt-item-name">${escapeHtml(item.name)}</span>
+        <span class="receipt-item-detail">${paidQty} x RM ${price.toFixed(2)}</span>
+        <span class="receipt-item-detail">RM ${itemTotal.toFixed(2)}</span>
+      </div>
+    `;
+  }
+}
       itemsHtml += '</div>';
 
       // Discounts
@@ -5619,19 +5704,34 @@ document.addEventListener('keydown', (e) => {
   // --- LOGIN MODE BARCODE HANDLING (always active when modal is open) ---
   const loginModal = document.getElementById('loginModal');
   if (loginModal && loginModal.style.display === 'flex') {
-    // Enter key finishes the barcode
     if (e.key === 'Enter') {
       e.preventDefault();
       processLoginBarcode();
       return;
     }
-    // Accumulate alphanumeric characters (typical barcode characters)
     if (e.key.length === 1 && /[a-zA-Z0-9-]/.test(e.key)) {
       if (loginBarcodeTimer) clearTimeout(loginBarcodeTimer);
       loginBarcodeBuffer += e.key;
       loginBarcodeTimer = setTimeout(() => resetLoginBarcodeBuffer(), 100);
     }
-    return; // Do not process product barcode while login modal is open
+    return;
+  }
+
+  // --- CLAIM PRIZE MODAL (step1) BARCODE HANDLING ---
+  const claimModal = document.getElementById('claimPrizeModal');
+  const claimStep1 = document.getElementById('claimStep1');
+  if (claimModal && claimModal.style.display === 'flex' && claimStep1 && claimStep1.style.display !== 'none') {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      processClaimBarcode();
+      return;
+    }
+    if (e.key.length === 1 && /[a-zA-Z0-9-]/.test(e.key)) {
+      if (claimBarcodeTimer) clearTimeout(claimBarcodeTimer);
+      claimBarcodeBuffer += e.key;
+      claimBarcodeTimer = setTimeout(() => resetClaimBarcodeBuffer(), 100);
+    }
+    return; // Don't process product barcode while claiming
   }
 
   // --- PRODUCT SCANNER MODE (only after login) ---
@@ -6782,6 +6882,21 @@ if (applyHistoryBtn) {
     preloadReport();
     enableBarcodeScanner();
     refreshCategoryHighlighting();
+	 const nonAdminDateInput = document.getElementById('nonAdminStatsDate');
+  if (nonAdminDateInput) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    nonAdminDateInput.value = `${yyyy}-${mm}-${dd}`;
+    nonAdminDateInput.max = `${yyyy}-${mm}-${dd}`;
+    nonAdminDateInput.addEventListener('change', () => {
+      const selectedDate = nonAdminDateInput.value;
+      if (selectedDate) {
+        updateNonAdminReportStats(selectedDate);
+      }
+    });
+  }
     if (window.autoSyncInterval) clearInterval(window.autoSyncInterval);
     window.autoSyncInterval = setInterval(() => backgroundSync(), 60000);
   }
@@ -6805,7 +6920,7 @@ async function openReportsModal() {
       if (reportFiltersDiv) reportFiltersDiv.style.display = 'flex';
       if (productToggle) productToggle.style.display = 'block';
       if (nonAdminStatsDiv) nonAdminStatsDiv.style.display = 'none';
-    } else {
+   } else {
   // Non‑admin view: hide admin elements, show simplified stats
   if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
   if (reportFiltersDiv) reportFiltersDiv.style.display = 'none';
@@ -6816,6 +6931,7 @@ async function openReportsModal() {
   const reportStatsDiv = document.querySelector('#adminReportModal .report-stats');
   if (reportStatsDiv) reportStatsDiv.style.display = 'none';
 
+  // Load stats for the currently selected date (today initially)
   await updateNonAdminReportStats();
 }
     // -------------------------------------------------
@@ -7622,15 +7738,28 @@ function updateReceipts() {
   }
 
   const closeClaimPrizeModal = document.getElementById('closeClaimPrizeModal');
-  if (closeClaimPrizeModal) closeClaimPrizeModal.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');
-  const cancelClaimBtn = document.getElementById('cancelClaimBtn');
-  if (cancelClaimBtn) cancelClaimBtn.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');
-  const cancelClaimStep2Btn = document.getElementById('cancelClaimStep2Btn');
-  if (cancelClaimStep2Btn) cancelClaimStep2Btn.addEventListener('click', () => document.getElementById('claimPrizeModal').style.display = 'none');
-  const checkReceiptBtn = document.getElementById('checkReceiptBtn');
-  if (checkReceiptBtn) checkReceiptBtn.addEventListener('click', checkReceiptForClaim);
-  const applyPrizeBtn = document.getElementById('applyPrizeBtn');
+if (closeClaimPrizeModal) {
+  closeClaimPrizeModal.addEventListener('click', () => {
+    document.getElementById('claimPrizeModal').style.display = 'none';
+    resetClaimBarcodeBuffer();
+  });
+}
+const cancelClaimBtn = document.getElementById('cancelClaimBtn');
+if (cancelClaimBtn) {
+  cancelClaimBtn.addEventListener('click', () => {
+    document.getElementById('claimPrizeModal').style.display = 'none';
+    resetClaimBarcodeBuffer();
+  });
+}
+const cancelClaimStep2Btn = document.getElementById('cancelClaimStep2Btn');
+if (cancelClaimStep2Btn) {
+  cancelClaimStep2Btn.addEventListener('click', () => {
+    document.getElementById('claimPrizeModal').style.display = 'none';
+    resetClaimBarcodeBuffer();
+  });
+}
   if (applyPrizeBtn) applyPrizeBtn.addEventListener('click', applyPrizeToCart);
+  document.getElementById('checkReceiptBtn').addEventListener('click', checkReceiptForClaim);
 
   const closeSpecialPromoModal = document.getElementById('closeSpecialPromoModal');
   if (closeSpecialPromoModal) closeSpecialPromoModal.addEventListener('click', () => document.getElementById('specialPromoModal').style.display = 'none');

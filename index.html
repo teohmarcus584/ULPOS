@@ -1580,6 +1580,55 @@
   max-height: 500px !important;
   overflow-y: auto !important;
 }
+/* Bank/Corporate theme for account switch modal */
+.corporate-modal .modal-container {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fc 100%);
+  border: 1px solid #d4af37;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(212, 175, 55, 0.2) inset;
+  border-radius: 16px;
+  color: #1e2a3a;
+  text-align: center;
+  font-family: 'Georgia', 'Times New Roman', serif;
+}
+.corporate-modal .modal-title {
+  font-size: 1.8rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #c6a43b;
+  font-weight: 600;
+  border-bottom: 2px solid #d4af37;
+  display: inline-block;
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
+.corporate-modal .welcome-message {
+  font-size: 1.6rem;
+  font-weight: 500;
+  margin: 25px 0;
+  color: #0b2b44;
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+}
+.corporate-modal .modal-buttons {
+  justify-content: center;
+}
+.corporate-modal .modal-btn-primary {
+  background: #0b2b44;
+  border: none;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #ffffff;
+  padding: 12px 28px;
+  border-radius: 40px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+}
+.corporate-modal .modal-btn-primary:hover {
+  background: #1e4a6e;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -2102,6 +2151,9 @@ async function autoSelectStoreByLocation() {
 let lowStockFilterActive = false;   // track filter state
 let staffDiscountActive = false;   // whether 10% discount is active
 let staffDiscount = 0;             // computed amount (10% of subtotal)
+// Login modal barcode scanner variables
+let loginBarcodeBuffer = '';
+let loginBarcodeTimer = null;
   // New variables for preloaded report and settlement data
   let preloadedSettlementTotals = null;      // cache settlement totals for current store today
   let preloadedReportCache = null;            // { store, employeeId, from, to, totals, productDetails, chartData }
@@ -2329,6 +2381,33 @@ function setCachedStoreReport(store, from, to, data) {
     };
   }
 })();
+function showAccountSwitchModal(employeeName) {
+  return new Promise((resolve) => {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay corporate-modal';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+      <div class="modal-container" style="max-width: 500px;">
+        <div class="modal-title">🔐 ACCOUNT SWITCHED</div>
+        <div class="welcome-message">WELCOME ${employeeName.toUpperCase()}</div>
+        <div class="modal-buttons">
+          <button id="corpConfirmBtn" class="modal-btn modal-btn-primary">✓ CONFIRM</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    const confirmBtn = modal.querySelector('#corpConfirmBtn');
+    const closeModal = () => {
+      modal.remove();
+      resolve();
+    };
+
+    confirmBtn.addEventListener('click', closeModal);
+    // Optional: auto‑close after 2.5 seconds (can be removed for stricter bank feel)
+    setTimeout(closeModal, 3000);
+  });
+}
 async function getCachedReport(cacheKey, maxAgeMs = 5 * 60 * 1000) {
   try {
     const database = await openIndexedDB();
@@ -2351,7 +2430,62 @@ async function getCachedReport(cacheKey, maxAgeMs = 5 * 60 * 1000) {
     return null;
   }
 }
+function findEmployeeByPin(pin) {
+  if (!cachedEmployees || cachedEmployees.length === 0) return null;
+  // Ensure both are compared as strings (PIN can be numeric or leading zeros)
+  return cachedEmployees.find(emp => String(emp.pin) === String(pin));
+}
+async function switchToEmployee(newEmployee) {
+  if (currentEmployee && currentEmployee.id === newEmployee.id) {
+    await showAlertModal('Already logged in', `Already logged in as ${newEmployee.name}.`);
+    return;
+  }
 
+  // --- Reset local state ---
+  clearCart();
+  discountAmount = 0;
+  buy2Free1Discount = 0;
+  buy3Free1Discount = 0;
+  customDiscount = 0;
+  staffDiscountActive = false;
+  staffDiscount = 0;
+  selectedCustomer = null;
+  updateCustomerDisplay();
+
+  // --- Set new employee ---
+  currentEmployee = newEmployee;
+  document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
+
+  // --- Refresh salesperson dropdown ---
+  if (soldBySelectCart.options.length <= 1) {
+    const employees = await fetchEmployees();
+    employeeNameMap = {};
+    soldBySelectCart.innerHTML = '';
+    employees.forEach(emp => {
+      employeeNameMap[emp.id] = emp.name;
+      const option = document.createElement('option');
+      option.value = emp.id;
+      option.textContent = `${emp.name} (ID: ${emp.id})`;
+      soldBySelectCart.appendChild(option);
+    });
+  }
+  soldBySelectCart.value = currentEmployee.id;
+
+  // --- Update admin‑only UI elements ---
+  const sideInventory = document.getElementById('sideInventoryBtn');
+  const sideCollection = document.getElementById('sideCollectionBtn');
+  if (currentEmployee.isAdmin) {
+    if (sideInventory) sideInventory.style.display = 'flex';
+    if (sideCollection) sideCollection.style.display = 'flex';
+    storeSelect.disabled = false;
+  } else {
+    if (sideInventory) sideInventory.style.display = 'none';
+    if (sideCollection) sideCollection.style.display = 'none';
+    storeSelect.disabled = true;
+  }
+
+ await showAccountSwitchModal(currentEmployee.name);
+}
 async function setCachedReport(cacheKey, report) {
   try {
     const database = await openIndexedDB();
@@ -2505,7 +2639,24 @@ function toggleLowStockFilter() {
       field.focus();
     });
   }
+function resetLoginBarcodeBuffer() {
+  loginBarcodeBuffer = '';
+  if (loginBarcodeTimer) {
+    clearTimeout(loginBarcodeTimer);
+    loginBarcodeTimer = null;
+  }
+}
 
+function processLoginBarcode() {
+  const code = loginBarcodeBuffer.trim();
+  if (code === '') return;
+  // Display the scanned PIN in the input field (optional, gives visual feedback)
+  const pinInput = document.getElementById('pinInput');
+  if (pinInput) pinInput.value = code.slice(0, 4);
+  // Verify the PIN using the existing backend call
+  verifyEmployeeByPin(code.slice(0, 4));
+  resetLoginBarcodeBuffer();
+}
   function showSelectModal(title, options) {
     return new Promise((resolve) => {
       const overlay = document.getElementById('selectModal');
@@ -5383,6 +5534,16 @@ function processBarcode() {
   const code = barcodeBuffer.trim();
   if (code === '') return;
   
+  // --- New: Check if scanned code matches an employee PIN ---
+  const matchedEmployee = findEmployeeByPin(code);
+  if (matchedEmployee) {
+    // Switch to that employee
+    switchToEmployee(matchedEmployee);
+    resetBarcodeBuffer();
+    return;
+  }
+  
+  // --- Otherwise, process as product barcode ---
   const product = products.find(p => String(p.id) === code);
   if (!product) {
     showAlertModal('Barcode not found', `Product with ID ${code} does not exist.`);
@@ -5391,25 +5552,21 @@ function processBarcode() {
   }
 
   if (inventoryMode) {
+    // ... (your existing inventory mode code remains unchanged)
     const oldStock = product.stock;
     const newStock = oldStock + 1;
     product.stock = newStock;
-    
     const displaySpan = document.querySelector(`.stock-display[data-id="${product.id}"]`);
     if (displaySpan) displaySpan.innerText = newStock;
-    
     scheduleStockUpdate(product.id, newStock);
     logStockChange(product.id, product.name, product.category, oldStock, newStock, 1);
     checkAndNotifyOutOfStock(product.id, product.name, newStock);
     refreshCategoryHighlighting();
-    
     const statusSpan = document.getElementById('barcodeStatus');
     if (statusSpan) {
       statusSpan.style.background = '#c8e6c9';
-      statusSpan.style.transition = '0.2s';
       setTimeout(() => { statusSpan.style.background = '#e8f5e9'; }, 200);
     }
-    console.log(`📦 Stock increased for ${product.name} to ${newStock}`);
   } else {
     addToCart(product);
     const statusSpan = document.getElementById('barcodeStatus');
@@ -5422,6 +5579,25 @@ function processBarcode() {
 }
 
 document.addEventListener('keydown', (e) => {
+  // --- LOGIN MODE BARCODE HANDLING (always active when modal is open) ---
+  const loginModal = document.getElementById('loginModal');
+  if (loginModal && loginModal.style.display === 'flex') {
+    // Enter key finishes the barcode
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      processLoginBarcode();
+      return;
+    }
+    // Accumulate alphanumeric characters (typical barcode characters)
+    if (e.key.length === 1 && /[a-zA-Z0-9-]/.test(e.key)) {
+      if (loginBarcodeTimer) clearTimeout(loginBarcodeTimer);
+      loginBarcodeBuffer += e.key;
+      loginBarcodeTimer = setTimeout(() => resetLoginBarcodeBuffer(), 100);
+    }
+    return; // Do not process product barcode while login modal is open
+  }
+
+  // --- PRODUCT SCANNER MODE (only after login) ---
   if (!scannerActive) return;
   const activeTag = document.activeElement.tagName;
   if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
@@ -7197,7 +7373,9 @@ function updateStoreCashSummary() {
     employeesLastFetched = 0;
   });
 
-  document.getElementById('closeLoginModal')?.addEventListener('click', () => {});
+ document.getElementById('closeLoginModal')?.addEventListener('click', () => {
+  resetLoginBarcodeBuffer();
+});
 
   function updateCategoryDropdown() {
     const previousSelected = categorySelect.value;

@@ -6924,9 +6924,17 @@ async function openReportsModal() {
   const datePickerDiv = document.getElementById('nonAdminDatePicker');
   if (datePickerDiv) datePickerDiv.style.display = 'block';
 
-  // Hide the payment method breakdown rows (Cash, Card, QR, Alipay)
-  const paymentRows = document.querySelectorAll('#adminReportModal .stat-item.breakdown');
-  paymentRows.forEach(row => row.style.display = 'none');
+  // Hide only payment method rows, but keep Refunds & Refunded Bills
+const statItems = document.querySelectorAll('#adminReportModal .stat-item');
+statItems.forEach(item => {
+  const labelSpan = item.querySelector('span:first-child');
+  if (labelSpan) {
+    const text = labelSpan.innerText.trim();
+    if (text.includes('Cash') || text.includes('Card') || text.includes('QR Pay') || text.includes('Alipay')) {
+      item.style.display = 'none';
+    }
+  }
+});
 
   // Load report for the selected date using the existing function that updates
   // totalSales, refunds, refundedBills, transactions, itemsSold.

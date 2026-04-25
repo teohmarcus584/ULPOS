@@ -1632,7 +1632,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -3989,7 +3989,7 @@ function applyStaffDiscount() {
     errorDiv.style.display = 'block';
   }
 
-  async function checkReceiptForClaim() {
+ async function checkReceiptForClaim() {
   const receipt = document.getElementById('claimReceiptInput').value.trim();
   if (!receipt) {
     showClaimError('Please enter a receipt number.');
@@ -4011,41 +4011,43 @@ function applyStaffDiscount() {
         return;
       }
       window.pendingClaimReceipt = data;
-      document.getElementById('validReceiptId').innerText = data.receipt;
 
-      // --- Auto‑detect prize value and pre‑select dropdown ---
-      let prizeValue = data.value; // may be stored as number
-      if (!prizeValue && data.prize_label) {
-        // Extract RM amount from prize_label, e.g., "CAR AROMATIC - RM 38" → 38
-        const match = data.prize_label.match(/RM\s*(\d+(?:\.\d+)?)/);
+      // Extract prize label and value
+      let prizeLabel = data.prize_label || data.prize || '';
+      let prizeValue = data.value;
+      if (!prizeValue && prizeLabel) {
+        const match = prizeLabel.match(/RM\s*(\d+(?:\.\d+)?)/);
         if (match) prizeValue = parseFloat(match[1]);
       }
-      if (prizeValue) {
-        const prizeSelect = document.getElementById('prizeSelect');
-        let matched = false;
-        for (let i = 0; i < prizeSelect.options.length; i++) {
-          if (parseFloat(prizeSelect.options[i].value) === prizeValue) {
-            prizeSelect.selectedIndex = i;
-            matched = true;
-            break;
-          }
-        }
-        if (!matched) {
-          // If no exact match, add a temporary option (should not happen with standard prizes)
-          const newOption = document.createElement('option');
-          newOption.value = prizeValue;
-          newOption.text = `Auto-detected prize - RM ${prizeValue}`;
-          prizeSelect.appendChild(newOption);
-          prizeSelect.value = prizeValue;
-        }
-      } else {
-        // Fallback: select first option
-        const prizeSelect = document.getElementById('prizeSelect');
-        if (prizeSelect.options.length) prizeSelect.selectedIndex = 0;
+      if (!prizeValue) {
+        prizeValue = 38;
+        prizeLabel = prizeLabel || `RM ${prizeValue} FREE GIFT`;
       }
 
+      // Store for later use
+      window.pendingPrizeValue = prizeValue;
+      window.pendingPrizeLabel = prizeLabel;
+
+      // Replace step2 content with prize info (no dropdown)
+      const step2Div = document.getElementById('claimStep2');
+      step2Div.innerHTML = `
+        <p>Receipt: <strong id="validReceiptId">${escapeHtml(data.receipt)}</strong></p>
+        <p>Prize won: <strong>${escapeHtml(prizeLabel)}</strong></p>
+        <p>Discount amount: <strong>RM ${prizeValue.toFixed(2)}</strong></p>
+        <div class="modal-buttons">
+          <button id="applyPrizeBtn" class="modal-btn modal-btn-primary">Apply Discount</button>
+          <button id="cancelClaimStep2Btn" class="modal-btn modal-btn-secondary">Cancel</button>
+        </div>
+      `;
+
       document.getElementById('claimStep1').style.display = 'none';
-      document.getElementById('claimStep2').style.display = 'block';
+      step2Div.style.display = 'block';
+
+      // Re-attach event listeners
+      document.getElementById('applyPrizeBtn').addEventListener('click', applyPrizeToCart);
+      document.getElementById('cancelClaimStep2Btn').addEventListener('click', () => {
+        document.getElementById('claimPrizeModal').style.display = 'none';
+      });
     } else {
       showClaimError(result.error || 'Receipt not found.');
     }
@@ -4057,20 +4059,19 @@ function applyStaffDiscount() {
   }
 }
 
-  function applyPrizeToCart() {
-    const receiptData = window.pendingClaimReceipt;
-    if (!receiptData) return;
-    const prizeValue = parseFloat(document.getElementById('prizeSelect').value);
-    const prizeText = document.getElementById('prizeSelect').selectedOptions[0].text;
+ function applyPrizeToCart() {
+  if (!window.pendingClaimReceipt) return;
+  const prizeValue = window.pendingPrizeValue || 38;
+  const prizeText = window.pendingPrizeLabel || `RM ${prizeValue} FREE GIFT`;
 
-    pendingPrize = { receipt: receiptData.receipt, value: prizeValue, name: prizeText };
-    discountAmount = prizeValue;
-    claimedReceiptInfo = pendingPrize;
-    updateCartUI();
+  pendingPrize = { receipt: window.pendingClaimReceipt.receipt, value: prizeValue, name: prizeText };
+  discountAmount = prizeValue;
+  claimedReceiptInfo = pendingPrize;
+  updateCartUI();
 
-    showAlertModal('Prize Applied', `Discount of RM ${prizeValue.toFixed(2)} has been applied to this sale.\nThe prize will be marked as claimed only after successful payment.`);
-    document.getElementById('claimPrizeModal').style.display = 'none';
-  }
+  showAlertModal('Prize Applied', `Discount of RM ${prizeValue.toFixed(2)} has been applied to this sale.\nThe prize will be marked as claimed only after successful payment.`);
+  document.getElementById('claimPrizeModal').style.display = 'none';
+}
 
   async function claimPrizeAfterSale(receipt, prizeValue, finalTotal) {
     try {

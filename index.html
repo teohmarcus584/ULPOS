@@ -1632,7 +1632,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -5770,16 +5770,14 @@ function resetBarcodeBuffer() {
   barcodeTimer = null;
 }
 
-function processBarcode() {
+async function processBarcode() {
   if (!scannerActive) return;
   const code = barcodeBuffer.trim();
   if (code === '') return;
   
-  // --- New: Check if scanned code matches an employee PIN ---
-  const matchedEmployee = findEmployeeByPin(code);
-  if (matchedEmployee) {
-    // Switch to that employee
-    switchToEmployee(matchedEmployee);
+  // --- First, try to switch employee using server verification ---
+  const isEmployee = await verifyAndSwitchEmployee(code);
+  if (isEmployee) {
     resetBarcodeBuffer();
     return;
   }
@@ -5793,7 +5791,6 @@ function processBarcode() {
   }
 
   if (inventoryMode) {
-    // ... (your existing inventory mode code remains unchanged)
     const oldStock = product.stock;
     const newStock = oldStock + 1;
     product.stock = newStock;

@@ -1632,7 +1632,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -4706,29 +4706,34 @@ function renderReceiptsList(receipts) {
       // Items list
       let itemsHtml = '<div class="receipt-items-list">';
       for (const item of rec.items) {
-        const price = parseFloat(item.price) || 0;
-        const quantity = parseInt(item.quantity) || 0;
-        const freeQuantity = parseInt(item.free_quantity) || 0;
-        const paidQty = quantity - freeQuantity;
-        if (paidQty <= 0) continue;
-        const itemTotal = paidQty * price;
-        itemsHtml += `
-          <div class="receipt-item-row">
-            <span class="receipt-item-name">${escapeHtml(item.name)}</span>
-            <span class="receipt-item-detail">${paidQty} x RM ${price.toFixed(2)}</span>
-            <span class="receipt-item-detail">RM ${itemTotal.toFixed(2)}</span>
-          </div>
-        `;
-        if (freeQuantity > 0) {
-          itemsHtml += `
-            <div class="receipt-item-row" style="color:#10b981; font-style:italic;">
-              <span class="receipt-item-name">🎁 FREE GIFT</span>
-              <span class="receipt-item-detail">${freeQuantity} x ${escapeHtml(item.name)}</span>
-              <span class="receipt-item-detail">RM 0.00</span>
-            </div>
-          `;
-        }
-      }
+  const price = parseFloat(item.price) || 0;
+  const quantity = parseInt(item.quantity) || 0;
+  const freeQuantity = parseInt(item.free_quantity) || 0;
+  const paidQty = quantity - freeQuantity;
+
+  // Show free gift line if any free units exist
+  if (freeQuantity > 0) {
+    itemsHtml += `
+      <div class="receipt-item-row" style="color:#10b981; font-style:italic;">
+        <span class="receipt-item-name">🎁 FREE GIFT</span>
+        <span class="receipt-item-detail">${freeQuantity} x ${escapeHtml(item.name)}</span>
+        <span class="receipt-item-detail">RM 0.00</span>
+      </div>
+    `;
+  }
+
+  // Show paid portion if any
+  if (paidQty > 0) {
+    const itemTotal = paidQty * price;
+    itemsHtml += `
+      <div class="receipt-item-row">
+        <span class="receipt-item-name">${escapeHtml(item.name)}</span>
+        <span class="receipt-item-detail">${paidQty} x RM ${price.toFixed(2)}</span>
+        <span class="receipt-item-detail">RM ${itemTotal.toFixed(2)}</span>
+      </div>
+    `;
+  }
+}
       itemsHtml += '</div>';
 
       // Discounts

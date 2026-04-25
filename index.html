@@ -6563,6 +6563,7 @@ if (inventoryMode) {
 
   // ==================== PRELOAD SETTLEMENT AND REPORT AFTER LOGIN ====================
   async function preloadSettlement() {
+   if (!currentEmployee) return; 
     try {
       const store = currentStore;
       const todayStr = getLocalDateString(new Date());
@@ -6576,7 +6577,7 @@ if (inventoryMode) {
   }
 
 async function preloadReport() {
-  if (!currentEmployee) return;
+  if (!currentEmployee) return;   
   try {
     const todayStr = getLocalDateString(new Date());
     let store, employeeId;

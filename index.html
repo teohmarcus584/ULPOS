@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1635,7 +1636,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -1921,15 +1922,17 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
       </select>
     </div>
     <div id="nonAdminCustomDateRange" style="display: none; gap: 8px; align-items: flex-end;">
-      <!-- existing custom date inputs -->
+      <div class="filter-group">
+        <label>From</label>
+        <input type="date" id="nonAdminFromDate">
+      </div>
+      <div class="filter-group">
+        <label>To</label>
+        <input type="date" id="nonAdminToDate">
+      </div>
+      <button id="applyNonAdminDateBtn" class="cart-header-btn">Apply</button>
     </div>
   </div>
-</div>
-
-<!-- ✅ NEW: Sales Person Filter (visible only for non-admin) -->
-<div id="nonAdminSalesPersonFilter" class="filter-group" style="margin: 15px 0; display: none;">
-  <label>👤 Sales Person</label>
-  <select id="nonAdminSalesPersonSelect"></select>
 </div>
     <div id="storeBreakdownContainer" style="margin: 20px 0; display: none;">
       <h3 style="margin-bottom: 16px;">🏪 Store Breakdown</h3>
@@ -2426,25 +2429,37 @@ function setCachedStoreReport(store, from, to, data) {
     };
   }
 })();
-async function updateNonAdminReport(from, to, salesPersonId = null) {
+// For non‑admin: show store total + current staff's sales (based on sales_person_id)
+async function updateNonAdminReport(from, to) {
   if (!currentEmployee || currentEmployee.isAdmin) return;
+  const store = currentStore;
 
-  // If a salesPersonId is provided, use it; otherwise fallback to current employee
-  const targetId = (salesPersonId && salesPersonId !== 'all') ? salesPersonId : currentEmployee.id;
-  // For the main "My Total Sales" stat, we want all stores combined
-  const store = 'all';
+  // 1. Store total (all transactions, no employee filter)
+  const storeTotals = await fetchSalesReport(store, 'all', from, to, false, true);
+  if (storeTotals) {
+    document.getElementById('adminReportTotalSales').innerText = `RM ${storeTotals.totalSales.toFixed(2)}`;
+    document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(storeTotals.refundTotal || 0).toFixed(2)}`;
+    document.getElementById('adminReportRefundedBills').innerText = storeTotals.refundedTransactionCount || 0;
+    document.getElementById('adminReportTransactionCount').innerText = storeTotals.transactionCount || 0;
+    document.getElementById('adminReportTotalItems').innerText = storeTotals.totalItems || 0;
+  }
 
-  const totals = await fetchSalesReport(store, targetId, from, to, false, true);
-  if (!totals) return;
+  // 2. Staff's own sales (using sales_person_id)
+  const staffAgg = await fetchEmployeeSalesAggregate(store, from, to);
+  if (staffAgg && staffAgg.labels.length) {
+    const staffIndex = staffAgg.labels.findIndex(name =>
+      name === currentEmployee.name || name.includes(currentEmployee.id)
+    );
+    const mySales = staffIndex !== -1 ? staffAgg.data[staffIndex] : 0;
+    document.getElementById('adminReportTotalSales').innerText = `RM ${mySales.toFixed(2)}`;
+    // Also update the separate "nonAdminEmployeeTotal" if you keep that card
+    const empTotalEl = document.getElementById('nonAdminEmployeeTotal');
+    if (empTotalEl) empTotalEl.innerText = `RM ${mySales.toFixed(2)}`;
+  }
 
-  document.getElementById('adminReportTotalSales').innerText = `RM ${totals.totalSales.toFixed(2)}`;
-  document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(totals.refundTotal || 0).toFixed(2)}`;
-  document.getElementById('adminReportRefundedBills').innerText = totals.refundedTransactionCount || 0;
-  document.getElementById('adminReportTransactionCount').innerText = totals.transactionCount || 0;
-  document.getElementById('adminReportTotalItems').innerText = totals.totalItems || 0;
-
+  // 3. Refresh product details if visible (also filter by sales_person_id)
   if (productDetailsVisible) {
-    const productData = await fetchProductSalesReport(store, targetId, from, to);
+    const productData = await fetchProductSalesReport(store, currentEmployee.id, from, to);
     renderProductDetails(productData);
   }
 }
@@ -4242,60 +4257,34 @@ async function checkReceiptForClaim() {
     hideLoading();
   }
 }
-async function updateNonAdminStatsCards(from, to, salesPersonId = null) {
-  // Guard: ensure currentEmployee exists and is not admin
+async function updateNonAdminStatsCards(from, to) {
   if (!currentEmployee || currentEmployee.isAdmin) return;
-
-  // Additional safety: ensure currentStore is defined
   const store = currentStore;
-  if (!store) return;
 
-  // Determine which sales person to report on:
-  // - If salesPersonId is provided (from the Sales Person dropdown), use it.
-  // - If salesPersonId is 'all', we treat as 'all' (but we still need to show a total for the selected option).
-  //   For 'all', we could either show the sum of all sales persons, but that's not typical for "My Sales".
-  //   We'll handle 'all' by showing the total for the current employee as a fallback.
-  let targetId = currentEmployee.id;
-  if (salesPersonId && salesPersonId !== 'all') {
-    targetId = salesPersonId;
+  // Store total (all employees)
+  const storeTotals = await fetchSalesReport(store, 'all', from, to, false, true);
+  const storeTotalElem = document.getElementById('nonAdminStoreTotal');
+  const storeNameElem = document.getElementById('nonAdminStoreName');
+  if (storeTotalElem && storeTotals) {
+    storeTotalElem.innerText = `RM ${storeTotals.totalSales.toFixed(2)}`;
+  }
+  if (storeNameElem) {
+    storeNameElem.innerText = store.charAt(0).toUpperCase() + store.slice(1);
   }
 
-  // Fetch store total (all employees in this store) – used for "Store Total Sales" card
-  const storeReport = await fetchSalesReport(store, 'all', from, to, false, true);
-
-  // Fetch sales for the selected sales person (across all stores)
-  const empReport = await fetchSalesReport('all', targetId, from, to, false, true);
-
-  // Update "Store Total Sales" card
-  if (storeReport) {
-    const storeTotalElem = document.getElementById('nonAdminStoreTotal');
-    const storeNameElem = document.getElementById('nonAdminStoreName');
-    if (storeTotalElem) {
-      storeTotalElem.innerText = `RM ${storeReport.totalSales.toFixed(2)}`;
-    }
-    if (storeNameElem) {
-      storeNameElem.innerText = store.charAt(0).toUpperCase() + store.slice(1).replace('_', ' ');
-    }
+  // Staff's own sales (sales_person_id)
+  const staffAgg = await fetchEmployeeSalesAggregate(store, from, to);
+  let mySales = 0;
+  if (staffAgg && staffAgg.labels.length) {
+    const idx = staffAgg.labels.findIndex(name =>
+      name === currentEmployee.name || name.includes(currentEmployee.id)
+    );
+    if (idx !== -1) mySales = staffAgg.data[idx];
   }
-
-  // Update "My Sales" card (or selected sales person's sales)
-  if (empReport) {
-    const empTotalElem = document.getElementById('nonAdminEmployeeTotal');
-    const empNameElem = document.getElementById('nonAdminEmployeeName');
-    if (empTotalElem) {
-      empTotalElem.innerText = `RM ${empReport.totalSales.toFixed(2)}`;
-    }
-    if (empNameElem) {
-      // If a specific sales person was selected (not 'all'), show their name
-      if (salesPersonId && salesPersonId !== 'all') {
-        const selectedEmp = cachedEmployees.find(e => e.id == salesPersonId);
-        empNameElem.innerText = selectedEmp ? selectedEmp.name : 'Selected Sales Person';
-      } else {
-        // Fallback to the logged‑in cashier's name
-        empNameElem.innerText = currentEmployee.name;
-      }
-    }
-  }
+  const empTotalElem = document.getElementById('nonAdminEmployeeTotal');
+  const empNameElem = document.getElementById('nonAdminEmployeeName');
+  if (empTotalElem) empTotalElem.innerText = `RM ${mySales.toFixed(2)}`;
+  if (empNameElem) empNameElem.innerText = currentEmployee.name;
 }
  function applyPrizeToCart() {
   if (!window.pendingClaimReceipt) return;
@@ -5326,9 +5315,10 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
     } catch(err) { console.error(err); return null; }
   }
 
- async function fetchProductSalesReport(store, employeeId, from, to) {
+async function fetchProductSalesReport(store, employeeId, from, to) {
   try {
-    let url = `${APPS_SCRIPT_URL}?action=getReceipts&store=${store}&employeeId=${employeeId}`;
+    // 1. Fetch all receipts for the store (no employee filter)
+    let url = `${APPS_SCRIPT_URL}?action=getReceipts&store=${store}&employeeId=all`;
     if (from) url += `&from=${encodeURIComponent(from)}`;
     if (to) url += `&to=${encodeURIComponent(to)}`;
     const response = await fetch(url);
@@ -5336,28 +5326,39 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
 
     if (!result.success || !result.receipts) return [];
 
-    const productMap = new Map(); // key: product id
+    // 2. Filter receipts by sales_person_id (or fallback to employee_id)
+    const filteredReceipts = result.receipts.filter(rec => {
+      const salesPersonId = rec.sales_person_id || rec.employee_id;
+      return String(salesPersonId) === String(employeeId);
+    });
 
-    for (const receipt of result.receipts) {
-      // Get discount amounts
-      const buy2Free1Discount = parseFloat(receipt.buy2_free1_discount) || 0;
-      const buy3Free1Discount = parseFloat(receipt.buy3_free1_discount) || 0;
-      const otherDiscounts = (parseFloat(receipt.discount) || 0) +
-                             (parseFloat(receipt.custom_discount) || 0) +
-                             (parseFloat(receipt.staff_discount) || 0);
+    // 3. Aggregate product sales with discount distribution
+    const productMap = new Map(); // key = product id
 
-      // Build list of items with original totals
-      const itemsWithOrig = [];
+    for (const receipt of filteredReceipts) {
+      // Extract discount amounts
+      const luckyDrawDiscount = parseFloat(receipt.discount) || 0;
+      const carPromoDiscount = parseFloat(receipt.buy2_free1_discount) || 0;
+      const perfumePromoDiscount = parseFloat(receipt.buy3_free1_discount) || 0;
+      const customDiscount = parseFloat(receipt.custom_discount) || 0;
+      const staffDiscount = parseFloat(receipt.staff_discount) || 0;
+      const otherDiscounts = luckyDrawDiscount + customDiscount + staffDiscount;
+      const promoDiscounts = carPromoDiscount + perfumePromoDiscount;
+
+      // Build items with original paid totals (excluding free gifts)
+      const paidItems = [];
       let originalSubtotal = 0;
+
       for (const item of receipt.items) {
         const price = parseFloat(item.price) || 0;
         const quantity = parseInt(item.quantity) || 0;
         const freeQuantity = parseInt(item.free_quantity) || 0;
         const paidQty = quantity - freeQuantity;
         if (paidQty <= 0) continue;
+
         const origTotal = paidQty * price;
         originalSubtotal += origTotal;
-        itemsWithOrig.push({
+        paidItems.push({
           id: item.id,
           name: item.name,
           category: item.category || "Uncategorized",
@@ -5367,37 +5368,37 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
         });
       }
 
-      if (itemsWithOrig.length === 0) continue;
+      if (paidItems.length === 0) continue;
 
-      // --- Apply Car Aromatic promo (RM 2 fixed price) ---
-      if (buy2Free1Discount > 0) {
-        const targetItem = itemsWithOrig.find(i => i.category === "CAR AROMATIC");
+      // Apply car aromatic promo (fixed RM 2 price) – discount already in receipt
+      if (carPromoDiscount > 0) {
+        const targetItem = paidItems.find(i => i.category === "CAR AROMATIC");
         if (targetItem) {
-          // Reduce its total by the discount amount (original price - 2)
-          const newTotal = Math.max(0, targetItem.origTotal - buy2Free1Discount);
+          // The discount is the difference between original price and RM 2
+          const newTotal = Math.max(0, targetItem.origTotal - carPromoDiscount);
           targetItem.origTotal = newTotal;
         }
       }
 
-      // --- Apply 15ml Perfume EDP promo (RM 8 fixed price) ---
-      if (buy3Free1Discount > 0) {
-        const targetItem = itemsWithOrig.find(i => i.category === "15ML PERFUME EDP");
+      // Apply 15ml perfume promo (fixed RM 8 price)
+      if (perfumePromoDiscount > 0) {
+        const targetItem = paidItems.find(i => i.category === "15ML PERFUME EDP");
         if (targetItem) {
-          const newTotal = Math.max(0, targetItem.origTotal - buy3Free1Discount);
+          const newTotal = Math.max(0, targetItem.origTotal - perfumePromoDiscount);
           targetItem.origTotal = newTotal;
         }
       }
 
-      // --- Apply remaining discounts proportionally ---
+      // Apply remaining discounts proportionally
       if (otherDiscounts > 0 && originalSubtotal > 0) {
         const ratio = 1 - (otherDiscounts / originalSubtotal);
-        for (const item of itemsWithOrig) {
+        for (const item of paidItems) {
           item.origTotal = item.origTotal * ratio;
         }
       }
 
       // Aggregate into productMap
-      for (const item of itemsWithOrig) {
+      for (const item of paidItems) {
         const id = item.id;
         if (productMap.has(id)) {
           const existing = productMap.get(id);
@@ -5414,14 +5415,14 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
       }
     }
 
-    // Convert map to array and sort by quantity sold
+    // Convert to array and sort by quantity sold
     const productsArray = Array.from(productMap.values())
       .filter(p => p.quantity > 0)
       .sort((a, b) => b.quantity - a.quantity);
 
     return productsArray;
   } catch (err) {
-    console.error("fetchProductSalesReport error:", err);
+    console.error('fetchProductSalesReport error:', err);
     return [];
   }
 }
@@ -7035,193 +7036,128 @@ if (applyHistoryBtn) {
 
 async function openReportsModal() {
   closeSideMenu();
-  if (!currentEmployee) return;   // ✅ guard against null
+  if (!currentEmployee) return;
 
   const modal = document.getElementById('adminReportModal');
   if (!modal) return;
   modal.style.display = 'flex';
 
-  // Helper to hide payment rows for non‑admin (keeps refunds visible)
   function hidePaymentRowsForNonAdmin() {
     if (!currentEmployee || currentEmployee.isAdmin) return;
-    const allBreakdownRows = document.querySelectorAll('#adminReportModal .stat-item.breakdown');
-    allBreakdownRows.forEach(row => {
-      const labelSpan = row.querySelector('span:first-child');
-      if (labelSpan) {
-        const text = labelSpan.innerText.trim();
-        if (text.includes('Cash') || text.includes('Card') || text.includes('QR Pay') || text.includes('Alipay')) {
-          row.style.display = 'none';
-        } else {
-          row.style.display = 'flex';   // keep refunds & refunded bills visible
-        }
-      }
-    });
+    const paymentRows = document.querySelectorAll('#adminReportModal .stat-item.breakdown');
+    paymentRows.forEach(row => row.style.display = 'none');
   }
 
-  // --- DOM references ---
   const storeBreakdownDiv = document.getElementById('storeBreakdownContainer');
   const reportFiltersDiv = document.querySelector('#adminReportModal .report-filters');
   const productToggle = document.getElementById('toggleProductDetailsBtn');
   const nonAdminStatsDiv = document.getElementById('nonAdminReportStats');
   const nonAdminDateRangeDiv = document.getElementById('nonAdminDateRange');
 
-  // ========== 1. UI Toggle: Admin vs Non‑Admin ==========
+  // ✅ Moved todayStr to the top so it's available everywhere
+  const todayStr = getLocalDateString(new Date());
+
+  // ========== 1. UI Toggle ==========
   if (currentEmployee.isAdmin) {
-    // Admin view
     if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'block';
     if (reportFiltersDiv) reportFiltersDiv.style.display = 'flex';
     if (productToggle) productToggle.style.display = 'block';
     if (nonAdminStatsDiv) nonAdminStatsDiv.style.display = 'none';
     if (nonAdminDateRangeDiv) nonAdminDateRangeDiv.style.display = 'none';
 
-    // Ensure all stat items are visible
     const allStatItems = document.querySelectorAll('#adminReportModal .stat-item');
     allStatItems.forEach(item => item.style.display = 'flex');
 
-    // Stop any previous polling
-    if (window.paymentHideInterval) {
-      clearInterval(window.paymentHideInterval);
-      window.paymentHideInterval = null;
-    }
-  } 
-  else {
-    // Non‑admin view
-    if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
-    if (reportFiltersDiv) reportFiltersDiv.style.display = 'none';
-    const nonAdminCardsDiv = document.getElementById('nonAdminStatsCards');
-    if (nonAdminCardsDiv) nonAdminCardsDiv.style.display = 'block';
-    if (productToggle) productToggle.style.display = 'block';
-    if (nonAdminDateRangeDiv) nonAdminDateRangeDiv.style.display = 'block';
+    if (window.paymentHideInterval) clearInterval(window.paymentHideInterval);
+} else {
+  // ========== NON‑ADMIN VIEW ==========
+  if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
+  if (reportFiltersDiv) reportFiltersDiv.style.display = 'none';
+  const nonAdminCardsDiv = document.getElementById('nonAdminStatsCards');
+  if (nonAdminCardsDiv) nonAdminCardsDiv.style.display = 'block';
+  if (productToggle) productToggle.style.display = 'block';
+  if (nonAdminDateRangeDiv) nonAdminDateRangeDiv.style.display = 'block';
 
-    // Hide payment rows (Cash/Card/QR/Alipay) but keep refunds
+  hidePaymentRowsForNonAdmin();
+
+  const totalSalesStatItem = document.querySelector('#adminReportModal .stat-item:first-child');
+  if (totalSalesStatItem) {
+    const labelSpan = totalSalesStatItem.querySelector('span:first-child');
+    if (labelSpan) labelSpan.innerText = 'My Total Sales:';
+  }
+
+  const rangeSelect = document.getElementById('nonAdminDateRangeSelect');
+  const customDiv = document.getElementById('nonAdminCustomDateRange');
+  const fromDate = document.getElementById('nonAdminFromDate');
+  const toDate = document.getElementById('nonAdminToDate');
+  const applyBtn = document.getElementById('applyNonAdminDateBtn');
+
+  async function refreshNonAdmin() {
+    const range = rangeSelect.value;
+    const now = new Date();
+    let from, to;
+    if (range === 'today') {
+      const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      from = to = getUTCDateString(todayUTC);
+    } else if (range === 'week') {
+      const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      const day = todayUTC.getUTCDay();
+      const diff = day === 0 ? 6 : day - 1;
+      const start = new Date(todayUTC);
+      start.setUTCDate(todayUTC.getUTCDate() - diff);
+      from = getUTCDateString(start);
+      const end = new Date(start);
+      end.setUTCDate(start.getUTCDate() + 6);
+      to = getUTCDateString(end);
+    } else if (range === 'month') {
+      const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      from = getUTCDateString(start);
+      const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0));
+      to = getUTCDateString(end);
+    } else if (range === 'year') {
+      const start = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+      from = getUTCDateString(start);
+      const end = new Date(Date.UTC(now.getUTCFullYear(), 11, 31));
+      to = getUTCDateString(end);
+    } else if (range === 'custom') {
+      from = fromDate.value;
+      to = toDate.value;
+      if (!from || !to) return;
+    }
+    await updateNonAdminReport(from, to);
+    await updateNonAdminStatsCards(from, to);
     hidePaymentRowsForNonAdmin();
+  }
 
-    // Change "Total Sales" to "My Total Sales" for non‑admin
-    const totalSalesStatItem = document.querySelector('#adminReportModal .stat-item:first-child');
-    if (totalSalesStatItem) {
-      const labelSpan = totalSalesStatItem.querySelector('span:first-child');
-      if (labelSpan) labelSpan.innerText = 'My Total Sales:';
-    }
+  rangeSelect.addEventListener('change', () => {
+    const isCustom = rangeSelect.value === 'custom';
+    customDiv.style.display = isCustom ? 'flex' : 'none';
+    if (!isCustom) refreshNonAdmin();
+  });
+  if (applyBtn) applyBtn.addEventListener('click', refreshNonAdmin);
 
-    // --- Set up non‑admin date range controls ---
-    const rangeSelect = document.getElementById('nonAdminDateRangeSelect');
-    const customDiv = document.getElementById('nonAdminCustomDateRange');
-    const fromDate = document.getElementById('nonAdminFromDate');
-    const toDate = document.getElementById('nonAdminToDate');
-    const applyBtn = document.getElementById('applyNonAdminDateBtn');
-
-    // ✅ Populate Sales Person dropdown (show after login)
-    const salesPersonFilterDiv = document.getElementById('nonAdminSalesPersonFilter');
-    const salesPersonSelect = document.getElementById('nonAdminSalesPersonSelect');
-    if (salesPersonFilterDiv && salesPersonSelect) {
-      salesPersonFilterDiv.style.display = 'flex';
-      const employees = await fetchEmployees();
-      salesPersonSelect.innerHTML = '<option value="all">All Sales Persons</option>';
-      employees.forEach(emp => {
-        const option = document.createElement('option');
-        option.value = emp.id;
-        option.textContent = `${emp.name} (ID: ${emp.id})`;
-        salesPersonSelect.appendChild(option);
-      });
-      // Default to the currently selected sales person in the cart
-      const cartSalesPersonId = document.getElementById('soldBySelectCart')?.value;
-      if (cartSalesPersonId) salesPersonSelect.value = cartSalesPersonId;
-    }
-
-    function getDateRange() {
-      const range = rangeSelect.value;
-      const now = new Date();
-      let from = null, to = null;
-      if (range === 'today') {
-        from = to = getLocalDateString(now);
-      } else if (range === 'week') {
-        const start = new Date(now);
-        const dayOfWeek = now.getDay();
-        const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
-        start.setDate(now.getDate() - diffToMonday);
-        from = getLocalDateString(start);
-        const end = new Date(start);
-        end.setDate(start.getDate() + 6);
-        to = getLocalDateString(end);
-      } else if (range === 'month') {
-        const start = new Date(now.getFullYear(), now.getMonth(), 1);
-        from = getLocalDateString(start);
-        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        to = getLocalDateString(end);
-      } else if (range === 'year') {
-        const start = new Date(now.getFullYear(), 0, 1);
-        from = getLocalDateString(start);
-        const end = new Date(now.getFullYear(), 11, 31);
-        to = getLocalDateString(end);
-      } else if (range === 'custom') {
-        from = fromDate.value;
-        to = toDate.value;
-        if (!from || !to) return null;
-      }
-      return { from, to };
-    }
-
-    async function refreshNonAdminReport() {
-  if (!currentEmployee) return;
-  const range = getDateRange();
-  if (!range) return;
-  const selectedSalesPerson = salesPersonSelect ? salesPersonSelect.value : currentEmployee.id;
-  await updateNonAdminReport(range.from, range.to, selectedSalesPerson);
-  await updateNonAdminStatsCards(range.from, range.to, selectedSalesPerson);
+  // ✅ FIXED INITIAL LOAD – use UTC today
+  const now = new Date();
+  const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const todayStrUTC = getUTCDateString(todayUTC);
+  await updateNonAdminReport(todayStrUTC, todayStrUTC);
+  await updateNonAdminStatsCards(todayStrUTC, todayStrUTC);
   hidePaymentRowsForNonAdmin();
 }
-
-    // Event: show/hide custom range inputs
-    if (rangeSelect) {
-      rangeSelect.addEventListener('change', () => {
-        const isCustom = rangeSelect.value === 'custom';
-        if (customDiv) customDiv.style.display = isCustom ? 'flex' : 'none';
-        if (!isCustom) refreshNonAdminReport();
-      });
+  // ========== 2. Instant totals from cache (admin only) ==========
+  if (currentEmployee.isAdmin) {
+    if (preloadedReportCache && preloadedReportCache.from === todayStr) {
+      const totals = preloadedReportCache.totals;
+      document.getElementById('adminReportTotalSales').innerText = `RM ${totals.totalSales.toFixed(2)}`;
+      document.getElementById('adminReportCashTotal').innerText = `RM ${totals.cashTotal.toFixed(2)}`;
+      document.getElementById('adminReportCardTotal').innerText = `RM ${totals.cardTotal.toFixed(2)}`;
+      document.getElementById('adminReportQRTotal').innerText = `RM ${totals.otherTotal.toFixed(2)}`;
+      document.getElementById('adminReportAlipayTotal').innerText = `RM ${totals.alipayTotal.toFixed(2)}`;
+      document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(totals.refundTotal).toFixed(2)}`;
+      document.getElementById('adminReportRefundedBills').innerText = totals.refundedTransactionCount || 0;
+      document.getElementById('adminReportTransactionCount').innerText = totals.transactionCount || 0;
+      document.getElementById('adminReportTotalItems').innerText = totals.totalItems || 0;
     }
-    if (applyBtn) applyBtn.addEventListener('click', refreshNonAdminReport);
-    if (salesPersonSelect) {
-      salesPersonSelect.addEventListener('change', refreshNonAdminReport);
-    }
-
-    // Initial load: Today
-    const todayStr = getLocalDateString(new Date());
-    await updateNonAdminReport(todayStr, todayStr);
-    const initialSalesPerson = salesPersonSelect ? salesPersonSelect.value : currentEmployee.id;
-    await updateNonAdminStatsCards(todayStr, todayStr, initialSalesPerson);
-    hidePaymentRowsForNonAdmin();
-
-    // Polling as a safety net (optional)
-    if (window.paymentHideInterval) clearInterval(window.paymentHideInterval);
-    window.paymentHideInterval = setInterval(() => {
-      if (!currentEmployee || currentEmployee.isAdmin) return;
-      const modalEl = document.getElementById('adminReportModal');
-      if (modalEl && modalEl.style.display === 'flex') {
-        hidePaymentRowsForNonAdmin();
-        const firstStat = document.querySelector('#adminReportModal .stat-item:first-child span:first-child');
-        if (firstStat && firstStat.innerText !== 'My Total Sales:') {
-          firstStat.innerText = 'My Total Sales:';
-        }
-      } else if (window.paymentHideInterval) {
-        clearInterval(window.paymentHideInterval);
-        window.paymentHideInterval = null;
-      }
-    }, 500);
-  } // ✅ closes the if/else
-
-  // ========== 2. Instant totals from cache (if available) ==========
-  const todayStr = getLocalDateString(new Date());
-  if (preloadedReportCache && preloadedReportCache.from === todayStr) {
-    const totals = preloadedReportCache.totals;
-    document.getElementById('adminReportTotalSales').innerText = `RM ${totals.totalSales.toFixed(2)}`;
-    document.getElementById('adminReportCashTotal').innerText = `RM ${totals.cashTotal.toFixed(2)}`;
-    document.getElementById('adminReportCardTotal').innerText = `RM ${totals.cardTotal.toFixed(2)}`;
-    document.getElementById('adminReportQRTotal').innerText = `RM ${totals.otherTotal.toFixed(2)}`;
-    document.getElementById('adminReportAlipayTotal').innerText = `RM ${totals.alipayTotal.toFixed(2)}`;
-    document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(totals.refundTotal).toFixed(2)}`;
-    document.getElementById('adminReportRefundedBills').innerText = totals.refundedTransactionCount || 0;
-    document.getElementById('adminReportTransactionCount').innerText = totals.transactionCount || 0;
-    document.getElementById('adminReportTotalItems').innerText = totals.totalItems || 0;
   }
 
   // ========== 3. Instant store cards from cache (admin only) ==========
@@ -7231,7 +7167,6 @@ async function openReportsModal() {
     const from = getUTCDateString(todayUTC);
     const to = from;
     const stores = ['queens', 'sunshine', 'gurney_paragon'];
-
     let anyMissing = false;
     for (const storeName of stores) {
       const cached = await getCachedStoreReport(storeName, from, to);
@@ -7241,7 +7176,7 @@ async function openReportsModal() {
         anyMissing = true;
         const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
         if (card) {
-          card.querySelector('.store-total').innerHTML = '<span class="report-loading-spinner" style="width:16px;height:16px;"></span> Loading...';
+          card.querySelector('.store-total').innerHTML = '<span class="report-loading-spinner"></span> Loading...';
           card.querySelector('.store-cash').innerHTML = '💵 Loading...';
           card.querySelector('.store-card').innerHTML = '💳 Loading...';
           card.querySelector('.store-qr').innerHTML = '📱 Loading...';
@@ -7250,7 +7185,7 @@ async function openReportsModal() {
           card.querySelector('.store-refunded-bills').innerHTML = '📄 Loading...';
           card.querySelector('.store-transactions').innerHTML = 'Loading...';
           card.querySelector('.store-items-sold').innerHTML = 'Loading...';
-          card.querySelector('.employee-list').innerHTML = '<div class="report-loading-spinner" style="width:16px;height:16px;"></div>';
+          card.querySelector('.employee-list').innerHTML = '<div class="report-loading-spinner"></div>';
         }
       }
     }
@@ -7260,7 +7195,7 @@ async function openReportsModal() {
     }
   }
 
-  // ========== 4. Loading spinner (if no cache) ==========
+  // ========== 4. Loading spinner ==========
   let loadingMsg = document.getElementById('adminReportLoadingMsg');
   if (!loadingMsg) {
     loadingMsg = document.createElement('div');
@@ -7270,29 +7205,16 @@ async function openReportsModal() {
     loadingMsg.style.background = '#f8fafc';
     loadingMsg.style.borderRadius = '12px';
     loadingMsg.style.margin = '10px 0';
-    loadingMsg.style.display = 'flex';
-    loadingMsg.style.alignItems = 'center';
-    loadingMsg.style.justifyContent = 'center';
-    loadingMsg.style.gap = '12px';
-    loadingMsg.innerHTML = `
-      <div class="report-loading-spinner"></div>
-      <span style="font-size: 1rem; color: #334155;">Loading report data...</span>
-    `;
+    loadingMsg.innerHTML = '<div class="report-loading-spinner"></div><span>Loading report data...</span>';
     const reportStats = document.querySelector('#adminReportModal .report-stats');
     if (reportStats) reportStats.insertAdjacentElement('beforebegin', loadingMsg);
   }
+  loadingMsg.style.display = (preloadedReportCache && preloadedReportCache.from === todayStr) ? 'none' : 'flex';
 
-  if (preloadedReportCache && preloadedReportCache.from === todayStr) {
-    loadingMsg.style.display = 'none';
-  } else {
-    loadingMsg.style.display = 'flex';
-  }
-
-  // ========== 5. Refresh admin report in background ==========
+  // ========== 5. Background refresh ==========
   if (currentEmployee.isAdmin) {
     await updateAdminReport(false);
   } else {
-    // For non‑admin, just hide the loading spinner after a short delay
     setTimeout(() => {
       const msg = document.getElementById('adminReportLoadingMsg');
       if (msg) msg.style.display = 'none';
@@ -7331,10 +7253,9 @@ async function openReportsModal() {
     if (receiptsStore) receiptsStore.value = currentStore;
   }
 
-  // ========== 7. Populate store selects (for receipts modal) ==========
+  // ========== 7. Populate store selects ==========
   populateStoreSelects();
 
-  // Final: ensure any leftover loading message is hidden
   const finalLoadingMsg = document.getElementById('adminReportLoadingMsg');
   if (finalLoadingMsg) finalLoadingMsg.style.display = 'none';
 }
@@ -7646,6 +7567,23 @@ const sysRefund = parseFloat(document.getElementById('sysRefund').innerText.repl
 
   // ✅ Load collection history
   await loadCollectionHistory();
+}
+// Fetch aggregated sales per sales_person (by store and date)
+async function fetchEmployeeSalesAggregate(store, from, to) {
+  try {
+    let url = `${APPS_SCRIPT_URL}?action=getEmployeeSalesData&store=${store}`;
+    if (from) url += `&from=${encodeURIComponent(from)}`;
+    if (to) url += `&to=${encodeURIComponent(to)}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success) {
+      return { labels: result.labels || [], data: result.data || [] };
+    }
+    return null;
+  } catch (err) {
+    console.error('fetchEmployeeSalesAggregate error:', err);
+    return null;
+  }
 }
 async function updateAdminReportForDate(dateStr = null) {
   if (!currentEmployee) return;

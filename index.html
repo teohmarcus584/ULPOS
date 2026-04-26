@@ -4242,7 +4242,7 @@ async function updateNonAdminStatsCards(from, to) {
   // Fetch store total (all employees in this store)
   const storeReport = await fetchSalesReport(store, 'all', from, to, false, true);
   // Fetch employee total (only this employee)
-  const empReport = await fetchSalesReport(store, employeeId, from, to, false, true);
+   const empReport = await fetchSalesReport('all', employeeId, from, to, false, true);
 
   if (storeReport) {
     const storeTotalElem = document.getElementById('nonAdminStoreTotal');

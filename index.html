@@ -3546,7 +3546,10 @@ async function saveTelegramSettings() {
       const result = await response.json();
       if (result.success) {
   // Sort products alphabetically by name
-  const sortedProducts = result.products.sort((a, b) => a.name.localeCompare(b.name));
+  const sortedProducts = result.products.map(p => ({
+  ...p,
+  category: (p.category || "Uncategorized").trim()
+})).sort((a, b) => a.name.localeCompare(b.name));
   preloadedDataMap[store] = {
     products: sortedProducts,
     employees: result.employees
@@ -3628,7 +3631,7 @@ async function fetchProductsFromSheet(force = false) {
           name: p.name,
           price: parseFloat(p.price),
           stock: parseInt(p.stock) || 0,
-          category: p.category || "Uncategorized"
+         category: (p.category || "Uncategorized").trim()
         })).sort((a, b) => a.name.localeCompare(b.name));
 
         const newHash = computeProductsHash(products);
@@ -6616,9 +6619,11 @@ function renderProductGrid() {
   }
 
   let filtered = products.slice();
-  if (selectedCategory !== 'all') {
-    filtered = filtered.filter(p => p.category === selectedCategory);
-  }
+if (selectedCategory !== 'all') {
+  // Normalize both strings: trim and lowercase
+  const normSelected = selectedCategory.trim().toLowerCase();
+  filtered = filtered.filter(p => p.category.trim().toLowerCase() === normSelected);
+}
   if (searchTerm) {
     filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm));
   }
@@ -7831,11 +7836,11 @@ function updateStoreCashSummary() {
     const categories = [...new Set(products.map(p => p.category))].sort();
     categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
     categories.forEach(cat => {
-      const option = document.createElement('option');
-      option.value = cat;
-      option.textContent = cat;
-      categorySelect.appendChild(option);
-    });
+  const option = document.createElement('option');
+  option.value = cat;
+  option.textContent = cat;
+  categorySelect.appendChild(option);
+});
     if (previousSelected !== 'all' && categories.includes(previousSelected)) {
       categorySelect.value = previousSelected;
     } else {

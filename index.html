@@ -1635,7 +1635,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -3005,7 +3005,7 @@ async function reprintSelectedSettlement() {
   
   const printed = await printSettlementReport(store, date, totals);
   if (printed) {
-    await showAlertModal('Success', 'Settlement report reprinted.');
+    
     document.getElementById('reprintSettlementModal').style.display = 'none';
   } else {
     await showAlertModal('Error', 'Failed to print settlement. Check printer connection.');
@@ -6774,7 +6774,7 @@ async function connectPrinter() {
     isPrinterConnected = true;
     window.printerAPI = { isConnected: true, printReceipt: printReceipt, openDrawer: openCashDrawer, printPrizeVoucher: printPrizeVoucher };
     updatePrinterStatusUI();
-   
+   closePrinterModalFunc();
   } catch (err) {
     printerStatusModal.innerText = `❌ ${err.message}`;
     console.error(err);

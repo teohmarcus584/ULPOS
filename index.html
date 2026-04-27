@@ -1635,7 +1635,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -7866,6 +7866,10 @@ function updateStoreCashSummary() {
   document.getElementById('checkoutBtn')?.addEventListener('click', startCheckout);
   document.getElementById('claimPrizeBtn')?.addEventListener('click', showClaimPrizeModal);
   document.getElementById('specialPromoBtn')?.addEventListener('click', showSpecialPromoModal);
+  document.getElementById('addProductHeaderBtn')?.addEventListener('click', showAddProductModal);
+document.getElementById('confirmAddProductBtn')?.addEventListener('click', addNewProduct);
+document.getElementById('cancelAddProductBtn')?.addEventListener('click', closeAddProductModal);
+document.getElementById('closeAddProductModal')?.addEventListener('click', closeAddProductModal);
   document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
   document.getElementById('refreshProductsPanelBtn')?.addEventListener('click', () => {
     localStorage.removeItem(`products_${currentStore}`);

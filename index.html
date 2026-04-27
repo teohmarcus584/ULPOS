@@ -1679,6 +1679,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
       </div>
     </div>
     <div class="pos-header-right">
+	 <button id="addProductHeaderBtn" class="cart-header-btn" style="display: none;">➕ Add Product</button>
       <span class="cashier-info" id="employeeNameHeader"></span>
       <span id="barcodeStatus" class="cashier-info" style="background:#e8f5e9; color:#2c7a4b;">📷 Barcode ready</span>
       <button id="logoutHeaderBtn" class="logout-header-btn">🚪 Logout</button>
@@ -2107,13 +2108,36 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
     <div id="telegramStatus" style="margin-top: 12px; font-size: 0.9rem; color: #2c7a4b;"></div>
   </div>
 </div>
-
+<!-- Add Product Modal (for Inventory Mode) -->
+<div id="addProductModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 500px;">
+    <span class="close-modal" id="closeAddProductModal">×</span>
+    <div class="modal-title">➕ Add New Product</div>
+    <div class="filter-group">
+      <label>Product Name</label>
+      <input type="text" id="newProductName" class="modal-input" placeholder="e.g., Luxury Perfume">
+    </div>
+    <div class="filter-group">
+      <label>Selling Price (RM)</label>
+      <input type="number" id="newProductPrice" class="modal-input" step="0.01" min="0" placeholder="0.00">
+    </div>
+    <div class="filter-group">
+      <label>Category</label>
+      <input type="text" id="newProductCategory" class="modal-input" placeholder="e.g., Perfume, Lotion, etc.">
+    </div>
+    <div id="addProductError" style="color:#ef4444; margin-top: 12px; display: none;"></div>
+    <div class="modal-buttons">
+      <button id="confirmAddProductBtn" class="modal-btn modal-btn-primary">➕ Add Product</button>
+      <button id="cancelAddProductBtn" class="modal-btn modal-btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
 <div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"></div><div class="loading-text" id="loadingMessage">Processing...</div></div>
 
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxEpeOAl41EjAxVnyEab3tJKOJFw4H9kYb5VfhiuFrJgmDEeLX54ILXOp0zh0ER8uJOeA/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNUym8kf53mcci0Yvovlt9XEV5pWq2kVlvJibjxkyecT0tPH8bmiKeVkX5P-1xKhg7AA/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -3442,31 +3466,99 @@ async function saveTelegramSettings() {
  function toggleInventoryMode() {
   inventoryMode = !inventoryMode;
   const lowStockBtn = document.getElementById('lowStockToggleBtn');
+  const addProductBtn = document.getElementById('addProductHeaderBtn');   // ✅ changed ID
+
   if (inventoryMode) {
     cartNormalContent.style.display = 'none';
     stockHistoryContainerDiv.style.display = 'flex';
     cartTitleElement.innerText = '📦 Inventory Mode';
-    if (updateStockTimeout) clearTimeout(updateStockTimeout);
-    loadStockHistoryFromSheet();
-    // Show low stock button
+    if (addProductBtn) addProductBtn.style.display = 'inline-flex';      // show button
     if (lowStockBtn) lowStockBtn.style.display = 'inline-flex';
+    loadStockHistoryFromSheet();
   } else {
     cartNormalContent.style.display = 'block';
     stockHistoryContainerDiv.style.display = 'none';
     cartTitleElement.innerText = '🧾 Current Sale';
-    // Hide low stock button
+    if (addProductBtn) addProductBtn.style.display = 'none';             // hide button
     if (lowStockBtn) lowStockBtn.style.display = 'none';
-    // Optionally reset the low stock filter when leaving inventory mode
     if (lowStockFilterActive) {
       lowStockFilterActive = false;
       if (lowStockBtn) lowStockBtn.classList.remove('active');
       renderProductGrid();
     }
   }
-  // Refresh category highlighting based on new inventory mode
   refreshCategoryHighlighting();
   renderProductGrid();
   if (typeof updateHandleIcon === 'function') updateHandleIcon();
+}
+// Show Add Product modal
+function showAddProductModal() {
+  document.getElementById('newProductName').value = '';
+  document.getElementById('newProductPrice').value = '';
+  document.getElementById('newProductCategory').value = '';
+  document.getElementById('addProductError').style.display = 'none';
+  document.getElementById('addProductModal').style.display = 'flex';
+}
+
+// Close Add Product modal
+function closeAddProductModal() {
+  document.getElementById('addProductModal').style.display = 'none';
+}
+
+// Add new product to Google Sheet
+async function addNewProduct() {
+  const name = document.getElementById('newProductName').value.trim();
+  const price = parseFloat(document.getElementById('newProductPrice').value);
+  const category = document.getElementById('newProductCategory').value.trim();
+
+  const errorDiv = document.getElementById('addProductError');
+  if (!name) {
+    errorDiv.innerText = 'Product name is required.';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  if (isNaN(price) || price <= 0) {
+    errorDiv.innerText = 'Please enter a valid selling price (greater than 0).';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  if (!category) {
+    errorDiv.innerText = 'Category is required.';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  showLoading('Adding product...');
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', 'addProduct');
+    formData.append('name', name);
+    formData.append('price', price);
+    formData.append('category', category);
+    const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+    const result = await response.json();
+    if (result.success) {
+      await showAlertModal('Success', `Product "${name}" added successfully.`);
+      closeAddProductModal();
+      // Refresh products and categories
+      await fetchProductsFromSheet(true);
+      // If inventory mode is active, re-render the product grid (shows new product)
+      if (inventoryMode) {
+        renderProductGrid();
+        refreshCategoryHighlighting();
+      } else {
+        renderProductGrid();
+      }
+    } else {
+      throw new Error(result.error || 'Unknown error');
+    }
+  } catch (err) {
+    console.error(err);
+    errorDiv.innerText = 'Failed to add product: ' + err.message;
+    errorDiv.style.display = 'block';
+  } finally {
+    hideLoading();
+  }
 }
   // ==================== CATEGORY HIGHLIGHTING FOR LOW STOCK (Inventory mode only) ====================
   function refreshCategoryHighlighting() {
@@ -8201,4 +8293,4 @@ document.getElementById('checkReceiptBtn').addEventListener('click', checkReceip
 
 </script>
 </body>
-</html>
+</html> 

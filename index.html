@@ -4664,13 +4664,27 @@ function openLuckyDraw(transactionId, customerId) {
 }
 
 async function reprintReceipt(receipt) {
+  // Check printer connection – if not connected, try to connect automatically
+  if (!isPrinterConnected) {
+    showLoading('Printer not connected. Opening Bluetooth selection...');
+    try {
+      await connectPrinter();
+      hideLoading();
+    } catch (err) {
+      hideLoading();
+      await showAlertModal('Connection Failed', 'Could not connect to printer. Please try again.');
+      return;
+    }
+  }
+
   if (!window.printerAPI || !window.printerAPI.printReceipt) {
     await showAlertModal('Printer Error', 'Printer not connected or print function unavailable.');
     return;
   }
   const success = await window.printerAPI.printReceipt(receipt, 1);
   if (success) {
-    await showAlertModal('Reprint', 'Receipt reprinted successfully.');
+    // Silent success – no alert
+    // await showAlertModal('Reprint', 'Receipt reprinted successfully.');
   } else {
     await showAlertModal('Error', 'Failed to reprint. Check printer connection.');
   }
@@ -5000,20 +5014,31 @@ function getUTCDateString(date) {
   return `${year}-${month}-${day}`;
 }
 async function reprintLuckyDraw(txId) {
+  // Check printer connection – if not connected, try to connect automatically
+  if (!isPrinterConnected) {
+    showLoading('Printer not connected. Opening Bluetooth selection...');
+    try {
+      await connectPrinter();
+      hideLoading();
+    } catch (err) {
+      hideLoading();
+      await showAlertModal('Connection Failed', 'Could not connect to printer. Please try again.');
+      return;
+    }
+  }
+
   try {
     const url = `${APPS_SCRIPT_URL}?action=get&receipt=${encodeURIComponent(txId)}`;
     const response = await fetch(url);
     const result = await response.json();
     
     if (!result.success) {
-      // No lucky draw record found – open the spin page
       await showAlertModal('No Lucky Draw Record', 'This receipt has not been entered into the lucky draw. Opening the lucky draw page to spin now.');
       openLuckyDraw(txId, null);
       return;
     }
     
     const transaction = result.data;
-    // Check if the lucky draw has already been claimed
     if (transaction.claimed === true) {
       await showAlertModal('Already Claimed', 'This lucky draw prize has already been claimed and cannot be reprinted.');
       return;
@@ -5027,7 +5052,8 @@ async function reprintLuckyDraw(txId) {
     
     const success = await window.printerAPI.printPrizeVoucher(prizeLabel, txId);
     if (success) {
-      await showAlertModal('Reprinted', 'Lucky draw voucher reprinted successfully.');
+      // Silent success – no alert
+      // await showAlertModal('Reprinted', 'Lucky draw voucher reprinted successfully.');
     } else {
       await showAlertModal('Print Failed', 'Could not print voucher. Check printer connection.');
     }

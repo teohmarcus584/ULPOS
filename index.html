@@ -6562,10 +6562,22 @@ paperSizeSelectModal.value = savedSize;
 
 window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer: openCashDrawer, printPrizeVoucher: printPrizeVoucher };
   // ==================== RENDER PRODUCT GRID ====================
-function renderProductGrid() {
+async function renderProductGrid() {
+  // ========== SAFETY CHECK: force fresh fetch if products empty ==========
+  if (!products.length) {
+    console.warn('Products array empty – fetching fresh data...');
+    await fetchProductsFromSheet(true);
+    if (!products.length) {
+      productGridEl.innerHTML = '<div style="text-align:center; padding:20px;">⚠️ Failed to load products. Please refresh.</div>';
+      productGridEl.className = 'product-grid';
+      return;
+    }
+  }
+
   const searchTerm = searchInput.value.toLowerCase();
   const selectedCategory = categorySelect.value;
 
+  // ========== CATEGORY CARDS VIEW (when "all" selected and NOT inventory mode) ==========
   if (selectedCategory === 'all' && !inventoryMode) {
     const categories = [...new Set(products.map(p => p.category))];
     let filteredCategories = categories;
@@ -6584,64 +6596,66 @@ function renderProductGrid() {
 
     let html = '';
     filteredCategories.forEach(cat => {
-  const productCount = products.filter(p => p.category === cat).length;
-  const imgUrl = getCategoryImage(cat);
-  html += `
-    <div class="category-card" data-category="${escapeHtml(cat)}">
-      <div class="category-card-image">
-        <img src="${imgUrl}" alt="${escapeHtml(cat)}" onerror="this.src='https://via.placeholder.com/150?text=📦'">
-      </div>
-      <div class="category-card-name">${escapeHtml(cat)}</div>
-      <div class="category-card-count">${productCount} products</div>
-    </div>
-  `;
-});
+      const productCount = products.filter(p => p.category === cat).length;
+      const imgUrl = getCategoryImage(cat);
+      html += `
+        <div class="category-card" data-category="${escapeHtml(cat)}">
+          <div class="category-card-image">
+            <img src="${imgUrl}" alt="${escapeHtml(cat)}" onerror="this.src='https://via.placeholder.com/150?text=📦'">
+          </div>
+          <div class="category-card-name">${escapeHtml(cat)}</div>
+          <div class="category-card-count">${productCount} products</div>
+        </div>
+      `;
+    });
 
     productGridEl.innerHTML = html;
     productGridEl.className = 'product-grid';
 
+    // ========== IMPROVED CATEGORY CARD CLICK HANDLER ==========
     document.querySelectorAll('.category-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const category = card.dataset.category;
-        categorySelect.value = category;
-        renderProductGrid();
-      });
+      // Remove old listener if any (avoid duplicates)
+      if (card._clickHandler) card.removeEventListener('click', card._clickHandler);
+      const handler = () => {
+        const category = card.dataset.category.trim();
+        if (categorySelect.value !== category) {
+          categorySelect.value = category;
+        }
+        // Clear search bar to show full category list
+        if (searchInput) searchInput.value = '';
+        renderProductGrid(); // re‑render in product list mode
+      };
+      card.addEventListener('click', handler);
+      card._clickHandler = handler;
     });
 
+    // Show/hide back button
     const backBtn = document.getElementById('backToCategoriesBtn');
     if (backBtn) backBtn.style.display = 'none';
     return;
   }
 
+  // ========== PRODUCT LIST / GRID VIEW (when a specific category is selected OR inventory mode) ==========
   const backBtn = document.getElementById('backToCategoriesBtn');
   if (backBtn) {
     backBtn.style.display = (selectedCategory !== 'all' && !inventoryMode) ? 'inline-flex' : 'none';
   }
 
+  // Filter products by category, search, low stock
   let filtered = products.slice();
-if (selectedCategory !== 'all') {
-  // Normalize both strings: trim and lowercase
-  const normSelected = selectedCategory.trim().toLowerCase();
-  filtered = filtered.filter(p => p.category.trim().toLowerCase() === normSelected);
-}
+  if (selectedCategory !== 'all') {
+    // ========== CONSOLE LOGS TO DEBUG CATEGORY MISMATCH ==========
+    const normSelected = selectedCategory.trim().toLowerCase();
+    console.log('Filtering by category:', normSelected);
+    console.log('Available categories:', products.map(p => p.category.trim().toLowerCase()));
+    filtered = filtered.filter(p => p.category.trim().toLowerCase() === normSelected);
+  }
+
   if (searchTerm) {
     filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm));
   }
   if (lowStockFilterActive) {
     filtered = filtered.filter(p => p.stock < LOW_STOCK_THRESHOLD);
-  }
-
-  if (products.length === 0) {
-    productGridEl.innerHTML = `
-      <div style="text-align:center; padding:20px;">
-        ⏳ Loading products...<br>
-        <button id="retryLoadProductsBtn" style="margin-top:10px; padding:8px 16px; border-radius:40px; background:#3b82f6; color:white; border:none; cursor:pointer;">Retry</button>
-      </div>
-    `;
-    const retryBtn = document.getElementById('retryLoadProductsBtn');
-    if (retryBtn) retryBtn.addEventListener('click', async () => await fetchProductsFromSheet(true));
-    productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
-    return;
   }
 
   if (filtered.length === 0) {
@@ -6650,85 +6664,88 @@ if (selectedCategory !== 'all') {
     return;
   }
 
-let html = '';
-filtered.forEach(prod => {
-  const isLowStock = prod.stock < LOW_STOCK_THRESHOLD;
-  const lowStockClass = (inventoryMode && isLowStock) ? 'low-stock-card' : '';
+  // Render products according to viewMode (grid/list) and inventory mode
+  let html = '';
+  filtered.forEach(prod => {
+    const isLowStock = prod.stock < LOW_STOCK_THRESHOLD;
+    const lowStockClass = (inventoryMode && isLowStock) ? 'low-stock-card' : '';
 
-  if (inventoryMode) {
-    html += `<div class="product-card ${lowStockClass}">
-      <div class="product-name">${escapeHtml(prod.name)}</div>
-      <div class="product-category">${escapeHtml(prod.category)}</div>
-      <div class="product-price">RM ${prod.price.toFixed(2)}</div>
-      <div class="inventory-controls">
-        <button class="inventory-btn dec-stock" data-id="${prod.id}" data-current="${prod.stock}">−</button>
-        <span class="stock-display" data-id="${prod.id}">${prod.stock}</span>
-        <button class="inventory-btn inc-stock" data-id="${prod.id}" data-current="${prod.stock}">+</button>
-      </div>
-    </div>`;
-  } else {
-    const stockStatus = `📦 Stock: ${prod.stock}`;
-    html += `<div class="product-card ${lowStockClass}" data-id="${prod.id}">
-      <div class="product-name">${escapeHtml(prod.name)}</div>
-      <div class="product-category">${escapeHtml(prod.category)}</div>
-      <div class="product-price">RM ${prod.price.toFixed(2)}</div>
-      <div class="product-stock">${stockStatus}</div>
-    </div>`;
-  }
-});
-
-productGridEl.innerHTML = html;
-productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
-
-if (inventoryMode) {
-  document.querySelectorAll('.dec-stock').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const id = btn.dataset.id;
-      const product = products.find(p => p.id == id);
-      if (product) {
-        const oldStock = product.stock;
-        const newStock = product.stock - 1;
-        product.stock = newStock;
-        const displaySpan = document.querySelector(`.stock-display[data-id="${id}"]`);
-        if (displaySpan) displaySpan.innerText = newStock;
-        scheduleStockUpdate(id, newStock);
-        logStockChange(product.id, product.name, product.category, oldStock, newStock, -1);
-        checkAndNotifyOutOfStock(product.id, product.name, newStock);
-        refreshCategoryHighlighting();
-      }
-      e.stopPropagation();
-    });
-  });
-
-  document.querySelectorAll('.inc-stock').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const id = btn.dataset.id;
-      const product = products.find(p => p.id == id);
-      if (product) {
-        const oldStock = product.stock;
-        const newStock = product.stock + 1;
-        product.stock = newStock;
-        const displaySpan = document.querySelector(`.stock-display[data-id="${id}"]`);
-        if (displaySpan) displaySpan.innerText = newStock;
-        scheduleStockUpdate(id, newStock);
-        logStockChange(product.id, product.name, product.category, oldStock, newStock, 1);
-        checkAndNotifyOutOfStock(product.id, product.name, newStock);
-        refreshCategoryHighlighting();
-      }
-      e.stopPropagation();
-    });
-  });
-} else {
-  document.querySelectorAll('.product-card').forEach(card => {
-    const productId = card.dataset.id;
-    const product = products.find(p => p.id == productId);
-    if (product) {
-      card.addEventListener('click', (e) => {
-        addToCart(product);
-      });
+    if (inventoryMode) {
+      html += `<div class="product-card ${lowStockClass}">
+        <div class="product-name">${escapeHtml(prod.name)}</div>
+        <div class="product-category">${escapeHtml(prod.category)}</div>
+        <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+        <div class="inventory-controls">
+          <button class="inventory-btn dec-stock" data-id="${prod.id}" data-current="${prod.stock}">−</button>
+          <span class="stock-display" data-id="${prod.id}">${prod.stock}</span>
+          <button class="inventory-btn inc-stock" data-id="${prod.id}" data-current="${prod.stock}">+</button>
+        </div>
+      </div>`;
+    } else {
+      const stockStatus = `📦 Stock: ${prod.stock}`;
+      html += `<div class="product-card ${lowStockClass}" data-id="${prod.id}">
+        <div class="product-name">${escapeHtml(prod.name)}</div>
+        <div class="product-category">${escapeHtml(prod.category)}</div>
+        <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+        <div class="product-stock">${stockStatus}</div>
+      </div>`;
     }
   });
-}}
+
+  productGridEl.innerHTML = html;
+  productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
+
+  // Attach inventory buttons if in inventory mode
+  if (inventoryMode) {
+    document.querySelectorAll('.dec-stock').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = btn.dataset.id;
+        const product = products.find(p => p.id == id);
+        if (product) {
+          const oldStock = product.stock;
+          const newStock = product.stock - 1;
+          product.stock = newStock;
+          const displaySpan = document.querySelector(`.stock-display[data-id="${id}"]`);
+          if (displaySpan) displaySpan.innerText = newStock;
+          scheduleStockUpdate(id, newStock);
+          logStockChange(product.id, product.name, product.category, oldStock, newStock, -1);
+          checkAndNotifyOutOfStock(product.id, product.name, newStock);
+          refreshCategoryHighlighting();
+        }
+        e.stopPropagation();
+      });
+    });
+    document.querySelectorAll('.inc-stock').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = btn.dataset.id;
+        const product = products.find(p => p.id == id);
+        if (product) {
+          const oldStock = product.stock;
+          const newStock = product.stock + 1;
+          product.stock = newStock;
+          const displaySpan = document.querySelector(`.stock-display[data-id="${id}"]`);
+          if (displaySpan) displaySpan.innerText = newStock;
+          scheduleStockUpdate(id, newStock);
+          logStockChange(product.id, product.name, product.category, oldStock, newStock, 1);
+          checkAndNotifyOutOfStock(product.id, product.name, newStock);
+          refreshCategoryHighlighting();
+        }
+        e.stopPropagation();
+      });
+    });
+  } else {
+    // Normal selling mode: add to cart on click
+    document.querySelectorAll('.product-card').forEach(card => {
+      const productId = card.dataset.id;
+      const product = products.find(p => p.id == productId);
+      if (product) {
+        card.addEventListener('click', (e) => {
+          addToCart(product);
+        });
+      }
+    });
+  }
+}
   // ==================== VIEW TOGGLE ====================
   function setViewMode(mode) {
     viewMode = mode;

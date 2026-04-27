@@ -1635,7 +1635,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2122,9 +2122,14 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
       <input type="number" id="newProductPrice" class="modal-input" step="0.01" min="0" placeholder="0.00">
     </div>
     <div class="filter-group">
-      <label>Category</label>
-      <input type="text" id="newProductCategory" class="modal-input" placeholder="e.g., Perfume, Lotion, etc.">
-    </div>
+  <label>Category</label>
+  <select id="newProductCategorySelect" class="modal-input">
+    <option value="">-- Select or create category --</option>
+  </select>
+  <div id="newCategoryInputGroup" style="display: none; margin-top: 8px;">
+    <input type="text" id="newProductCategoryText" class="modal-input" placeholder="Enter new category name">
+  </div>
+</div>
     <div id="addProductError" style="color:#ef4444; margin-top: 12px; display: none;"></div>
     <div class="modal-buttons">
       <button id="confirmAddProductBtn" class="modal-btn modal-btn-primary">➕ Add Product</button>
@@ -2520,7 +2525,36 @@ function resetClaimBarcodeBuffer() {
     claimBarcodeTimer = null;
   }
 }
-
+function toggleNewCategoryInput() {
+  const select = document.getElementById('newProductCategorySelect');
+  const inputGroup = document.getElementById('newCategoryInputGroup');
+  if (select.value === "__NEW__") {
+    inputGroup.style.display = 'block';
+  } else {
+    inputGroup.style.display = 'none';
+    document.getElementById('newProductCategoryText').value = '';
+  }
+}
+function populateCategorySelect() {
+  const select = document.getElementById('newProductCategorySelect');
+  if (!select) return;
+  
+  // Get unique categories from products
+  const categories = [...new Set(products.map(p => p.category))].sort();
+  
+  select.innerHTML = '<option value="">-- Select or create category --</option>';
+  categories.forEach(cat => {
+    const option = document.createElement('option');
+    option.value = cat;
+    option.textContent = cat;
+    select.appendChild(option);
+  });
+  // Add "New Category" option at the end
+  const newOption = document.createElement('option');
+  newOption.value = "__NEW__";
+  newOption.textContent = "➕ New Category";
+  select.appendChild(newOption);
+}
 function processClaimBarcode() {
   const code = claimBarcodeBuffer.trim();
   if (code === '') return;
@@ -3491,12 +3525,19 @@ async function saveTelegramSettings() {
   renderProductGrid();
   if (typeof updateHandleIcon === 'function') updateHandleIcon();
 }
-// Show Add Product modal
 function showAddProductModal() {
   document.getElementById('newProductName').value = '';
   document.getElementById('newProductPrice').value = '';
-  document.getElementById('newProductCategory').value = '';
+  document.getElementById('newProductCategoryText').value = '';
   document.getElementById('addProductError').style.display = 'none';
+  
+  // Populate category dropdown
+  populateCategorySelect();
+  
+  // Ensure the new-category input is hidden initially
+  document.getElementById('newCategoryInputGroup').style.display = 'none';
+  document.getElementById('newProductCategorySelect').value = '';
+  
   document.getElementById('addProductModal').style.display = 'flex';
 }
 
@@ -3509,9 +3550,26 @@ function closeAddProductModal() {
 async function addNewProduct() {
   const name = document.getElementById('newProductName').value.trim();
   const price = parseFloat(document.getElementById('newProductPrice').value);
-  const category = document.getElementById('newProductCategory').value.trim();
-
+  const select = document.getElementById('newProductCategorySelect');
+  let category = select.value;
   const errorDiv = document.getElementById('addProductError');
+  
+  // If "New Category" is selected, use the text input value
+  if (category === "__NEW__") {
+    const newCat = document.getElementById('newProductCategoryText').value.trim();
+    if (!newCat) {
+      errorDiv.innerText = 'Please enter a new category name.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+    category = newCat;
+  } else if (!category) {
+    errorDiv.innerText = 'Please select or create a category.';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  
+  // Validate name, price (same as before)
   if (!name) {
     errorDiv.innerText = 'Product name is required.';
     errorDiv.style.display = 'block';
@@ -3522,12 +3580,8 @@ async function addNewProduct() {
     errorDiv.style.display = 'block';
     return;
   }
-  if (!category) {
-    errorDiv.innerText = 'Category is required.';
-    errorDiv.style.display = 'block';
-    return;
-  }
-
+  
+  // Rest of the function unchanged...
   showLoading('Adding product...');
   try {
     const formData = new URLSearchParams();
@@ -3540,9 +3594,7 @@ async function addNewProduct() {
     if (result.success) {
       await showAlertModal('Success', `Product "${name}" added successfully.`);
       closeAddProductModal();
-      // Refresh products and categories
       await fetchProductsFromSheet(true);
-      // If inventory mode is active, re-render the product grid (shows new product)
       if (inventoryMode) {
         renderProductGrid();
         refreshCategoryHighlighting();
@@ -7870,6 +7922,8 @@ function updateStoreCashSummary() {
 document.getElementById('confirmAddProductBtn')?.addEventListener('click', addNewProduct);
 document.getElementById('cancelAddProductBtn')?.addEventListener('click', closeAddProductModal);
 document.getElementById('closeAddProductModal')?.addEventListener('click', closeAddProductModal);
+
+document.getElementById('newProductCategorySelect')?.addEventListener('change', toggleNewCategoryInput);
   document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
   document.getElementById('refreshProductsPanelBtn')?.addEventListener('click', () => {
     localStorage.removeItem(`products_${currentStore}`);

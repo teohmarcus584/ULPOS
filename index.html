@@ -1635,7 +1635,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2983,13 +2983,12 @@ async function reprintSelectedSettlement() {
   const store = currentStore || initialStore;
   const date = settlementData.date;
   
-  // Build totals object required by printSettlementReport
   const totals = {
     cashSystem: settlementData.cash_system || 0,
     cardSystem: settlementData.card_system || 0,
     qrSystem: settlementData.qr_system || 0,
     alipaySystem: settlementData.alipay_system || 0,
-    refundSystem: settlementData.refund_system || 0,  // you may need to add this field in backend
+    refundSystem: settlementData.refund_system || 0,
     cashActual: settlementData.cash_actual,
     cardActual: settlementData.card_actual,
     qrActual: settlementData.qr_actual,
@@ -2997,15 +2996,24 @@ async function reprintSelectedSettlement() {
     pettyCash: settlementData.petty_cash_float
   };
   
-  // If refund_system not stored, we can compute it from system totals (optional)
-  if (!totals.refundSystem) {
-    // Possibly fetch from another source or assume 0
-    totals.refundSystem = 0;
+  if (!totals.refundSystem) totals.refundSystem = 0;
+  
+  // Check printer connection – if not connected, try to connect automatically
+  if (!isPrinterConnected) {
+    showLoading('Printer not connected. Opening Bluetooth selection...');
+    try {
+      await connectPrinter();
+      hideLoading();
+    } catch (err) {
+      hideLoading();
+      await showAlertModal('Connection Failed', 'Could not connect to printer. Please try again.');
+      return;
+    }
   }
   
+  // Now print the settlement report
   const printed = await printSettlementReport(store, date, totals);
   if (printed) {
-    
     document.getElementById('reprintSettlementModal').style.display = 'none';
   } else {
     await showAlertModal('Error', 'Failed to print settlement. Check printer connection.');
@@ -6752,35 +6760,39 @@ async function printPrizeVoucher(prizeLabel, receiptNumber, spinDate = new Date(
 }
 
 async function connectPrinter() {
-  try {
-    connectBtnModal.disabled = true;
-    printerStatusModal.innerText = '🔍 Scanning...';
-    const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] });
-    gattServer = await device.gatt.connect();
-    const services = await gattServer.getPrimaryServices();
-    let foundChar = null;
-    for (const service of services) {
-      const chars = await service.getCharacteristics();
-      for (const char of chars) {
-        if (char.properties.write || char.properties.writeWithoutResponse) {
-          foundChar = char;
-          break;
+  return new Promise(async (resolve, reject) => {
+    try {
+      connectBtnModal.disabled = true;
+      printerStatusModal.innerText = '🔍 Scanning...';
+      const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] });
+      gattServer = await device.gatt.connect();
+      const services = await gattServer.getPrimaryServices();
+      let foundChar = null;
+      for (const service of services) {
+        const chars = await service.getCharacteristics();
+        for (const char of chars) {
+          if (char.properties.write || char.properties.writeWithoutResponse) {
+            foundChar = char;
+            break;
+          }
         }
+        if (foundChar) break;
       }
-      if (foundChar) break;
+      if (!foundChar) throw new Error('No writable characteristic');
+      printerCharacteristic = foundChar;
+      isPrinterConnected = true;
+      window.printerAPI = { isConnected: true, printReceipt: printReceipt, openDrawer: openCashDrawer, printPrizeVoucher: printPrizeVoucher };
+      updatePrinterStatusUI();
+      closePrinterModalFunc(); // close the printer settings modal automatically
+      resolve(true);
+    } catch (err) {
+      printerStatusModal.innerText = `❌ ${err.message}`;
+      console.error(err);
+      reject(err);
+    } finally {
+      connectBtnModal.disabled = false;
     }
-    if (!foundChar) throw new Error('No writable characteristic');
-    printerCharacteristic = foundChar;
-    isPrinterConnected = true;
-    window.printerAPI = { isConnected: true, printReceipt: printReceipt, openDrawer: openCashDrawer, printPrizeVoucher: printPrizeVoucher };
-    updatePrinterStatusUI();
-   closePrinterModalFunc();
-  } catch (err) {
-    printerStatusModal.innerText = `❌ ${err.message}`;
-    console.error(err);
-  } finally {
-    connectBtnModal.disabled = false;
-  }
+  });
 }
 
 function disconnectPrinter() {
@@ -7726,8 +7738,9 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
   document.getElementById('recordSettlementBtn').style.display = 'block';
 });
 // Record Settlement button
+// Record Settlement button
 document.getElementById('recordSettlementBtn')?.addEventListener('click', async () => {
-showLoading('Recording settlement...');
+  showLoading('Recording settlement...');
   const store = document.getElementById('settlementStoreSelect').value;
   const pettyCash = parseFloat(document.getElementById('pettyCashFloat').value) || 0;
   const actualCash = parseFloat(document.getElementById('actualCash').value);
@@ -7739,10 +7752,9 @@ showLoading('Recording settlement...');
   const sysCard = parseFloat(document.getElementById('sysCard').innerText.replace('RM ', '')) || 0;
   const sysQR = parseFloat(document.getElementById('sysQR').innerText.replace('RM ', '')) || 0;
   const sysAlipay = parseFloat(document.getElementById('sysAlipay').innerText.replace('RM ', '')) || 0;
-const sysRefund = parseFloat(document.getElementById('sysRefund').innerText.replace('RM ', '')) || 0;
+  const sysRefund = parseFloat(document.getElementById('sysRefund').innerText.replace('RM ', '')) || 0;
   const todayStr = getLocalDateString(new Date());
 
-  
   try {
     const formData = new URLSearchParams();
     formData.append('action', 'recordSettlement');
@@ -7766,13 +7778,28 @@ const sysRefund = parseFloat(document.getElementById('sysRefund').innerText.repl
     if (result.success) {
       await showAlertModal('Settlement Recorded', `Settlement for ${store} on ${todayStr} has been saved.`);
 
-      // ✅ Print settlement report automatically
+      // ✅ Check printer connection before printing
+      if (!isPrinterConnected) {
+        showLoading('Printer not connected. Opening Bluetooth selection...');
+        try {
+          await connectPrinter();
+          hideLoading();
+        } catch (err) {
+          hideLoading();
+          await showAlertModal('Printer Connection Failed', 'Could not connect to printer. Settlement recorded but report not printed.');
+          document.getElementById('settlementModal').style.display = 'none';
+          await refreshSettlementTotals(store);
+          return;
+        }
+      }
+
+      // Print settlement report
       const totals = {
         cashSystem: sysCash,
         cardSystem: sysCard,
         qrSystem: sysQR,
         alipaySystem: sysAlipay,
-        refundSystem: sysRefund,   // ❌ ERROR: sysRefund is not defined!
+        refundSystem: sysRefund,
         cashActual: actualCash,
         cardActual: actualCard,
         qrActual: actualQR,

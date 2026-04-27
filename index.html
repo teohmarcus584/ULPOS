@@ -1994,7 +1994,24 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
     <div class="modal-buttons"><button id="closeAdminReportBtn" class="modal-btn modal-btn-secondary">Close</button></div>
   </div>
 </div>
-
+<!-- Modal to select a past settlement for reprinting -->
+<div id="reprintSettlementModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 500px;">
+    <span class="close-modal" id="closeReprintModal">×</span>
+    <div class="modal-title">📋 Select Settlement to Reprint</div>
+    <div class="filter-group">
+      <label>Settlement Date</label>
+      <select id="settlementDateSelect" class="modal-input">
+        <option value="">Loading settlements...</option>
+      </select>
+    </div>
+    <div id="reprintSettlementError" style="color:#ef4444; margin:12px 0; display:none;"></div>
+    <div class="modal-buttons">
+      <button id="confirmReprintSettlementBtn" class="modal-btn modal-btn-primary">🖨️ Reprint</button>
+      <button id="cancelReprintSettlementBtn" class="modal-btn modal-btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
 <div id="settlementModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 500px;">
     <span class="close-modal" id="closeSettlementModal">×</span>
@@ -2007,7 +2024,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
     <div class="filter-group"><label>QR Settlement (Actual)</label><input type="number" id="actualQR" class="modal-input" placeholder="Enter actual QR settlement" step="0.01"></div>
     <div class="filter-group"><label>Alipay Settlement (Actual)</label><input type="number" id="actualAlipay" class="modal-input" placeholder="Enter actual Alipay settlement" step="0.01"></div>
     <div id="settlementError" style="color:#ef4444; margin: 12px 0; display: none;"></div>
-    <div class="modal-buttons"><button id="checkSettlementBtn" class="modal-btn modal-btn-primary">Check</button><button id="recordSettlementBtn" class="modal-btn modal-btn-primary" style="display: none;">Record Settlement</button><button id="closeSettlementModalBtn" class="modal-btn modal-btn-secondary">Cancel</button></div>
+    <div class="modal-buttons"><button id="checkSettlementBtn" class="modal-btn modal-btn-primary">Check</button><button id="recordSettlementBtn" class="modal-btn modal-btn-primary" style="display: none;">Record Settlement</button> <button id="reprintSettlementBtn" class="modal-btn modal-btn-secondary">Settlement History</button><button id="closeSettlementModalBtn" class="modal-btn modal-btn-secondary">Cancel</button></div>
   </div>
 </div>
 
@@ -2142,7 +2159,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNUym8kf53mcci0Yvovlt9XEV5pWq2kVlvJibjxkyecT0tPH8bmiKeVkX5P-1xKhg7AA/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw4EUGUC9sr_c2G_aFPifMQcEHg_siieNHZDbQCUNCDRkK4mi_F31AQF4cAj1VMzjb00A/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -2738,6 +2755,7 @@ function applyRoleBasedUI() {
     }, 50);
   }
 }
+
 async function setCachedReport(cacheKey, report) {
   try {
     const database = await openIndexedDB();
@@ -2898,7 +2916,101 @@ function resetLoginBarcodeBuffer() {
     loginBarcodeTimer = null;
   }
 }
+// Fetch all settlement records for a specific store
+async function fetchSettlementsForStore(store) {
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=getSettlementsForStore&store=${store}&_=${Date.now()}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success && result.settlements) {
+      return result.settlements; // array of { date, petty_cash_float, cash_system, card_system, qr_system, alipay_system, cash_actual, card_actual, qr_actual, alipay_actual, employee_name, ... }
+    } else {
+      console.error("Failed to fetch settlements:", result.error);
+      return [];
+    }
+  } catch (err) {
+    console.error("fetchSettlementsForStore error:", err);
+    return [];
+  }
+}
 
+// Populate the settlement select dropdown and show the modal
+async function showReprintSettlementModal() {
+  const modal = document.getElementById('reprintSettlementModal');
+  const select = document.getElementById('settlementDateSelect');
+  const errorDiv = document.getElementById('reprintSettlementError');
+  
+  // Determine store (use currentStore, or for non‑admin the initial store)
+  let store = currentStore;
+  if (!currentEmployee?.isAdmin) {
+    store = initialStore;
+  }
+  
+  select.innerHTML = '<option value="">Loading settlements...</option>';
+  errorDiv.style.display = 'none';
+  modal.style.display = 'flex';
+  
+  const settlements = await fetchSettlementsForStore(store);
+  if (settlements.length === 0) {
+    select.innerHTML = '<option value="">No previous settlements found</option>';
+    return;
+  }
+  
+  // Sort by date descending (most recent first)
+  settlements.sort((a, b) => new Date(b.date) - new Date(a.date));
+  
+  let options = '';
+  settlements.forEach(s => {
+    const displayDate = new Date(s.date).toLocaleDateString();
+    const employee = s.employee_name ? ` (by ${s.employee_name})` : '';
+    options += `<option value="${s.date}" data-settlement='${JSON.stringify(s)}'>${displayDate}${employee}</option>`;
+  });
+  select.innerHTML = options;
+}
+
+// Reprint a selected settlement
+async function reprintSelectedSettlement() {
+  const select = document.getElementById('settlementDateSelect');
+  const selectedOption = select.options[select.selectedIndex];
+  if (!selectedOption || !selectedOption.value) {
+    const errorDiv = document.getElementById('reprintSettlementError');
+    errorDiv.innerText = 'Please select a settlement date.';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  
+  const settlementData = JSON.parse(selectedOption.dataset.settlement);
+  const store = currentStore || initialStore;
+  const date = settlementData.date;
+  
+  // Build totals object required by printSettlementReport
+  const totals = {
+    cashSystem: settlementData.cash_system || 0,
+    cardSystem: settlementData.card_system || 0,
+    qrSystem: settlementData.qr_system || 0,
+    alipaySystem: settlementData.alipay_system || 0,
+    refundSystem: settlementData.refund_system || 0,  // you may need to add this field in backend
+    cashActual: settlementData.cash_actual,
+    cardActual: settlementData.card_actual,
+    qrActual: settlementData.qr_actual,
+    alipayActual: settlementData.alipay_actual,
+    pettyCash: settlementData.petty_cash_float
+  };
+  
+  // If refund_system not stored, we can compute it from system totals (optional)
+  if (!totals.refundSystem) {
+    // Possibly fetch from another source or assume 0
+    totals.refundSystem = 0;
+  }
+  
+  const printed = await printSettlementReport(store, date, totals);
+  if (printed) {
+    await showAlertModal('Success', 'Settlement report reprinted.');
+    document.getElementById('reprintSettlementModal').style.display = 'none';
+  } else {
+    await showAlertModal('Error', 'Failed to print settlement. Check printer connection.');
+  }
+}
 function processLoginBarcode() {
   const code = loginBarcodeBuffer.trim();
   if (code === '') return;
@@ -7684,7 +7796,19 @@ const sysRefund = parseFloat(document.getElementById('sysRefund').innerText.repl
   document.getElementById('collectionBtn')?.addEventListener('click', openCollectionModal);
   document.getElementById('closeCollectionModal')?.addEventListener('click', () => document.getElementById('collectionModal').style.display = 'none');
   document.getElementById('closeCollectionModalBtn')?.addEventListener('click', () => document.getElementById('collectionModal').style.display = 'none');
+// Inside the existing window load / DOMContentLoaded block (or wherever you attach listeners)
+const reprintSettlementBtn = document.getElementById('reprintSettlementBtn');
+if (reprintSettlementBtn) {
+  reprintSettlementBtn.addEventListener('click', showReprintSettlementModal);
+}
 
+// Close reprint modal
+const closeReprintModal = document.getElementById('closeReprintModal');
+const cancelReprintBtn = document.getElementById('cancelReprintSettlementBtn');
+const confirmReprintBtn = document.getElementById('confirmReprintSettlementBtn');
+if (closeReprintModal) closeReprintModal.addEventListener('click', () => document.getElementById('reprintSettlementModal').style.display = 'none');
+if (cancelReprintBtn) cancelReprintBtn.addEventListener('click', () => document.getElementById('reprintSettlementModal').style.display = 'none');
+if (confirmReprintBtn) confirmReprintBtn.addEventListener('click', reprintSelectedSettlement);
   // ==================== CASH COLLECTION ====================
   let allUnsettledCash = [];
 

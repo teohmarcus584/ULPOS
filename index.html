@@ -6573,18 +6573,18 @@ function renderProductGrid() {
 
     let html = '';
     filteredCategories.forEach(cat => {
-      const productCount = products.filter(p => p.category === cat).length;
-      const imgUrl = (categoryImages && categoryImages[cat]) || (categoryImages && categoryImages["default"]) || "https://via.placeholder.com/150?text=📦";
-      html += `
-        <div class="category-card" data-category="${escapeHtml(cat)}">
-          <div class="category-card-image">
-            <img src="${imgUrl}" alt="${escapeHtml(cat)}" onerror="this.src='https://via.placeholder.com/150?text=📦'">
-          </div>
-          <div class="category-card-name">${escapeHtml(cat)}</div>
-          <div class="category-card-count">${productCount} products</div>
-        </div>
-      `;
-    });
+  const productCount = products.filter(p => p.category === cat).length;
+  const imgUrl = getCategoryImage(cat);
+  html += `
+    <div class="category-card" data-category="${escapeHtml(cat)}">
+      <div class="category-card-image">
+        <img src="${imgUrl}" alt="${escapeHtml(cat)}" onerror="this.src='https://via.placeholder.com/150?text=📦'">
+      </div>
+      <div class="category-card-name">${escapeHtml(cat)}</div>
+      <div class="category-card-count">${productCount} products</div>
+    </div>
+  `;
+});
 
     productGridEl.innerHTML = html;
     productGridEl.className = 'product-grid';

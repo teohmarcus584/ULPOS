@@ -1635,7 +1635,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2142,7 +2142,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6RjQBPB8rDGWnHneevE9RBdZxpEMz3GSbYMnEDOwT3T4Kv-XOUa8lqrkGDEv-73BYCQ/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNUym8kf53mcci0Yvovlt9XEV5pWq2kVlvJibjxkyecT0tPH8bmiKeVkX5P-1xKhg7AA/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -3592,8 +3592,9 @@ async function addNewProduct() {
     const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
     const result = await response.json();
     if (result.success) {
+	closeAddProductModal();
       await showAlertModal('Success', `Product "${name}" added successfully.`);
-      closeAddProductModal();
+      
       await fetchProductsFromSheet(true);
       if (inventoryMode) {
         renderProductGrid();

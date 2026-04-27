@@ -1635,7 +1635,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -7799,16 +7799,35 @@ const sysRefund = parseFloat(document.getElementById('sysRefund').innerText.repl
 // Inside the existing window load / DOMContentLoaded block (or wherever you attach listeners)
 const reprintSettlementBtn = document.getElementById('reprintSettlementBtn');
 if (reprintSettlementBtn) {
-  reprintSettlementBtn.addEventListener('click', showReprintSettlementModal);
+  reprintSettlementBtn.addEventListener('click', () => {
+    // Close the settlement modal first
+    const settlementModal = document.getElementById('settlementModal');
+    if (settlementModal) settlementModal.style.display = 'none';
+    // Then open the reprint (settlement history) modal
+    showReprintSettlementModal();
+  });
 }
 
-// Close reprint modal
+// Close reprint modal and reopen settlement modal
 const closeReprintModal = document.getElementById('closeReprintModal');
 const cancelReprintBtn = document.getElementById('cancelReprintSettlementBtn');
 const confirmReprintBtn = document.getElementById('confirmReprintSettlementBtn');
-if (closeReprintModal) closeReprintModal.addEventListener('click', () => document.getElementById('reprintSettlementModal').style.display = 'none');
-if (cancelReprintBtn) cancelReprintBtn.addEventListener('click', () => document.getElementById('reprintSettlementModal').style.display = 'none');
-if (confirmReprintBtn) confirmReprintBtn.addEventListener('click', reprintSelectedSettlement);
+
+function closeReprintAndOpenSettlement() {
+  document.getElementById('reprintSettlementModal').style.display = 'none';
+  // Reopen the settlement modal (refresh totals, etc.)
+  openSettlementModal();  // this function already exists and properly shows the modal
+}
+
+if (closeReprintModal) {
+  closeReprintModal.addEventListener('click', closeReprintAndOpenSettlement);
+}
+if (cancelReprintBtn) {
+  cancelReprintBtn.addEventListener('click', closeReprintAndOpenSettlement);
+}
+if (confirmReprintBtn) {
+  confirmReprintBtn.addEventListener('click', reprintSelectedSettlement);
+}
   // ==================== CASH COLLECTION ====================
   let allUnsettledCash = [];
 

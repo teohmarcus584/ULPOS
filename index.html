@@ -1635,7 +1635,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2159,7 +2159,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwexZes0uF4Z01JxDH-YG0LEo5Q9H7JhIVikB5C8Dg5vd-P7cfwEBzGfbfE9RVnWj_rTQ/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8BlhiDQiElD0reSTqbDtgvr3_d_R3vODw-aTqNtUa7xhM0iuaKtx98RKz7P4s3f5U-Q/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -4468,15 +4468,20 @@ async function checkReceiptForClaim() {
     const result = await response.json();
     if (result.success) {
       const data = result.data;
-     if (data.claimed) {
+    if (data.claimed) {
   let claimDate = '';
   if (data.claimed_at) {
     const dateObj = new Date(data.claimed_at);
-    claimDate = dateObj.toLocaleString(); // e.g., "4/28/2026, 3:45:12 PM"
-  } else if (data.claimed_date) {
-    claimDate = data.claimed_date;
+    claimDate = dateObj.toLocaleString();  // e.g., "4/28/2026, 3:45:12 PM"
   }
-  const errorMsg = `This prize has already been claimed.${claimDate ? `<br><span style="color:red;">Claimed on: ${claimDate}</span>` : ''}`;
+  
+  let purchaseInfo = '';
+  const purchaseTotal = data.purchase_total || data.value; // 'value' is the purchase amount at claim time
+  if (purchaseTotal && !isNaN(parseFloat(purchaseTotal))) {
+    purchaseInfo = `<br>With purchase of: RM ${parseFloat(purchaseTotal).toFixed(2)}`;
+  }
+  
+  const errorMsg = `This prize has already been claimed.${claimDate ? `<br><span style="color:red;">Claimed on: ${claimDate}${purchaseInfo}</span>` : ''}`;
   showClaimError(errorMsg, true);
   return;
 }

@@ -4445,11 +4445,15 @@ function applyStaffDiscount() {
     document.getElementById('claimPrizeModal').style.display = 'flex';
   }
 
-  function showClaimError(msg) {
-    const errorDiv = document.getElementById('claimError');
+  function showClaimError(msg, isHtml = false) {
+  const errorDiv = document.getElementById('claimError');
+  if (isHtml) {
+    errorDiv.innerHTML = msg;
+  } else {
     errorDiv.innerText = msg;
-    errorDiv.style.display = 'block';
   }
+  errorDiv.style.display = 'block';
+}
 
 async function checkReceiptForClaim() {
   const receipt = document.getElementById('claimReceiptInput').value.trim();
@@ -4464,10 +4468,18 @@ async function checkReceiptForClaim() {
     const result = await response.json();
     if (result.success) {
       const data = result.data;
-      if (data.claimed) {
-        showClaimError('This prize has already been claimed.');
-        return;
-      }
+     if (data.claimed) {
+  let claimDate = '';
+  if (data.claimed_at) {
+    const dateObj = new Date(data.claimed_at);
+    claimDate = dateObj.toLocaleString(); // e.g., "4/28/2026, 3:45:12 PM"
+  } else if (data.claimed_date) {
+    claimDate = data.claimed_date;
+  }
+  const errorMsg = `This prize has already been claimed.${claimDate ? `<br><span style="color:red;">Claimed on: ${claimDate}</span>` : ''}`;
+  showClaimError(errorMsg, true);
+  return;
+}
       if (data.is_expired) {
         showClaimError('This prize has expired (30 days after creation).');
         return;

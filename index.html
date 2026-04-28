@@ -1635,7 +1635,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2159,7 +2159,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTT1_NzLEmQx-gGaw3viCYvf0CtWsvMeWs_tjZmvz7uCamaeY4dtA3GjPSNz3s9Lb4jQ/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzAzwe-mV2qdJv8cnHAWOrp47jpTV1Fw582dvO6Ju103YjCcUUhDqTPM1SZsuI-DZBq/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -4472,12 +4472,15 @@ async function checkReceiptForClaim() {
   let claimDate = '';
   if (data.claimed_at) {
     const dateObj = new Date(data.claimed_at);
-    claimDate = dateObj.toLocaleString();
+    claimDate = dateObj.toLocaleString();  // e.g., "4/28/2026, 3:45:12 PM"
   }
+  
   let purchaseInfo = '';
-  if (data.purchase_total && data.purchase_total > 0) {
-    purchaseInfo = `<br>Purchase amount: RM ${data.purchase_total.toFixed(2)}`;
+  const purchaseTotal = data.purchase_total || data.value; // 'value' is the purchase amount at claim time
+  if (purchaseTotal && !isNaN(parseFloat(purchaseTotal))) {
+    purchaseInfo = `<br>With purchase of: RM ${parseFloat(purchaseTotal).toFixed(2)}`;
   }
+  
   const errorMsg = `This prize has already been claimed.${claimDate ? `<br><span style="color:red;">Claimed on: ${claimDate}${purchaseInfo}</span>` : ''}`;
   showClaimError(errorMsg, true);
   return;

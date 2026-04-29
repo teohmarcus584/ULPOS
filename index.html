@@ -2159,7 +2159,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8BlhiDQiElD0reSTqbDtgvr3_d_R3vODw-aTqNtUa7xhM0iuaKtx98RKz7P4s3f5U-Q/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_8Hhn4B13psffasxJ3t65YnR7NLrusO4OAQPH0oSrwOhO8BcmXhWQp1Lv6mw1PrLBAQ/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -3626,13 +3626,17 @@ async function saveTelegramSettings() {
   const addProductBtn = document.getElementById('addProductHeaderBtn');   // ✅ changed ID
 
   if (inventoryMode) {
-    cartNormalContent.style.display = 'none';
-    stockHistoryContainerDiv.style.display = 'flex';
-    cartTitleElement.innerText = '📦 Inventory Mode';
-    if (addProductBtn) addProductBtn.style.display = 'inline-flex';      // show button
-    if (lowStockBtn) lowStockBtn.style.display = 'inline-flex';
-    loadStockHistoryFromSheet();
-  } else {
+    html += `<div class="product-card ${lowStockClass}">
+      <div class="product-name">${escapeHtml(prod.name)}</div>
+      <div class="product-category">${escapeHtml(prod.category)}</div>
+      <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+      <div class="inventory-controls">
+        <button class="inventory-btn dec-stock" data-id="${prod.id}">−</button>
+        <input type="number" class="stock-input" data-id="${prod.id}" value="${prod.stock}" step="1" min="0" style="width:70px; text-align:center; border-radius:20px; border:1px solid #cbd5e1; padding:6px;">
+        <button class="inventory-btn inc-stock" data-id="${prod.id}">+</button>
+      </div>
+    </div>`;
+} else {
     cartNormalContent.style.display = 'block';
     stockHistoryContainerDiv.style.display = 'none';
     cartTitleElement.innerText = '🧾 Current Sale';
@@ -6951,85 +6955,110 @@ function renderProductGrid() {
     return;
   }
 
-let html = '';
-filtered.forEach(prod => {
-  const isLowStock = prod.stock < LOW_STOCK_THRESHOLD;
-  const lowStockClass = (inventoryMode && isLowStock) ? 'low-stock-card' : '';
+  let html = '';
+  filtered.forEach(prod => {
+    const isLowStock = prod.stock < LOW_STOCK_THRESHOLD;
+    const lowStockClass = (inventoryMode && isLowStock) ? 'low-stock-card' : '';
 
-  if (inventoryMode) {
-    html += `<div class="product-card ${lowStockClass}">
-      <div class="product-name">${escapeHtml(prod.name)}</div>
-      <div class="product-category">${escapeHtml(prod.category)}</div>
-      <div class="product-price">RM ${prod.price.toFixed(2)}</div>
-      <div class="inventory-controls">
-        <button class="inventory-btn dec-stock" data-id="${prod.id}" data-current="${prod.stock}">−</button>
-        <span class="stock-display" data-id="${prod.id}">${prod.stock}</span>
-        <button class="inventory-btn inc-stock" data-id="${prod.id}" data-current="${prod.stock}">+</button>
-      </div>
-    </div>`;
-  } else {
-    const stockStatus = `📦 Stock: ${prod.stock}`;
-    html += `<div class="product-card ${lowStockClass}" data-id="${prod.id}">
-      <div class="product-name">${escapeHtml(prod.name)}</div>
-      <div class="product-category">${escapeHtml(prod.category)}</div>
-      <div class="product-price">RM ${prod.price.toFixed(2)}</div>
-      <div class="product-stock">${stockStatus}</div>
-    </div>`;
-  }
-});
-
-productGridEl.innerHTML = html;
-productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
-
-if (inventoryMode) {
-  document.querySelectorAll('.dec-stock').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const id = btn.dataset.id;
-      const product = products.find(p => p.id == id);
-      if (product) {
-        const oldStock = product.stock;
-        const newStock = product.stock - 1;
-        product.stock = newStock;
-        const displaySpan = document.querySelector(`.stock-display[data-id="${id}"]`);
-        if (displaySpan) displaySpan.innerText = newStock;
-        scheduleStockUpdate(id, newStock);
-        logStockChange(product.id, product.name, product.category, oldStock, newStock, -1);
-        checkAndNotifyOutOfStock(product.id, product.name, newStock);
-        refreshCategoryHighlighting();
-      }
-      e.stopPropagation();
-    });
-  });
-
-  document.querySelectorAll('.inc-stock').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const id = btn.dataset.id;
-      const product = products.find(p => p.id == id);
-      if (product) {
-        const oldStock = product.stock;
-        const newStock = product.stock + 1;
-        product.stock = newStock;
-        const displaySpan = document.querySelector(`.stock-display[data-id="${id}"]`);
-        if (displaySpan) displaySpan.innerText = newStock;
-        scheduleStockUpdate(id, newStock);
-        logStockChange(product.id, product.name, product.category, oldStock, newStock, 1);
-        checkAndNotifyOutOfStock(product.id, product.name, newStock);
-        refreshCategoryHighlighting();
-      }
-      e.stopPropagation();
-    });
-  });
-} else {
-  document.querySelectorAll('.product-card').forEach(card => {
-    const productId = card.dataset.id;
-    const product = products.find(p => p.id == productId);
-    if (product) {
-      card.addEventListener('click', (e) => {
-        addToCart(product);
-      });
+    if (inventoryMode) {
+      html += `<div class="product-card ${lowStockClass}">
+        <div class="product-name">${escapeHtml(prod.name)}</div>
+        <div class="product-category">${escapeHtml(prod.category)}</div>
+        <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+        <div class="inventory-controls">
+          <button class="inventory-btn dec-stock" data-id="${prod.id}">−</button>
+          <input type="number" class="stock-input" data-id="${prod.id}" value="${prod.stock}" step="1" min="0" style="width:70px; text-align:center; border-radius:20px; border:1px solid #cbd5e1; padding:6px;">
+          <button class="inventory-btn inc-stock" data-id="${prod.id}">+</button>
+        </div>
+      </div>`;
+    } else {
+      const stockStatus = `📦 Stock: ${prod.stock}`;
+      html += `<div class="product-card ${lowStockClass}" data-id="${prod.id}">
+        <div class="product-name">${escapeHtml(prod.name)}</div>
+        <div class="product-category">${escapeHtml(prod.category)}</div>
+        <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+        <div class="product-stock">${stockStatus}</div>
+      </div>`;
     }
   });
-}}
+
+  productGridEl.innerHTML = html;
+  productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
+
+  if (inventoryMode) {
+    // Helper to update stock from a new numeric value
+    const updateStockForProduct = (productId, newStock, delta) => {
+      const product = products.find(p => p.id == productId);
+      if (!product) return;
+      const oldStock = product.stock;
+      if (newStock === oldStock) return;
+      product.stock = newStock;
+      // Update input field if present
+      const inputField = document.querySelector(`.stock-input[data-id="${productId}"]`);
+      if (inputField) inputField.value = newStock;
+      scheduleStockUpdate(productId, newStock);
+      logStockChange(product.id, product.name, product.category, oldStock, newStock, delta);
+      checkAndNotifyOutOfStock(product.id, product.name, newStock);
+      refreshCategoryHighlighting();
+    };
+
+    // Dec button
+    document.querySelectorAll('.dec-stock').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = btn.dataset.id;
+        const input = document.querySelector(`.stock-input[data-id="${id}"]`);
+        if (input) {
+          let newVal = parseInt(input.value) - 1;
+          if (isNaN(newVal)) newVal = 0;
+          if (newVal < 0) newVal = 0;
+          updateStockForProduct(id, newVal, -1);
+        }
+        e.stopPropagation();
+      });
+    });
+
+    // Inc button
+    document.querySelectorAll('.inc-stock').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = btn.dataset.id;
+        const input = document.querySelector(`.stock-input[data-id="${id}"]`);
+        if (input) {
+          let newVal = parseInt(input.value) + 1;
+          if (isNaN(newVal)) newVal = 0;
+          updateStockForProduct(id, newVal, 1);
+        }
+        e.stopPropagation();
+      });
+    });
+
+    // Editable input – listen for change (when user types and leaves field)
+    document.querySelectorAll('.stock-input').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const id = input.dataset.id;
+        let newVal = parseInt(input.value);
+        if (isNaN(newVal)) newVal = 0;
+        if (newVal < 0) newVal = 0;
+        const product = products.find(p => p.id == id);
+        if (product) {
+          const delta = newVal - product.stock;
+          updateStockForProduct(id, newVal, delta);
+        }
+        e.stopPropagation();
+      });
+    });
+  } else {
+    // Normal mode: click on product card adds to cart
+    document.querySelectorAll('.product-card').forEach(card => {
+      const productId = card.dataset.id;
+      const product = products.find(p => p.id == productId);
+      if (product) {
+        card.addEventListener('click', (e) => {
+          addToCart(product);
+        });
+      }
+    });
+  }
+}
   // ==================== VIEW TOGGLE ====================
   function setViewMode(mode) {
     viewMode = mode;

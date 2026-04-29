@@ -1635,7 +1635,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -3620,27 +3620,23 @@ async function saveTelegramSettings() {
   }
 
   // ==================== INVENTORY MODE TOGGLE ====================
- function toggleInventoryMode() {
+function toggleInventoryMode() {
   inventoryMode = !inventoryMode;
   const lowStockBtn = document.getElementById('lowStockToggleBtn');
-  const addProductBtn = document.getElementById('addProductHeaderBtn');   // ✅ changed ID
+  const addProductBtn = document.getElementById('addProductHeaderBtn');
 
   if (inventoryMode) {
-    html += `<div class="product-card ${lowStockClass}">
-      <div class="product-name">${escapeHtml(prod.name)}</div>
-      <div class="product-category">${escapeHtml(prod.category)}</div>
-      <div class="product-price">RM ${prod.price.toFixed(2)}</div>
-      <div class="inventory-controls">
-        <button class="inventory-btn dec-stock" data-id="${prod.id}">−</button>
-        <input type="number" class="stock-input" data-id="${prod.id}" value="${prod.stock}" step="1" min="0" style="width:70px; text-align:center; border-radius:20px; border:1px solid #cbd5e1; padding:6px;">
-        <button class="inventory-btn inc-stock" data-id="${prod.id}">+</button>
-      </div>
-    </div>`;
-} else {
+    cartNormalContent.style.display = 'none';
+    stockHistoryContainerDiv.style.display = 'flex';
+    cartTitleElement.innerText = '📦 Inventory Mode';
+    if (addProductBtn) addProductBtn.style.display = 'inline-flex';
+    if (lowStockBtn) lowStockBtn.style.display = 'inline-flex';
+    loadStockHistoryFromSheet();
+  } else {
     cartNormalContent.style.display = 'block';
     stockHistoryContainerDiv.style.display = 'none';
     cartTitleElement.innerText = '🧾 Current Sale';
-    if (addProductBtn) addProductBtn.style.display = 'none';             // hide button
+    if (addProductBtn) addProductBtn.style.display = 'none';
     if (lowStockBtn) lowStockBtn.style.display = 'none';
     if (lowStockFilterActive) {
       lowStockFilterActive = false;

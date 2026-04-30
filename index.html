@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2166,7 +2166,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxqcCd-Ih5fjKsKfJLhrvQx4ZNBO9mfxuVFlkpwelZysoJG1EWfQ7XofFw40g2yVAqnGA/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbynUwttCsy9qEtWNB_jZ2X6P5CPfL8B6ESnchm02SUi58A-G9-SYWzykfynC-L1HPVyVQ/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -4475,49 +4475,43 @@ async function checkReceiptForClaim() {
     const result = await response.json();
     if (result.success) {
       const data = result.data;
-    if (data.claimed) {
-  let claimDate = '';
-  if (data.claimed_at) {
-    const dateObj = new Date(data.claimed_at);
-    claimDate = dateObj.toLocaleString();  // e.g., "4/28/2026, 3:45:12 PM"
-  }
-  
-  let purchaseInfo = '';
-  const purchaseTotal = data.purchase_total || data.value; // 'value' is the purchase amount at claim time
-  if (purchaseTotal && !isNaN(parseFloat(purchaseTotal))) {
-    purchaseInfo = `<br>With purchase of: RM ${parseFloat(purchaseTotal).toFixed(2)}`;
-  }
-  
-  const errorMsg = `This prize has already been claimed.${claimDate ? `<br><span style="color:red;">Claimed on: ${claimDate}${purchaseInfo}</span>` : ''}`;
-  showClaimError(errorMsg, true);
-  return;
-}
+      if (data.claimed) {
+        let claimDate = '';
+        if (data.claimed_at) {
+          const dateObj = new Date(data.claimed_at);
+          claimDate = dateObj.toLocaleString();
+        }
+        let purchaseInfo = '';
+        const purchaseTotal = data.purchase_total || data.value;
+        if (purchaseTotal && !isNaN(parseFloat(purchaseTotal))) {
+          purchaseInfo = `<br>With purchase of: RM ${parseFloat(purchaseTotal).toFixed(2)}`;
+        }
+        const errorMsg = `This prize has already been claimed.${claimDate ? `<br><span style="color:red;">Claimed on: ${claimDate}${purchaseInfo}</span>` : ''}`;
+        showClaimError(errorMsg, true);
+        return;
+      }
       if (data.is_expired) {
         showClaimError('This prize has expired (30 days after creation).');
         return;
       }
       window.pendingClaimReceipt = data;
 
-      // Extract prize label and value
-      let prizeLabel = data.prize_label || data.prize || '';
-      let prizeValue = data.value;
-      if (!prizeValue && prizeLabel) {
+      // ✅ NEW: Use discount_value from the backend
+      let prizeValue = Number(data.discount_value);
+      if (isNaN(prizeValue) || prizeValue <= 0) {
+        // Fallback: extract from prize label (should not happen if backend provides discount_value)
+        let prizeLabel = data.prize_label || data.prize || '';
         const match = prizeLabel.match(/RM\s*(\d+(?:\.\d+)?)/);
         if (match) prizeValue = parseFloat(match[1]);
+        else prizeValue = 38;
       }
-      if (!prizeValue) {
-        prizeValue = 38;
-        prizeLabel = prizeLabel || `RM ${prizeValue} FREE GIFT`;
-      }
+      const prizeLabel = data.prize_label || data.prize || `RM ${prizeValue} FREE GIFT`;
 
-      // Store for later use
       window.pendingPrizeValue = prizeValue;
       window.pendingPrizeLabel = prizeLabel;
 
-      // ✅ Reset barcode buffer after successful fetch
       resetClaimBarcodeBuffer();
 
-      // Replace step2 content with prize info (no dropdown)
       const step2Div = document.getElementById('claimStep2');
       step2Div.innerHTML = `
         <p>Receipt: <strong id="validReceiptId">${escapeHtml(data.receipt)}</strong></p>
@@ -4532,11 +4526,10 @@ async function checkReceiptForClaim() {
       document.getElementById('claimStep1').style.display = 'none';
       step2Div.style.display = 'block';
 
-      // Re-attach event listeners
       document.getElementById('applyPrizeBtn').addEventListener('click', applyPrizeToCart);
       document.getElementById('cancelClaimStep2Btn').addEventListener('click', () => {
         document.getElementById('claimPrizeModal').style.display = 'none';
-        resetClaimBarcodeBuffer();   // Also reset on cancel
+        resetClaimBarcodeBuffer();
       });
     } else {
       showClaimError(result.error || 'Receipt not found.');
@@ -4592,17 +4585,17 @@ async function updateNonAdminStatsCards(from, to) {
 }
 
   async function claimPrizeAfterSale(receipt, prizeValue, finalTotal) {
-    try {
-      const formData = new URLSearchParams();
-      formData.append("action", "claim");
-      formData.append("receipt", receipt);
-      formData.append("value", prizeValue);
-      formData.append("finalTotal", finalTotal);
-      await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
-    } catch (err) {
-      console.error('Error claiming prize after sale:', err);
-    }
+  try {
+    const formData = new URLSearchParams();
+    formData.append("action", "claim");
+    formData.append("receipt", receipt);
+    formData.append("value", prizeValue);
+    formData.append("finalTotal", finalTotal);
+    await fetch(APPS_SCRIPT_URL, { method: "POST", body: formData });
+  } catch (err) {
+    console.error('Error claiming prize after sale:', err);
   }
+}
 
   // ==================== SPECIAL PROMO FUNCTIONS ====================
   function showSpecialPromoModal() {

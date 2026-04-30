@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -1820,11 +1820,12 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 
 <div id="luckyDrawModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 400px;">
-    <span class="close-modal" id="closeLuckyDrawModal">×</span>
     <div class="modal-title">🎲 Lucky Draw</div>
     <p>Transaction ID: <strong id="luckyTxId"></strong></p>
     <p>Click below to enter the Lucky Draw with this receipt number.</p>
-    <div class="modal-buttons"><button id="openLuckyDrawBtn" class="modal-btn modal-btn-primary">🎁 Go to Lucky Draw</button><button id="closeLuckyDrawBtn" class="modal-btn modal-btn-secondary">Close</button></div>
+    <div class="modal-buttons">
+      <button id="openLuckyDrawBtn" class="modal-btn modal-btn-primary">🎁 Go to Lucky Draw</button>
+    </div>
   </div>
 </div>
 

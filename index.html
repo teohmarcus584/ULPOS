@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2166,7 +2166,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbynUwttCsy9qEtWNB_jZ2X6P5CPfL8B6ESnchm02SUi58A-G9-SYWzykfynC-L1HPVyVQ/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxqcCd-Ih5fjKsKfJLhrvQx4ZNBO9mfxuVFlkpwelZysoJG1EWfQ7XofFw40g2yVAqnGA/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -6761,40 +6761,55 @@ async function printPrizeVoucher(prizeLabel, receiptNumber, spinDate = new Date(
     const validFrom = new Date(spinDate.getFullYear(), spinDate.getMonth(), spinDate.getDate());
     const validTill = new Date(validFrom);
     validTill.setDate(validTill.getDate() + 30);
+
+    // Determine if prize label starts with "FREE" (case insensitive)
+    const startsWithFree = prizeLabel.trim().toLowerCase().startsWith('free');
+
+    // Build the lines array conditionally
     const lines = [
       '',
       'LUCKY DRAW',
       'CONGRATULATIONS',
       'YOU ARE ENTITLED',
       '',
-      `FREE ${prizeLabel}`,
-      'WITH ANY PURCHASE',
-      '(EXCEPT OPENING PROMOTION)',
+      prizeLabel,          // ✅ REMOVED the word "FREE" – just the prize label
+    ];
+
+    if (startsWithFree) {
+      lines.push('WITH ANY PURCHASE');
+      lines.push('(EXCEPT OPENING PROMOTION)');
+    }
+
+    lines.push(
       '',
       `VALID FROM ${formatDate(validFrom)}`,
       `TILL ${formatDate(validTill)}`,
       `Receipt No: ${receiptNumber}`,
       ''
-    ];
+    );
+
     const text = lines.join('\n');
     const commands = [];
-    commands.push(0x1B, 0x40);
-    commands.push(0x1B, 0x52, 0x00);
-    commands.push(0x1B, 0x21, 0x00);
-    commands.push(0x1B, 0x61, 0x01);
-    for (let i = 0; i < text.length; i++) commands.push(text.charCodeAt(i));
+    commands.push(0x1B, 0x40);                 // init
+    commands.push(0x1B, 0x52, 0x00);          // select character code table (0 = standard)
+    commands.push(0x1B, 0x21, 0x00);          // normal size
+    commands.push(0x1B, 0x61, 0x01);          // center align
+    for (let i = 0; i < text.length; i++) {
+      commands.push(text.charCodeAt(i));
+    }
     commands.push(0x0A);
 
-    commands.push(0x1D, 0x68, 0x32);
-    commands.push(0x1D, 0x77, 0x01);
-    commands.push(0x1B, 0x61, 0x01);
+    // Barcode
+    commands.push(0x1D, 0x68, 0x32);          // barcode height = 50
+    commands.push(0x1D, 0x77, 0x01);          // barcode width = 2
+    commands.push(0x1B, 0x61, 0x01);          // center
     const barcodeData = encoder.encode(receiptNumber);
     const len = barcodeData.length;
-    commands.push(0x1D, 0x6B, 0x49, len);
+    commands.push(0x1D, 0x6B, 0x49, len);     // CODE 128
     for (let i = 0; i < len; i++) commands.push(barcodeData[i]);
     commands.push(0x0A, 0x0A);
-    commands.push(0x1B, 0x64, 0x03);
-    commands.push(0x1D, 0x56, 0x41, 0x00);
+    commands.push(0x1B, 0x64, 0x03);          // feed 3 lines
+    commands.push(0x1D, 0x56, 0x41, 0x00);    // partial cut
 
     await sendChunkedData(new Uint8Array(commands), 500);
     return true;

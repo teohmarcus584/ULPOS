@@ -1632,6 +1632,12 @@
 body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
     display: none !important;
 }
+/* Out of stock highlight for selling mode */
+.product-card.out-of-stock-card {
+  background: #fee2e2;
+  border-left: 4px solid #ef4444;
+  box-shadow: 0 1px 3px rgba(239,68,68,0.2);
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -6967,15 +6973,22 @@ function renderProductGrid() {
           <button class="inventory-btn inc-stock" data-id="${prod.id}">+</button>
         </div>
       </div>`;
-    } else {
-      const stockStatus = `📦 Stock: ${prod.stock}`;
-      html += `<div class="product-card ${lowStockClass}" data-id="${prod.id}">
-        <div class="product-name">${escapeHtml(prod.name)}</div>
-        <div class="product-category">${escapeHtml(prod.category)}</div>
-        <div class="product-price">RM ${prod.price.toFixed(2)}</div>
-        <div class="product-stock">${stockStatus}</div>
-      </div>`;
-    }
+   } else {
+  // Determine the additional visual class:
+  let additionalClass = '';
+  if (!inventoryMode && prod.stock <= 0) {
+    additionalClass = 'out-of-stock-card';
+  } else if (inventoryMode && prod.stock < LOW_STOCK_THRESHOLD) {
+    additionalClass = 'low-stock-card';   // keep inventory low‑stock style
+  }
+  const stockStatus = `📦 Stock: ${prod.stock}`;
+  html += `<div class="product-card ${additionalClass}" data-id="${prod.id}">
+      <div class="product-name">${escapeHtml(prod.name)}</div>
+      <div class="product-category">${escapeHtml(prod.category)}</div>
+      <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+      <div class="product-stock">${stockStatus}</div>
+    </div>`;
+}
   });
 
   productGridEl.innerHTML = html;

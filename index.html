@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2166,7 +2166,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbynUwttCsy9qEtWNB_jZ2X6P5CPfL8B6ESnchm02SUi58A-G9-SYWzykfynC-L1HPVyVQ/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxqcCd-Ih5fjKsKfJLhrvQx4ZNBO9mfxuVFlkpwelZysoJG1EWfQ7XofFw40g2yVAqnGA/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -6781,12 +6781,14 @@ async function printPrizeVoucher(prizeLabel, receiptNumber, spinDate = new Date(
     }
 
     lines.push(
-      '',
-      `VALID FROM ${formatDate(validFrom)}`,
-      `TILL ${formatDate(validTill)}`,
-      `Receipt No: ${receiptNumber}`,
-      ''
-    );
+  '',
+  `VALID FROM ${formatDate(validFrom)}`,
+  `TILL ${formatDate(validTill)}`,
+  `Receipt No: ${receiptNumber}`,
+  '',
+  'VOUCHER CANNOT BE STACKED',   // <-- ADD THIS LINE
+  ''
+);
 
     const text = lines.join('\n');
     const commands = [];

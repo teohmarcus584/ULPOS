@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -6699,12 +6699,15 @@ function buildReceiptContent(copyLabel) {
   if (transaction.custom_discount > 0) lines.push(`Custom Discount     : -RM ${transaction.custom_discount.toFixed(2)}`);
   if (transaction.staff_discount > 0) lines.push(`Staff 10% Discount  : -RM ${transaction.staff_discount.toFixed(2)}`);
 
-  const paymentLines = [];
-  paymentLines.push(`PAYMENT METHOD : ${transaction.payment_method}`);
-  if (transaction.cash_received && transaction.payment_method === 'Cash') {
-    const change = transaction.cash_received - transaction.total;
-    paymentLines.push(`CHANGE : RM ${change.toFixed(2)}`);
-  }
+ const paymentLines = [];
+paymentLines.push(`PAYMENT METHOD : ${transaction.payment_method}`);
+if (transaction.cash_received && transaction.payment_method === 'Cash') {
+  const change = transaction.cash_received - transaction.total;
+  const changeAmt = change.toFixed(2);
+  // Center the whole line, and make only the amount bold
+  const changeLine = `\x1B\x61\x01CHANGE : RM \x1B\x45\x01${changeAmt}\x1B\x45\x00\x1B\x61\x00`;
+  paymentLines.push(changeLine);
+}
 
   // Footer lines – centered
   const footerLines = [

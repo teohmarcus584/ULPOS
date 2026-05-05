@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+  
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -7868,7 +7868,6 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
   document.getElementById('recordSettlementBtn').style.display = 'block';
 });
 // Record Settlement button
-// Record Settlement button
 document.getElementById('recordSettlementBtn')?.addEventListener('click', async () => {
   showLoading('Recording settlement...');
   const store = document.getElementById('settlementStoreSelect').value;
@@ -7923,7 +7922,7 @@ document.getElementById('recordSettlementBtn')?.addEventListener('click', async 
         }
       }
 
-      // Print settlement report
+      // ✅ Print settlement report – pass the captured pettyCash variable directly
       const totals = {
         cashSystem: sysCash,
         cardSystem: sysCard,
@@ -7934,7 +7933,7 @@ document.getElementById('recordSettlementBtn')?.addEventListener('click', async 
         cardActual: actualCard,
         qrActual: actualQR,
         alipayActual: actualAlipay,
-        pettyCash: pettyCash
+        pettyCash: pettyCash   // <-- use the captured value
       };
       await printSettlementReport(store, todayStr, totals);
 

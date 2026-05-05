@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-  
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -4197,35 +4197,42 @@ function loadPendingSales() {
   if (stored) pendingSales = JSON.parse(stored);
 }
 
-// Save a sale to the queue
 function queueSale(transaction) {
   pendingSales.push(transaction);
   localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
-  // Try to sync immediately (if online)
-  syncPendingSales();
+  // Don't call syncPendingSales here – let it run on its own interval or after checkout.
+  // But we can keep a lightweight schedule.
+  if (!isSyncing) syncPendingSales(); // still safe with lock
 }
 
-// Attempt to send all pending sales
+let isSyncing = false;
+
 async function syncPendingSales() {
+  if (isSyncing) return;        // already syncing, skip
   if (!navigator.onLine) return;
   if (pendingSales.length === 0) return;
 
-  
-  const failed = [];
-  for (const sale of pendingSales) {
-    const success = await saveTransactionToSheet(sale);
-    if (!success) failed.push(sale);
+  isSyncing = true;
+  try {
+    const failed = [];
+    for (const sale of pendingSales) {
+      // Attempt to save
+      const success = await saveTransactionToSheet(sale);
+      if (!success) failed.push(sale);
+    }
+    if (failed.length === 0) {
+      pendingSales = [];
+      localStorage.removeItem('pendingSales');
+    } else {
+      pendingSales = failed;
+      localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
+      showAlertModal('Sync Partial', `${failed.length} sale(s) failed. Will retry later.`);
+    }
+  } catch (err) {
+    console.error('syncPendingSales error:', err);
+  } finally {
+    isSyncing = false;
   }
-  if (failed.length === 0) {
-    pendingSales = [];
-    localStorage.removeItem('pendingSales');
-   
-  } else {
-    pendingSales = failed;
-    localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
-    showAlertModal('Sync Partial', `${failed.length} sale(s) failed. Will retry later.`);
-  }
-  hideLoading();
 }
 
 // Listen for online events

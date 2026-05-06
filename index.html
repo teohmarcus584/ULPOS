@@ -1641,7 +1641,8 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+ <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icon-192.png">
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2158,6 +2159,20 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
     <div class="modal-buttons">
       <button id="confirmAddProductBtn" class="modal-btn modal-btn-primary">➕ Add Product</button>
       <button id="cancelAddProductBtn" class="modal-btn modal-btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+<!-- ✅ INSERT CHANGE MODAL HERE -->
+<div id="changeModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 400px; text-align: center;">
+    <span class="close-modal" id="closeChangeModal">×</span>
+    <div class="modal-title" style="font-size: 2rem; margin-bottom: 20px;">💵 CHANGE</div>
+    <div id="changeAmountDisplay" style="font-size: 3.5rem; font-weight: 800; color: #2c7a4b; margin: 20px 0; background: #f0fdf4; padding: 20px; border-radius: 32px;">
+      RM 0.00
+    </div>
+    <p style="font-size: 1.2rem; color: #334155;">Please count the change before closing.</p>
+    <div class="modal-buttons" style="justify-content: center;">
+      <button id="confirmChangeBtn" class="modal-btn modal-btn-primary" style="font-size: 1.2rem; padding: 12px 28px;">OK</button>
     </div>
   </div>
 </div>
@@ -4778,14 +4793,40 @@ async function reprintReceipt(receipt) {
     });
 
     document.getElementById('confirmCashBtn').onclick = async () => {
-      const cashVal = parseFloat(document.getElementById('customCashInput').value);
-      if (isNaN(cashVal) || cashVal < totalAmount) {
-        await showAlertModal('Invalid', `Cash amount must be at least RM ${totalAmount.toFixed(2)}`);
-        return;
-      }
-      await showAlertModal('Change', `Change: RM ${(cashVal - totalAmount).toFixed(2)}`);
-      completeCheckout('Cash', cashVal);
-    };
+  const cashVal = parseFloat(document.getElementById('customCashInput').value);
+  if (isNaN(cashVal) || cashVal < totalAmount) {
+    await showAlertModal('Invalid', `Cash amount must be at least RM ${totalAmount.toFixed(2)}`);
+    return;
+  }
+  const changeAmount = cashVal - totalAmount;
+  
+  // Show the custom change modal
+  const changeModal = document.getElementById('changeModal');
+  const changeDisplay = document.getElementById('changeAmountDisplay');
+  changeDisplay.innerText = `RM ${changeAmount.toFixed(2)}`;
+  changeModal.style.display = 'flex';
+
+  // Wait for user to click OK
+  const confirmBtn = document.getElementById('confirmChangeBtn');
+  const closeModal = () => {
+    changeModal.style.display = 'none';
+    confirmBtn.removeEventListener('click', onConfirm);
+    document.getElementById('closeChangeModal').removeEventListener('click', onConfirm);
+  };
+  
+  const onConfirm = () => {
+    closeModal();
+    completeCheckout('Cash', cashVal);
+  };
+  
+  confirmBtn.addEventListener('click', onConfirm);
+  document.getElementById('closeChangeModal').addEventListener('click', onConfirm);
+  
+  // Also close if user clicks outside the modal content
+  changeModal.addEventListener('click', (e) => {
+    if (e.target === changeModal) onConfirm();
+  }, { once: true });
+};
     document.getElementById('confirmOtherBtn').onclick = () => {
       const selected = document.querySelector('.payment-btn.selected');
       if (!selected) {
@@ -8648,7 +8689,15 @@ document.getElementById('checkReceiptBtn').addEventListener('click', checkReceip
     categorySelect.value = 'all';
     renderProductGrid();
   });
-
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(reg => console.log('SW registered:', reg))
+        .catch(err => console.error('SW registration failed:', err));
+    });
+  }
 </script>
 </body>
 </html>

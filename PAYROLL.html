@@ -266,9 +266,9 @@
     let regularTotal = 0, otTotal = 0;
     for (const dayNet of dailyNet.values()) {
       if (otEnabled) {
-        if (dayNet > 9) {
-          regularTotal += 9;
-          otTotal += (dayNet - 9);
+        if (dayNet > 8) {
+          regularTotal += 8;
+          otTotal += (dayNet - 8);
         } else {
           regularTotal += dayNet;
         }

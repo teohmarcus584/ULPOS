@@ -2425,7 +2425,7 @@ function debouncedStockChange(productId, product, delta, currentFinalStock) {
     // Set a new timer – commit after 800ms idle
     pendingStockTimers[productId] = setTimeout(() => {
         commitStockChange(productId);
-    }, 800);
+    }, 3000);
 }
 function setCachedStoreReport(store, from, to, data) {
   const key = getCacheKey(store, from, to);

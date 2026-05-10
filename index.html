@@ -6282,14 +6282,12 @@ async function processBarcode() {
   const code = barcodeBuffer.trim();
   if (code === '') return;
   
-   
-  // --- First, try to switch employee using server verification ---
   let isEmployee = false;
   showLoading("🔍 Verifying PIN...");
   try {
     isEmployee = await verifyAndSwitchEmployee(code);
   } finally {
-    hideLoading();   // closes the modal regardless of success/failure
+    hideLoading();
   }
   
   if (isEmployee) {
@@ -6297,7 +6295,6 @@ async function processBarcode() {
     return;
   }
   
-  // --- Otherwise, process as product barcode ---
   const product = products.find(p => String(p.id) === code);
   if (!product) {
     showAlertModal('Barcode not found', `Product with ID ${code} does not exist.`);
@@ -6310,26 +6307,20 @@ async function processBarcode() {
     const newStock = oldStock + 1;
     product.stock = newStock;
 
-    // Update the numeric input field (if present)
     const inputField = document.querySelector(`.stock-input[data-id="${product.id}"]`);
     if (inputField) inputField.value = newStock;
 
-    // Buffer change for later server sync (no immediate update)
     pendingServerUpdates[product.id] = newStock;
-
-    // Log the change locally (only history)
     logStockChange(product.id, product.name, product.category, oldStock, newStock, 1);
-
-    // Update low‑stock highlighting
     refreshCategoryHighlighting();
 
-    // Visual feedback (optional)
     const statusSpan = document.getElementById('barcodeStatus');
     if (statusSpan) {
-        statusSpan.style.background = '#c8e6c9';
-        setTimeout(() => { statusSpan.style.background = '#e8f5e9'; }, 200);
+      statusSpan.style.background = '#c8e6c9';
+      setTimeout(() => { statusSpan.style.background = '#e8f5e9'; }, 200);
     }
-}
+  }   // ← closes if(inventoryMode)
+}       // ← closes processBarcode
 
 document.addEventListener('keydown', (e) => {
   // --- LOGIN MODE BARCODE HANDLING (always active when modal is open) ---

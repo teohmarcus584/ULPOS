@@ -2278,8 +2278,7 @@ const EMPLOYEE_CACHE_TTL = 1 * 60 * 1000; // 1 hour
   let syncInterval = null;
   let lastSyncTimestamp = null;
   let syncInProgress = false;
-let originalStockSnapshot = {};        // { productId: stockAtInventoryStart }
-let pendingServerUpdates = {};         // { productId: newStock }
+
   // ==================== NOTIFICATION & TELEGRAM VARIABLES ====================
   let notificationsSupported = false;
   let notificationsEnabled = false;
@@ -3694,32 +3693,20 @@ async function saveTelegramSettings() {
   }
 
   // ==================== INVENTORY MODE TOGGLE ====================
-async function toggleInventoryMode() {
-const addProductBtn = document.getElementById('addProductHeaderBtn');
-const lowStockBtn = document.getElementById('lowStockToggleBtn');
+function toggleInventoryMode() {
+flushPendingStockChanges();
+  inventoryMode = !inventoryMode;
+  const lowStockBtn = document.getElementById('lowStockToggleBtn');
+  const addProductBtn = document.getElementById('addProductHeaderBtn');
+
   if (inventoryMode) {
-    // --- Exiting inventory mode ---
-    if (Object.keys(pendingServerUpdates).length > 0 || stockHistory.length > 0) {
-      const action = await showConfirmModal(
-        'Unsaved changes',
-        'You have unsaved stock changes. Do you want to save them before leaving inventory mode?'
-      );
-      if (action) {
-        await saveInventoryChanges();
-      } else {
-        // Discard: restore original stock values from snapshot
-        for (const [id, oldStock] of Object.entries(originalStockSnapshot)) {
-          const product = products.find(p => p.id == id);
-          if (product) product.stock = oldStock;
-        }
-        pendingServerUpdates = {};
-        stockHistory = [];
-        renderStockHistory();
-        renderProductGrid();
-      }
-    }
-    inventoryMode = false;
-    // Reset normal UI
+    cartNormalContent.style.display = 'none';
+    stockHistoryContainerDiv.style.display = 'flex';
+    cartTitleElement.innerText = '📦 Inventory Mode';
+    if (addProductBtn) addProductBtn.style.display = 'inline-flex';
+    if (lowStockBtn) lowStockBtn.style.display = 'inline-flex';
+    loadStockHistoryFromSheet();
+  } else {
     cartNormalContent.style.display = 'block';
     stockHistoryContainerDiv.style.display = 'none';
     cartTitleElement.innerText = '🧾 Current Sale';
@@ -3730,23 +3717,6 @@ const lowStockBtn = document.getElementById('lowStockToggleBtn');
       if (lowStockBtn) lowStockBtn.classList.remove('active');
       renderProductGrid();
     }
-  } else {
-    // --- Entering inventory mode ---
-    flushPendingStockChanges();   // existing function
-    inventoryMode = true;
-
-    // Take a snapshot of current stock values
-    originalStockSnapshot = {};
-    products.forEach(p => { originalStockSnapshot[p.id] = p.stock; });
-    pendingServerUpdates = {};
-
-    cartNormalContent.style.display = 'none';
-    stockHistoryContainerDiv.style.display = 'flex';
-    cartTitleElement.innerText = '📦 Inventory Mode';
-    if (addProductBtn) addProductBtn.style.display = 'inline-flex';
-    if (lowStockBtn) lowStockBtn.style.display = 'inline-flex';
-
-    await loadStockHistoryFromSheet();
   }
   refreshCategoryHighlighting();
   renderProductGrid();
@@ -4090,7 +4060,6 @@ async function fetchProductsFromSheet(force = false) {
 
   // Background sync: check for changes without showing loading
   async function backgroundSync() {
-   if (inventoryMode) return; 
     if (syncInProgress) return;
     syncInProgress = true;
     try {
@@ -6282,12 +6251,14 @@ async function processBarcode() {
   const code = barcodeBuffer.trim();
   if (code === '') return;
   
+   
+  // --- First, try to switch employee using server verification ---
   let isEmployee = false;
   showLoading("🔍 Verifying PIN...");
   try {
     isEmployee = await verifyAndSwitchEmployee(code);
   } finally {
-    hideLoading();
+    hideLoading();   // closes the modal regardless of success/failure
   }
   
   if (isEmployee) {
@@ -6295,6 +6266,7 @@ async function processBarcode() {
     return;
   }
   
+  // --- Otherwise, process as product barcode ---
   const product = products.find(p => String(p.id) === code);
   if (!product) {
     showAlertModal('Barcode not found', `Product with ID ${code} does not exist.`);
@@ -6306,21 +6278,27 @@ async function processBarcode() {
     const oldStock = product.stock;
     const newStock = oldStock + 1;
     product.stock = newStock;
-
-    const inputField = document.querySelector(`.stock-input[data-id="${product.id}"]`);
-    if (inputField) inputField.value = newStock;
-
-    pendingServerUpdates[product.id] = newStock;
+    const displaySpan = document.querySelector(`.stock-display[data-id="${product.id}"]`);
+    if (displaySpan) displaySpan.innerText = newStock;
+    scheduleStockUpdate(product.id, newStock);
     logStockChange(product.id, product.name, product.category, oldStock, newStock, 1);
+    checkAndNotifyOutOfStock(product.id, product.name, newStock);
     refreshCategoryHighlighting();
-
     const statusSpan = document.getElementById('barcodeStatus');
     if (statusSpan) {
       statusSpan.style.background = '#c8e6c9';
       setTimeout(() => { statusSpan.style.background = '#e8f5e9'; }, 200);
     }
-  }   // ← closes if(inventoryMode)
-}       // ← closes processBarcode
+  } else {
+    addToCart(product);
+    const statusSpan = document.getElementById('barcodeStatus');
+    if (statusSpan) {
+      statusSpan.style.background = '#c8e6c9';
+      setTimeout(() => { statusSpan.style.background = '#e8f5e9'; }, 200);
+    }
+  }
+  resetBarcodeBuffer();
+}
 
 document.addEventListener('keydown', (e) => {
   // --- LOGIN MODE BARCODE HANDLING (always active when modal is open) ---
@@ -7006,40 +6984,7 @@ async function connectPrinter() {
     }
   });
 }
-async function saveInventoryChanges() {
-  if (Object.keys(pendingServerUpdates).length === 0 && stockHistory.length === 0) {
-    await showAlertModal('No changes', 'No stock changes to save.');
-    return;
-  }
 
-  showLoading('Saving inventory changes...');
-  try {
-    // 1. Save all pending product stock updates to Google Sheet
-    for (const [productId, newStock] of Object.entries(pendingServerUpdates)) {
-      await updateStockOnServer(productId, newStock);
-      await new Promise(r => setTimeout(r, 200));
-    }
-
-    // 2. Save the stock history (logs) to the history sheet
-    if (stockHistory.length > 0) {
-      await saveStockHistoryToSheet();
-      // ✅ Clear local history after successful save
-      stockHistory = [];
-      renderStockHistory();
-    }
-
-    // Clear pending buffer and update snapshot
-    pendingServerUpdates = {};
-    products.forEach(p => { originalStockSnapshot[p.id] = p.stock; });
-
-    await showAlertModal('Success', 'All stock changes have been saved to Google Sheets.');
-  } catch (err) {
-    console.error(err);
-    await showAlertModal('Error', 'Failed to save some changes. Please check network and try again.');
-  } finally {
-    hideLoading();
-  }
-}
 function disconnectPrinter() {
   if (gattServer) { gattServer.disconnect(); gattServer = null; printerCharacteristic = null; }
   isPrinterConnected = false;
@@ -7190,26 +7135,26 @@ function renderProductGrid() {
   if (inventoryMode) {
     // Helper to update stock from a new numeric value
 const updateStockForProduct = (productId, newStock, delta) => {
-  const product = products.find(p => p.id == productId);
-  if (!product) return;
-  const oldStock = product.stock;
-  if (newStock === oldStock) return;
+    const product = products.find(p => p.id == productId);
+    if (!product) return;
+    const oldStock = product.stock;
+    if (newStock === oldStock) return;
 
-  // Apply immediate local update
-  product.stock = newStock;
+    // Apply immediate local update
+    product.stock = newStock;
 
-  // Update input field if present
-  const inputField = document.querySelector(`.stock-input[data-id="${productId}"]`);
-  if (inputField) inputField.value = newStock;
+    // Update input field if present
+    const inputField = document.querySelector(`.stock-input[data-id="${productId}"]`);
+    if (inputField) inputField.value = newStock;
 
-  // Buffer the change for later server sync
-  pendingServerUpdates[productId] = newStock;
+    // Debounce the history logging and server sync
+    debouncedStockChange(productId, product, delta, newStock);
 
-  // Log the change (local history only)
-  logStockChange(product.id, product.name, product.category, oldStock, newStock, delta);
+    // Schedule server update (still debounced – we keep it separate)
+    scheduleStockUpdate(productId, newStock);
 
-  // Refresh low‑stock category highlighting
-  refreshCategoryHighlighting();
+    // Refresh low‑stock category highlighting
+    refreshCategoryHighlighting();
 };
 
     // Dec button
@@ -7471,7 +7416,7 @@ if (applyHistoryBtn) {
 
   document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLowStockFilter);
   document.getElementById('clearStockHistoryBtn')?.addEventListener('click', clearStockHistory);
-  document.getElementById('saveStockHistoryBtn')?.addEventListener('click', saveInventoryChanges);
+  document.getElementById('saveStockHistoryBtn')?.addEventListener('click', saveStockHistoryToSheet);
 
   const pinInputEl = document.getElementById('pinInput');
   if (pinInputEl) {

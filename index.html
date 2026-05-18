@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -6842,8 +6842,8 @@ function buildReceiptContent(copyLabel) {
       const barcodeData = encoder.encode(transaction.transaction_id);
       const barcodeLen = barcodeData.length;
       // Inside printReceipt, after generating receipt text:
-commands.push(0x1D, 0x68, 0x64);    // height = 100 dots
-commands.push(0x1D, 0x77, 0x03);    // width = 3
+commands.push(0x1D, 0x68, 0x40);   // height = 64 dots
+commands.push(0x1D, 0x77, 0x02);   // width = 2 (still thicker than original 1)
 commands.push(0x1B, 0x61, 0x01);    // center alignment
 // ... rest of barcode data
       commands.push(0x1D, 0x6B, 0x49, barcodeLen);
@@ -6933,8 +6933,8 @@ async function printPrizeVoucher(prizeLabel, receiptNumber, spinDate = new Date(
 
     // Barcode
     // Inside printReceipt, after generating receipt text:
-commands.push(0x1D, 0x68, 0x64);    // height = 100 dots
-commands.push(0x1D, 0x77, 0x03);    // width = 3
+commands.push(0x1D, 0x68, 0x40);   // height = 64 dots
+commands.push(0x1D, 0x77, 0x02);   // width = 2 (still thicker than original 1)
 commands.push(0x1B, 0x61, 0x01);    // center alignment
 // ... rest of barcode data
     const barcodeData = encoder.encode(receiptNumber);

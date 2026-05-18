@@ -2563,7 +2563,7 @@ async function updateNonAdminReport(from, to) {
   }
 
   // 2. Staff's own sales (using sales_person_id)
-  const staffAgg = await fetchEmployeeSalesAggregate(store, from, to);
+  const staffAgg = await fetchEmployeeSalesAggregate('all', from, to);
   if (staffAgg && staffAgg.labels.length) {
     const staffIndex = staffAgg.labels.findIndex(name =>
       name === currentEmployee.name || name.includes(currentEmployee.id)
@@ -4624,7 +4624,7 @@ async function updateNonAdminStatsCards(from, to) {
   }
 
   // Staff's own sales (sales_person_id)
-  const staffAgg = await fetchEmployeeSalesAggregate(store, from, to);
+  const staffAgg = await fetchEmployeeSalesAggregate('all', from, to);
   let mySales = 0;
   if (staffAgg && staffAgg.labels.length) {
     const idx = staffAgg.labels.findIndex(name =>

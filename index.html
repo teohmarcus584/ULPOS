@@ -5066,7 +5066,25 @@ async function completeCheckout(paymentMethod, cashReceived) {
 
       invalidateAllReportCaches();
 
-      const fakeReceipt = { ... }; // your existing fakeReceipt object
+      // ✅ FIXED: proper fakeReceipt object (no placeholder)
+      const fakeReceipt = {
+        transaction_id: transaction.transaction_id,
+        timestamp: transaction.timestamp,
+        items: transaction.items,
+        total: transaction.total,
+        payment_method: transaction.payment_method,
+        store: transaction.store,
+        employee_id: transaction.employee_id,
+        employee_name: transaction.employee_name,
+        refunded: false,
+        discount: transaction.discount,
+        buy2_free1_discount: transaction.buy2_free1_discount,
+        buy3_free1_discount: transaction.buy3_free1_discount,
+        custom_discount: transaction.custom_discount,
+        staff_discount: transaction.staff_discount,
+        sales_person_name: transaction.sales_person_name,
+        sales_person_id: transaction.sales_person_id
+      };
 
       if (!cachedReceipts) cachedReceipts = [];
       cachedReceipts.unshift(fakeReceipt);
@@ -5087,13 +5105,13 @@ async function completeCheckout(paymentMethod, cashReceived) {
       const luckyModal = document.getElementById('luckyDrawModal');
       luckyModal.style.display = 'flex';
 
-      // ✅ Use the captured ID, NOT selectedCustomer (which will be cleared)
+      // ✅ Use the captured ID – only one assignment
       document.getElementById('openLuckyDrawBtn').onclick = () => {
         openLuckyDraw(transactionId, customerIdForLuckyDraw);
         luckyModal.style.display = 'none';
       };
 
-      clearCart(); // This will set selectedCustomer = null, but we already saved the ID
+      clearCart();
     } else {
       await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
     }

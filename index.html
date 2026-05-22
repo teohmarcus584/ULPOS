@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -4980,7 +4980,6 @@ async function completeCheckout(paymentMethod, cashReceived) {
   }
   checkoutLock = true;
 
-  // Disable confirm buttons to prevent further clicks
   const confirmCashBtn = document.getElementById('confirmCashBtn');
   const confirmOtherBtn = document.getElementById('confirmOtherBtn');
   if (confirmCashBtn) confirmCashBtn.disabled = true;
@@ -5027,8 +5026,11 @@ async function completeCheckout(paymentMethod, cashReceived) {
       sales_person_id: salesPersonId,
     };
 
+    // ✅ CAPTURE customer ID BEFORE clearing cart
+    const customerIdForLuckyDraw = transaction.customer_id;
+
     queueSale(transaction);
-    const success = true; // optimistic
+    const success = true;
 
     if (success) {
       // Update local stock
@@ -5064,24 +5066,8 @@ async function completeCheckout(paymentMethod, cashReceived) {
 
       invalidateAllReportCaches();
 
-      const fakeReceipt = {
-  transaction_id: transaction.transaction_id,
-  timestamp: transaction.timestamp,
-  items: transaction.items,
-  total: transaction.total,
-  payment_method: transaction.payment_method,
-  store: transaction.store,
-  employee_id: transaction.employee_id,
-  employee_name: transaction.employee_name,
-  refunded: false,
-  discount: transaction.discount,
-  buy2_free1_discount: transaction.buy2_free1_discount,
-  buy3_free1_discount: transaction.buy3_free1_discount,
-  custom_discount: transaction.custom_discount,
-  staff_discount: transaction.staff_discount,
-  sales_person_name: transaction.sales_person_name,
-  sales_person_id: transaction.sales_person_id
-};
+      const fakeReceipt = { ... }; // your existing fakeReceipt object
+
       if (!cachedReceipts) cachedReceipts = [];
       cachedReceipts.unshift(fakeReceipt);
 
@@ -5100,12 +5086,14 @@ async function completeCheckout(paymentMethod, cashReceived) {
       document.getElementById('luckyTxId').innerText = transactionId;
       const luckyModal = document.getElementById('luckyDrawModal');
       luckyModal.style.display = 'flex';
+
+      // ✅ Use the captured ID, NOT selectedCustomer (which will be cleared)
       document.getElementById('openLuckyDrawBtn').onclick = () => {
-        openLuckyDraw(transactionId, selectedCustomer?.id);
+        openLuckyDraw(transactionId, customerIdForLuckyDraw);
         luckyModal.style.display = 'none';
       };
 
-      clearCart();
+      clearCart(); // This will set selectedCustomer = null, but we already saved the ID
     } else {
       await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
     }

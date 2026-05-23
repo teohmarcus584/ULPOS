@@ -2195,7 +2195,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrXOP5MXrlf5zxEfyobHe8nbBrvkn9TfEBHE52zmCJGRPoC6HBkwolUI61Cb84GMHu/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypK0ny-LzgeFnv7QruznSwGPMfZHeirY_UzI4JUpWUj4ulK7DOjG_lH5Y8rHpv2-kaPA/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -4573,11 +4573,51 @@ function applyStaffDiscount() {
   }
   errorDiv.style.display = 'block';
 }
+async function redeemPromoVoucher(code) {
+  showLoading('Redeeming promo voucher...');
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=redeemPromoVoucher&code=${encodeURIComponent(code)}`;
+    const response = await fetch(url);
+    const result = await response.json();
 
+    if (result.success) {
+      const discountValue = result.discount_value;
+      const promoText = result.promo_text;
+
+      // Store the promo info for later claiming (similar to Lucky Draw)
+      pendingPrize = {
+        receipt: code,
+        value: discountValue,
+        name: promoText,
+        isPromo: true
+      };
+      discountAmount = discountValue;
+      claimedReceiptInfo = pendingPrize;
+      updateCartUI();
+
+      showAlertModal('Promo Applied', `Promo voucher "${promoText}" applied. Discount: RM ${discountValue.toFixed(2)}`);
+      document.getElementById('claimPrizeModal').style.display = 'none';
+      resetClaimBarcodeBuffer();
+    } else {
+      showClaimError(result.error || 'Invalid or already used promo voucher.');
+    }
+  } catch (err) {
+    console.error(err);
+    showClaimError('Connection error. Please try again.');
+  } finally {
+    hideLoading();
+  }
+}
 async function checkReceiptForClaim() {
   const receipt = document.getElementById('claimReceiptInput').value.trim();
   if (!receipt) {
     showClaimError('Please enter a receipt number.');
+    return;
+  }
+   // Check if it's a promo voucher code (A1..A12, case insensitive)
+ const promoMatch = receipt.match(/^A([1-9]|1[0-2])$/i);
+if (promoMatch) {
+  await redeemPromoVoucher(receipt.toUpperCase());
     return;
   }
   showLoading('Checking receipt...');
@@ -6468,24 +6508,26 @@ async function getCachedMultiStoreReport(from, to) {
 }
 // Mapping of promo codes to voucher description
 const PROMO_MAP = {
-  "A1":  { text: "RM 2 CAR AROMATIC",           kind: "discount_price" },
-  "A2":  { text: "RM 8 PERFUME 15ML",           kind: "discount_price" },
-  "A3":  { text: "BUY 1 FREE 2 PERFUME",        kind: "bogo" },
-  "A4":  { text: "BUY 1 FREE 1 SIG PERFUME",    kind: "bogo" },
-  "A5":  { text: "BUY 1 FREE 1 EXCLUSIFS PERFUME", kind: "bogo" },
-  "A6":  { text: "LOTION BUY 1 FREE 1",         kind: "bogo" },
-  "A7":  { text: "ROOM SPRAY BUY 1 FREE 1",     kind: "bogo" },
-  "A8":  { text: "PILLOW MIST BUY 1 FREE 1",    kind: "bogo" },
-  "A9":  { text: "CAR AROMATIC BUY 1 FREE 1",   kind: "bogo" },
-  "A10": { text: "15 ML PERFUME BUY 1 FREE 1",  kind: "bogo" },
-  "A11": { text: "CANDLE BUY 1 FREE 1",         kind: "bogo" },
-  "A12": { text: "BODY WASH BUY 2 FREE 2",      kind: "bogo" }
+  "A1":  { text: "RM 36 CAR AROMATIC",           value: 36,  kind: "discount_price" },
+  "A2":  { text: "RM 67 PERFUME 15ML",           value: 67,  kind: "discount_price" },
+  "A3":  { text: "BUY 1 FREE 2 PERFUME",         value: 360, kind: "bogo" },
+  "A4":  { text: "BUY 1 FREE 1 SIG PERFUME",     value: 180, kind: "bogo" },
+  "A5":  { text: "BUY 1 FREE 1 EXCLUSIFS PERFUME", value: 280, kind: "bogo" },
+  "A6":  { text: "LOTION BUY 1 FREE 1",          value: 109, kind: "bogo" },
+  "A7":  { text: "ROOM SPRAY BUY 1 FREE 1",      value: 89,  kind: "bogo" },
+  "A8":  { text: "PILLOW MIST BUY 1 FREE 1",     value: 75,  kind: "bogo" },
+  "A9":  { text: "CAR AROMATIC BUY 1 FREE 1",    value: 38,  kind: "bogo" },
+  "A10": { text: "15 ML PERFUME BUY 1 FREE 1",   value: 75,  kind: "bogo" },
+  "A11": { text: "CANDLE BUY 1 FREE 1",          value: 109, kind: "bogo" },
+  "A12": { text: "BODY WASH BUY 2 FREE 2",       value: 134, kind: "bogo" }
 };
 
 async function processPromoBarcode(code) {
   const upperCode = code.trim().toUpperCase();
   const promo = PROMO_MAP[upperCode];
+  const discountValue = promo.value;
   if (!promo) {
+  
     promoVoucherError.innerText = `❌ Invalid promo code: ${code}. Use A1 .. A12.`;
     promoVoucherError.style.display = 'block';
     return;
@@ -6517,7 +6559,7 @@ async function processPromoBarcode(code) {
   const printed = await printPromoVoucher(promo.text, voucherId, validFromStr, validTillStr);
   if (printed) {
     // Optionally save to Google Sheet (optional – you can call a backend action)
-    await savePromoVoucherToSheet(voucherId, promo.text, currentEmployee?.name, issueDate, expiryDate);
+    await savePromoVoucherToSheet(voucherId, promo.text, discountValue, currentEmployee?.name, issueDate, expiryDate);
     showAlertModal('Voucher Printed', `Promo voucher "${promo.text}" printed successfully.\nValid until ${validTillStr}.`);
     closePromoVoucherModalFunc();
   } else {
@@ -6587,12 +6629,13 @@ async function printPromoVoucher(description, voucherId, validFrom, validTill) {
 }
 
 // Optional: save issued promo voucher to Google Sheet (reuse existing save mechanism)
-async function savePromoVoucherToSheet(voucherId, promoText, employeeName, issueDate, expiryDate) {
+async function savePromoVoucherToSheet(voucherId, promoText, discountValue, employeeName, issueDate, expiryDate) {
   try {
     const formData = new URLSearchParams();
     formData.append('action', 'savePromoVoucher');
     formData.append('voucher_id', voucherId);
     formData.append('promo_text', promoText);
+    formData.append('discount_value', discountValue);   // NEW
     formData.append('employee_name', employeeName || currentEmployee?.name || '');
     formData.append('issue_date', issueDate.toISOString());
     formData.append('expiry_date', expiryDate.toISOString());

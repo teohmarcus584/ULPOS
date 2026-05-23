@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -6362,22 +6362,50 @@ document.addEventListener('keydown', (e) => {
     return;
   }
 // INSIDE the keydown listener, after the login‑modal handling, add:
+// --- Promo modal barcode handling (buffer + timeout) ---
 if (promoModalActive) {
   if (e.key === 'Enter') {
     e.preventDefault();
+    // Process whatever is currently in the input field
     const code = promoCodeInput.value.trim();
     if (code) processPromoBarcode(code);
     return;
   }
+
+  // Only accept alphanumeric and dash characters
   if (e.key.length === 1 && /[a-zA-Z0-9-]/.test(e.key)) {
-    // accumulate into the input field itself (the user sees it)
-    promoCodeInput.value += e.key;
-    if (promoCodeInput.value.length === 2 && /^A[1-9]|A1[0-2]$/.test(promoCodeInput.value)) {
-      // auto‑process when exactly A1..A12 is typed
-      processPromoBarcode(promoCodeInput.value);
-    }
+    e.preventDefault();  // prevent double‑typing
+
+    // Append to a separate buffer (not directly to the input)
+    if (!window.promoBarcodeBuffer) window.promoBarcodeBuffer = '';
+    if (window.promoBarcodeTimer) clearTimeout(window.promoBarcodeTimer);
+
+    window.promoBarcodeBuffer += e.key;
+
+    // Update the input field for visual feedback (optional)
+    promoCodeInput.value = window.promoBarcodeBuffer;
+
+    // Set timer to process the buffer after a short pause (e.g., 150ms)
+    window.promoBarcodeTimer = setTimeout(() => {
+      const raw = window.promoBarcodeBuffer || '';
+      window.promoBarcodeBuffer = '';
+      promoCodeInput.value = '';
+
+      // Extract the first occurrence of A1..A12 (case‑insensitive)
+      const match = raw.match(/\b(A[1-9]|A1[0-2])\b/i);
+      if (match) {
+        processPromoBarcode(match[1].toUpperCase());
+      } else if (raw.length > 0) {
+        promoVoucherError.innerText = `❌ Invalid promo code: ${raw}. Use A1 .. A12.`;
+        promoVoucherError.style.display = 'block';
+        // Clear error after 3 seconds
+        setTimeout(() => {
+          if (promoVoucherError) promoVoucherError.style.display = 'none';
+        }, 3000);
+      }
+    }, 150);
   }
-  return; // don't process product barcode while modal is open
+  return; // do not process product barcode while modal is open
 }
   // --- CLAIM PRIZE MODAL (step1) BARCODE HANDLING ---
   const claimModal = document.getElementById('claimPrizeModal');
@@ -6464,7 +6492,7 @@ async function processPromoBarcode(code) {
   }
 
   // Generate unique voucher number
-  const voucherId = `PROMO-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const voucherId = upperCode;  // e.g., "A1"
   const issueDate = new Date();
   const expiryDate = new Date(issueDate);
   expiryDate.setDate(expiryDate.getDate() + 3);  // 3 days validity
@@ -6499,44 +6527,58 @@ async function processPromoBarcode(code) {
 }
 
 // Printer function for promo vouchers (similar to prize voucher)
+// Printer function for promo vouchers (QR code version)
 async function printPromoVoucher(description, voucherId, validFrom, validTill) {
   if (!isPrinterConnected || !printerCharacteristic) return false;
 
+  const encoder = new TextEncoder();
   const maxChars = paperSizeSelectModal.value === '58' ? 32 : 48;
   const separator = '='.repeat(maxChars);
+  const dash = '-'.repeat(maxChars);
 
-  const lines = [];
-  lines.push('');
-  lines.push('PROMOTIONAL VOUCHER');
-  lines.push(separator);
-  lines.push(`CODE   : ${voucherId.slice(-8)}`);
-  lines.push(`OFFER  : ${description}`);
-  lines.push(`VALID FROM : ${validFrom}`);
-  lines.push(`VALID TILL : ${validTill}`);
-  lines.push(separator);
-  lines.push('TERMS & CONDITIONS');
-  lines.push('- Present this voucher at checkout');
-  lines.push('- Not combinable with other promotions');
-  lines.push('- One time use only');
-  lines.push(separator);
-  lines.push('');
+  // Build lines exactly like Lucky Draw voucher
+  const lines = [
+    '',
+    'PROMOTIONAL VOUCHER',
+    separator,
+    `OFFER: ${description}`,
+    `CODE: ${voucherId.slice(-8)}`,
+    dash,
+    `VALID FROM: ${validFrom}`,
+    `VALID TILL: ${validTill}`,
+    separator,
+    'TERMS & CONDITIONS',
+    '- Present this QR code at checkout',
+    '- Not combinable with other promotions',
+    '- One time use only',
+    separator,
+    ''
+  ];
 
   const text = lines.join('\n');
+
   const commands = [];
   commands.push(0x1B, 0x40);                 // init
   commands.push(0x1B, 0x61, 0x01);           // center align
 
+  // Print text lines
   for (let ch of text) commands.push(ch.charCodeAt(0));
 
-  // Add barcode of voucherId (same as lucky draw)
-  const encoder = new TextEncoder();
-  const barcodeData = encoder.encode(voucherId);
-  const len = barcodeData.length;
-  commands.push(0x1D, 0x68, 0x40);           // barcode height
-  commands.push(0x1D, 0x77, 0x02);           // barcode width
-  commands.push(0x1B, 0x61, 0x01);           // center
-  commands.push(0x1D, 0x6B, 0x49, len);      // CODE128
-  for (let i = 0; i < len; i++) commands.push(barcodeData[i]);
+  // ---- QR Code (instead of barcode) ----
+  const qrData = voucherId;  // encode the voucher ID
+  const qrDataLen = qrData.length;
+
+  // ESC/POS QR Code commands (Model 2, size 8, error correction M)
+  commands.push(0x1D, 0x28, 0x6B, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00); // Select model 2
+  commands.push(0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, 0x08);       // Set size = 8 (adjust if needed)
+  commands.push(0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45, 0x30);       // Error correction level M (48)
+  commands.push(0x1D, 0x28, 0x6B, 0x00, 0x00, 0x31, 0x50, 0x30);       // Store QR data – placeholder length
+  // Store the actual QR data
+  const qrDataCommand = [0x1D, 0x28, 0x6B, (qrDataLen + 3) & 0xFF, ((qrDataLen + 3) >> 8) & 0xFF, 0x31, 0x50, 0x30];
+  for (let i = 0; i < qrDataLen; i++) qrDataCommand.push(qrData.charCodeAt(i));
+  commands.push(...qrDataCommand);
+  commands.push(0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30);         // Print QR code
+
   commands.push(0x0A, 0x0A);
   commands.push(0x1B, 0x64, 0x03);           // feed 3 lines
   commands.push(0x1D, 0x56, 0x41, 0x00);     // partial cut

@@ -1687,6 +1687,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
     <div class="pos-header-right">
 	 <button id="addProductHeaderBtn" class="cart-header-btn" style="display: none;">➕ Add Product</button>
       <span class="cashier-info" id="employeeNameHeader"></span>
+	   <button id="promoVoucherBtn" class="cart-header-btn" title="Print Promo Voucher">🎟️ Promo Voucher</button>
       <span id="barcodeStatus" class="cashier-info" style="background:#e8f5e9; color:#2c7a4b;">📷 Barcode ready</span>
       <button id="logoutHeaderBtn" class="logout-header-btn">🚪 Logout</button>
       <button id="printerIconBtn" class="printer-icon-btn">🖨️</button>
@@ -2176,7 +2177,21 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </div>
 </div>
 <div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"></div><div class="loading-text" id="loadingMessage">Processing...</div></div>
-
+<!-- Promo Voucher Modal -->
+<div id="promoVoucherModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 500px;">
+    <span class="close-modal" id="closePromoVoucherModal">×</span>
+    <div class="modal-title">🎟️ Scan Promo Barcode</div>
+    <div class="filter-group">
+      <label>Scan or type promo code (A1 … A12)</label>
+      <input type="text" id="promoCodeInput" class="modal-input" placeholder="e.g. A1" autofocus>
+    </div>
+    <div class="modal-buttons">
+      <button id="cancelPromoVoucherBtn" class="modal-btn modal-btn-secondary">Cancel</button>
+    </div>
+    <div id="promoVoucherError" style="color:#ef4444; margin-top:12px; display:none;"></div>
+  </div>
+</div>
 <script>
 
   // ==================== CONFIGURATION ====================
@@ -2366,7 +2381,37 @@ let storeReportCache = {};
 function getCacheKey(store, from, to) {
   return `store_${store}_${from}_${to}`;
 }
+// --- Promo Voucher Feature ---
+const promoVoucherBtn = document.getElementById('promoVoucherBtn');
+const promoVoucherModal = document.getElementById('promoVoucherModal');
+const promoCodeInput = document.getElementById('promoCodeInput');
+const closePromoVoucherModal = document.getElementById('closePromoVoucherModal');
+const cancelPromoVoucherBtn = document.getElementById('cancelPromoVoucherBtn');
+const promoVoucherError = document.getElementById('promoVoucherError');
 
+let promoModalActive = false;
+
+function openPromoVoucherModal() {
+  promoModalActive = true;
+  promoVoucherModal.style.display = 'flex';
+  promoCodeInput.value = '';
+  promoVoucherError.style.display = 'none';
+  promoCodeInput.focus();
+}
+
+function closePromoVoucherModalFunc() {
+  promoModalActive = false;
+  promoVoucherModal.style.display = 'none';
+}
+
+if (promoVoucherBtn) promoVoucherBtn.addEventListener('click', openPromoVoucherModal);
+if (closePromoVoucherModal) closePromoVoucherModal.addEventListener('click', closePromoVoucherModalFunc);
+if (cancelPromoVoucherBtn) cancelPromoVoucherBtn.addEventListener('click', closePromoVoucherModalFunc);
+
+// Also close when clicking on overlay background
+promoVoucherModal?.addEventListener('click', (e) => {
+  if (e.target === promoVoucherModal) closePromoVoucherModalFunc();
+});
 async function getCachedStoreReport(store, from, to) {
   const key = getCacheKey(store, from, to);
   const cached = storeReportCache[key];
@@ -4980,6 +5025,7 @@ async function completeCheckout(paymentMethod, cashReceived) {
   }
   checkoutLock = true;
 
+  // Disable confirm buttons to prevent further clicks
   const confirmCashBtn = document.getElementById('confirmCashBtn');
   const confirmOtherBtn = document.getElementById('confirmOtherBtn');
   if (confirmCashBtn) confirmCashBtn.disabled = true;
@@ -5026,11 +5072,8 @@ async function completeCheckout(paymentMethod, cashReceived) {
       sales_person_id: salesPersonId,
     };
 
-    // ✅ CAPTURE customer ID BEFORE clearing cart
-    const customerIdForLuckyDraw = transaction.customer_id;
-
     queueSale(transaction);
-    const success = true;
+    const success = true; // optimistic
 
     if (success) {
       // Update local stock
@@ -5066,26 +5109,24 @@ async function completeCheckout(paymentMethod, cashReceived) {
 
       invalidateAllReportCaches();
 
-      // ✅ FIXED: proper fakeReceipt object (no placeholder)
       const fakeReceipt = {
-        transaction_id: transaction.transaction_id,
-        timestamp: transaction.timestamp,
-        items: transaction.items,
-        total: transaction.total,
-        payment_method: transaction.payment_method,
-        store: transaction.store,
-        employee_id: transaction.employee_id,
-        employee_name: transaction.employee_name,
-        refunded: false,
-        discount: transaction.discount,
-        buy2_free1_discount: transaction.buy2_free1_discount,
-        buy3_free1_discount: transaction.buy3_free1_discount,
-        custom_discount: transaction.custom_discount,
-        staff_discount: transaction.staff_discount,
-        sales_person_name: transaction.sales_person_name,
-        sales_person_id: transaction.sales_person_id
-      };
-
+  transaction_id: transaction.transaction_id,
+  timestamp: transaction.timestamp,
+  items: transaction.items,
+  total: transaction.total,
+  payment_method: transaction.payment_method,
+  store: transaction.store,
+  employee_id: transaction.employee_id,
+  employee_name: transaction.employee_name,
+  refunded: false,
+  discount: transaction.discount,
+  buy2_free1_discount: transaction.buy2_free1_discount,
+  buy3_free1_discount: transaction.buy3_free1_discount,
+  custom_discount: transaction.custom_discount,
+  staff_discount: transaction.staff_discount,
+  sales_person_name: transaction.sales_person_name,
+  sales_person_id: transaction.sales_person_id
+};
       if (!cachedReceipts) cachedReceipts = [];
       cachedReceipts.unshift(fakeReceipt);
 
@@ -5104,10 +5145,8 @@ async function completeCheckout(paymentMethod, cashReceived) {
       document.getElementById('luckyTxId').innerText = transactionId;
       const luckyModal = document.getElementById('luckyDrawModal');
       luckyModal.style.display = 'flex';
-
-      // ✅ Use the captured ID – only one assignment
       document.getElementById('openLuckyDrawBtn').onclick = () => {
-        openLuckyDraw(transactionId, customerIdForLuckyDraw);
+        openLuckyDraw(transactionId, selectedCustomer?.id);
         luckyModal.style.display = 'none';
       };
 
@@ -6322,7 +6361,24 @@ document.addEventListener('keydown', (e) => {
     }
     return;
   }
-
+// INSIDE the keydown listener, after the login‑modal handling, add:
+if (promoModalActive) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const code = promoCodeInput.value.trim();
+    if (code) processPromoBarcode(code);
+    return;
+  }
+  if (e.key.length === 1 && /[a-zA-Z0-9-]/.test(e.key)) {
+    // accumulate into the input field itself (the user sees it)
+    promoCodeInput.value += e.key;
+    if (promoCodeInput.value.length === 2 && /^A[1-9]|A1[0-2]$/.test(promoCodeInput.value)) {
+      // auto‑process when exactly A1..A12 is typed
+      processPromoBarcode(promoCodeInput.value);
+    }
+  }
+  return; // don't process product barcode while modal is open
+}
   // --- CLAIM PRIZE MODAL (step1) BARCODE HANDLING ---
   const claimModal = document.getElementById('claimPrizeModal');
   const claimStep1 = document.getElementById('claimStep1');
@@ -6381,6 +6437,128 @@ async function getCachedMultiStoreReport(from, to) {
     return cached.data;
   }
   return null;
+}
+// Mapping of promo codes to voucher description
+const PROMO_MAP = {
+  "A1":  { text: "RM 2 CAR AROMATIC",           kind: "discount_price" },
+  "A2":  { text: "RM 8 PERFUME 15ML",           kind: "discount_price" },
+  "A3":  { text: "BUY 1 FREE 2 PERFUME",        kind: "bogo" },
+  "A4":  { text: "BUY 1 FREE 1 SIG PERFUME",    kind: "bogo" },
+  "A5":  { text: "BUY 1 FREE 1 EXCLUSIFS PERFUME", kind: "bogo" },
+  "A6":  { text: "LOTION BUY 1 FREE 1",         kind: "bogo" },
+  "A7":  { text: "ROOM SPRAY BUY 1 FREE 1",     kind: "bogo" },
+  "A8":  { text: "PILLOW MIST BUY 1 FREE 1",    kind: "bogo" },
+  "A9":  { text: "CAR AROMATIC BUY 1 FREE 1",   kind: "bogo" },
+  "A10": { text: "15 ML PERFUME BUY 1 FREE 1",  kind: "bogo" },
+  "A11": { text: "CANDLE BUY 1 FREE 1",         kind: "bogo" },
+  "A12": { text: "BODY WASH BUY 2 FREE 2",      kind: "bogo" }
+};
+
+async function processPromoBarcode(code) {
+  const upperCode = code.trim().toUpperCase();
+  const promo = PROMO_MAP[upperCode];
+  if (!promo) {
+    promoVoucherError.innerText = `❌ Invalid promo code: ${code}. Use A1 .. A12.`;
+    promoVoucherError.style.display = 'block';
+    return;
+  }
+
+  // Generate unique voucher number
+  const voucherId = `PROMO-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const issueDate = new Date();
+  const expiryDate = new Date(issueDate);
+  expiryDate.setDate(expiryDate.getDate() + 3);  // 3 days validity
+
+  const validFromStr = issueDate.toLocaleDateString();
+  const validTillStr = expiryDate.toLocaleDateString();
+
+  // 1. Print the voucher using the printer
+  if (!window.printerAPI || !window.printerAPI.isConnected) {
+    showLoading('Printer not connected. Opening Bluetooth...');
+    try {
+      await connectPrinter();
+      hideLoading();
+    } catch (err) {
+      hideLoading();
+      promoVoucherError.innerText = 'Printer not connected. Please connect first.';
+      promoVoucherError.style.display = 'block';
+      return;
+    }
+  }
+
+  const printed = await printPromoVoucher(promo.text, voucherId, validFromStr, validTillStr);
+  if (printed) {
+    // Optionally save to Google Sheet (optional – you can call a backend action)
+    await savePromoVoucherToSheet(voucherId, promo.text, currentEmployee?.name, issueDate, expiryDate);
+    showAlertModal('Voucher Printed', `Promo voucher "${promo.text}" printed successfully.\nValid until ${validTillStr}.`);
+    closePromoVoucherModalFunc();
+  } else {
+    promoVoucherError.innerText = 'Print failed. Check printer connection.';
+    promoVoucherError.style.display = 'block';
+  }
+}
+
+// Printer function for promo vouchers (similar to prize voucher)
+async function printPromoVoucher(description, voucherId, validFrom, validTill) {
+  if (!isPrinterConnected || !printerCharacteristic) return false;
+
+  const maxChars = paperSizeSelectModal.value === '58' ? 32 : 48;
+  const separator = '='.repeat(maxChars);
+
+  const lines = [];
+  lines.push('');
+  lines.push('PROMOTIONAL VOUCHER');
+  lines.push(separator);
+  lines.push(`CODE   : ${voucherId.slice(-8)}`);
+  lines.push(`OFFER  : ${description}`);
+  lines.push(`VALID FROM : ${validFrom}`);
+  lines.push(`VALID TILL : ${validTill}`);
+  lines.push(separator);
+  lines.push('TERMS & CONDITIONS');
+  lines.push('- Present this voucher at checkout');
+  lines.push('- Not combinable with other promotions');
+  lines.push('- One time use only');
+  lines.push(separator);
+  lines.push('');
+
+  const text = lines.join('\n');
+  const commands = [];
+  commands.push(0x1B, 0x40);                 // init
+  commands.push(0x1B, 0x61, 0x01);           // center align
+
+  for (let ch of text) commands.push(ch.charCodeAt(0));
+
+  // Add barcode of voucherId (same as lucky draw)
+  const encoder = new TextEncoder();
+  const barcodeData = encoder.encode(voucherId);
+  const len = barcodeData.length;
+  commands.push(0x1D, 0x68, 0x40);           // barcode height
+  commands.push(0x1D, 0x77, 0x02);           // barcode width
+  commands.push(0x1B, 0x61, 0x01);           // center
+  commands.push(0x1D, 0x6B, 0x49, len);      // CODE128
+  for (let i = 0; i < len; i++) commands.push(barcodeData[i]);
+  commands.push(0x0A, 0x0A);
+  commands.push(0x1B, 0x64, 0x03);           // feed 3 lines
+  commands.push(0x1D, 0x56, 0x41, 0x00);     // partial cut
+
+  return await sendChunkedData(new Uint8Array(commands), 500);
+}
+
+// Optional: save issued promo voucher to Google Sheet (reuse existing save mechanism)
+async function savePromoVoucherToSheet(voucherId, promoText, employeeName, issueDate, expiryDate) {
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', 'savePromoVoucher');
+    formData.append('voucher_id', voucherId);
+    formData.append('promo_text', promoText);
+    formData.append('employee_name', employeeName || currentEmployee?.name || '');
+    formData.append('issue_date', issueDate.toISOString());
+    formData.append('expiry_date', expiryDate.toISOString());
+    formData.append('store', currentStore);
+    await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+  } catch (err) {
+    console.warn('Failed to save promo voucher to sheet:', err);
+  }
 }
 function hidePaymentRowsForNonAdmin() {
   if (!currentEmployee || currentEmployee.isAdmin) return;

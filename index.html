@@ -4699,6 +4699,16 @@ function usePromoVoucher(code) {
     return { success: false, error: err.toString() };
   }
 }
+async function usePromoVoucherAfterSale(code) {
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', 'usePromoVoucher');
+    formData.append('code', code);
+    await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+  } catch (err) {
+    console.error('Failed to mark promo voucher as used:', err);
+  }
+}
 async function checkReceiptForClaim() {
   const receipt = document.getElementById('claimReceiptInput').value.trim();
   if (!receipt) {
@@ -4723,6 +4733,7 @@ async function checkReceiptForClaim() {
         value: discountValue,
         name: promoText,
         isPromo: true
+		 code: receipt
       };
       discountAmount = discountValue;
       claimedReceiptInfo = pendingPrize;

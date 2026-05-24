@@ -4611,16 +4611,45 @@ async function redeemPromoVoucher(code) {
 async function checkReceiptForClaim() {
   const receipt = document.getElementById('claimReceiptInput').value.trim();
   if (!receipt) {
-    showClaimError('Please enter a receipt number.');
+    showClaimError('Please enter a receipt number or promo code.');
     return;
   }
-   // Check if it's a promo voucher code (A1..A12, case insensitive)
- const promoMatch = receipt.match(/^A([1-9]|1[0-2])$/i);
-if (promoMatch) {
-  await redeemPromoVoucher(receipt.toUpperCase());
-    return;
+
+  // First, try to redeem as a promo voucher (checks PromoVouchers sheet)
+  showLoading('Checking promo voucher...');
+  try {
+    const promoUrl = `${APPS_SCRIPT_URL}?action=redeemPromoVoucher&code=${encodeURIComponent(receipt)}`;
+    const promoResponse = await fetch(promoUrl);
+    const promoResult = await promoResponse.json();
+
+    if (promoResult.success) {
+      // It's a valid promo voucher – apply discount
+      const discountValue = promoResult.discount_value;
+      const promoText = promoResult.promo_text;
+
+      pendingPrize = {
+        receipt: receipt,
+        value: discountValue,
+        name: promoText,
+        isPromo: true
+      };
+      discountAmount = discountValue;
+      claimedReceiptInfo = pendingPrize;
+      updateCartUI();
+
+      showAlertModal('Promo Applied', `Promo voucher "${promoText}" applied. Discount: RM ${discountValue.toFixed(2)}`);
+      document.getElementById('claimPrizeModal').style.display = 'none';
+      resetClaimBarcodeBuffer();
+      hideLoading();
+      return;
+    }
+  } catch (err) {
+    console.warn('Promo voucher check failed:', err);
+    // Continue to Lucky Draw check
   }
-  showLoading('Checking receipt...');
+
+  // If not a promo voucher (or lookup failed), try Lucky Draw receipt
+  showLoading('Checking Lucky Draw receipt...');
   try {
     const url = `${APPS_SCRIPT_URL}?action=get&receipt=${encodeURIComponent(receipt)}`;
     const response = await fetch(url);
@@ -4648,10 +4677,8 @@ if (promoMatch) {
       }
       window.pendingClaimReceipt = data;
 
-      // ✅ READ DISCOUNT_VALUE from backend
       let prizeValue = Number(data.discount_value);
       if (isNaN(prizeValue) || prizeValue <= 0) {
-        // Fallback: extract from prize label (should not happen)
         let prizeLabel = data.prize_label || data.prize || '';
         const match = prizeLabel.match(/RM\s*(\d+(?:\.\d+)?)/);
         if (match) prizeValue = parseFloat(match[1]);

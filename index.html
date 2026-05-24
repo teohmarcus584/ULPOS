@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2195,7 +2195,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypK0ny-LzgeFnv7QruznSwGPMfZHeirY_UzI4JUpWUj4ulK7DOjG_lH5Y8rHpv2-kaPA/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlmwMy8aANHy1aDhythk5KsSZHrsxrbSorYSWZy3Q0rUpbhwor_Wp2CnWjHk9SWvoolA/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -6537,9 +6537,9 @@ async function processPromoBarcode(code) {
                     Date.now().toString(36).slice(-5).toUpperCase() + 
                     Math.random().toString(36).substring(2,5).toUpperCase();
 
-  const issueDate = new Date();
-  const expiryDate = new Date(issueDate);
-  expiryDate.setDate(expiryDate.getDate() + 3);
+ const issueDate = new Date();
+// Fixed expiry date: June 7, 2026 (month is 0-indexed, so 5 = June)
+const expiryDate = new Date(2026, 5, 7);
 
   const validFromStr = issueDate.toLocaleDateString();
   const validTillStr = expiryDate.toLocaleDateString();

@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -4573,132 +4573,7 @@ function applyStaffDiscount() {
   }
   errorDiv.style.display = 'block';
 }
-function redeemPromoVoucher(code) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName("PromoVouchers");
-    if (!sheet) {
-      return { success: false, error: "Promo vouchers sheet not found." };
-    }
 
-    // Ensure required columns exist (idempotent)
-    let headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    let modified = false;
-    
-    if (headers.indexOf("Redeemed") === -1) {
-      const newCol = headers.length + 1;
-      sheet.getRange(1, newCol).setValue("Redeemed");
-      modified = true;
-    }
-    if (headers.indexOf("Redeemed At") === -1) {
-      const newCol = headers.length + 1;
-      sheet.getRange(1, newCol).setValue("Redeemed At");
-      modified = true;
-    }
-    
-    if (modified) {
-      SpreadsheetApp.flush(); // Force sheet update
-      // Refresh headers after adding columns
-      headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    }
-
-    const data = sheet.getDataRange().getValues();
-    if (data.length < 2) {
-      return { success: false, error: "No promo vouchers found." };
-    }
-
-    const voucherIdCol = headers.indexOf("Voucher ID");
-    const promoTextCol = headers.indexOf("Promo Text");
-    const discountValueCol = headers.indexOf("Discount Value (RM)");
-    const redeemedCol = headers.indexOf("Redeemed");
-    const redeemedAtCol = headers.indexOf("Redeemed At");
-    const expiryDateCol = headers.indexOf("Expiry Date");
-
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const voucherId = row[voucherIdCol];
-      if (String(voucherId).toUpperCase() === String(code).toUpperCase()) {
-        
-        // Check expiry
-        if (expiryDateCol !== -1 && row[expiryDateCol]) {
-          const expiry = new Date(row[expiryDateCol]);
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          if (expiry < today) {
-            return { success: false, error: "This voucher has expired." };
-          }
-        }
-
-        // Check if already redeemed
-        if (redeemedCol !== -1 && (row[redeemedCol] === true || row[redeemedCol] === "TRUE")) {
-          return { success: false, error: "This promo voucher has already been used." };
-        }
-
-        const discountValue = parseFloat(row[discountValueCol]) || 0;
-        const promoText = row[promoTextCol] || "";
-
-        // Mark as redeemed (ONLY after sale, but we return success for now)
-        // Note: The actual marking is done in usePromoVoucher() after payment.
-        // Here we just check and return the discount.
-        return {
-          success: true,
-          discount_value: discountValue,
-          promo_text: promoText,
-          voucher_id: voucherId
-        };
-      }
-    }
-    return { success: false, error: "Promo voucher not found." };
-  } catch (err) {
-    console.error("redeemPromoVoucher error: " + err.toString());
-    return { success: false, error: err.toString() };
-  }
-}
-function usePromoVoucher(code) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName("PromoVouchers");
-    if (!sheet) return { success: false, error: "Promo vouchers sheet not found." };
-
-    // Ensure columns exist (idempotent)
-    let headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    let modified = false;
-    if (headers.indexOf("Redeemed") === -1) {
-      sheet.getRange(1, headers.length + 1).setValue("Redeemed");
-      modified = true;
-    }
-    if (headers.indexOf("Redeemed At") === -1) {
-      sheet.getRange(1, headers.length + 1).setValue("Redeemed At");
-      modified = true;
-    }
-    if (modified) {
-      SpreadsheetApp.flush();
-      headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    }
-
-    const data = sheet.getDataRange().getValues();
-    const voucherIdCol = headers.indexOf("Voucher ID");
-    const redeemedCol = headers.indexOf("Redeemed");
-    const redeemedAtCol = headers.indexOf("Redeemed At");
-
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const voucherId = row[voucherIdCol];
-      if (String(voucherId).toUpperCase() === String(code).toUpperCase()) {
-        const rowNum = i + 1;
-        sheet.getRange(rowNum, redeemedCol + 1).setValue(true);
-        if (redeemedAtCol !== -1) {
-          sheet.getRange(rowNum, redeemedAtCol + 1).setValue(new Date().toISOString());
-        }
-        return { success: true };
-      }
-    }
-    return { success: false, error: "Promo voucher not found." };
-  } catch (err) {
-    console.error("usePromoVoucher error: " + err.toString());
-    return { success: false, error: err.toString() };
-  }
-}
 async function usePromoVoucherAfterSale(code) {
   try {
     const formData = new URLSearchParams();

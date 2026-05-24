@@ -2195,7 +2195,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlmwMy8aANHy1aDhythk5KsSZHrsxrbSorYSWZy3Q0rUpbhwor_Wp2CnWjHk9SWvoolA/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxMed5SJC85RWKxBfMEAx7as0bD78mE3ZphPdJj7qHbF4M3y2JHrTyHgZb7FYDouvaiLw/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -4608,6 +4608,16 @@ async function redeemPromoVoucher(code) {
     hideLoading();
   }
 }
+async function usePromoVoucherAfterSale(code) {
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', 'usePromoVoucher');
+    formData.append('code', code);
+    await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+  } catch (err) {
+    console.error('Failed to mark promo voucher as used:', err);
+  }
+}
 async function checkReceiptForClaim() {
   const receipt = document.getElementById('claimReceiptInput').value.trim();
   if (!receipt) {
@@ -4618,7 +4628,7 @@ async function checkReceiptForClaim() {
   // First, try to redeem as a promo voucher (checks PromoVouchers sheet)
   showLoading('Checking promo voucher...');
   try {
-    const promoUrl = `${APPS_SCRIPT_URL}?action=redeemPromoVoucher&code=${encodeURIComponent(receipt)}`;
+    const promoUrl = `${APPS_SCRIPT_URL}?action=getPromoVoucher&code=${encodeURIComponent(receipt)}`;
     const promoResponse = await fetch(promoUrl);
     const promoResult = await promoResponse.json();
 
@@ -5216,7 +5226,9 @@ async function completeCheckout(paymentMethod, cashReceived) {
         openLuckyDraw(transactionId, selectedCustomer?.id);
         luckyModal.style.display = 'none';
       };
-
+if (pendingPrize && pendingPrize.isPromo && pendingPrize.code) {
+  await usePromoVoucherAfterSale(pendingPrize.code);
+}
       clearCart();
     } else {
       await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');

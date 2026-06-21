@@ -5527,11 +5527,13 @@ function renderStockTakeProductGrid() {
         <div class="product-name">${escapeHtml(prod.name)}</div>
         <div class="product-category">${escapeHtml(prod.category)}</div>
         <div class="product-price">RM ${prod.price.toFixed(2)}</div>
-        <div class="product-stock">Current: ${prod.stock}</div>
-        <div style="margin-top:8px;">
+        <div class="product-stock" style="font-weight:600; color:#0f172a;">Current: ${prod.stock}</div>
+        <div style="margin-top:8px; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <button class="stock-take-dec-btn" data-id="${prod.id}" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:30px; font-weight:bold; font-size:1.2rem; cursor:pointer;">−</button>
           <input type="number" class="stock-take-input" data-id="${prod.id}" 
-                 value="${countedValue}" placeholder="Counted" 
+                 value="${countedValue}" placeholder="${prod.stock}" 
                  style="width:80px; padding:8px; border-radius:20px; border:1px solid #cbd5e1; text-align:center;">
+          <button class="stock-take-inc-btn" data-id="${prod.id}" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:30px; font-weight:bold; font-size:1.2rem; cursor:pointer;">+</button>
         </div>
       </div>
     `;
@@ -5551,6 +5553,7 @@ function renderStockTakeProductGrid() {
         const product = products.find(p => p.id == productId);
         if (existing) {
           existing.counted_stock = value;
+          existing.difference = value - existing.current_stock;
         } else if (product) {
           stockTakeData.push({
             product_id: product.id,
@@ -5561,9 +5564,52 @@ function renderStockTakeProductGrid() {
             difference: value - product.stock
           });
         }
-        // Update the difference in the UI
         updateStockTakeSummary();
       }
+    });
+  });
+  
+  // Attach decrement button listeners
+  document.querySelectorAll('.stock-take-dec-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const productId = btn.dataset.id;
+      const input = document.querySelector(`.stock-take-input[data-id="${productId}"]`);
+      if (input) {
+        let currentVal = parseInt(input.value);
+        if (isNaN(currentVal)) {
+          // If empty, use placeholder (current stock)
+          const product = products.find(p => p.id == productId);
+          currentVal = product ? product.stock : 0;
+        }
+        const newVal = Math.max(0, currentVal - 1);
+        input.value = newVal;
+        // Trigger input event
+        const event = new Event('input', { bubbles: true });
+        input.dispatchEvent(event);
+      }
+      e.stopPropagation();
+    });
+  });
+  
+  // Attach increment button listeners
+  document.querySelectorAll('.stock-take-inc-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const productId = btn.dataset.id;
+      const input = document.querySelector(`.stock-take-input[data-id="${productId}"]`);
+      if (input) {
+        let currentVal = parseInt(input.value);
+        if (isNaN(currentVal)) {
+          // If empty, use placeholder (current stock)
+          const product = products.find(p => p.id == productId);
+          currentVal = product ? product.stock : 0;
+        }
+        const newVal = currentVal + 1;
+        input.value = newVal;
+        // Trigger input event
+        const event = new Event('input', { bubbles: true });
+        input.dispatchEvent(event);
+      }
+      e.stopPropagation();
     });
   });
 }
@@ -8155,11 +8201,16 @@ document.getElementById('sideStockTakeApprovalBtn')?.addEventListener('click', w
   const closeSideMenuBtn = document.getElementById('closeSideMenuBtn');
 
   function openSideMenu() {
-    flushPendingStockChanges();
-    if (inventoryMode) toggleInventoryMode();
-    sideMenuOverlay.style.display = 'flex';
-    setTimeout(() => { sideMenuDiv.classList.add('open'); }, 10);
+  // ✅ Exit stock take mode if active
+  if (stockTakeMode) {
+    toggleStockTakeMode();  // This will exit stock take mode
   }
+  
+  flushPendingStockChanges();
+  if (inventoryMode) toggleInventoryMode();
+  sideMenuOverlay.style.display = 'flex';
+  setTimeout(() => { sideMenuDiv.classList.add('open'); }, 10);
+}
 
   function closeSideMenu() {
     sideMenuDiv.classList.remove('open');
@@ -8171,12 +8222,16 @@ document.getElementById('sideStockTakeApprovalBtn')?.addEventListener('click', w
   if (sideMenuOverlay) sideMenuOverlay.addEventListener('click', (e) => { if (e.target === sideMenuOverlay) closeSideMenu(); });
 
   function wrapMenuAction(actionFn) {
-    return async (...args) => {
-      if (inventoryMode && actionFn !== toggleInventoryMode) toggleInventoryMode();
-      await actionFn(...args);
-      closeSideMenu();
-    };
-  }
+  return async (...args) => {
+    // ✅ Exit stock take mode if active
+    if (stockTakeMode) {
+      toggleStockTakeMode();
+    }
+    if (inventoryMode && actionFn !== toggleInventoryMode) toggleInventoryMode();
+    await actionFn(...args);
+    closeSideMenu();
+  };
+}
 
   const sideReportBtn = document.getElementById('sideReportBtn');
   const sideSettlementBtn = document.getElementById('sideSettlementBtn');

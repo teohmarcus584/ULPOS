@@ -5477,13 +5477,13 @@ async function fetchReceipts(store, employeeId, from, to, search) {
 
 // ==================== STOCK TAKE FEATURE ====================
 let stockTakeMode = false;
-let stockTakeData = [];
+let stockTakeData = {};  // 👈 CHANGE: Use an object instead of array, keyed by product_id
 
 function toggleStockTakeMode() {
   stockTakeMode = !stockTakeMode;
   if (stockTakeMode) {
     // Enter stock take mode
-    stockTakeData = [];
+    stockTakeData = {};  // Reset as empty object
     document.getElementById('stockTakeModeIndicator').style.display = 'block';
     document.getElementById('submitStockTakeBtn').style.display = 'block';
     // Show products with input fields for counting
@@ -5513,17 +5513,18 @@ function renderStockTakeProductGrid() {
     return;
   }
   
+  // Count how many products have been counted
+  const countedCount = Object.keys(stockTakeData).length;
+  
   let html = '<div style="margin-bottom:16px; padding:12px; background:#f0fdf4; border-radius:16px; border:1px solid #10b981;">';
   html += '<strong>📋 Stock Take Mode</strong><br>';
-  html += `<span style="font-size:0.9rem; color:#64748b;">Products: ${filtered.length} | Counted: ${stockTakeData.length}</span>`;
+  html += `<span style="font-size:0.9rem; color:#64748b;">Products: ${filtered.length} | Counted: ${countedCount}</span>`;
   html += '</div>';
   
   html += '<div class="product-grid">';
   filtered.forEach(prod => {
-    // Find the MOST RECENT entry for this product
-    const existing = stockTakeData.filter(d => d.product_id === prod.id);
-    const lastEntry = existing.length > 0 ? existing[existing.length - 1] : null;
-    const countedValue = lastEntry ? lastEntry.counted_stock : '';
+    const existing = stockTakeData[prod.id];
+    const countedValue = existing ? existing.counted_stock : '';
     html += `
       <div class="product-card" data-id="${prod.id}">
         <div class="product-name">${escapeHtml(prod.name)}</div>
@@ -5545,7 +5546,7 @@ function renderStockTakeProductGrid() {
   productGridEl.innerHTML = html;
   productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
   
-  // --- Helper function to update stock take data (REPLACE, don't add) ---
+  // --- Helper function to update stock take data ---
   function updateStockTakeData(productId, newValue) {
     // Get the product from the current products array
     const product = products.find(p => p.id == productId);
@@ -5554,18 +5555,15 @@ function renderStockTakeProductGrid() {
     // Always use the product's current stock as the baseline
     const currentStock = product.stock;
     
-    // 🔥 CRITICAL: Remove ALL existing entries for this product first
-    stockTakeData = stockTakeData.filter(d => d.product_id !== productId);
-    
-    // Then add the new entry
-    stockTakeData.push({
+    // 👈 KEY FIX: Directly assign to the object property (overwrites, doesn't add)
+    stockTakeData[productId] = {
       product_id: product.id,
       product_name: product.name,
       category: product.category,
       current_stock: currentStock,
       counted_stock: newValue,
       difference: newValue - currentStock
-    });
+    };
     
     // Update the display
     updateStockTakeSummary();
@@ -5573,18 +5571,24 @@ function renderStockTakeProductGrid() {
   
   // Attach input listeners
   document.querySelectorAll('.stock-take-input').forEach(input => {
-    input.addEventListener('input', (e) => {
+    // Remove old listener to prevent duplicates
+    input.removeEventListener('input', input._stockTakeHandler);
+    
+    const handler = (e) => {
       const productId = input.dataset.id;
       const value = parseInt(input.value);
       if (!isNaN(value) && value >= 0) {
         updateStockTakeData(productId, value);
       }
-    });
+    };
+    input._stockTakeHandler = handler;
+    input.addEventListener('input', handler);
   });
   
   // Attach decrement button listeners
   document.querySelectorAll('.stock-take-dec-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.removeEventListener('click', btn._decHandler);
+    const handler = (e) => {
       const productId = btn.dataset.id;
       const input = document.querySelector(`.stock-take-input[data-id="${productId}"]`);
       if (input) {
@@ -5600,12 +5604,15 @@ function renderStockTakeProductGrid() {
         updateStockTakeData(productId, newVal);
       }
       e.stopPropagation();
-    });
+    };
+    btn._decHandler = handler;
+    btn.addEventListener('click', handler);
   });
   
   // Attach increment button listeners
   document.querySelectorAll('.stock-take-inc-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.removeEventListener('click', btn._incHandler);
+    const handler = (e) => {
       const productId = btn.dataset.id;
       const input = document.querySelector(`.stock-take-input[data-id="${productId}"]`);
       if (input) {
@@ -5621,25 +5628,30 @@ function renderStockTakeProductGrid() {
         updateStockTakeData(productId, newVal);
       }
       e.stopPropagation();
-    });
+    };
+    btn._incHandler = handler;
+    btn.addEventListener('click', handler);
   });
 }
 
 function updateStockTakeSummary() {
   // Update the counter and show differences
-  const totalCounted = stockTakeData.length;
+  const totalCounted = Object.keys(stockTakeData).length;
   const indicator = document.querySelector('#stockTakeModeIndicator span');
   if (indicator) indicator.innerText = `Counted: ${totalCounted} products`;
 }
 
 async function submitStockTake() {
-  if (stockTakeData.length === 0) {
+  // Convert object to array for processing
+  const dataArray = Object.values(stockTakeData);
+  
+  if (dataArray.length === 0) {
     await showAlertModal('Empty Stock Take', 'Please count at least one product before submitting.');
     return;
   }
   
   // Filter out items with no change or invalid values
-  const itemsToSubmit = stockTakeData.filter(d => {
+  const itemsToSubmit = dataArray.filter(d => {
     // Re-fetch the product to ensure we have the latest current stock
     const product = products.find(p => p.id == d.product_id);
     if (!product) return false;

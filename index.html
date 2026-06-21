@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -5543,28 +5543,37 @@ function renderStockTakeProductGrid() {
   productGridEl.innerHTML = html;
   productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
   
+  // --- Helper function to update stock take data ---
+  function updateStockTakeData(productId, newValue) {
+    const product = products.find(p => p.id == productId);
+    if (!product) return;
+    
+    const existing = stockTakeData.find(d => d.product_id === productId);
+    if (existing) {
+      // Update existing entry
+      existing.counted_stock = newValue;
+      existing.difference = newValue - existing.current_stock;
+    } else {
+      // Create new entry
+      stockTakeData.push({
+        product_id: product.id,
+        product_name: product.name,
+        category: product.category,
+        current_stock: product.stock,
+        counted_stock: newValue,
+        difference: newValue - product.stock
+      });
+    }
+    updateStockTakeSummary();
+  }
+  
   // Attach input listeners
   document.querySelectorAll('.stock-take-input').forEach(input => {
     input.addEventListener('input', (e) => {
       const productId = input.dataset.id;
       const value = parseInt(input.value);
       if (!isNaN(value) && value >= 0) {
-        const existing = stockTakeData.find(d => d.product_id === productId);
-        const product = products.find(p => p.id == productId);
-        if (existing) {
-          existing.counted_stock = value;
-          existing.difference = value - existing.current_stock;
-        } else if (product) {
-          stockTakeData.push({
-            product_id: product.id,
-            product_name: product.name,
-            category: product.category,
-            current_stock: product.stock,
-            counted_stock: value,
-            difference: value - product.stock
-          });
-        }
-        updateStockTakeSummary();
+        updateStockTakeData(productId, value);
       }
     });
   });
@@ -5583,13 +5592,34 @@ function renderStockTakeProductGrid() {
         }
         const newVal = Math.max(0, currentVal - 1);
         input.value = newVal;
-        // Trigger input event
-        const event = new Event('input', { bubbles: true });
-        input.dispatchEvent(event);
+        // Update stock take data directly
+        updateStockTakeData(productId, newVal);
       }
       e.stopPropagation();
     });
   });
+  
+  // Attach increment button listeners
+  document.querySelectorAll('.stock-take-inc-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const productId = btn.dataset.id;
+      const input = document.querySelector(`.stock-take-input[data-id="${productId}"]`);
+      if (input) {
+        let currentVal = parseInt(input.value);
+        if (isNaN(currentVal)) {
+          // If empty, use placeholder (current stock)
+          const product = products.find(p => p.id == productId);
+          currentVal = product ? product.stock : 0;
+        }
+        const newVal = currentVal + 1;
+        input.value = newVal;
+        // Update stock take data directly
+        updateStockTakeData(productId, newVal);
+      }
+      e.stopPropagation();
+    });
+  });
+}
   
   // Attach increment button listeners
   document.querySelectorAll('.stock-take-inc-btn').forEach(btn => {

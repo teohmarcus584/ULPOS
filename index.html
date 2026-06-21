@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -5545,23 +5545,28 @@ function renderStockTakeProductGrid() {
   
   // --- Helper function to update stock take data ---
   function updateStockTakeData(productId, newValue) {
+    // Get the product from the current products array
     const product = products.find(p => p.id == productId);
     if (!product) return;
     
+    // Always use the product's current stock as the baseline
+    const currentStock = product.stock;
+    
     const existing = stockTakeData.find(d => d.product_id === productId);
     if (existing) {
-      // Update existing entry
+      // Update existing entry - always use the latest current stock
+      existing.current_stock = currentStock;
       existing.counted_stock = newValue;
-      existing.difference = newValue - existing.current_stock;
+      existing.difference = newValue - currentStock;
     } else {
       // Create new entry
       stockTakeData.push({
         product_id: product.id,
         product_name: product.name,
         category: product.category,
-        current_stock: product.stock,
+        current_stock: currentStock,
         counted_stock: newValue,
-        difference: newValue - product.stock
+        difference: newValue - currentStock
       });
     }
     updateStockTakeSummary();
@@ -5586,7 +5591,7 @@ function renderStockTakeProductGrid() {
       if (input) {
         let currentVal = parseInt(input.value);
         if (isNaN(currentVal)) {
-          // If empty, use placeholder (current stock)
+          // If empty, use placeholder (current stock from products array)
           const product = products.find(p => p.id == productId);
           currentVal = product ? product.stock : 0;
         }
@@ -5607,7 +5612,7 @@ function renderStockTakeProductGrid() {
       if (input) {
         let currentVal = parseInt(input.value);
         if (isNaN(currentVal)) {
-          // If empty, use placeholder (current stock)
+          // If empty, use placeholder (current stock from products array)
           const product = products.find(p => p.id == productId);
           currentVal = product ? product.stock : 0;
         }
@@ -5634,10 +5639,27 @@ async function submitStockTake() {
     return;
   }
   
+  // --- DEBUG: Log the data to see what's happening ---
+  console.log('Stock Take Data:', JSON.stringify(stockTakeData, null, 2));
+  
   // Filter out items with no change or invalid values
-  const itemsToSubmit = stockTakeData.filter(d => 
-    !isNaN(d.counted_stock) && d.counted_stock >= 0 && d.counted_stock !== d.current_stock
-  );
+  // Compare counted_stock with current_stock (which should always be the product's current stock)
+  const itemsToSubmit = stockTakeData.filter(d => {
+    // Re-fetch the product to ensure we have the latest current stock
+    const product = products.find(p => p.id == d.product_id);
+    if (!product) return false;
+    
+    // Update the current_stock to match the product's actual stock
+    d.current_stock = product.stock;
+    d.difference = d.counted_stock - d.current_stock;
+    
+    return !isNaN(d.counted_stock) && 
+           d.counted_stock >= 0 && 
+           d.counted_stock !== d.current_stock;
+  });
+  
+  // --- DEBUG: Log what will be submitted ---
+  console.log('Items to submit:', JSON.stringify(itemsToSubmit, null, 2));
   
   if (itemsToSubmit.length === 0) {
     await showAlertModal('No Changes', 'No stock changes detected. Please update quantities.');

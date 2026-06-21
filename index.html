@@ -1694,20 +1694,32 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
     </div>
   </div>
   <div class="pos-dashboard">
-    <div class="products-panel">
-      <div class="filter-bar">
-        <select id="categorySelect"><option value="all">📂 All Categories</option></select>
-        <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search product...">
-        <button id="refreshProductsPanelBtn" class="refresh-btn" title="Force sync now">🔄 Sync now</button>
-        <button id="lowStockToggleBtn" class="low-stock-toggle">⚠️ Low Stock</button>
-        <div class="view-toggle">
-          <button id="backToCategoriesBtn" style="display:none;" class="refresh-btn">← Categories</button>
-         <button id="gridViewBtn" title="Grid view">⊞</button>
-<button id="listViewBtn" class="active" title="List view">≡</button>
-        </div>
-      </div>
-      <div id="productGrid" class="product-grid">Loading products...</div>
+   <div class="products-panel">
+  <div class="filter-bar">
+    <select id="categorySelect">...</select>
+    <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search product...">
+    <button id="refreshProductsPanelBtn" class="refresh-btn">🔄 Sync now</button>
+    <button id="lowStockToggleBtn" class="low-stock-toggle">⚠️ Low Stock</button>
+    <div class="view-toggle">
+      <button id="backToCategoriesBtn" style="display:none;" class="refresh-btn">← Categories</button>
+      <button id="gridViewBtn" title="Grid view">⊞</button>
+      <button id="listViewBtn" class="active" title="List view">≡</button>
     </div>
+  </div>
+  
+  <!-- ✅ ADD STOCK TAKE MODE INDICATOR HERE (BEFORE productGrid) -->
+  <div id="stockTakeModeIndicator" style="display:none; background:#f0fdf4; border:2px solid #10b981; border-radius:12px; padding:12px; margin:8px 0; text-align:center;">
+    <strong>📋 Stock Take Mode</strong>
+    <span style="display:block; font-size:0.9rem; color:#64748b;">Count: <span id="stockTakeCount">0</span> products</span>
+  </div>
+  
+  <!-- ✅ ADD SUBMIT BUTTON HERE (BEFORE productGrid) -->
+  <button id="submitStockTakeBtn" style="display:none; background:#10b981; color:white; border:none; border-radius:40px; padding:12px 24px; font-weight:600; cursor:pointer; width:100%; margin-top:12px;">
+    📤 Submit Stock Take
+  </button>
+  
+  <div id="productGrid" class="product-grid">Loading products...</div>
+</div>
     <div class="cart-panel">
       <div id="cartHandle" class="cart-handle"><span class="cart-handle-icon">▶</span></div>
       <div class="cart-header">
@@ -1748,8 +1760,26 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 </div>
 
 <!-- Side Menu -->
-<div id="sideMenuOverlay" class="side-menu-overlay"><div id="sideMenu" class="side-menu"><div class="menu-header"><h3>Menu</h3><button class="close-menu" id="closeSideMenuBtn">✕</button></div><div class="menu-buttons"><button id="sideReportBtn" class="menu-btn">📊 Report</button><button id="sideSettlementBtn" class="menu-btn">💰 Settlement</button><button id="sideCollectionBtn" class="menu-btn" style="display: none;">💵 Cash Collection</button><button id="sideInventoryBtn" class="menu-btn" style="display: none;">📦 Inventory</button><button id="sideReceiptsBtn" class="menu-btn">📜 Receipts</button><button id="sideDrawerBtn" class="menu-btn">💰 Open Drawer</button><button id="sideChangePinBtn" class="menu-btn">🔑 Change PIN</button><button id="sideStockAlertBtn" class="menu-btn">🔔 Stock Alerts: OFF</button><button id="sideTelegramBtn" class="menu-btn">📱 Telegram Alerts</button></div></div></div>
-
+<div id="sideMenuOverlay" class="side-menu-overlay"><div id="sideMenu" class="side-menu">
+  <div class="menu-header">
+    <h3>Menu</h3>
+    <button class="close-menu" id="closeSideMenuBtn">✕</button>
+  </div>
+  <div class="menu-buttons">
+    <button id="sideReportBtn" class="menu-btn">📊 Report</button>
+    <button id="sideSettlementBtn" class="menu-btn">💰 Settlement</button>
+    <button id="sideCollectionBtn" class="menu-btn" style="display: none;">💵 Cash Collection</button>
+    <button id="sideInventoryBtn" class="menu-btn" style="display: none;">📦 Inventory</button>
+    <!-- ✅ ADD STOCK TAKE BUTTONS HERE -->
+    <button id="sideStockTakeBtn" class="menu-btn">📋 Stock Take</button>
+    <button id="sideStockTakeApprovalBtn" class="menu-btn" style="display: none;">✅ Approve Stock Take</button>
+    <button id="sideReceiptsBtn" class="menu-btn">📜 Receipts</button>
+    <button id="sideDrawerBtn" class="menu-btn">💰 Open Drawer</button>
+    <button id="sideChangePinBtn" class="menu-btn">🔑 Change PIN</button>
+    <button id="sideStockAlertBtn" class="menu-btn">🔔 Stock Alerts: OFF</button>
+    <button id="sideTelegramBtn" class="menu-btn">📱 Telegram Alerts</button>
+  </div>
+</div>
 <!-- All Required Modals (fully defined) -->
 <div id="changePinModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 400px;">
@@ -2195,7 +2225,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzEktp0ZaDvBoVjUKbmcTJHBc2Rjiv2nnBJDiMXOubWLzME_K6K1vLln6i-Xy1lYbJn0Q/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwkRWGFNjJ5TZVHKFwvrGVmzA-YJsBqAQDKDiglBrImVd2hSRvFeIkTu9ydt9X9eLmHxA/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -2797,7 +2827,10 @@ function applyRoleBasedUI() {
     if (sideCollection) sideCollection.style.display = 'none';
     storeSelect.disabled = true;
   }
-
+ const approvalBtn = document.getElementById('sideStockTakeApprovalBtn');
+  if (approvalBtn) {
+    approvalBtn.style.display = currentEmployee?.isAdmin ? 'flex' : 'none';
+  }
   // --- Report modal filter groups & charts ---
   const reportStoreFilter = document.getElementById('reportStoreFilterGroup');
   const employeeFilterGroup = document.getElementById('employeeFilterGroup');
@@ -5441,6 +5474,367 @@ async function fetchReceipts(store, employeeId, from, to, search) {
     hideLoading();
   }
 }
+
+// ==================== STOCK TAKE FEATURE ====================
+let stockTakeMode = false;
+let stockTakeData = [];
+
+function toggleStockTakeMode() {
+  stockTakeMode = !stockTakeMode;
+  if (stockTakeMode) {
+    // Enter stock take mode
+    stockTakeData = [];
+    document.getElementById('stockTakeModeIndicator').style.display = 'block';
+    document.getElementById('submitStockTakeBtn').style.display = 'block';
+    // Show products with input fields for counting
+    renderStockTakeProductGrid();
+  } else {
+    // Exit stock take mode
+    document.getElementById('stockTakeModeIndicator').style.display = 'none';
+    document.getElementById('submitStockTakeBtn').style.display = 'none';
+    renderProductGrid(); // back to normal view
+  }
+}
+
+function renderStockTakeProductGrid() {
+  const searchTerm = searchInput.value.toLowerCase();
+  const selectedCategory = categorySelect.value;
+  
+  let filtered = products.slice();
+  if (selectedCategory !== 'all') {
+    filtered = filtered.filter(p => p.category === selectedCategory);
+  }
+  if (searchTerm) {
+    filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm));
+  }
+  
+  if (filtered.length === 0) {
+    productGridEl.innerHTML = '<div style="text-align:center; padding:20px;">No products to count.</div>';
+    return;
+  }
+  
+  let html = '<div style="margin-bottom:16px; padding:12px; background:#f0fdf4; border-radius:16px; border:1px solid #10b981;">';
+  html += '<strong>📋 Stock Take Mode</strong><br>';
+  html += `<span style="font-size:0.9rem; color:#64748b;">Products: ${filtered.length} | Counted: ${stockTakeData.length}</span>`;
+  html += '</div>';
+  
+  html += '<div class="product-grid">';
+  filtered.forEach(prod => {
+    const existing = stockTakeData.find(d => d.product_id === prod.id);
+    const countedValue = existing ? existing.counted_stock : '';
+    html += `
+      <div class="product-card" data-id="${prod.id}">
+        <div class="product-name">${escapeHtml(prod.name)}</div>
+        <div class="product-category">${escapeHtml(prod.category)}</div>
+        <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+        <div class="product-stock">Current: ${prod.stock}</div>
+        <div style="margin-top:8px;">
+          <input type="number" class="stock-take-input" data-id="${prod.id}" 
+                 value="${countedValue}" placeholder="Counted" 
+                 style="width:80px; padding:8px; border-radius:20px; border:1px solid #cbd5e1; text-align:center;">
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  
+  productGridEl.innerHTML = html;
+  productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
+  
+  // Attach input listeners
+  document.querySelectorAll('.stock-take-input').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const productId = input.dataset.id;
+      const value = parseInt(input.value);
+      if (!isNaN(value) && value >= 0) {
+        const existing = stockTakeData.find(d => d.product_id === productId);
+        const product = products.find(p => p.id == productId);
+        if (existing) {
+          existing.counted_stock = value;
+        } else if (product) {
+          stockTakeData.push({
+            product_id: product.id,
+            product_name: product.name,
+            category: product.category,
+            current_stock: product.stock,
+            counted_stock: value,
+            difference: value - product.stock
+          });
+        }
+        // Update the difference in the UI
+        updateStockTakeSummary();
+      }
+    });
+  });
+}
+
+function updateStockTakeSummary() {
+  // Update the counter and show differences
+  const totalCounted = stockTakeData.length;
+  const indicator = document.querySelector('#stockTakeModeIndicator span');
+  if (indicator) indicator.innerText = `Counted: ${totalCounted} products`;
+}
+
+async function submitStockTake() {
+  if (stockTakeData.length === 0) {
+    await showAlertModal('Empty Stock Take', 'Please count at least one product before submitting.');
+    return;
+  }
+  
+  // Filter out items with no change or invalid values
+  const itemsToSubmit = stockTakeData.filter(d => 
+    !isNaN(d.counted_stock) && d.counted_stock >= 0 && d.counted_stock !== d.current_stock
+  );
+  
+  if (itemsToSubmit.length === 0) {
+    await showAlertModal('No Changes', 'No stock changes detected. Please update quantities.');
+    return;
+  }
+  
+  const confirmed = await showConfirmModal(
+    'Submit Stock Take',
+    `Submit stock take for ${itemsToSubmit.length} product(s) with changes?`
+  );
+  
+  if (!confirmed) return;
+  
+  showLoading('Submitting stock take request...');
+  
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', 'createStockTakeRequest');
+    formData.append('store', currentStore);
+    formData.append('employee_id', currentEmployee.id);
+    formData.append('employee_name', currentEmployee.name);
+    formData.append('items', JSON.stringify(itemsToSubmit));
+    
+    const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+    const result = await response.json();
+    
+    if (result.success) {
+      await showAlertModal('Stock Take Submitted', 
+        `Stock take request submitted successfully!\n\n` +
+        `Request ID: ${result.request_id}\n` +
+        `Items: ${itemsToSubmit.length} products\n` +
+        `Awaiting manager approval.`
+      );
+      // Exit stock take mode
+      toggleStockTakeMode();
+    } else {
+      throw new Error(result.error || 'Unknown error');
+    }
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Error', 'Failed to submit stock take: ' + err.message);
+  } finally {
+    hideLoading();
+  }
+}
+
+// ==================== MANAGER STOCK TAKE APPROVAL ====================
+async function openStockTakeApprovalModal() {
+  if (!currentEmployee || !currentEmployee.isAdmin) {
+    await showAlertModal('Access Denied', 'Only managers can approve stock take requests.');
+    return;
+  }
+  
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.style.display = 'flex';
+  modal.innerHTML = `
+    <div class="modal-container" style="max-width: 800px;">
+      <span class="close-modal" id="closeStockTakeApproval">×</span>
+      <div class="modal-title">📋 Stock Take Approvals</div>
+      <div id="stockTakeRequestsList" style="max-height: 60vh; overflow-y: auto; margin: 16px 0;">
+        <div style="text-align:center; padding:20px;">Loading requests...</div>
+      </div>
+      <div class="modal-buttons">
+        <button id="refreshStockTakeBtn" class="modal-btn modal-btn-secondary">🔄 Refresh</button>
+        <button id="closeStockTakeApprovalBtn" class="modal-btn modal-btn-secondary">Close</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  // Load pending requests
+  await loadPendingStockTakeRequests(modal);
+  
+  // Event listeners
+  modal.querySelector('#closeStockTakeApproval').addEventListener('click', () => modal.remove());
+  modal.querySelector('#closeStockTakeApprovalBtn').addEventListener('click', () => modal.remove());
+  modal.querySelector('#refreshStockTakeBtn').addEventListener('click', () => loadPendingStockTakeRequests(modal));
+}
+
+async function loadPendingStockTakeRequests(modal) {
+  const list = modal.querySelector('#stockTakeRequestsList');
+  if (!list) return;
+  
+  list.innerHTML = '<div style="text-align:center; padding:20px;">Loading requests...</div>';
+  
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=getPendingStockTakeRequests&store=all&_=${Date.now()}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    
+    if (!result.success || !result.requests || result.requests.length === 0) {
+      list.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">No pending stock take requests.</div>';
+      return;
+    }
+    
+    let html = '';
+    for (const req of result.requests) {
+      const date = new Date(req.timestamp).toLocaleString();
+      const storeName = req.store.charAt(0).toUpperCase() + req.store.slice(1);
+      
+      html += `
+        <div style="background:#f8fafc; border-radius:16px; padding:16px; margin-bottom:12px; border-left:4px solid #f59e0b;">
+          <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:8px;">
+            <div>
+              <strong style="font-size:1.1rem;">🏪 ${storeName}</strong>
+              <span style="margin-left:12px; font-size:0.9rem; color:#64748b;">${date}</span>
+            </div>
+            <div>
+              <span style="background:#fef3c7; color:#92400e; padding:4px 12px; border-radius:20px; font-size:0.8rem;">PENDING</span>
+            </div>
+          </div>
+          <div style="font-size:0.9rem; margin-bottom:8px;">
+            👤 ${req.employee_name} (ID: ${req.employee_id})
+          </div>
+          <div style="background:white; border-radius:12px; padding:12px; margin:8px 0; max-height:200px; overflow-y:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+              <thead>
+                <tr style="border-bottom:1px solid #e2e8f0;">
+                  <th style="text-align:left; padding:4px 8px;">Product</th>
+                  <th style="text-align:right; padding:4px 8px;">Current</th>
+                  <th style="text-align:right; padding:4px 8px;">Counted</th>
+                  <th style="text-align:right; padding:4px 8px;">Diff</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
+      
+      for (const item of req.items) {
+        const diff = item.counted_stock - item.current_stock;
+        const diffColor = diff > 0 ? '#2c7a4b' : diff < 0 ? '#ef4444' : '#64748b';
+        html += `
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:4px 8px;">${escapeHtml(item.product_name)}</td>
+            <td style="text-align:right; padding:4px 8px;">${item.current_stock}</td>
+            <td style="text-align:right; padding:4px 8px; font-weight:600;">${item.counted_stock}</td>
+            <td style="text-align:right; padding:4px 8px; color:${diffColor}; font-weight:600;">${diff > 0 ? '+' : ''}${diff}</td>
+          </tr>
+        `;
+      }
+      
+      html += `
+              </tbody>
+            </table>
+          </div>
+          <div style="display:flex; gap:12px; margin-top:12px; justify-content:flex-end;">
+            <button class="approve-stock-take-btn" data-request="${req.request_id}" 
+                    style="background:#2c7a4b; color:white; border:none; border-radius:40px; padding:8px 24px; font-weight:600; cursor:pointer;">
+              ✅ Approve
+            </button>
+            <button class="reject-stock-take-btn" data-request="${req.request_id}"
+                    style="background:#ef4444; color:white; border:none; border-radius:40px; padding:8px 24px; font-weight:600; cursor:pointer;">
+              ❌ Reject
+            </button>
+          </div>
+        </div>
+      `;
+    }
+    
+    list.innerHTML = html;
+    
+    // Attach approve/reject handlers
+    list.querySelectorAll('.approve-stock-take-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const requestId = btn.dataset.request;
+        approveStockTakeRequest(requestId, modal);
+      });
+    });
+    
+    list.querySelectorAll('.reject-stock-take-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const requestId = btn.dataset.request;
+        rejectStockTakeRequest(requestId, modal);
+      });
+    });
+    
+  } catch (err) {
+    console.error(err);
+    list.innerHTML = '<div style="text-align:center; padding:20px; color:#ef4444;">Failed to load requests.</div>';
+  }
+}
+
+async function approveStockTakeRequest(requestId, modal) {
+  const confirmed = await showConfirmModal(
+    'Approve Stock Take',
+    `Are you sure you want to approve request ${requestId}? This will update product stocks in the system.`
+  );
+  
+  if (!confirmed) return;
+  
+  showLoading('Approving stock take...');
+  
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', 'approveStockTake');
+    formData.append('request_id', requestId);
+    formData.append('approved_by', currentEmployee.id);
+    formData.append('approved_by_name', currentEmployee.name);
+    
+    const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+    const result = await response.json();
+    
+    if (result.success) {
+      await showAlertModal('Approved', `Stock take approved! ${result.updated_count} product(s) updated.`);
+      // Refresh the list
+      await loadPendingStockTakeRequests(modal);
+      // Refresh product display
+      await fetchProductsFromSheet(true);
+      renderProductGrid();
+    } else {
+      throw new Error(result.error || 'Unknown error');
+    }
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Error', 'Failed to approve: ' + err.message);
+  } finally {
+    hideLoading();
+  }
+}
+
+async function rejectStockTakeRequest(requestId, modal) {
+  const reason = await showInputModal('Rejection Reason', 'Enter reason for rejection');
+  if (reason === null) return; // User cancelled
+  
+  showLoading('Rejecting stock take...');
+  
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', 'rejectStockTake');
+    formData.append('request_id', requestId);
+    formData.append('rejected_by', currentEmployee.id);
+    formData.append('rejected_by_name', currentEmployee.name);
+    formData.append('reason', reason || 'No reason provided');
+    
+    const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+    const result = await response.json();
+    
+    if (result.success) {
+      await showAlertModal('Rejected', 'Stock take request rejected.');
+      await loadPendingStockTakeRequests(modal);
+    } else {
+      throw new Error(result.error || 'Unknown error');
+    }
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Error', 'Failed to reject: ' + err.message);
+  } finally {
+    hideLoading();
+  }
+}
   // ========== UPDATED RECEIPT RENDERING WITH DETAILED ITEMS, DISCOUNTS, FREE GIFTS ==========
 function renderReceiptsList(receipts) {
   const container = document.getElementById('receiptsList');
@@ -7650,6 +8044,13 @@ if (applyHistoryBtn) {
     await loadCollectionHistory(from, to);
   });
 }
+// ==================== STOCK TAKE UI FUNCTIONS ====================
+function updateStockTakeUI() {
+  const approvalBtn = document.getElementById('sideStockTakeApprovalBtn');
+  if (approvalBtn) {
+    approvalBtn.style.display = currentEmployee?.isAdmin ? 'flex' : 'none';
+  }
+}
  async function verifyEmployeeByPin(pin) {
   // Prevent multiple verification attempts
   if (window.verifying) return;
@@ -7706,7 +8107,17 @@ if (applyHistoryBtn) {
   document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLowStockFilter);
   document.getElementById('clearStockHistoryBtn')?.addEventListener('click', clearStockHistory);
   document.getElementById('saveStockHistoryBtn')?.addEventListener('click', saveStockHistoryToSheet);
+// ==================== STOCK TAKE EVENT LISTENERS ====================
+// Stock Take toggle
+document.getElementById('sideStockTakeBtn')?.addEventListener('click', wrapMenuAction(() => {
+  toggleStockTakeMode();
+}));
 
+// Submit stock take
+document.getElementById('submitStockTakeBtn')?.addEventListener('click', submitStockTake);
+
+// Stock Take Approval (Admin only)
+document.getElementById('sideStockTakeApprovalBtn')?.addEventListener('click', wrapMenuAction(openStockTakeApprovalModal));
   const pinInputEl = document.getElementById('pinInput');
   if (pinInputEl) {
     document.querySelectorAll('.keypad-btn').forEach(btn => {

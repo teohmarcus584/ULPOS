@@ -5520,8 +5520,10 @@ function renderStockTakeProductGrid() {
   
   html += '<div class="product-grid">';
   filtered.forEach(prod => {
-    const existing = stockTakeData.find(d => d.product_id === prod.id);
-    const countedValue = existing ? existing.counted_stock : '';
+    // Find the MOST RECENT entry for this product
+    const existing = stockTakeData.filter(d => d.product_id === prod.id);
+    const lastEntry = existing.length > 0 ? existing[existing.length - 1] : null;
+    const countedValue = lastEntry ? lastEntry.counted_stock : '';
     html += `
       <div class="product-card" data-id="${prod.id}">
         <div class="product-name">${escapeHtml(prod.name)}</div>
@@ -5543,7 +5545,7 @@ function renderStockTakeProductGrid() {
   productGridEl.innerHTML = html;
   productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
   
-  // --- Helper function to update stock take data ---
+  // --- Helper function to update stock take data (REPLACE, don't add) ---
   function updateStockTakeData(productId, newValue) {
     // Get the product from the current products array
     const product = products.find(p => p.id == productId);
@@ -5552,23 +5554,20 @@ function renderStockTakeProductGrid() {
     // Always use the product's current stock as the baseline
     const currentStock = product.stock;
     
-    const existing = stockTakeData.find(d => d.product_id === productId);
-    if (existing) {
-      // Update existing entry - always use the latest current stock
-      existing.current_stock = currentStock;
-      existing.counted_stock = newValue;
-      existing.difference = newValue - currentStock;
-    } else {
-      // Create new entry
-      stockTakeData.push({
-        product_id: product.id,
-        product_name: product.name,
-        category: product.category,
-        current_stock: currentStock,
-        counted_stock: newValue,
-        difference: newValue - currentStock
-      });
-    }
+    // 🔥 CRITICAL: Remove ALL existing entries for this product first
+    stockTakeData = stockTakeData.filter(d => d.product_id !== productId);
+    
+    // Then add the new entry
+    stockTakeData.push({
+      product_id: product.id,
+      product_name: product.name,
+      category: product.category,
+      current_stock: currentStock,
+      counted_stock: newValue,
+      difference: newValue - currentStock
+    });
+    
+    // Update the display
     updateStockTakeSummary();
   }
   
@@ -5639,11 +5638,7 @@ async function submitStockTake() {
     return;
   }
   
-  // --- DEBUG: Log the data to see what's happening ---
-  console.log('Stock Take Data:', JSON.stringify(stockTakeData, null, 2));
-  
   // Filter out items with no change or invalid values
-  // Compare counted_stock with current_stock (which should always be the product's current stock)
   const itemsToSubmit = stockTakeData.filter(d => {
     // Re-fetch the product to ensure we have the latest current stock
     const product = products.find(p => p.id == d.product_id);
@@ -5657,9 +5652,6 @@ async function submitStockTake() {
            d.counted_stock >= 0 && 
            d.counted_stock !== d.current_stock;
   });
-  
-  // --- DEBUG: Log what will be submitted ---
-  console.log('Items to submit:', JSON.stringify(itemsToSubmit, null, 2));
   
   if (itemsToSubmit.length === 0) {
     await showAlertModal('No Changes', 'No stock changes detected. Please update quantities.');

@@ -5620,29 +5620,6 @@ function renderStockTakeProductGrid() {
     });
   });
 }
-  
-  // Attach increment button listeners
-  document.querySelectorAll('.stock-take-inc-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const productId = btn.dataset.id;
-      const input = document.querySelector(`.stock-take-input[data-id="${productId}"]`);
-      if (input) {
-        let currentVal = parseInt(input.value);
-        if (isNaN(currentVal)) {
-          // If empty, use placeholder (current stock)
-          const product = products.find(p => p.id == productId);
-          currentVal = product ? product.stock : 0;
-        }
-        const newVal = currentVal + 1;
-        input.value = newVal;
-        // Trigger input event
-        const event = new Event('input', { bubbles: true });
-        input.dispatchEvent(event);
-      }
-      e.stopPropagation();
-    });
-  });
-}
 
 function updateStockTakeSummary() {
   // Update the counter and show differences

@@ -8180,8 +8180,7 @@ function updateStockTakeUI() {
   const gridBtn = document.getElementById('gridViewBtn');
   const listBtn = document.getElementById('listViewBtn');
   if (gridBtn && listBtn) {
-    gridBtn.addEventListener('click', () => setViewMode('grid'));
-    listBtn.addEventListener('click', () => setViewMode('list'));
+   
   }
 
   document.getElementById('lowStockToggleBtn')?.addEventListener('click', toggleLowStockFilter);
@@ -9123,18 +9122,10 @@ document.getElementById('closeAddProductModal')?.addEventListener('click', close
 
 document.getElementById('newProductCategorySelect')?.addEventListener('change', toggleNewCategoryInput);
   document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
-  document.getElementById('refreshProductsPanelBtn')?.addEventListener('click', () => {
-    localStorage.removeItem(`products_${currentStore}`);
-    fetchProductsFromSheet(true);
-  });
+  
 
-  if (searchInput) {
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => renderProductGrid(), 300);
-    });
-  }
-  if (categorySelect) categorySelect.addEventListener('change', renderProductGrid);
+  
+  
 
   document.getElementById('logoutHeaderBtn')?.addEventListener('click', () => {
     if (typeof stopReceiptPolling === 'function') stopReceiptPolling();
@@ -9164,7 +9155,51 @@ document.getElementById('newProductCategorySelect')?.addEventListener('change', 
  document.getElementById('closeLoginModal')?.addEventListener('click', () => {
   resetLoginBarcodeBuffer();
 });
+// Add this helper function near the top of your JavaScript
+function refreshProductDisplay() {
+  if (stockTakeMode) {
+    renderStockTakeProductGrid();
+  } else {
+    renderProductGrid();
+  }
+}
 
+// Then replace ALL these event listeners with the new one:
+// 1. Category select
+if (categorySelect) {
+  categorySelect.addEventListener('change', refreshProductDisplay);
+}
+
+// 2. Search input
+if (searchInput) {
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(refreshProductDisplay, 300);
+  });
+}
+
+// 3. View toggle buttons
+gridBtn.addEventListener('click', () => {
+  setViewMode('grid');
+  refreshProductDisplay();
+});
+listBtn.addEventListener('click', () => {
+  setViewMode('list');
+  refreshProductDisplay();
+});
+
+// 4. Refresh button
+document.getElementById('refreshProductsPanelBtn')?.addEventListener('click', async () => {
+  localStorage.removeItem(`products_${currentStore}`);
+  await fetchProductsFromSheet(true);
+  refreshProductDisplay();
+});
+
+// 5. Low stock toggle
+document.getElementById('lowStockToggleBtn')?.addEventListener('click', () => {
+  toggleLowStockFilter();
+  refreshProductDisplay();
+});
   function updateCategoryDropdown() {
     const previousSelected = categorySelect.value;
     const categories = [...new Set(products.map(p => p.category))].sort();

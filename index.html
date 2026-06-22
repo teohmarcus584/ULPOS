@@ -4936,82 +4936,95 @@ async function reprintReceipt(receipt) {
 }
 
   function showPaymentModal(totalAmount) {
-    const modal = document.getElementById('paymentModal');
-    const cashOptionsDiv = document.getElementById('cashOptions');
-    const otherOptionsDiv = document.getElementById('otherPaymentOptions');
-    const suggestionsContainer = document.getElementById('suggestionsContainer');
-    cashOptionsDiv.style.display = 'none';
-    otherOptionsDiv.style.display = 'none';
-    modal.style.display = 'flex';
+  const modal = document.getElementById('paymentModal');
+  const cashOptionsDiv = document.getElementById('cashOptions');
+  const otherOptionsDiv = document.getElementById('otherPaymentOptions');
+  const suggestionsContainer = document.getElementById('suggestionsContainer');
+  cashOptionsDiv.style.display = 'none';
+  otherOptionsDiv.style.display = 'none';
+  modal.style.display = 'flex';
 
-    const paymentBtns = document.querySelectorAll('.payment-btn');
-    paymentBtns.forEach(btn => {
-      btn.classList.remove('selected');
-      btn.addEventListener('click', () => {
-        paymentBtns.forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        if (btn.dataset.method === 'Cash') {
-          cashOptionsDiv.style.display = 'block';
-          otherOptionsDiv.style.display = 'none';
-          const suggestions = new Set();
-          [100, 50, 20, 10].forEach(amt => { if (amt >= totalAmount) suggestions.add(amt); });
-          const roundedUp10 = Math.ceil(totalAmount / 10) * 10;
-          if (roundedUp10 >= totalAmount) suggestions.add(roundedUp10);
-          const roundedUp50 = Math.ceil(totalAmount / 50) * 50;
-          if (roundedUp50 >= totalAmount) suggestions.add(roundedUp50);
-          suggestions.add(totalAmount);
-          suggestionsContainer.innerHTML = '';
-          Array.from(suggestions).sort((a, b) => a - b).forEach(amt => {
-            const btn = document.createElement('button');
-            btn.className = 'suggestion-btn';
-            btn.innerText = `RM ${amt.toFixed(2)}`;
-            btn.onclick = () => { document.getElementById('customCashInput').value = amt.toFixed(2); };
-            suggestionsContainer.appendChild(btn);
-          });
-          document.getElementById('customCashInput').value = '';
-        } else {
-          cashOptionsDiv.style.display = 'none';
-          otherOptionsDiv.style.display = 'block';
-        }
-      });
+  // Clear existing listeners to avoid duplicates
+  const paymentBtns = document.querySelectorAll('.payment-btn');
+  paymentBtns.forEach(btn => {
+    btn.classList.remove('selected');
+    // Remove old listeners by cloning
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+  });
+
+  // Re-query after replacement
+  const newPaymentBtns = document.querySelectorAll('.payment-btn');
+  newPaymentBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      newPaymentBtns.forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      if (btn.dataset.method === 'Cash') {
+        cashOptionsDiv.style.display = 'block';
+        otherOptionsDiv.style.display = 'none';
+        const suggestions = new Set();
+        [100, 50, 20, 10].forEach(amt => { if (amt >= totalAmount) suggestions.add(amt); });
+        const roundedUp10 = Math.ceil(totalAmount / 10) * 10;
+        if (roundedUp10 >= totalAmount) suggestions.add(roundedUp10);
+        const roundedUp50 = Math.ceil(totalAmount / 50) * 50;
+        if (roundedUp50 >= totalAmount) suggestions.add(roundedUp50);
+        suggestions.add(totalAmount);
+        suggestionsContainer.innerHTML = '';
+        Array.from(suggestions).sort((a, b) => a - b).forEach(amt => {
+          const suggBtn = document.createElement('button');
+          suggBtn.className = 'suggestion-btn';
+          suggBtn.innerText = `RM ${amt.toFixed(2)}`;
+          suggBtn.onclick = () => { document.getElementById('customCashInput').value = amt.toFixed(2); };
+          suggestionsContainer.appendChild(suggBtn);
+        });
+        document.getElementById('customCashInput').value = '';
+      } else {
+        cashOptionsDiv.style.display = 'none';
+        otherOptionsDiv.style.display = 'block';
+      }
     });
+  });
 
-    document.getElementById('confirmCashBtn').onclick = async () => {
-  const cashVal = parseFloat(document.getElementById('customCashInput').value);
-  if (isNaN(cashVal) || cashVal < totalAmount) {
-    await showAlertModal('Invalid', `Cash amount must be at least RM ${totalAmount.toFixed(2)}`);
-    return;
+  // Re-bind confirm buttons
+  const confirmCashBtn = document.getElementById('confirmCashBtn');
+  const confirmOtherBtn = document.getElementById('confirmOtherBtn');
+  
+  if (confirmCashBtn) {
+    confirmCashBtn.onclick = async () => {
+      const cashVal = parseFloat(document.getElementById('customCashInput').value);
+      if (isNaN(cashVal) || cashVal < totalAmount) {
+        await showAlertModal('Invalid', `Cash amount must be at least RM ${totalAmount.toFixed(2)}`);
+        return;
+      }
+      const changeAmount = cashVal - totalAmount;
+      const changeModal = document.getElementById('changeModal');
+      const changeDisplay = document.getElementById('changeAmountDisplay');
+      changeDisplay.innerText = `RM ${changeAmount.toFixed(2)}`;
+      changeModal.style.display = 'flex';
+
+      const confirmBtn = document.getElementById('confirmChangeBtn');
+      const closeModal = () => {
+        changeModal.style.display = 'none';
+        confirmBtn.removeEventListener('click', onConfirm);
+        document.getElementById('closeChangeModal').removeEventListener('click', onConfirm);
+      };
+      
+      const onConfirm = () => {
+        closeModal();
+        completeCheckout('Cash', cashVal);
+      };
+      
+      confirmBtn.addEventListener('click', onConfirm);
+      document.getElementById('closeChangeModal').addEventListener('click', onConfirm);
+      
+      changeModal.addEventListener('click', (e) => {
+        if (e.target === changeModal) onConfirm();
+      }, { once: true });
+    };
   }
-  const changeAmount = cashVal - totalAmount;
-  
-  // Show the custom change modal
-  const changeModal = document.getElementById('changeModal');
-  const changeDisplay = document.getElementById('changeAmountDisplay');
-  changeDisplay.innerText = `RM ${changeAmount.toFixed(2)}`;
-  changeModal.style.display = 'flex';
 
-  // Wait for user to click OK
-  const confirmBtn = document.getElementById('confirmChangeBtn');
-  const closeModal = () => {
-    changeModal.style.display = 'none';
-    confirmBtn.removeEventListener('click', onConfirm);
-    document.getElementById('closeChangeModal').removeEventListener('click', onConfirm);
-  };
-  
-  const onConfirm = () => {
-    closeModal();
-    completeCheckout('Cash', cashVal);
-  };
-  
-  confirmBtn.addEventListener('click', onConfirm);
-  document.getElementById('closeChangeModal').addEventListener('click', onConfirm);
-  
-  // Also close if user clicks outside the modal content
-  changeModal.addEventListener('click', (e) => {
-    if (e.target === changeModal) onConfirm();
-  }, { once: true });
-};
-    document.getElementById('confirmOtherBtn').onclick = () => {
+  if (confirmOtherBtn) {
+    confirmOtherBtn.onclick = () => {
       const selected = document.querySelector('.payment-btn.selected');
       if (!selected) {
         showAlertModal('Error', 'Please select a payment method.');
@@ -5019,30 +5032,24 @@ async function reprintReceipt(receipt) {
       }
       completeCheckout(selected.dataset.method, null);
     };
-    const confirmCashBtn = document.getElementById('confirmCashBtn');
-const confirmOtherBtn = document.getElementById('confirmOtherBtn');
-
-document.getElementById('cancelPaymentBtn').onclick = () => {
-  modal.style.display = 'none';
-  confirmCashBtn.disabled = false;
-  confirmOtherBtn.disabled = false;
-  checkoutLock = false;
-};
-
-document.getElementById('cancelOtherBtn').onclick = () => {
-  modal.style.display = 'none';
-  confirmCashBtn.disabled = false;
-  confirmOtherBtn.disabled = false;
-  checkoutLock = false;
-};
-
-document.getElementById('closePaymentModal').onclick = () => {
-  modal.style.display = 'none';
-  confirmCashBtn.disabled = false;
-  confirmOtherBtn.disabled = false;
-  checkoutLock = false;
-};
   }
+
+  // Cancel buttons
+  document.getElementById('cancelPaymentBtn').onclick = () => {
+    modal.style.display = 'none';
+    checkoutLock = false;
+  };
+
+  document.getElementById('cancelOtherBtn').onclick = () => {
+    modal.style.display = 'none';
+    checkoutLock = false;
+  };
+
+  document.getElementById('closePaymentModal').onclick = () => {
+    modal.style.display = 'none';
+    checkoutLock = false;
+  };
+}
 async function loadCollectionHistory(fromDate = null, toDate = null) {
   const historyContainer = document.getElementById('collectionHistoryList');
   if (!historyContainer) return;

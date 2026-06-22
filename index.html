@@ -5123,7 +5123,19 @@ async function completeCheckout(paymentMethod, cashReceived) {
     document.getElementById('paymentModal').style.display = 'none';
     const totalAmount = pendingTransaction.totalAmount;
 
-    const transactionId = await getNextTransactionNumber(currentStore);
+    // ✅ FIX: Make sure getNextTransactionNumber works
+    let transactionId;
+    try {
+      transactionId = await getNextTransactionNumber(currentStore);
+    } catch (err) {
+      console.error('Failed to get transaction number:', err);
+      // Fallback: generate a local transaction ID
+      const prefix = currentStore.substring(0, 3).toUpperCase();
+      const timestamp = Date.now();
+      const random = Math.floor(Math.random() * 1000);
+      transactionId = `${prefix}-${timestamp}-${random}`;
+    }
+
     const salesPersonSelect = document.getElementById('soldBySelectCart');
     const selectedOption = salesPersonSelect.options[salesPersonSelect.selectedIndex];
     const salesPersonName = selectedOption ? selectedOption.text.split(' (ID:')[0] : '';
@@ -5160,7 +5172,8 @@ async function completeCheckout(paymentMethod, cashReceived) {
       sales_person_id: salesPersonId,
     };
 
-    queueSale(transaction);
+    // ✅ FIX: Await the queueSale
+    await queueSale(transaction);
     const success = true; // optimistic
 
     if (success) {
@@ -5198,23 +5211,23 @@ async function completeCheckout(paymentMethod, cashReceived) {
       invalidateAllReportCaches();
 
       const fakeReceipt = {
-  transaction_id: transaction.transaction_id,
-  timestamp: transaction.timestamp,
-  items: transaction.items,
-  total: transaction.total,
-  payment_method: transaction.payment_method,
-  store: transaction.store,
-  employee_id: transaction.employee_id,
-  employee_name: transaction.employee_name,
-  refunded: false,
-  discount: transaction.discount,
-  buy2_free1_discount: transaction.buy2_free1_discount,
-  buy3_free1_discount: transaction.buy3_free1_discount,
-  custom_discount: transaction.custom_discount,
-  staff_discount: transaction.staff_discount,
-  sales_person_name: transaction.sales_person_name,
-  sales_person_id: transaction.sales_person_id
-};
+        transaction_id: transaction.transaction_id,
+        timestamp: transaction.timestamp,
+        items: transaction.items,
+        total: transaction.total,
+        payment_method: transaction.payment_method,
+        store: transaction.store,
+        employee_id: transaction.employee_id,
+        employee_name: transaction.employee_name,
+        refunded: false,
+        discount: transaction.discount,
+        buy2_free1_discount: transaction.buy2_free1_discount,
+        buy3_free1_discount: transaction.buy3_free1_discount,
+        custom_discount: transaction.custom_discount,
+        staff_discount: transaction.staff_discount,
+        sales_person_name: transaction.sales_person_name,
+        sales_person_id: transaction.sales_person_id
+      };
       if (!cachedReceipts) cachedReceipts = [];
       cachedReceipts.unshift(fakeReceipt);
 
@@ -5237,16 +5250,16 @@ async function completeCheckout(paymentMethod, cashReceived) {
         openLuckyDraw(transactionId, selectedCustomer?.id);
         luckyModal.style.display = 'none';
       };
-if (pendingPrize && pendingPrize.isPromo && pendingPrize.code) {
-  await usePromoVoucherAfterSale(pendingPrize.code);
-}
+      if (pendingPrize && pendingPrize.isPromo && pendingPrize.code) {
+        await usePromoVoucherAfterSale(pendingPrize.code);
+      }
       clearCart();
     } else {
       await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
     }
   } catch (err) {
     console.error('Checkout error:', err);
-    await showAlertModal('Error', 'An error occurred during checkout. Please try again.');
+    await showAlertModal('Error', 'An error occurred during checkout: ' + err.message);
   } finally {
     checkoutLock = false;
     if (confirmCashBtn) confirmCashBtn.disabled = false;
@@ -5264,7 +5277,6 @@ if (pendingPrize && pendingPrize.isPromo && pendingPrize.code) {
     formData.append("cash_received", transaction.cash_received || '');
     formData.append("timestamp", transaction.timestamp);
     formData.append("store", currentStore);
-    // ✅ Use the logged‑in cashier's ID (from transaction)
     formData.append("employee_id", transaction.employee_id);
     formData.append("discount", transaction.discount || 0);
     formData.append("buy2_free1_discount", transaction.buy2_free1_discount || 0);
@@ -5273,7 +5285,6 @@ if (pendingPrize && pendingPrize.isPromo && pendingPrize.code) {
     formData.append("staff_discount", transaction.staff_discount || 0);
     formData.append("prize_claimed", transaction.prize_claimed ? JSON.stringify(transaction.prize_claimed) : '');
     if (transaction.customer_id) formData.append("customer_id", transaction.customer_id);
-    // ✅ Send sales person fields separately
     formData.append("sales_person_name", transaction.sales_person_name || '');
     formData.append("sales_person_id", transaction.sales_person_id || '');
 
@@ -5281,10 +5292,8 @@ if (pendingPrize && pendingPrize.isPromo && pendingPrize.code) {
     const result = await response.json();
     return result.success === true;
   } catch (err) {
-    console.error(err);
+    console.error('saveTransactionToSheet error:', err);
     return false;
-  } finally {
-    hideLoading();
   }
 }
 function getUTCDateString(date) {

@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -5987,7 +5987,12 @@ function updateSelectedCount(requestId) {
 
 // --- Approve Selected Items ---
 async function approveSelectedItems(requestId, modal) {
+  // Get ALL checkboxes for this request first
+  const allCheckboxes = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]`);
   const selectedCheckboxes = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]:checked`);
+  
+  // Debug: log the counts
+  console.log(`Total checkboxes: ${allCheckboxes.length}, Selected: ${selectedCheckboxes.length}`);
   
   if (selectedCheckboxes.length === 0) {
     await showAlertModal('No Items Selected', 'Please select at least one item to approve.');
@@ -6001,15 +6006,52 @@ async function approveSelectedItems(requestId, modal) {
     return;
   }
   
-  // Get the selected product IDs
-  const selectedProductIds = Array.from(selectedCheckboxes).map(cb => cb.dataset.product);
+  // ✅ FIX: Ensure items is an array (parse if it's a string)
+  let itemsArray = requestData.items;
+  if (typeof itemsArray === 'string') {
+    try {
+      itemsArray = JSON.parse(itemsArray);
+    } catch (e) {
+      console.error('Failed to parse items:', e);
+      itemsArray = [];
+    }
+  }
   
-  // Filter items to only those selected
-  const selectedItems = requestData.items.filter(item => selectedProductIds.includes(item.product_id));
+  // ✅ FIX: Ensure items is always an array
+  if (!Array.isArray(itemsArray)) {
+    itemsArray = [];
+  }
+  
+  // Debug: log the structure
+  console.log('Items array:', itemsArray);
+  console.log('First item product_id:', itemsArray[0]?.product_id);
+  
+  // Get the selected product IDs from checkboxes
+  const selectedProductIds = Array.from(selectedCheckboxes).map(cb => {
+    const productId = cb.dataset.product;
+    // ✅ FIX: Convert to string for comparison (in case one is number, one is string)
+    return String(productId);
+  });
+  
+  console.log('Selected product IDs:', selectedProductIds);
+  
+  // ✅ FIX: Filter items - compare as strings
+  const selectedItems = itemsArray.filter(item => {
+    const itemProductId = String(item.product_id);
+    return selectedProductIds.includes(itemProductId);
+  });
+  
+  // Debug: log selected items count
+  console.log(`Selected items count: ${selectedItems.length}`);
+  
+  if (selectedItems.length === 0) {
+    await showAlertModal('No Matching Items', 'Could not find matching items for the selected checkboxes. Please refresh and try again.');
+    return;
+  }
   
   const confirmed = await showConfirmModal(
     'Approve Selected Items',
-    `Approve ${selectedItems.length} item(s) out of ${requestData.items.length} total?\n\nThis will update stock for the selected items only.`
+    `Approve ${selectedItems.length} item(s) out of ${itemsArray.length} total?\n\nThis will update stock for the selected items only.`
   );
   
   if (!confirmed) return;
@@ -6026,11 +6068,14 @@ async function approveSelectedItems(requestId, modal) {
     formData.append('items', JSON.stringify(selectedItems));
     // Also send which items were selected (for partial approval tracking)
     formData.append('partial_approval', 'true');
-    formData.append('total_items', requestData.items.length);
+    formData.append('total_items', itemsArray.length);
     formData.append('approved_count', selectedItems.length);
     
     const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
     const result = await response.json();
+    
+    // ✅ FIX: Calculate remaining items HERE (outside the result.success check)
+    const remainingItems = itemsArray.length - selectedItems.length;
     
     if (result.success) {
       await showAlertModal('✅ Partial Approval Successful', 
@@ -6044,7 +6089,7 @@ async function approveSelectedItems(requestId, modal) {
           </div>
           <div style="background:#f0fdf4; border-radius:12px; padding:12px 16px; border-left:4px solid #2c7a4b; margin-top:8px;">
             <div style="font-weight:500; color:#2c7a4b; margin-bottom:4px;">✅ Approved: ${selectedItems.length} item(s)</div>
-            <div style="font-weight:500; color:#ef4444; margin-bottom:4px;">⏳ Remaining: ${requestData.items.length - selectedItems.length} item(s)</div>
+            <div style="font-weight:500; color:#ef4444; margin-bottom:4px;">⏳ Remaining: ${remainingItems} item(s)</div>
           </div>
           <div style="margin-top:12px; font-size:0.85rem; color:#64748b;">
             The remaining items are still pending review.

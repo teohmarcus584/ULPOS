@@ -5968,7 +5968,6 @@ async function loadPendingStockTakeRequests(modal) {
 // --- Helper: Update selected count for a request ---
 function updateSelectedCount(requestId) {
   const checkedItems = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]:checked`);
-  const totalItems = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]`);
   const count = checkedItems.length;
   
   const approveBtn = document.querySelector(`.approve-selected-btn[data-request="${requestId}"]`);
@@ -6070,7 +6069,12 @@ async function approveSelectedItems(requestId, modal) {
 
 // --- Reject Selected Items ---
 async function rejectSelectedItems(requestId, modal) {
+  // Get ALL checkboxes for this request first
+  const allCheckboxes = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]`);
   const selectedCheckboxes = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]:checked`);
+  
+  // Debug: log the counts
+  console.log(`Total checkboxes: ${allCheckboxes.length}, Selected: ${selectedCheckboxes.length}`);
   
   if (selectedCheckboxes.length === 0) {
     await showAlertModal('No Items Selected', 'Please select at least one item to reject.');
@@ -6089,6 +6093,9 @@ async function rejectSelectedItems(requestId, modal) {
   
   // Filter items to only those selected
   const selectedItems = requestData.items.filter(item => selectedProductIds.includes(item.product_id));
+  
+  // Debug: log selected items count
+  console.log(`Selected items count: ${selectedItems.length}`);
   
   const reason = await showInputModal('Rejection Reason', 'Enter reason for rejecting selected items');
   if (reason === null) return; // User cancelled

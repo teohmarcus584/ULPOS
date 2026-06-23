@@ -6126,7 +6126,7 @@ async function rejectSelectedItems(requestId, modal) {
     const result = await response.json();
     
     if (result.success) {
-      // Calculate remaining items
+      // ✅ FIX: Calculate remaining items here
       const remainingItems = requestData.items.length - selectedItems.length;
       
       await showAlertModal('✅ Partial Rejection Successful', 

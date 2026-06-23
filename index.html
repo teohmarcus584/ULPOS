@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -6099,7 +6099,12 @@ async function rejectSelectedItems(requestId, modal) {
     }
   }
   
-  // ✅ FIX: Log the structure to debug
+  // ✅ FIX: Ensure items is always an array
+  if (!Array.isArray(itemsArray)) {
+    itemsArray = [];
+  }
+  
+  // Debug: log the structure
   console.log('Items array:', itemsArray);
   console.log('First item product_id:', itemsArray[0]?.product_id);
   
@@ -6154,10 +6159,10 @@ async function rejectSelectedItems(requestId, modal) {
     const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
     const result = await response.json();
     
+    // ✅ FIX: Calculate remaining items HERE (outside the result.success check)
+    const remainingItems = itemsArray.length - selectedItems.length;
+    
     if (result.success) {
-      // ✅ FIX: Calculate remaining items
-      const remainingItems = itemsArray.length - selectedItems.length;
-      
       await showAlertModal('✅ Partial Rejection Successful', 
         `<div style="text-align:left; padding:4px 0;">
           <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">

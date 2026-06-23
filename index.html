@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2226,7 +2226,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7HUHmjfRX8IFY3gHJ2yunpvY6-NjP0ak38C0okhwtaMb9LyYMfrC1sh2Owtu_8qf_IA/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYXA2fFmbMB8Mmc67KU8LmCGgTCvw_l7SzilDCdo57rJNWRdJpBrxjNCpaZoT5FTFaKg/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -5811,27 +5811,38 @@ async function loadPendingStockTakeRequests(modal) {
       const storeName = req.store.charAt(0).toUpperCase() + req.store.slice(1);
       
       html += `
-        <div style="background:#f8fafc; border-radius:16px; padding:16px; margin-bottom:12px; border-left:4px solid #f59e0b;">
-          <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:8px;">
+        <div style="background:#f8fafc; border-radius:16px; padding:16px; margin-bottom:16px; border-left:4px solid #f59e0b; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:12px;">
             <div>
               <strong style="font-size:1.1rem;">🏪 ${storeName}</strong>
               <span style="margin-left:12px; font-size:0.9rem; color:#64748b;">${date}</span>
             </div>
-            <div>
+            <div style="display:flex; align-items:center; gap:12px;">
               <span style="background:#fef3c7; color:#92400e; padding:4px 12px; border-radius:20px; font-size:0.8rem;">PENDING</span>
+              <span style="font-size:0.85rem; color:#64748b;">👤 ${req.employee_name}</span>
             </div>
           </div>
-          <div style="font-size:0.9rem; margin-bottom:8px;">
-            👤 ${req.employee_name} (ID: ${req.employee_id})
+          
+          <!-- Select All checkbox for this request -->
+          <div style="margin:8px 0 12px 0; display:flex; align-items:center; gap:12px; padding:8px 12px; background:#f1f5f9; border-radius:8px;">
+            <label style="display:flex; align-items:center; gap:8px; font-weight:500; font-size:0.9rem; cursor:pointer;">
+              <input type="checkbox" class="select-all-items" data-request="${req.request_id}" checked>
+              <span>✅ Select All Items</span>
+            </label>
+            <span style="font-size:0.8rem; color:#64748b;">(${req.items.length} items)</span>
           </div>
-          <div style="background:white; border-radius:12px; padding:12px; margin:8px 0; max-height:200px; overflow-y:auto;">
+          
+          <div style="background:white; border-radius:12px; padding:12px; margin:8px 0; max-height:250px; overflow-y:auto; border:1px solid #e2e8f0;">
             <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
               <thead>
-                <tr style="border-bottom:1px solid #e2e8f0;">
-                  <th style="text-align:left; padding:4px 8px;">Product</th>
-                  <th style="text-align:right; padding:4px 8px;">Current</th>
-                  <th style="text-align:right; padding:4px 8px;">Counted</th>
-                  <th style="text-align:right; padding:4px 8px;">Diff</th>
+                <tr style="border-bottom:2px solid #e2e8f0;">
+                  <th style="text-align:center; padding:6px 8px; width:40px;">
+                    <input type="checkbox" class="select-all-in-request" data-request="${req.request_id}" checked>
+                  </th>
+                  <th style="text-align:left; padding:6px 8px;">Product</th>
+                  <th style="text-align:right; padding:6px 8px;">Current</th>
+                  <th style="text-align:right; padding:6px 8px;">Counted</th>
+                  <th style="text-align:right; padding:6px 8px;">Diff</th>
                 </tr>
               </thead>
               <tbody>
@@ -5840,12 +5851,16 @@ async function loadPendingStockTakeRequests(modal) {
       for (const item of req.items) {
         const diff = item.counted_stock - item.current_stock;
         const diffColor = diff > 0 ? '#2c7a4b' : diff < 0 ? '#ef4444' : '#64748b';
+        const diffSymbol = diff > 0 ? '+' : '';
         html += `
           <tr style="border-bottom:1px solid #f1f5f9;">
-            <td style="padding:4px 8px;">${escapeHtml(item.product_name)}</td>
-            <td style="text-align:right; padding:4px 8px;">${item.current_stock}</td>
-            <td style="text-align:right; padding:4px 8px; font-weight:600;">${item.counted_stock}</td>
-            <td style="text-align:right; padding:4px 8px; color:${diffColor}; font-weight:600;">${diff > 0 ? '+' : ''}${diff}</td>
+            <td style="text-align:center; padding:6px 8px;">
+              <input type="checkbox" class="item-checkbox" data-request="${req.request_id}" data-product="${item.product_id}" checked>
+            </td>
+            <td style="padding:6px 8px; font-weight:500;">${escapeHtml(item.product_name)}</td>
+            <td style="text-align:right; padding:6px 8px;">${item.current_stock}</td>
+            <td style="text-align:right; padding:6px 8px; font-weight:600;">${item.counted_stock}</td>
+            <td style="text-align:right; padding:6px 8px; color:${diffColor}; font-weight:600;">${diffSymbol}${diff}</td>
           </tr>
         `;
       }
@@ -5854,14 +5869,15 @@ async function loadPendingStockTakeRequests(modal) {
               </tbody>
             </table>
           </div>
-          <div style="display:flex; gap:12px; margin-top:12px; justify-content:flex-end;">
-            <button class="approve-stock-take-btn" data-request="${req.request_id}" 
-                    style="background:#2c7a4b; color:white; border:none; border-radius:40px; padding:8px 24px; font-weight:600; cursor:pointer;">
-              ✅ Approve
+          
+          <div style="display:flex; gap:12px; margin-top:12px; justify-content:flex-end; flex-wrap:wrap;">
+            <button class="approve-selected-btn" data-request="${req.request_id}" 
+                    style="background:#2c7a4b; color:white; border:none; border-radius:40px; padding:8px 20px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+              ✅ Approve Selected (0)
             </button>
-            <button class="reject-stock-take-btn" data-request="${req.request_id}"
-                    style="background:#ef4444; color:white; border:none; border-radius:40px; padding:8px 24px; font-weight:600; cursor:pointer;">
-              ❌ Reject
+            <button class="reject-selected-btn" data-request="${req.request_id}"
+                    style="background:#ef4444; color:white; border:none; border-radius:40px; padding:8px 20px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+              ❌ Reject Selected (0)
             </button>
           </div>
         </div>
@@ -5870,24 +5886,295 @@ async function loadPendingStockTakeRequests(modal) {
     
     list.innerHTML = html;
     
-    // Attach approve/reject handlers
-    list.querySelectorAll('.approve-stock-take-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const requestId = btn.dataset.request;
-        approveStockTakeRequest(requestId, modal);
+    // --- Handle Select All for each request ---
+    document.querySelectorAll('.select-all-items').forEach(selectAll => {
+      selectAll.addEventListener('change', function() {
+        const requestId = this.dataset.request;
+        const isChecked = this.checked;
+        // Update all item checkboxes in this request
+        document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]`).forEach(cb => {
+          cb.checked = isChecked;
+        });
+        // Update the "select all in request" checkbox
+        const selectAllInRequest = document.querySelector(`.select-all-in-request[data-request="${requestId}"]`);
+        if (selectAllInRequest) selectAllInRequest.checked = isChecked;
+        updateSelectedCount(requestId);
       });
     });
     
-    list.querySelectorAll('.reject-stock-take-btn').forEach(btn => {
+    // --- Handle "Select All in Request" (header checkbox) ---
+    document.querySelectorAll('.select-all-in-request').forEach(selectAll => {
+      selectAll.addEventListener('change', function() {
+        const requestId = this.dataset.request;
+        const isChecked = this.checked;
+        // Update all item checkboxes in this request
+        document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]`).forEach(cb => {
+          cb.checked = isChecked;
+        });
+        // Update the main Select All checkbox
+        const selectAllMain = document.querySelector(`.select-all-items[data-request="${requestId}"]`);
+        if (selectAllMain) selectAllMain.checked = isChecked;
+        updateSelectedCount(requestId);
+      });
+    });
+    
+    // --- Handle individual item checkboxes ---
+    document.querySelectorAll('.item-checkbox').forEach(cb => {
+      cb.addEventListener('change', function() {
+        const requestId = this.dataset.request;
+        const allItems = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]`);
+        const checkedItems = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]:checked`);
+        
+        // Update "Select All" checkbox
+        const selectAllMain = document.querySelector(`.select-all-items[data-request="${requestId}"]`);
+        if (selectAllMain) {
+          selectAllMain.checked = allItems.length === checkedItems.length;
+        }
+        const selectAllInRequest = document.querySelector(`.select-all-in-request[data-request="${requestId}"]`);
+        if (selectAllInRequest) {
+          selectAllInRequest.checked = allItems.length === checkedItems.length;
+        }
+        updateSelectedCount(requestId);
+      });
+    });
+    
+    // --- Attach approve/reject handlers ---
+    document.querySelectorAll('.approve-selected-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const requestId = btn.dataset.request;
-        rejectStockTakeRequest(requestId, modal);
+        approveSelectedItems(requestId, modal);
       });
+    });
+    
+    document.querySelectorAll('.reject-selected-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const requestId = btn.dataset.request;
+        rejectSelectedItems(requestId, modal);
+      });
+    });
+    
+    // --- Initialize counts ---
+    document.querySelectorAll('.approve-selected-btn').forEach(btn => {
+      const requestId = btn.dataset.request;
+      updateSelectedCount(requestId);
     });
     
   } catch (err) {
     console.error(err);
     list.innerHTML = '<div style="text-align:center; padding:20px; color:#ef4444;">Failed to load requests.</div>';
+  }
+}
+
+// --- Helper: Update selected count for a request ---
+function updateSelectedCount(requestId) {
+  const checkedItems = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]:checked`);
+  const totalItems = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]`);
+  const count = checkedItems.length;
+  
+  const approveBtn = document.querySelector(`.approve-selected-btn[data-request="${requestId}"]`);
+  const rejectBtn = document.querySelector(`.reject-selected-btn[data-request="${requestId}"]`);
+  
+  if (approveBtn) {
+    approveBtn.innerHTML = `✅ Approve Selected (${count})`;
+    approveBtn.disabled = count === 0;
+    approveBtn.style.opacity = count === 0 ? '0.5' : '1';
+  }
+  if (rejectBtn) {
+    rejectBtn.innerHTML = `❌ Reject Selected (${count})`;
+    rejectBtn.disabled = count === 0;
+    rejectBtn.style.opacity = count === 0 ? '0.5' : '1';
+  }
+}
+
+// --- Approve Selected Items ---
+async function approveSelectedItems(requestId, modal) {
+  const selectedCheckboxes = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]:checked`);
+  
+  if (selectedCheckboxes.length === 0) {
+    await showAlertModal('No Items Selected', 'Please select at least one item to approve.');
+    return;
+  }
+  
+  // Get the full request data
+  const requestData = await fetchRequestData(requestId);
+  if (!requestData) {
+    await showAlertModal('Error', 'Could not load request data.');
+    return;
+  }
+  
+  // Get the selected product IDs
+  const selectedProductIds = Array.from(selectedCheckboxes).map(cb => cb.dataset.product);
+  
+  // Filter items to only those selected
+  const selectedItems = requestData.items.filter(item => selectedProductIds.includes(item.product_id));
+  
+  const confirmed = await showConfirmModal(
+    'Approve Selected Items',
+    `Approve ${selectedItems.length} item(s) out of ${requestData.items.length} total?\n\nThis will update stock for the selected items only.`
+  );
+  
+  if (!confirmed) return;
+  
+  showLoading('Approving selected items...');
+  
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', 'approveStockTake');
+    formData.append('request_id', requestId);
+    formData.append('approved_by', currentEmployee.id);
+    formData.append('approved_by_name', currentEmployee.name);
+    // Only send the selected items
+    formData.append('items', JSON.stringify(selectedItems));
+    // Also send which items were selected (for partial approval tracking)
+    formData.append('partial_approval', 'true');
+    formData.append('total_items', requestData.items.length);
+    formData.append('approved_count', selectedItems.length);
+    
+    const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+    const result = await response.json();
+    
+    if (result.success) {
+      await showAlertModal('✅ Partial Approval Successful', 
+        `<div style="text-align:left; padding:4px 0;">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+            <span style="font-size:2rem;">📋</span>
+            <div>
+              <div style="font-weight:600; color:#0f172a;">Stock Take Partially Approved</div>
+              <div style="font-size:0.9rem; color:#64748b;">Request ID: ${requestId}</div>
+            </div>
+          </div>
+          <div style="background:#f0fdf4; border-radius:12px; padding:12px 16px; border-left:4px solid #2c7a4b; margin-top:8px;">
+            <div style="font-weight:500; color:#2c7a4b; margin-bottom:4px;">✅ Approved: ${selectedItems.length} item(s)</div>
+            <div style="font-weight:500; color:#ef4444; margin-bottom:4px;">⏳ Remaining: ${requestData.items.length - selectedItems.length} item(s)</div>
+          </div>
+          <div style="margin-top:12px; font-size:0.85rem; color:#64748b;">
+            The remaining items are still pending review.
+          </div>
+        </div>`
+      );
+      // Refresh the list
+      await loadPendingStockTakeRequests(modal);
+      // Refresh product display
+      await fetchProductsFromSheet(true);
+      renderProductGrid();
+    } else {
+      throw new Error(result.error || 'Unknown error');
+    }
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Error', 'Failed to approve selected items: ' + err.message);
+  } finally {
+    hideLoading();
+  }
+}
+
+// --- Reject Selected Items ---
+async function rejectSelectedItems(requestId, modal) {
+  const selectedCheckboxes = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]:checked`);
+  
+  if (selectedCheckboxes.length === 0) {
+    await showAlertModal('No Items Selected', 'Please select at least one item to reject.');
+    return;
+  }
+  
+  // Get the full request data
+  const requestData = await fetchRequestData(requestId);
+  if (!requestData) {
+    await showAlertModal('Error', 'Could not load request data.');
+    return;
+  }
+  
+  // Get the selected product IDs
+  const selectedProductIds = Array.from(selectedCheckboxes).map(cb => cb.dataset.product);
+  
+  // Filter items to only those selected
+  const selectedItems = requestData.items.filter(item => selectedProductIds.includes(item.product_id));
+  
+  const reason = await showInputModal('Rejection Reason', 'Enter reason for rejecting selected items');
+  if (reason === null) return; // User cancelled
+  
+  const confirmed = await showConfirmModal(
+    'Reject Selected Items',
+    `Reject ${selectedItems.length} item(s) out of ${requestData.items.length} total?\n\nThis will mark only the selected items as rejected.`
+  );
+  
+  if (!confirmed) return;
+  
+  showLoading('Rejecting selected items...');
+  
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', 'rejectStockTake');
+    formData.append('request_id', requestId);
+    formData.append('rejected_by', currentEmployee.id);
+    formData.append('rejected_by_name', currentEmployee.name);
+    formData.append('reason', reason || 'No reason provided');
+    // Only send the selected items
+    formData.append('items', JSON.stringify(selectedItems));
+    formData.append('partial_rejection', 'true');
+    formData.append('total_items', requestData.items.length);
+    formData.append('rejected_count', selectedItems.length);
+    
+    const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+    const result = await response.json();
+    
+    if (result.success) {
+      await showAlertModal('✅ Partial Rejection Successful', 
+        `<div style="text-align:left; padding:4px 0;">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+            <span style="font-size:2rem;">📋</span>
+            <div>
+              <div style="font-weight:600; color:#0f172a;">Selected Items Rejected</div>
+              <div style="font-size:0.9rem; color:#64748b;">Request ID: ${requestId}</div>
+            </div>
+          </div>
+          <div style="background:#fef2f2; border-radius:12px; padding:12px 16px; border-left:4px solid #ef4444; margin-top:8px;">
+            <div style="font-weight:500; color:#dc2626; margin-bottom:4px;">❌ Rejected: ${selectedItems.length} item(s)</div>
+            <div style="font-weight:500; color:#2c7a4b; margin-bottom:4px;">⏳ Remaining: ${requestData.items.length - selectedItems.length} item(s)</div>
+          </div>
+          <div style="background:#f8fafc; border-radius:8px; padding:8px 12px; margin-top:8px;">
+            <div style="font-weight:500; color:#1e293b; font-size:0.85rem;">📝 Reason:</div>
+            <div style="color:#475569; font-size:0.9rem;">${escapeHtml(reason)}</div>
+          </div>
+          <div style="margin-top:12px; font-size:0.85rem; color:#64748b;">
+            The remaining items are still pending review.
+          </div>
+        </div>`
+      );
+      // Refresh the list
+      await loadPendingStockTakeRequests(modal);
+    } else {
+      throw new Error(result.error || 'Unknown error');
+    }
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Error', 'Failed to reject selected items: ' + err.message);
+  } finally {
+    hideLoading();
+  }
+}
+
+// --- Helper: Fetch request data by ID ---
+async function fetchRequestData(requestId) {
+  try {
+    // Get all pending requests and find the specific one
+    const url = `${APPS_SCRIPT_URL}?action=getPendingStockTakeRequests&store=all&_=${Date.now()}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success && result.requests) {
+      const request = result.requests.find(r => r.request_id === requestId);
+      if (request) {
+        // Ensure items is an array
+        if (typeof request.items === 'string') {
+          request.items = JSON.parse(request.items);
+        }
+        return request;
+      }
+    }
+    return null;
+  } catch (err) {
+    console.error('fetchRequestData error:', err);
+    return null;
   }
 }
 

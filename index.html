@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -6088,21 +6088,50 @@ async function rejectSelectedItems(requestId, modal) {
     return;
   }
   
-  // Get the selected product IDs
-  const selectedProductIds = Array.from(selectedCheckboxes).map(cb => cb.dataset.product);
+  // ✅ FIX: Ensure items is an array (parse if it's a string)
+  let itemsArray = requestData.items;
+  if (typeof itemsArray === 'string') {
+    try {
+      itemsArray = JSON.parse(itemsArray);
+    } catch (e) {
+      console.error('Failed to parse items:', e);
+      itemsArray = [];
+    }
+  }
   
-  // Filter items to only those selected
-  const selectedItems = requestData.items.filter(item => selectedProductIds.includes(item.product_id));
+  // ✅ FIX: Log the structure to debug
+  console.log('Items array:', itemsArray);
+  console.log('First item product_id:', itemsArray[0]?.product_id);
+  
+  // Get the selected product IDs from checkboxes
+  const selectedProductIds = Array.from(selectedCheckboxes).map(cb => {
+    const productId = cb.dataset.product;
+    // ✅ FIX: Convert to string for comparison (in case one is number, one is string)
+    return String(productId);
+  });
+  
+  console.log('Selected product IDs:', selectedProductIds);
+  
+  // ✅ FIX: Filter items - compare as strings
+  const selectedItems = itemsArray.filter(item => {
+    const itemProductId = String(item.product_id);
+    return selectedProductIds.includes(itemProductId);
+  });
   
   // Debug: log selected items count
   console.log(`Selected items count: ${selectedItems.length}`);
+  
+  if (selectedItems.length === 0) {
+    await showAlertModal('No Matching Items', 'Could not find matching items for the selected checkboxes. Please refresh and try again.');
+    return;
+  }
   
   const reason = await showInputModal('Rejection Reason', 'Enter reason for rejecting selected items');
   if (reason === null) return; // User cancelled
   
   const confirmed = await showConfirmModal(
     'Reject Selected Items',
-    `Reject ${selectedItems.length} item(s) out of ${requestData.items.length} total?\n\nThis will mark only the selected items as rejected.`
+    `Reject ${selectedItems.length} item(s) out of ${itemsArray.length} total?\n\nThis will mark only the selected items as rejected.`
   );
   
   if (!confirmed) return;
@@ -6119,15 +6148,15 @@ async function rejectSelectedItems(requestId, modal) {
     // Only send the selected items
     formData.append('items', JSON.stringify(selectedItems));
     formData.append('partial_rejection', 'true');
-    formData.append('total_items', requestData.items.length);
+    formData.append('total_items', itemsArray.length);
     formData.append('rejected_count', selectedItems.length);
     
     const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
     const result = await response.json();
     
     if (result.success) {
-      // ✅ FIX: Calculate remaining items here
-      const remainingItems = requestData.items.length - selectedItems.length;
+      // ✅ FIX: Calculate remaining items
+      const remainingItems = itemsArray.length - selectedItems.length;
       
       await showAlertModal('✅ Partial Rejection Successful', 
         `<div style="text-align:left; padding:4px 0;">
@@ -6174,9 +6203,18 @@ async function fetchRequestData(requestId) {
     if (result.success && result.requests) {
       const request = result.requests.find(r => r.request_id === requestId);
       if (request) {
-        // Ensure items is an array
+        // ✅ FIX: Ensure items is an array
         if (typeof request.items === 'string') {
-          request.items = JSON.parse(request.items);
+          try {
+            request.items = JSON.parse(request.items);
+          } catch (e) {
+            console.error('Failed to parse items in fetchRequestData:', e);
+            request.items = [];
+          }
+        }
+        // ✅ FIX: Ensure items is always an array
+        if (!Array.isArray(request.items)) {
+          request.items = [];
         }
         return request;
       }

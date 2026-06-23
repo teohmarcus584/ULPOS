@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -4053,9 +4053,16 @@ async function fetchProductsFromSheet(force = false) {
         localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
 
         updateCategoryDropdown();
-        renderProductGrid();
         refreshCategoryHighlighting();
         updateSyncStatus(true, now);
+        
+        // ✅ Check stock take mode before rendering
+        if (stockTakeMode) {
+          renderStockTakeProductGrid();
+        } else {
+          renderProductGrid();
+        }
+        
         hideLoading();
         return true;
       }
@@ -4070,9 +4077,16 @@ async function fetchProductsFromSheet(force = false) {
           // ✅ Ensure sorted order
           products = [...cachedProducts].sort((a, b) => a.name.localeCompare(b.name));
           updateCategoryDropdown();
-          renderProductGrid();
           refreshCategoryHighlighting();
           updateSyncStatus(true, timestamp);
+          
+          // ✅ Check stock take mode before rendering
+          if (stockTakeMode) {
+            renderStockTakeProductGrid();
+          } else {
+            renderProductGrid();
+          }
+          
           hideLoading();
           return true;
         }
@@ -4084,9 +4098,16 @@ async function fetchProductsFromSheet(force = false) {
           localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: cachedProducts, hash: cachedHash }));
           products = [...cachedProducts].sort((a, b) => a.name.localeCompare(b.name));
           updateCategoryDropdown();
-          renderProductGrid();
           refreshCategoryHighlighting();
           updateSyncStatus(true, now);
+          
+          // ✅ Check stock take mode before rendering
+          if (stockTakeMode) {
+            renderStockTakeProductGrid();
+          } else {
+            renderProductGrid();
+          }
+          
           hideLoading();
           return true;
         }
@@ -4116,9 +4137,16 @@ async function fetchProductsFromSheet(force = false) {
       localStorage.setItem('lastSyncTimestamps', JSON.stringify(lastSyncTimestamps));
 
       updateCategoryDropdown();
-      renderProductGrid();
       refreshCategoryHighlighting();
       updateSyncStatus(true, now);
+      
+      // ✅ Check stock take mode before rendering
+      if (stockTakeMode) {
+        renderStockTakeProductGrid();
+      } else {
+        renderProductGrid();
+      }
+      
       hideLoading();
       return true;
 
@@ -4138,46 +4166,62 @@ async function fetchProductsFromSheet(force = false) {
   return false;
 }
 
-  // Background sync: check for changes without showing loading
   async function backgroundSync() {
-    if (syncInProgress) return;
-    syncInProgress = true;
-    try {
-      const store = currentStore;
-      const cacheKey = `products_${store}`;
-      const hashKey = `products_hash_${store}`;
-      const cached = localStorage.getItem(cacheKey);
-      if (!cached) {
-        // No cache, do a full sync
-        await fetchProductsFromSheet(false);
-        return;
+  if (syncInProgress) return;
+  syncInProgress = true;
+  try {
+    const store = currentStore;
+    const cacheKey = `products_${store}`;
+    const hashKey = `products_hash_${store}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (!cached) {
+      // ✅ Store the current mode
+      const wasInStockTakeMode = stockTakeMode;
+      await fetchProductsFromSheet(false);
+      // ✅ If we were in stock take mode and got kicked out, restore it
+      if (wasInStockTakeMode && !stockTakeMode) {
+        stockTakeMode = true;
+        renderStockTakeProductGrid();
       }
-      const { hash: cachedHash } = JSON.parse(cached);
-      // Fetch only hash from server (lightweight endpoint)
-      const url = `${APPS_SCRIPT_URL}?action=getProductsHash&store=${store}&_=${Date.now()}`;
-      const response = await fetch(url);
-      const result = await response.json();
-      if (result.success && result.hash) {
-        if (result.hash !== cachedHash) {
-          console.log("Hash mismatch, updating products...");
-          await fetchProductsFromSheet(true);
-        } else {
-          // Update timestamp only
-          const { products: cachedProducts, hash } = JSON.parse(cached);
-          localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), products: cachedProducts, hash }));
-          updateSyncStatus(true, Date.now());
+      return;
+    }
+    const { hash: cachedHash } = JSON.parse(cached);
+    const url = `${APPS_SCRIPT_URL}?action=getProductsHash&store=${store}&_=${Date.now()}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    if (result.success && result.hash) {
+      if (result.hash !== cachedHash) {
+        console.log("Hash mismatch, updating products...");
+        const wasInStockTakeMode = stockTakeMode;
+        await fetchProductsFromSheet(true);
+        if (wasInStockTakeMode && !stockTakeMode) {
+          stockTakeMode = true;
+          renderStockTakeProductGrid();
         }
       } else {
-        // Fallback: full sync
-        await fetchProductsFromSheet(true);
+        const { products: cachedProducts, hash } = JSON.parse(cached);
+        localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), products: cachedProducts, hash }));
+        updateSyncStatus(true, Date.now());
+        // ✅ Don't re-render if in stock take mode, or use refreshProductDisplay
+        if (!stockTakeMode) {
+          renderProductGrid();
+        }
       }
-    } catch (err) {
-      console.warn("Background sync failed:", err);
-      updateSyncStatus(false);
-    } finally {
-      syncInProgress = false;
+    } else {
+      const wasInStockTakeMode = stockTakeMode;
+      await fetchProductsFromSheet(true);
+      if (wasInStockTakeMode && !stockTakeMode) {
+        stockTakeMode = true;
+        renderStockTakeProductGrid();
+      }
     }
+  } catch (err) {
+    console.warn("Background sync failed:", err);
+    updateSyncStatus(false);
+  } finally {
+    syncInProgress = false;
   }
+}
 
   function updateSyncStatus(success, timestampMs) {
     const statusDiv = document.getElementById('syncStatus');
@@ -7859,7 +7903,10 @@ window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer
 function renderProductGrid() {
   const searchTerm = searchInput.value.toLowerCase();
   const selectedCategory = categorySelect.value;
-
+ if (stockTakeMode) {
+    renderStockTakeProductGrid();
+    return;
+  }
   if (selectedCategory === 'all' && !inventoryMode) {
     const categories = [...new Set(products.map(p => p.category))];
     let filteredCategories = categories;

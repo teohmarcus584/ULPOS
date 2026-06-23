@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -6029,7 +6029,6 @@ async function approveSelectedItems(requestId, modal) {
   // Get the selected product IDs from checkboxes
   const selectedProductIds = Array.from(selectedCheckboxes).map(cb => {
     const productId = cb.dataset.product;
-    // ✅ FIX: Convert to string for comparison (in case one is number, one is string)
     return String(productId);
   });
   
@@ -6074,8 +6073,9 @@ async function approveSelectedItems(requestId, modal) {
     const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
     const result = await response.json();
     
-    // ✅ FIX: Calculate remaining items HERE (outside the result.success check)
+    // ✅ FIX: Calculate remainingItems HERE (outside the result.success check)
     const remainingItems = itemsArray.length - selectedItems.length;
+    console.log(`Remaining items: ${remainingItems}`);
     
     if (result.success) {
       await showAlertModal('✅ Partial Approval Successful', 
@@ -6156,7 +6156,7 @@ async function rejectSelectedItems(requestId, modal) {
   // Get the selected product IDs from checkboxes
   const selectedProductIds = Array.from(selectedCheckboxes).map(cb => {
     const productId = cb.dataset.product;
-    // ✅ FIX: Convert to string for comparison (in case one is number, one is string)
+    // ✅ FIX: Convert to string for comparison
     return String(productId);
   });
   
@@ -6204,8 +6204,10 @@ async function rejectSelectedItems(requestId, modal) {
     const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
     const result = await response.json();
     
-    // ✅ FIX: Calculate remaining items HERE (outside the result.success check)
+    // ✅ FIX: Calculate remainingItems HERE (outside the result.success check)
+    // This ensures it's defined regardless of whether result.success is true or false
     const remainingItems = itemsArray.length - selectedItems.length;
+    console.log(`Remaining items: ${remainingItems}`);
     
     if (result.success) {
       await showAlertModal('✅ Partial Rejection Successful', 

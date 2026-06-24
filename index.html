@@ -5805,78 +5805,125 @@ async function loadPendingStockTakeRequests(modal) {
       return;
     }
     
+    // ✅ GROUP REQUESTS BY STORE
+    const groupedByStore = {};
+    result.requests.forEach(req => {
+      const storeKey = req.store;
+      if (!groupedByStore[storeKey]) {
+        groupedByStore[storeKey] = [];
+      }
+      groupedByStore[storeKey].push(req);
+    });
+    
     let html = '';
-    for (const req of result.requests) {
-      const date = new Date(req.timestamp).toLocaleString();
-      const storeName = req.store.charAt(0).toUpperCase() + req.store.slice(1);
+    
+    // Process each store group
+    for (const [storeName, requests] of Object.entries(groupedByStore)) {
+      const storeDisplay = storeName.charAt(0).toUpperCase() + storeName.slice(1).replace('_', ' ');
+      
+      // Generate a unique group ID for this store
+      const groupId = `store_${storeName}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
       
       html += `
-        <div style="background:#f8fafc; border-radius:16px; padding:16px; margin-bottom:16px; border-left:4px solid #f59e0b; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-          <div style="display:flex; justify-content:space-between; flex-wrap:wrap; margin-bottom:12px;">
+        <div style="background:#f8fafc; border-radius:16px; padding:16px; margin-bottom:20px; border-left:4px solid #3b82f6; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid #e2e8f0;">
             <div>
-              <strong style="font-size:1.1rem;">🏪 ${storeName}</strong>
-              <span style="margin-left:12px; font-size:0.9rem; color:#64748b;">${date}</span>
+              <strong style="font-size:1.3rem;">🏪 ${storeDisplay}</strong>
+              <span style="margin-left:12px; font-size:0.9rem; color:#64748b;">${requests.length} submission(s)</span>
             </div>
-            <div style="display:flex; align-items:center; gap:12px;">
-              <span style="background:#fef3c7; color:#92400e; padding:4px 12px; border-radius:20px; font-size:0.8rem;">PENDING</span>
-              <span style="font-size:0.85rem; color:#64748b;">👤 ${req.employee_name}</span>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span style="background:#dbeafe; color:#1e40af; padding:4px 12px; border-radius:20px; font-size:0.8rem;">GROUPED</span>
             </div>
           </div>
           
-          <!-- Select All checkbox for this request -->
+          <!-- Select All for this store group -->
           <div style="margin:8px 0 12px 0; display:flex; align-items:center; gap:12px; padding:8px 12px; background:#f1f5f9; border-radius:8px;">
             <label style="display:flex; align-items:center; gap:8px; font-weight:500; font-size:0.9rem; cursor:pointer;">
-              <input type="checkbox" class="select-all-items" data-request="${req.request_id}" checked>
-              <span>✅ Select All Items</span>
+              <input type="checkbox" class="select-all-store-items" data-group="${groupId}" checked>
+              <span>✅ Select All Items (All Categories)</span>
             </label>
-            <span style="font-size:0.8rem; color:#64748b;">(${req.items.length} items)</span>
+            <span style="font-size:0.8rem; color:#64748b;">
+              ${requests.reduce((total, req) => total + (Array.isArray(req.items) ? req.items.length : JSON.parse(req.items).length), 0)} total items
+            </span>
           </div>
           
-          <div style="background:white; border-radius:12px; padding:12px; margin:8px 0; max-height:250px; overflow-y:auto; border:1px solid #e2e8f0;">
-            <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
-              <thead>
-                <tr style="border-bottom:2px solid #e2e8f0;">
-                  <th style="text-align:center; padding:6px 8px; width:40px;">
-                    <input type="checkbox" class="select-all-in-request" data-request="${req.request_id}" checked>
-                  </th>
-                  <th style="text-align:left; padding:6px 8px;">Product</th>
-                  <th style="text-align:right; padding:6px 8px;">Current</th>
-                  <th style="text-align:right; padding:6px 8px;">Counted</th>
-                  <th style="text-align:right; padding:6px 8px;">Diff</th>
-                </tr>
-              </thead>
-              <tbody>
+          <!-- CATEGORY SEPARATORS -->
+          <div style="margin: 8px 0 12px 0; display: flex; flex-direction: column; gap: 12px;">
       `;
       
-      for (const item of req.items) {
-        const diff = item.counted_stock - item.current_stock;
-        const diffColor = diff > 0 ? '#2c7a4b' : diff < 0 ? '#ef4444' : '#64748b';
-        const diffSymbol = diff > 0 ? '+' : '';
+      // Process each request in this store (each is a separate category submission)
+      for (const req of requests) {
+        const date = new Date(req.timestamp).toLocaleString();
+        const items = Array.isArray(req.items) ? req.items : JSON.parse(req.items);
+        
+        // Get category from first item (all items in this request should be same category)
+        const category = items.length > 0 ? items[0].category : 'Unknown Category';
+        
         html += `
-          <tr style="border-bottom:1px solid #f1f5f9;">
-            <td style="text-align:center; padding:6px 8px;">
-              <input type="checkbox" class="item-checkbox" data-request="${req.request_id}" data-product="${item.product_id}" checked>
-            </td>
-            <td style="padding:6px 8px; font-weight:500;">${escapeHtml(item.product_name)}</td>
-            <td style="text-align:right; padding:6px 8px;">${item.current_stock}</td>
-            <td style="text-align:right; padding:6px 8px; font-weight:600;">${item.counted_stock}</td>
-            <td style="text-align:right; padding:6px 8px; color:${diffColor}; font-weight:600;">${diffSymbol}${diff}</td>
-          </tr>
+          <div style="background:white; border-radius:12px; padding:12px 16px; border:1px solid #e2e8f0; border-left:4px solid #8b5cf6;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-weight:600; color:#0f172a;">📂 ${escapeHtml(category)}</span>
+                <span style="font-size:0.75rem; color:#64748b;">${date}</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:0.8rem; color:#64748b;">👤 ${req.employee_name}</span>
+                <span style="background:#fef3c7; color:#92400e; padding:2px 10px; border-radius:20px; font-size:0.7rem;">PENDING</span>
+              </div>
+            </div>
+            
+            <div style="background:#f8fafc; border-radius:8px; padding:8px; max-height:150px; overflow-y:auto; border:1px solid #f1f5f9;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                <thead>
+                  <tr style="border-bottom:1px solid #e2e8f0;">
+                    <th style="text-align:center; padding:4px 6px; width:36px;">
+                      <input type="checkbox" class="select-all-category-items" data-request="${req.request_id}" data-group="${groupId}" checked>
+                    </th>
+                    <th style="text-align:left; padding:4px 6px;">Product</th>
+                    <th style="text-align:right; padding:4px 6px;">Current</th>
+                    <th style="text-align:right; padding:4px 6px;">Counted</th>
+                    <th style="text-align:right; padding:4px 6px;">Diff</th>
+                  </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        for (const item of items) {
+          const diff = item.counted_stock - item.current_stock;
+          const diffColor = diff > 0 ? '#2c7a4b' : diff < 0 ? '#ef4444' : '#64748b';
+          const diffSymbol = diff > 0 ? '+' : '';
+          html += `
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <td style="text-align:center; padding:4px 6px;">
+                <input type="checkbox" class="item-checkbox" data-request="${req.request_id}" data-product="${item.product_id}" data-group="${groupId}" checked>
+              </td>
+              <td style="padding:4px 6px; font-weight:500;">${escapeHtml(item.product_name)}</td>
+              <td style="text-align:right; padding:4px 6px;">${item.current_stock}</td>
+              <td style="text-align:right; padding:4px 6px; font-weight:600;">${item.counted_stock}</td>
+              <td style="text-align:right; padding:4px 6px; color:${diffColor}; font-weight:600;">${diffSymbol}${diff}</td>
+            </tr>
+          `;
+        }
+        
+        html += `
+                </tbody>
+              </table>
+            </div>
+          </div>
         `;
       }
       
       html += `
-              </tbody>
-            </table>
-          </div>
+          </div> <!-- End category separators -->
           
-          <div style="display:flex; gap:12px; margin-top:12px; justify-content:flex-end; flex-wrap:wrap;">
-            <button class="approve-selected-btn" data-request="${req.request_id}" 
-                    style="background:#2c7a4b; color:white; border:none; border-radius:40px; padding:8px 20px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+          <!-- ACTION BUTTONS FOR THE STORE GROUP -->
+          <div style="display:flex; gap:12px; margin-top:16px; justify-content:flex-end; flex-wrap:wrap; border-top:1px solid #e2e8f0; padding-top:12px;">
+            <button class="approve-store-group-btn" data-group="${groupId}" 
+                    style="background:#2c7a4b; color:white; border:none; border-radius:40px; padding:10px 24px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
               ✅ Approve Selected (0)
             </button>
-            <button class="reject-selected-btn" data-request="${req.request_id}"
-                    style="background:#ef4444; color:white; border:none; border-radius:40px; padding:8px 20px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
+            <button class="reject-store-group-btn" data-group="${groupId}"
+                    style="background:#ef4444; color:white; border:none; border-radius:40px; padding:10px 24px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
               ❌ Reject Selected (0)
             </button>
           </div>
@@ -5886,77 +5933,84 @@ async function loadPendingStockTakeRequests(modal) {
     
     list.innerHTML = html;
     
-    // --- Handle Select All for each request ---
-    document.querySelectorAll('.select-all-items').forEach(selectAll => {
+    // --- ATTACH EVENT LISTENERS ---
+    
+    // 1. "Select All Store Items" checkbox
+    document.querySelectorAll('.select-all-store-items').forEach(selectAll => {
       selectAll.addEventListener('change', function() {
-        const requestId = this.dataset.request;
+        const groupId = this.dataset.group;
         const isChecked = this.checked;
-        // Update all item checkboxes in this request
-        document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]`).forEach(cb => {
+        // Update ALL checkboxes in this store group
+        document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]`).forEach(cb => {
           cb.checked = isChecked;
         });
-        // Update the "select all in request" checkbox
-        const selectAllInRequest = document.querySelector(`.select-all-in-request[data-request="${requestId}"]`);
-        if (selectAllInRequest) selectAllInRequest.checked = isChecked;
-        updateSelectedCount(requestId);
+        document.querySelectorAll(`.select-all-category-items[data-group="${groupId}"]`).forEach(cb => {
+          cb.checked = isChecked;
+        });
+        updateStoreGroupCounts(groupId);
       });
     });
     
-    // --- Handle "Select All in Request" (header checkbox) ---
-    document.querySelectorAll('.select-all-in-request').forEach(selectAll => {
+    // 2. "Select All Category Items" checkbox (per category/request)
+    document.querySelectorAll('.select-all-category-items').forEach(selectAll => {
       selectAll.addEventListener('change', function() {
         const requestId = this.dataset.request;
+        const groupId = this.dataset.group;
         const isChecked = this.checked;
-        // Update all item checkboxes in this request
+        // Update all checkboxes in this request/category
         document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]`).forEach(cb => {
           cb.checked = isChecked;
         });
-        // Update the main Select All checkbox
-        const selectAllMain = document.querySelector(`.select-all-items[data-request="${requestId}"]`);
-        if (selectAllMain) selectAllMain.checked = isChecked;
-        updateSelectedCount(requestId);
+        updateStoreGroupCounts(groupId);
       });
     });
     
-    // --- Handle individual item checkboxes ---
+    // 3. Individual item checkboxes
     document.querySelectorAll('.item-checkbox').forEach(cb => {
       cb.addEventListener('change', function() {
+        const groupId = this.dataset.group;
         const requestId = this.dataset.request;
-        const allItems = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]`);
-        const checkedItems = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]:checked`);
         
-        // Update "Select All" checkbox
-        const selectAllMain = document.querySelector(`.select-all-items[data-request="${requestId}"]`);
-        if (selectAllMain) {
-          selectAllMain.checked = allItems.length === checkedItems.length;
+        // Update the "Select All Category" checkbox for this request
+        const allCategoryItems = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]`);
+        const checkedCategoryItems = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]:checked`);
+        const selectAllCategory = document.querySelector(`.select-all-category-items[data-request="${requestId}"]`);
+        if (selectAllCategory) {
+          selectAllCategory.checked = allCategoryItems.length === checkedCategoryItems.length;
         }
-        const selectAllInRequest = document.querySelector(`.select-all-in-request[data-request="${requestId}"]`);
-        if (selectAllInRequest) {
-          selectAllInRequest.checked = allItems.length === checkedItems.length;
+        
+        // Update the "Select All Store" checkbox
+        const allStoreItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]`);
+        const checkedStoreItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]:checked`);
+        const selectAllStore = document.querySelector(`.select-all-store-items[data-group="${groupId}"]`);
+        if (selectAllStore) {
+          selectAllStore.checked = allStoreItems.length === checkedStoreItems.length;
         }
-        updateSelectedCount(requestId);
+        
+        updateStoreGroupCounts(groupId);
       });
     });
     
-    // --- Attach approve/reject handlers ---
-    document.querySelectorAll('.approve-selected-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const requestId = btn.dataset.request;
-        approveSelectedItems(requestId, modal);
+    // 4. Approve Store Group button
+    document.querySelectorAll('.approve-store-group-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const groupId = this.dataset.group;
+        approveStoreGroup(groupId, modal);
       });
     });
     
-    document.querySelectorAll('.reject-selected-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const requestId = btn.dataset.request;
-        rejectSelectedItems(requestId, modal);
+    // 5. Reject Store Group button
+    document.querySelectorAll('.reject-store-group-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const groupId = this.dataset.group;
+        rejectStoreGroup(groupId, modal);
       });
     });
     
-    // --- Initialize counts ---
-    document.querySelectorAll('.approve-selected-btn').forEach(btn => {
-      const requestId = btn.dataset.request;
-      updateSelectedCount(requestId);
+    // Initialize counts for all groups
+    document.querySelectorAll('.approve-store-group-btn, .reject-store-group-btn').forEach(btn => {
+      const groupId = btn.dataset.group;
+      updateStoreGroupCounts(groupId);
     });
     
   } catch (err) {
@@ -5964,7 +6018,241 @@ async function loadPendingStockTakeRequests(modal) {
     list.innerHTML = '<div style="text-align:center; padding:20px; color:#ef4444;">Failed to load requests.</div>';
   }
 }
+// --- Helper: Update counts for a store group ---
+function updateStoreGroupCounts(groupId) {
+  const checkedItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]:checked`);
+  const totalItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]`);
+  const count = checkedItems.length;
+  
+  const approveBtn = document.querySelector(`.approve-store-group-btn[data-group="${groupId}"]`);
+  const rejectBtn = document.querySelector(`.reject-store-group-btn[data-group="${groupId}"]`);
+  
+  if (approveBtn) {
+    approveBtn.innerHTML = `✅ Approve Selected (${count}/${totalItems.length})`;
+    approveBtn.disabled = count === 0;
+    approveBtn.style.opacity = count === 0 ? '0.5' : '1';
+  }
+  if (rejectBtn) {
+    rejectBtn.innerHTML = `❌ Reject Selected (${count}/${totalItems.length})`;
+    rejectBtn.disabled = count === 0;
+    rejectBtn.style.opacity = count === 0 ? '0.5' : '1';
+  }
+}
 
+// --- Helper: Get all selected items for a store group ---
+function getSelectedItemsForGroup(groupId) {
+  const selectedCheckboxes = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]:checked`);
+  const selectedItems = [];
+  
+  // Group by request ID to preserve request structure
+  const groupedByRequest = {};
+  selectedCheckboxes.forEach(cb => {
+    const requestId = cb.dataset.request;
+    const productId = cb.dataset.product;
+    if (!groupedByRequest[requestId]) {
+      groupedByRequest[requestId] = [];
+    }
+    groupedByRequest[requestId].push(productId);
+  });
+  
+  // For each request, get the full item data
+  for (const [requestId, productIds] of Object.entries(groupedByRequest)) {
+    // Find the request data from the DOM or fetch it
+    // We'll use a simple approach: fetch each request's data
+    // But to avoid multiple fetches, we'll collect all selected items
+    const checkboxes = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]:checked`);
+    checkboxes.forEach(cb => {
+      const productId = cb.dataset.product;
+      // Find the product name and details from the table row
+      const row = cb.closest('tr');
+      if (row) {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 4) {
+          const name = cells[1]?.textContent?.trim() || '';
+          const currentStock = parseInt(cells[2]?.textContent?.trim()) || 0;
+          const countedStock = parseInt(cells[3]?.textContent?.trim()) || 0;
+          selectedItems.push({
+            product_id: productId,
+            product_name: name,
+            current_stock: currentStock,
+            counted_stock: countedStock,
+            request_id: requestId
+          });
+        }
+      }
+    });
+  }
+  
+  return selectedItems;
+}
+
+// --- Approve Store Group ---
+async function approveStoreGroup(groupId, modal) {
+  const selectedItems = getSelectedItemsForGroup(groupId);
+  
+  if (selectedItems.length === 0) {
+    await showAlertModal('No Items Selected', 'Please select at least one item to approve.');
+    return;
+  }
+  
+  // Group by request ID for approval
+  const groupedByRequest = {};
+  selectedItems.forEach(item => {
+    if (!groupedByRequest[item.request_id]) {
+      groupedByRequest[item.request_id] = [];
+    }
+    groupedByRequest[item.request_id].push(item);
+  });
+  
+  const totalItems = Object.values(groupedByRequest).reduce((sum, items) => sum + items.length, 0);
+  
+  const confirmed = await showConfirmModal(
+    'Approve Selected Items',
+    `Approve ${totalItems} item(s) across ${Object.keys(groupedByRequest).length} category submission(s)?\n\nThis will update stock for all selected items.`
+  );
+  
+  if (!confirmed) return;
+  
+  showLoading('Approving selected items...');
+  
+  try {
+    let successCount = 0;
+    let failCount = 0;
+    
+    // Process each request separately
+    for (const [requestId, items] of Object.entries(groupedByRequest)) {
+      const formData = new URLSearchParams();
+      formData.append('action', 'approveStockTake');
+      formData.append('request_id', requestId);
+      formData.append('approved_by', currentEmployee.id);
+      formData.append('approved_by_name', currentEmployee.name);
+      formData.append('items', JSON.stringify(items));
+      formData.append('partial_approval', 'true');
+      formData.append('approved_count', items.length);
+      
+      const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+      const result = await response.json();
+      
+      if (result.success) {
+        successCount += items.length;
+      } else {
+        failCount += items.length;
+      }
+    }
+    
+    await showAlertModal('✅ Approval Complete', 
+      `<div style="text-align:left; padding:4px 0;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <span style="font-size:2rem;">📋</span>
+          <div>
+            <div style="font-weight:600; color:#0f172a;">Stock Take Approved</div>
+          </div>
+        </div>
+        <div style="background:#f0fdf4; border-radius:12px; padding:12px 16px; border-left:4px solid #2c7a4b; margin-top:8px;">
+          <div style="font-weight:500; color:#2c7a4b;">✅ Approved: ${successCount} item(s)</div>
+          ${failCount > 0 ? `<div style="font-weight:500; color:#ef4444;">❌ Failed: ${failCount} item(s)</div>` : ''}
+        </div>
+      </div>`
+    );
+    
+    // Refresh the list and products
+    await loadPendingStockTakeRequests(modal);
+    await fetchProductsFromSheet(true);
+    renderProductGrid();
+    
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Error', 'Failed to approve selected items: ' + err.message);
+  } finally {
+    hideLoading();
+  }
+}
+
+// --- Reject Store Group ---
+async function rejectStoreGroup(groupId, modal) {
+  const selectedItems = getSelectedItemsForGroup(groupId);
+  
+  if (selectedItems.length === 0) {
+    await showAlertModal('No Items Selected', 'Please select at least one item to reject.');
+    return;
+  }
+  
+  // Group by request ID for rejection
+  const groupedByRequest = {};
+  selectedItems.forEach(item => {
+    if (!groupedByRequest[item.request_id]) {
+      groupedByRequest[item.request_id] = [];
+    }
+    groupedByRequest[item.request_id].push(item);
+  });
+  
+  const totalItems = Object.values(groupedByRequest).reduce((sum, items) => sum + items.length, 0);
+  
+  const reason = await showInputModal('Rejection Reason', 'Enter reason for rejecting selected items');
+  if (reason === null) return;
+  
+  const confirmed = await showConfirmModal(
+    'Reject Selected Items',
+    `Reject ${totalItems} item(s) across ${Object.keys(groupedByRequest).length} category submission(s)?\n\nThis will mark only the selected items as rejected.`
+  );
+  
+  if (!confirmed) return;
+  
+  showLoading('Rejecting selected items...');
+  
+  try {
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (const [requestId, items] of Object.entries(groupedByRequest)) {
+      const formData = new URLSearchParams();
+      formData.append('action', 'rejectStockTake');
+      formData.append('request_id', requestId);
+      formData.append('rejected_by', currentEmployee.id);
+      formData.append('rejected_by_name', currentEmployee.name);
+      formData.append('reason', reason || 'No reason provided');
+      formData.append('items', JSON.stringify(items));
+      formData.append('partial_rejection', 'true');
+      formData.append('rejected_count', items.length);
+      
+      const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+      const result = await response.json();
+      
+      if (result.success) {
+        successCount += items.length;
+      } else {
+        failCount += items.length;
+      }
+    }
+    
+    await showAlertModal('✅ Rejection Complete', 
+      `<div style="text-align:left; padding:4px 0;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <span style="font-size:2rem;">📋</span>
+          <div>
+            <div style="font-weight:600; color:#0f172a;">Selected Items Rejected</div>
+          </div>
+        </div>
+        <div style="background:#fef2f2; border-radius:12px; padding:12px 16px; border-left:4px solid #ef4444; margin-top:8px;">
+          <div style="font-weight:500; color:#dc2626;">❌ Rejected: ${successCount} item(s)</div>
+          ${failCount > 0 ? `<div style="font-weight:500; color:#ef4444;">❌ Failed: ${failCount} item(s)</div>` : ''}
+        </div>
+        <div style="background:#f8fafc; border-radius:8px; padding:8px 12px; margin-top:8px;">
+          <div style="font-weight:500; color:#1e293b; font-size:0.85rem;">📝 Reason:</div>
+          <div style="color:#475569; font-size:0.9rem;">${escapeHtml(reason)}</div>
+        </div>
+      </div>`
+    );
+    
+    await loadPendingStockTakeRequests(modal);
+    
+  } catch (err) {
+    console.error(err);
+    await showAlertModal('Error', 'Failed to reject selected items: ' + err.message);
+  } finally {
+    hideLoading();
+  }
+}
 // --- Helper: Update selected count for a request ---
 function updateSelectedCount(requestId) {
   const checkedItems = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]:checked`);

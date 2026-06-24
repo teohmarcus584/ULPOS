@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -5978,16 +5978,21 @@ async function loadPendingStockTakeRequests(modal) {
         const employeeName = info.employee_name || 'Unknown';
         const requestId = info.requestId || 'unknown';
         
-        // Build table rows for this category
+        // ✅ Build table rows for this category - store category in each row and checkbox
         let tableRowsHtml = '';
         for (const item of items) {
           const diff = item.counted_stock - item.current_stock;
           const diffColor = diff > 0 ? '#2c7a4b' : diff < 0 ? '#ef4444' : '#64748b';
           const diffSymbol = diff > 0 ? '+' : '';
           tableRowsHtml += `
-            <tr style="border-bottom:1px solid #f1f5f9;">
+            <tr style="border-bottom:1px solid #f1f5f9;" data-category="${escapeHtml(category)}">
               <td style="text-align:center; padding:4px 6px;">
-                <input type="checkbox" class="item-checkbox" data-request="${requestId}" data-product="${item.product_id}" data-group="${groupId}" checked>
+                <input type="checkbox" class="item-checkbox" 
+                       data-request="${requestId}" 
+                       data-product="${item.product_id}" 
+                       data-group="${groupId}" 
+                       data-category="${escapeHtml(category)}" 
+                       checked>
               </td>
               <td style="padding:4px 6px; font-weight:500;">${escapeHtml(item.product_name || 'Unknown')}</td>
               <td style="text-align:right; padding:4px 6px;">${item.current_stock || 0}</td>
@@ -5997,8 +6002,9 @@ async function loadPendingStockTakeRequests(modal) {
           `;
         }
         
+        // ✅ Build the category section with data-category attribute
         categorySectionsHtml += `
-          <div style="background:white; border-radius:12px; padding:12px 16px; border:1px solid #e2e8f0; border-left:4px solid #8b5cf6;">
+          <div style="background:white; border-radius:12px; padding:12px 16px; border:1px solid #e2e8f0; border-left:4px solid #8b5cf6;" data-category="${escapeHtml(category)}">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-weight:600; color:#0f172a;">📂 ${escapeHtml(category)}</span>
@@ -6015,7 +6021,9 @@ async function loadPendingStockTakeRequests(modal) {
                 <thead>
                   <tr style="border-bottom:1px solid #e2e8f0;">
                     <th style="text-align:center; padding:4px 6px; width:36px;">
-                      <input type="checkbox" class="select-all-category-items" data-category="${category}" data-group="${groupId}" checked>
+                      <input type="checkbox" class="select-all-category-items" 
+                             data-category="${escapeHtml(category)}" 
+                             data-group="${groupId}" checked>
                     </th>
                     <th style="text-align:left; padding:4px 6px;">Product</th>
                     <th style="text-align:right; padding:4px 6px;">Current</th>
@@ -6099,7 +6107,7 @@ async function loadPendingStockTakeRequests(modal) {
       });
     });
     
-    // 2. "Select All Category Items" checkbox (updated to use data-category)
+    // 2. "Select All Category Items" checkbox
     document.querySelectorAll('.select-all-category-items').forEach(selectAll => {
       selectAll.addEventListener('change', function() {
         const groupId = this.dataset.group;
@@ -6107,8 +6115,7 @@ async function loadPendingStockTakeRequests(modal) {
         const isChecked = this.checked;
         
         // Find all item checkboxes that belong to this category within this group
-        // We need to find the category section and select all items in it
-        const categorySection = this.closest('div[style*="border-left: 4px solid"]');
+        const categorySection = this.closest('div[data-category]');
         if (categorySection) {
           const checkboxes = categorySection.querySelectorAll('.item-checkbox');
           checkboxes.forEach(cb => {
@@ -6123,7 +6130,7 @@ async function loadPendingStockTakeRequests(modal) {
     document.querySelectorAll('.item-checkbox').forEach(cb => {
       cb.addEventListener('change', function() {
         const groupId = this.dataset.group;
-        const categorySection = this.closest('div[style*="border-left: 4px solid"]');
+        const categorySection = this.closest('div[data-category]');
         
         if (categorySection) {
           // Update "Select All Category"
@@ -6201,48 +6208,66 @@ function getSelectedItemsForGroup(groupId) {
   const selectedCheckboxes = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]:checked`);
   const selectedItems = [];
   
-  // Group by request ID to preserve request structure
-  const groupedByRequest = {};
   selectedCheckboxes.forEach(cb => {
-    const requestId = cb.dataset.request;
-    const productId = cb.dataset.product;
-    if (!groupedByRequest[requestId]) {
-      groupedByRequest[requestId] = [];
-    }
-    groupedByRequest[requestId].push(productId);
-  });
-  
-  // For each request, get the full item data
-  for (const [requestId, productIds] of Object.entries(groupedByRequest)) {
-    // Find the request data from the DOM or fetch it
-    // We'll use a simple approach: fetch each request's data
-    // But to avoid multiple fetches, we'll collect all selected items
-    const checkboxes = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]:checked`);
-    checkboxes.forEach(cb => {
-      const productId = cb.dataset.product;
-      // Find the product name and details from the table row
-      const row = cb.closest('tr');
-      if (row) {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 4) {
-          const name = cells[1]?.textContent?.trim() || '';
-          const currentStock = parseInt(cells[2]?.textContent?.trim()) || 0;
-          const countedStock = parseInt(cells[3]?.textContent?.trim()) || 0;
-          selectedItems.push({
-            product_id: productId,
-            product_name: name,
-            current_stock: currentStock,
-            counted_stock: countedStock,
-            request_id: requestId
-          });
+    // Get the closest category section (the div with border-left)
+    const categorySection = cb.closest('div[style*="border-left: 4px solid"]');
+    let category = 'Unknown';
+    let productName = '';
+    let currentStock = 0;
+    let countedStock = 0;
+    
+    // Try to get category from the section header
+    if (categorySection) {
+      const headerSpan = categorySection.querySelector('span[style*="font-weight:600"]');
+      if (headerSpan) {
+        // Extract category name from "📂 Category Name" format
+        const text = headerSpan.textContent || '';
+        const match = text.match(/📂\s*(.+)/);
+        if (match) {
+          category = match[1].trim();
         }
       }
+    }
+    
+    // Get the row (tr) that contains this checkbox
+    const row = cb.closest('tr');
+    if (row) {
+      const cells = row.querySelectorAll('td');
+      if (cells.length >= 4) {
+        // Product name is in the second cell (index 1)
+        productName = cells[1]?.textContent?.trim() || '';
+        // Current stock is in the third cell (index 2)
+        currentStock = parseInt(cells[2]?.textContent?.trim()) || 0;
+        // Counted stock is in the fourth cell (index 3)
+        countedStock = parseInt(cells[3]?.textContent?.trim()) || 0;
+      }
+    }
+    
+    // If we couldn't get the category from the header, try to get it from the product list
+    if (category === 'Unknown' && productName) {
+      // Try to find the product in the products array
+      const product = products.find(p => p.name === productName);
+      if (product && product.category) {
+        category = product.category;
+      }
+    }
+    
+    const productId = cb.dataset.product;
+    const requestId = cb.dataset.request;
+    
+    selectedItems.push({
+      product_id: productId,
+      product_name: productName || 'Unknown Product',
+      category: category,
+      current_stock: currentStock,
+      counted_stock: countedStock,
+      request_id: requestId
     });
-  }
+  });
   
+  console.log('Selected items with categories:', selectedItems);
   return selectedItems;
 }
-
 // --- Approve Store Group ---
 async function approveStoreGroup(groupId, modal) {
   const selectedItems = getSelectedItemsForGroup(groupId);

@@ -6590,9 +6590,17 @@ async function rejectStoreGroup(groupId, modal) {
         let successCount = 0;
         let failCount = 0;
         let rejectedCategories = [];
+        let errors = [];
+        
+        // Log what we're sending
+        console.log('Grouped by request:', groupedByRequest);
         
         for (const [requestId, items] of Object.entries(groupedByRequest)) {
           const category = items[0]?.category || 'Unknown';
+          
+          // Log the items being sent
+          console.log(`Sending request ${requestId} with ${items.length} items:`, items);
+          
           const formData = new URLSearchParams();
           formData.append('action', 'rejectStockTake');
           formData.append('request_id', requestId);
@@ -6603,30 +6611,44 @@ async function rejectStoreGroup(groupId, modal) {
           formData.append('partial_rejection', 'true');
           formData.append('rejected_count', items.length);
           
-          const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
-          const result = await response.json();
+          // Log the form data
+          console.log('Form data being sent:', formData.toString());
           
-          if (result.success) {
-            successCount += items.length;
-            rejectedCategories.push(category);
-          } else {
+          try {
+            const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+            const result = await response.json();
+            
+            console.log(`Response for request ${requestId}:`, result);
+            
+            if (result.success) {
+              successCount += items.length;
+              rejectedCategories.push(category);
+            } else {
+              failCount += items.length;
+              errors.push(`Category "${category}": ${result.error || 'Unknown error'}`);
+              console.error(`Failed to reject request ${requestId}:`, result.error);
+            }
+          } catch (fetchError) {
             failCount += items.length;
+            errors.push(`Category "${category}": Network error - ${fetchError.message}`);
+            console.error(`Network error for request ${requestId}:`, fetchError);
           }
         }
         
-        await showAlertModal('✅ Rejection Complete', 
-          `<div style="text-align:left; padding:4px 0;">
+        // Show detailed results
+        let resultMessage = `
+          <div style="text-align:left; padding:4px 0;">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
               <span style="font-size:2.5rem;">📋</span>
               <div>
-                <div style="font-weight:600; color:#0f172a; font-size:1.2rem;">Selected Items Rejected</div>
-                <div style="font-size:0.9rem; color:#64748b;">${rejectedCategories.length} category(s) rejected</div>
+                <div style="font-weight:600; color:#0f172a; font-size:1.2rem;">${failCount === 0 ? '✅ Rejection Complete' : '⚠️ Partial Rejection'}</div>
+                <div style="font-size:0.9rem; color:#64748b;">${rejectedCategories.length} category(s) processed</div>
               </div>
             </div>
-            <div style="background:#fef2f2; border-radius:12px; padding:16px 20px; border-left:4px solid #ef4444;">
+            <div style="background:${failCount === 0 ? '#f0fdf4' : '#fefce8'}; border-radius:12px; padding:16px 20px; border-left:4px solid ${failCount === 0 ? '#059669' : '#f59e0b'};">
               <div style="display:flex; justify-content:space-between; padding:4px 0;">
                 <span style="color:#64748b;">❌ Rejected Items</span>
-                <span style="font-weight:700; color:#dc2626;">${successCount}</span>
+                <span style="font-weight:700; color:${failCount === 0 ? '#059669' : '#dc2626'};">${successCount}</span>
               </div>
               ${failCount > 0 ? `
                 <div style="display:flex; justify-content:space-between; padding:4px 0; border-top:1px solid #e2e8f0; margin-top:4px; padding-top:8px;">
@@ -6635,22 +6657,48 @@ async function rejectStoreGroup(groupId, modal) {
                 </div>
               ` : ''}
             </div>
+        `;
+        
+        // Add error details if any
+        if (errors.length > 0) {
+          resultMessage += `
+            <div style="background:#fef2f2; border-radius:8px; padding:12px 16px; margin-top:12px; border:1px solid #fecaca;">
+              <div style="font-weight:500; color:#dc2626; font-size:0.85rem; margin-bottom:8px;">⚠️ Errors:</div>
+              ${errors.map(err => `<div style="color:#475569; font-size:0.85rem; padding:2px 0;">• ${escapeHtml(err)}</div>`).join('')}
+            </div>
+          `;
+        }
+        
+        // Add reason if any were successful
+        if (successCount > 0) {
+          resultMessage += `
             <div style="background:#f8fafc; border-radius:8px; padding:12px 16px; margin-top:12px; border:1px solid #e2e8f0;">
               <div style="font-weight:500; color:#1e293b; font-size:0.85rem;">📝 Rejection Reason:</div>
               <div style="color:#475569; font-size:0.9rem; margin-top:4px;">${escapeHtml(reason)}</div>
             </div>
-            ${rejectedCategories.length > 0 ? `
-              <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:6px;">
-                ${rejectedCategories.map(cat => `<span style="background:#fee2e2; color:#991b1b; padding:2px 10px; border-radius:12px; font-size:0.75rem;">📂 ${escapeHtml(cat)}</span>`).join('')}
-              </div>
-            ` : ''}
-          </div>`
+          `;
+        }
+        
+        if (rejectedCategories.length > 0) {
+          resultMessage += `
+            <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:6px;">
+              ${rejectedCategories.map(cat => `<span style="background:#fee2e2; color:#991b1b; padding:2px 10px; border-radius:12px; font-size:0.75rem;">📂 ${escapeHtml(cat)}</span>`).join('')}
+            </div>
+          `;
+        }
+        
+        resultMessage += `</div>`;
+        
+        await showAlertModal(
+          failCount === 0 ? '✅ Rejection Complete' : '⚠️ Partial Rejection', 
+          resultMessage
         );
         
+        // Refresh the list
         await loadPendingStockTakeRequests(modal);
         
       } catch (err) {
-        console.error(err);
+        console.error('Rejection error:', err);
         await showAlertModal('Error', 'Failed to reject selected items: ' + err.message);
       } finally {
         hideLoading();

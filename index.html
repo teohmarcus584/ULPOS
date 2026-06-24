@@ -5801,13 +5801,27 @@ async function loadPendingStockTakeRequests(modal) {
     const result = await response.json();
     
     if (!result.success || !result.requests || result.requests.length === 0) {
-      list.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">No pending stock take requests.</div>';
+      list.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">✅ No pending stock take requests.</div>';
+      return;
+    }
+    
+    // ✅ Filter out requests that have no items or all items already processed
+    const validRequests = result.requests.filter(req => {
+      let items = req.items;
+      if (typeof items === 'string') {
+        try { items = JSON.parse(items); } catch(e) { items = []; }
+      }
+      return items && items.length > 0;
+    });
+    
+    if (validRequests.length === 0) {
+      list.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">✅ No pending stock take requests.</div>';
       return;
     }
     
     // ✅ GROUP REQUESTS BY STORE
     const groupedByStore = {};
-    result.requests.forEach(req => {
+    validRequests.forEach(req => {
       const storeKey = req.store;
       if (!groupedByStore[storeKey]) {
         groupedByStore[storeKey] = [];
@@ -5824,42 +5838,29 @@ async function loadPendingStockTakeRequests(modal) {
       // Generate a unique group ID for this store
       const groupId = `store_${storeName}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
       
-      html += `
-        <div style="background:#f8fafc; border-radius:16px; padding:16px; margin-bottom:20px; border-left:4px solid #3b82f6; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid #e2e8f0;">
-            <div>
-              <strong style="font-size:1.3rem;">🏪 ${storeDisplay}</strong>
-              <span style="margin-left:12px; font-size:0.9rem; color:#64748b;">${requests.length} submission(s)</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <span style="background:#dbeafe; color:#1e40af; padding:4px 12px; border-radius:20px; font-size:0.8rem;">GROUPED</span>
-            </div>
-          </div>
-          
-          <!-- Select All for this store group -->
-          <div style="margin:8px 0 12px 0; display:flex; align-items:center; gap:12px; padding:8px 12px; background:#f1f5f9; border-radius:8px;">
-            <label style="display:flex; align-items:center; gap:8px; font-weight:500; font-size:0.9rem; cursor:pointer;">
-              <input type="checkbox" class="select-all-store-items" data-group="${groupId}" checked>
-              <span>✅ Select All Items (All Categories)</span>
-            </label>
-            <span style="font-size:0.8rem; color:#64748b;">
-              ${requests.reduce((total, req) => total + (Array.isArray(req.items) ? req.items.length : JSON.parse(req.items).length), 0)} total items
-            </span>
-          </div>
-          
-          <!-- CATEGORY SEPARATORS -->
-          <div style="margin: 8px 0 12px 0; display: flex; flex-direction: column; gap: 12px;">
-      `;
+      // Calculate total items for this store
+      let totalStoreItems = 0;
+      let hasValidItems = false;
       
-      // Process each request in this store (each is a separate category submission)
+      // Build category sections
+      let categorySectionsHtml = '';
+      
       for (const req of requests) {
+        let items = req.items;
+        if (typeof items === 'string') {
+          try { items = JSON.parse(items); } catch(e) { items = []; }
+        }
+        
+        // Skip requests with no items
+        if (!items || items.length === 0) continue;
+        
+        hasValidItems = true;
+        totalStoreItems += items.length;
+        
         const date = new Date(req.timestamp).toLocaleString();
-        const items = Array.isArray(req.items) ? req.items : JSON.parse(req.items);
+        const category = items.length > 0 ? (items[0].category || 'Unknown Category') : 'Unknown Category';
         
-        // Get category from first item (all items in this request should be same category)
-        const category = items.length > 0 ? items[0].category : 'Unknown Category';
-        
-        html += `
+        categorySectionsHtml += `
           <div style="background:white; border-radius:12px; padding:12px 16px; border:1px solid #e2e8f0; border-left:4px solid #8b5cf6;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
               <div style="display:flex; align-items:center; gap:8px;">
@@ -5867,8 +5868,8 @@ async function loadPendingStockTakeRequests(modal) {
                 <span style="font-size:0.75rem; color:#64748b;">${date}</span>
               </div>
               <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:0.8rem; color:#64748b;">👤 ${req.employee_name}</span>
-                <span style="background:#fef3c7; color:#92400e; padding:2px 10px; border-radius:20px; font-size:0.7rem;">PENDING</span>
+                <span style="font-size:0.8rem; color:#64748b;">👤 ${req.employee_name || 'Unknown'}</span>
+                <span style="background:#fef3c7; color:#92400e; padding:2px 10px; border-radius:20px; font-size:0.7rem;">${items.length} items</span>
               </div>
             </div>
             
@@ -5897,15 +5898,15 @@ async function loadPendingStockTakeRequests(modal) {
               <td style="text-align:center; padding:4px 6px;">
                 <input type="checkbox" class="item-checkbox" data-request="${req.request_id}" data-product="${item.product_id}" data-group="${groupId}" checked>
               </td>
-              <td style="padding:4px 6px; font-weight:500;">${escapeHtml(item.product_name)}</td>
-              <td style="text-align:right; padding:4px 6px;">${item.current_stock}</td>
-              <td style="text-align:right; padding:4px 6px; font-weight:600;">${item.counted_stock}</td>
+              <td style="padding:4px 6px; font-weight:500;">${escapeHtml(item.product_name || 'Unknown')}</td>
+              <td style="text-align:right; padding:4px 6px;">${item.current_stock || 0}</td>
+              <td style="text-align:right; padding:4px 6px; font-weight:600;">${item.counted_stock || 0}</td>
               <td style="text-align:right; padding:4px 6px; color:${diffColor}; font-weight:600;">${diffSymbol}${diff}</td>
             </tr>
           `;
         }
         
-        html += `
+        categorySectionsHtml += `
                 </tbody>
               </table>
             </div>
@@ -5913,22 +5914,54 @@ async function loadPendingStockTakeRequests(modal) {
         `;
       }
       
+      // Skip if no valid items found
+      if (!hasValidItems) continue;
+      
       html += `
-          </div> <!-- End category separators -->
+        <div style="background:#f8fafc; border-radius:16px; padding:16px; margin-bottom:20px; border-left:4px solid #3b82f6; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid #e2e8f0;">
+            <div>
+              <strong style="font-size:1.3rem;">🏪 ${storeDisplay}</strong>
+              <span style="margin-left:12px; font-size:0.9rem; color:#64748b;">${requests.length} category(s)</span>
+              <span style="margin-left:12px; font-size:0.9rem; color:#2c7a4b; font-weight:600;">${totalStoreItems} items</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span style="background:#dbeafe; color:#1e40af; padding:4px 12px; border-radius:20px; font-size:0.8rem;">📋 ${requests.length} submissions</span>
+            </div>
+          </div>
+          
+          <!-- Select All for this store group -->
+          <div style="margin:8px 0 12px 0; display:flex; align-items:center; gap:12px; padding:8px 12px; background:#f1f5f9; border-radius:8px;">
+            <label style="display:flex; align-items:center; gap:8px; font-weight:500; font-size:0.9rem; cursor:pointer;">
+              <input type="checkbox" class="select-all-store-items" data-group="${groupId}" checked>
+              <span>✅ Select All (${totalStoreItems} items)</span>
+            </label>
+          </div>
+          
+          <!-- CATEGORY SEPARATORS -->
+          <div style="margin: 8px 0 12px 0; display: flex; flex-direction: column; gap: 12px;">
+            ${categorySectionsHtml}
+          </div>
           
           <!-- ACTION BUTTONS FOR THE STORE GROUP -->
           <div style="display:flex; gap:12px; margin-top:16px; justify-content:flex-end; flex-wrap:wrap; border-top:1px solid #e2e8f0; padding-top:12px;">
             <button class="approve-store-group-btn" data-group="${groupId}" 
                     style="background:#2c7a4b; color:white; border:none; border-radius:40px; padding:10px 24px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
-              ✅ Approve Selected (0)
+              ✅ Approve Selected (${totalStoreItems}/${totalStoreItems})
             </button>
             <button class="reject-store-group-btn" data-group="${groupId}"
                     style="background:#ef4444; color:white; border:none; border-radius:40px; padding:10px 24px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">
-              ❌ Reject Selected (0)
+              ❌ Reject Selected (${totalStoreItems}/${totalStoreItems})
             </button>
           </div>
         </div>
       `;
+    }
+    
+    // If no HTML was generated (all requests were empty)
+    if (!html) {
+      list.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">✅ No pending stock take requests with items.</div>';
+      return;
     }
     
     list.innerHTML = html;
@@ -5940,7 +5973,6 @@ async function loadPendingStockTakeRequests(modal) {
       selectAll.addEventListener('change', function() {
         const groupId = this.dataset.group;
         const isChecked = this.checked;
-        // Update ALL checkboxes in this store group
         document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]`).forEach(cb => {
           cb.checked = isChecked;
         });
@@ -5951,13 +5983,12 @@ async function loadPendingStockTakeRequests(modal) {
       });
     });
     
-    // 2. "Select All Category Items" checkbox (per category/request)
+    // 2. "Select All Category Items" checkbox
     document.querySelectorAll('.select-all-category-items').forEach(selectAll => {
       selectAll.addEventListener('change', function() {
         const requestId = this.dataset.request;
         const groupId = this.dataset.group;
         const isChecked = this.checked;
-        // Update all checkboxes in this request/category
         document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]`).forEach(cb => {
           cb.checked = isChecked;
         });
@@ -5971,7 +6002,7 @@ async function loadPendingStockTakeRequests(modal) {
         const groupId = this.dataset.group;
         const requestId = this.dataset.request;
         
-        // Update the "Select All Category" checkbox for this request
+        // Update "Select All Category"
         const allCategoryItems = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]`);
         const checkedCategoryItems = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]:checked`);
         const selectAllCategory = document.querySelector(`.select-all-category-items[data-request="${requestId}"]`);
@@ -5979,7 +6010,7 @@ async function loadPendingStockTakeRequests(modal) {
           selectAllCategory.checked = allCategoryItems.length === checkedCategoryItems.length;
         }
         
-        // Update the "Select All Store" checkbox
+        // Update "Select All Store"
         const allStoreItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]`);
         const checkedStoreItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]:checked`);
         const selectAllStore = document.querySelector(`.select-all-store-items[data-group="${groupId}"]`);
@@ -6007,7 +6038,7 @@ async function loadPendingStockTakeRequests(modal) {
       });
     });
     
-    // Initialize counts for all groups
+    // Initialize counts
     document.querySelectorAll('.approve-store-group-btn, .reject-store-group-btn').forEach(btn => {
       const groupId = btn.dataset.group;
       updateStoreGroupCounts(groupId);
@@ -6023,17 +6054,18 @@ function updateStoreGroupCounts(groupId) {
   const checkedItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]:checked`);
   const totalItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]`);
   const count = checkedItems.length;
+  const total = totalItems.length;
   
   const approveBtn = document.querySelector(`.approve-store-group-btn[data-group="${groupId}"]`);
   const rejectBtn = document.querySelector(`.reject-store-group-btn[data-group="${groupId}"]`);
   
   if (approveBtn) {
-    approveBtn.innerHTML = `✅ Approve Selected (${count}/${totalItems.length})`;
+    approveBtn.innerHTML = `✅ Approve Selected (${count}/${total})`;
     approveBtn.disabled = count === 0;
     approveBtn.style.opacity = count === 0 ? '0.5' : '1';
   }
   if (rejectBtn) {
-    rejectBtn.innerHTML = `❌ Reject Selected (${count}/${totalItems.length})`;
+    rejectBtn.innerHTML = `❌ Reject Selected (${count}/${total})`;
     rejectBtn.disabled = count === 0;
     rejectBtn.style.opacity = count === 0 ? '0.5' : '1';
   }

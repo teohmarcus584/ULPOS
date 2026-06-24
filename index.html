@@ -5829,7 +5829,7 @@ async function loadPendingStockTakeRequests(modal) {
       groupedByStore[storeKey].push(req);
     });
     
-    let html = '';
+    let mainHtml = '';
     
     // Process each store group
     for (const [storeName, requests] of Object.entries(groupedByStore)) {
@@ -5860,6 +5860,7 @@ async function loadPendingStockTakeRequests(modal) {
         const date = new Date(req.timestamp).toLocaleString();
         const category = items.length > 0 ? (items[0].category || 'Unknown Category') : 'Unknown Category';
         
+        // Start category section
         categorySectionsHtml += `
           <div style="background:white; border-radius:12px; padding:12px 16px; border:1px solid #e2e8f0; border-left:4px solid #8b5cf6;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
@@ -5889,11 +5890,13 @@ async function loadPendingStockTakeRequests(modal) {
                 <tbody>
         `;
         
+        // ✅ FIX: Use a separate variable for table rows, not the main html
+        let tableRowsHtml = '';
         for (const item of items) {
           const diff = item.counted_stock - item.current_stock;
           const diffColor = diff > 0 ? '#2c7a4b' : diff < 0 ? '#ef4444' : '#64748b';
           const diffSymbol = diff > 0 ? '+' : '';
-          html += `
+          tableRowsHtml += `
             <tr style="border-bottom:1px solid #f1f5f9;">
               <td style="text-align:center; padding:4px 6px;">
                 <input type="checkbox" class="item-checkbox" data-request="${req.request_id}" data-product="${item.product_id}" data-group="${groupId}" checked>
@@ -5906,6 +5909,10 @@ async function loadPendingStockTakeRequests(modal) {
           `;
         }
         
+        // ✅ Append table rows to the tbody
+        categorySectionsHtml += tableRowsHtml;
+        
+        // Close the table and category section
         categorySectionsHtml += `
                 </tbody>
               </table>
@@ -5917,7 +5924,8 @@ async function loadPendingStockTakeRequests(modal) {
       // Skip if no valid items found
       if (!hasValidItems) continue;
       
-      html += `
+      // Build the complete store card
+      mainHtml += `
         <div style="background:#f8fafc; border-radius:16px; padding:16px; margin-bottom:20px; border-left:4px solid #3b82f6; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid #e2e8f0;">
             <div>
@@ -5959,12 +5967,12 @@ async function loadPendingStockTakeRequests(modal) {
     }
     
     // If no HTML was generated (all requests were empty)
-    if (!html) {
+    if (!mainHtml) {
       list.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">✅ No pending stock take requests with items.</div>';
       return;
     }
     
-    list.innerHTML = html;
+    list.innerHTML = mainHtml;
     
     // --- ATTACH EVENT LISTENERS ---
     

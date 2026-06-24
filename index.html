@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -6674,28 +6674,59 @@ async function rejectStockTakeRequest(requestId, modal) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.style.display = 'flex';
-    overlay.style.zIndex = '9999';  // HIGHER than approval modal (z-index: 2000)
+    overlay.style.zIndex = '9999';
+    overlay.style.background = 'rgba(0,0,0,0.7)';
+    overlay.style.backdropFilter = 'blur(4px)';
     overlay.innerHTML = `
-      <div class="modal-container" style="max-width: 500px; border-top: 6px solid #ef4444; position: relative; z-index: 10000;">
-        <span class="close-modal" id="closeRejectModal" style="font-size:32px;">×</span>
-        <div class="modal-title" style="color:#dc2626; display:flex; align-items:center; gap:12px; font-size:1.6rem;">
-          <span style="font-size:2.4rem;">❌</span> Reject Stock Take
+      <div class="modal-container" style="max-width: 550px; border-radius: 24px; padding: 0; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+        <!-- Header - Red gradient -->
+        <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 24px 28px; display: flex; align-items: center; gap: 16px;">
+          <div style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0;">
+            ❌
+          </div>
+          <div>
+            <div style="color: white; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px;">Reject Stock Take</div>
+            <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-top: 2px;">Request ID: ${escapeHtml(requestId)}</div>
+          </div>
+          <button id="closeRejectModalBtn" style="margin-left: auto; background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">✕</button>
         </div>
-        <p style="margin: 12px 0 16px 0; color: #64748b; font-size:1rem; line-height:1.5;">
-          Please provide a reason for rejecting this stock take request. This will be sent to the staff member who submitted it.
-        </p>
-        <div class="filter-group">
-          <label style="font-weight:600; font-size:0.95rem; color:#1e293b;">Rejection Reason <span style="color:#ef4444;">*</span></label>
-          <textarea id="rejectionReasonInput" rows="4" 
-                    placeholder="e.g., Please recount the items as the quantities seem incorrect. Make sure to count all stock in the back room and display shelves. If the count is still the same, please explain the discrepancy in detail."
-                    style="width:100%; padding:14px 16px; border-radius:16px; border:2px solid #e2e8f0; font-size:1rem; resize:vertical; min-height:120px; font-family:inherit; transition:border-color 0.2s;"
-                    onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.15)';"
-                    onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"></textarea>
-          <div style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">💡 Provide clear, actionable feedback to help staff correct the count.</div>
+        
+        <!-- Body -->
+        <div style="padding: 28px 28px 20px 28px; background: #f8fafc;">
+          <div style="background: white; border-radius: 16px; padding: 16px 20px; margin-bottom: 20px; border-left: 4px solid #f59e0b; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <div style="display: flex; align-items: center; gap: 8px; color: #92400e; font-weight: 500; font-size: 0.9rem;">
+              <span>💡</span> Please provide a reason for rejection. This will be sent to the staff member.
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 8px;">
+            <label style="display: block; font-weight: 600; color: #1e293b; font-size: 0.95rem; margin-bottom: 8px;">
+              📝 Rejection Reason <span style="color: #ef4444;">*</span>
+            </label>
+            <textarea id="rejectionReasonInput" rows="5" 
+              placeholder="e.g., Please recount the items as the quantities seem incorrect. Make sure to count all stock in the back room and display shelves. If the count is still the same, please explain the discrepancy in detail."
+              style="width: 100%; padding: 14px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; resize: vertical; min-height: 120px; font-family: inherit; transition: all 0.3s ease; background: white;"
+              onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)';"
+              onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"></textarea>
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 0.8rem; color: #94a3b8;">
+              <span>💡</span> Provide clear, actionable feedback to help staff correct the count.
+            </div>
+          </div>
+          
+          <!-- Quick reason buttons -->
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px;">
+            <button class="quick-reason-btn" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; color: #334155;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Count mismatch</button>
+            <button class="quick-reason-btn" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; color: #334155;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Missing items</button>
+            <button class="quick-reason-btn" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; color: #334155;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Incorrect count</button>
+            <button class="quick-reason-btn" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; color: #334155;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Please recount</button>
+            <button class="quick-reason-btn" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; color: #334155;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Check storage</button>
+          </div>
         </div>
-        <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
-          <button id="cancelRejectBtn" class="modal-btn modal-btn-secondary" style="padding:12px 28px; font-size:1rem;">Cancel</button>
-          <button id="confirmRejectBtn" class="modal-btn" style="background:#ef4444; color:white; padding:12px 28px; font-size:1rem; display:flex; align-items:center; gap:8px;">
+        
+        <!-- Footer -->
+        <div style="padding: 16px 28px 24px 28px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
+          <button id="cancelRejectBtn" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Cancel</button>
+          <button id="confirmRejectBtn" class="modal-btn" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(239,68,68,0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(239,68,68,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(239,68,68,0.3)'">
             <span>🗑️</span> Confirm Reject
           </button>
         </div>
@@ -6706,10 +6737,27 @@ async function rejectStockTakeRequest(requestId, modal) {
     const textarea = overlay.querySelector('#rejectionReasonInput');
     const confirmBtn = overlay.querySelector('#confirmRejectBtn');
     const cancelBtn = overlay.querySelector('#cancelRejectBtn');
-    const closeBtn = overlay.querySelector('#closeRejectModal');
+    const closeBtn = overlay.querySelector('#closeRejectModalBtn');
+    
+    // Quick reason buttons
+    document.querySelectorAll('.quick-reason-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const reasonText = this.textContent;
+        // Get the current text and add the quick reason
+        const currentText = textarea.value.trim();
+        if (currentText) {
+          textarea.value = `${currentText}\n\n${reasonText}: Please verify the count and resubmit.`;
+        } else {
+          textarea.value = `${reasonText}: Please verify the count and resubmit.`;
+        }
+        textarea.focus();
+        // Trigger onfocus event to show border
+        textarea.dispatchEvent(new Event('focus'));
+      });
+    });
     
     // Focus the textarea after a short delay
-    setTimeout(() => textarea.focus(), 200);
+    setTimeout(() => textarea.focus(), 300);
     
     const cleanup = () => {
       overlay.remove();
@@ -6734,14 +6782,13 @@ async function rejectStockTakeRequest(requestId, modal) {
         const result = await response.json();
         
         if (result.success) {
-          // Show a nicer success message
           await showAlertModal('✅ Request Rejected', 
             `<div style="text-align:left; padding:4px 0;">
               <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
                 <span style="font-size:2rem;">📋</span>
                 <div>
                   <div style="font-weight:600; color:#0f172a;">Stock Take Request Rejected</div>
-                  <div style="font-size:0.9rem; color:#64748b;">Request ID: ${requestId}</div>
+                  <div style="font-size:0.9rem; color:#64748b;">Request ID: ${escapeHtml(requestId)}</div>
                 </div>
               </div>
               <div style="background:#fef2f2; border-radius:12px; padding:12px 16px; border-left:4px solid #ef4444; margin-top:8px;">

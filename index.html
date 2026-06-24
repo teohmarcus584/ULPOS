@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -5558,34 +5558,115 @@ function renderStockTakeProductGrid() {
     return;
   }
   
-  // Count how many products have been counted
+  // Count how many products have been counted and how many have differences
   const countedCount = Object.keys(stockTakeData).length;
+  let diffCount = 0;
+  let positiveDiff = 0;
+  let negativeDiff = 0;
   
-  let html = '<div style="margin-bottom:16px; padding:12px; background:#f0fdf4; border-radius:16px; border:1px solid #10b981;">';
-  html += '<strong>📋 Stock Take Mode</strong><br>';
-  html += `<span style="font-size:0.9rem; color:#64748b;">Products: ${filtered.length} | Counted: ${countedCount}</span>`;
-  html += '</div>';
+  // Calculate stats
+  Object.values(stockTakeData).forEach(data => {
+    if (data.difference !== 0) {
+      diffCount++;
+      if (data.difference > 0) positiveDiff++;
+      else if (data.difference < 0) negativeDiff++;
+    }
+  });
+  
+  // Build the header with stats
+  let html = `
+    <div style="margin-bottom:16px; padding:12px 16px; background:#f0fdf4; border-radius:16px; border:1px solid #10b981; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <div>
+        <strong style="font-size:1.1rem;">📋 Stock Take Mode</strong>
+        <span style="font-size:0.9rem; color:#64748b; margin-left:12px;">Products: ${filtered.length} | Counted: ${countedCount}</span>
+      </div>
+      <div style="display:flex; gap:16px; font-size:0.85rem;">
+        ${diffCount > 0 ? `
+          <span style="color:#2c7a4b;">✅ ${positiveDiff} higher</span>
+          <span style="color:#dc2626;">❌ ${negativeDiff} lower</span>
+          <span style="color:#f59e0b;">📊 ${diffCount} total differences</span>
+        ` : `
+          <span style="color:#94a3b8;">📊 No differences yet</span>
+        `}
+      </div>
+    </div>
+  `;
   
   html += '<div class="product-grid">';
+  
   filtered.forEach(prod => {
     const existing = stockTakeData[prod.id];
     const countedValue = existing ? existing.counted_stock : '';
+    const difference = existing ? existing.difference : 0;
+    
+    // Determine highlight color based on difference
+    let diffColor = '';
+    let diffText = '';
+    let diffBg = '';
+    let borderColor = '';
+    
+    if (difference > 0) {
+      diffColor = '#2c7a4b';
+      diffBg = '#f0fdf4';
+      borderColor = '2px solid #2c7a4b';
+      diffText = `+${difference} higher`;
+    } else if (difference < 0) {
+      diffColor = '#dc2626';
+      diffBg = '#fef2f2';
+      borderColor = '2px solid #dc2626';
+      diffText = `${difference} lower`;
+    } else if (existing && difference === 0) {
+      diffColor = '#64748b';
+      diffBg = '#f8fafc';
+      borderColor = '1px solid #e2e8f0';
+      diffText = '✓ Matches';
+    } else {
+      diffColor = '#94a3b8';
+      diffBg = '#ffffff';
+      borderColor = '1px solid #e2e8f0';
+      diffText = 'Not counted';
+    }
+    
     html += `
-      <div class="product-card" data-id="${prod.id}">
+      <div class="product-card" data-id="${prod.id}" style="border: ${borderColor}; background: ${diffBg}; transition: all 0.3s ease;">
         <div class="product-name">${escapeHtml(prod.name)}</div>
         <div class="product-category">${escapeHtml(prod.category)}</div>
         <div class="product-price">RM ${prod.price.toFixed(2)}</div>
         <div class="product-stock" style="font-weight:600; color:#0f172a;">Current: ${prod.stock}</div>
+        
+        <!-- Difference Badge -->
+        ${existing ? `
+          <div style="margin: 4px 0 8px 0; font-weight:700; color:${diffColor}; font-size:0.9rem; background:${diffBg}; padding:2px 12px; border-radius:12px; display:inline-block; border:1px solid ${diffColor};">
+            ${diffText}
+          </div>
+        ` : ''}
+        
         <div style="margin-top:8px; display:flex; align-items:center; justify-content:center; gap:8px;">
-          <button class="stock-take-dec-btn" data-id="${prod.id}" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:30px; font-weight:bold; font-size:1.2rem; cursor:pointer;">−</button>
+          <button class="stock-take-dec-btn" data-id="${prod.id}" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:30px; font-weight:bold; font-size:1.2rem; cursor:pointer; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">−</button>
           <input type="number" class="stock-take-input" data-id="${prod.id}" 
                  value="${countedValue}" placeholder="${prod.stock}" 
-                 style="width:80px; padding:8px; border-radius:20px; border:1px solid #cbd5e1; text-align:center;">
-          <button class="stock-take-inc-btn" data-id="${prod.id}" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:30px; font-weight:bold; font-size:1.2rem; cursor:pointer;">+</button>
+                 style="width:80px; padding:8px; border-radius:20px; border:2px solid ${existing ? (difference !== 0 ? (difference > 0 ? '#2c7a4b' : '#dc2626') : '#10b981') : '#cbd5e1'}; text-align:center; font-weight:600; transition: all 0.3s ease; background:${existing ? (difference !== 0 ? (difference > 0 ? '#f0fdf4' : '#fef2f2') : '#f0fdf4') : 'white'};">
+          <button class="stock-take-inc-btn" data-id="${prod.id}" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:30px; font-weight:bold; font-size:1.2rem; cursor:pointer; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">+</button>
         </div>
+        
+        <!-- Quick comparison hint -->
+        ${existing && difference !== 0 ? `
+          <div style="margin-top:6px; font-size:0.7rem; color:${diffColor};">
+            ${difference > 0 ? `📈 Counted ${difference} more than system` : `📉 Counted ${Math.abs(difference)} less than system`}
+          </div>
+        ` : existing && difference === 0 ? `
+          <div style="margin-top:6px; font-size:0.7rem; color:#2c7a4b;">
+            ✅ Count matches system
+          </div>
+        ` : `
+          <div style="margin-top:6px; font-size:0.7rem; color:#94a3b8;">
+            ⏳ Enter count above
+          </div>
+        `}
       </div>
     `;
   });
+  
   html += '</div>';
   
   productGridEl.innerHTML = html;
@@ -5600,7 +5681,6 @@ function renderStockTakeProductGrid() {
     // Always use the product's current stock as the baseline
     const currentStock = product.stock;
     
-    // 👈 KEY FIX: Directly assign to the object property (overwrites, doesn't add)
     stockTakeData[productId] = {
       product_id: product.id,
       product_name: product.name,
@@ -5612,11 +5692,12 @@ function renderStockTakeProductGrid() {
     
     // Update the display
     updateStockTakeSummary();
+    // Re-render to show updated colors
+    renderStockTakeProductGrid();
   }
   
   // Attach input listeners
   document.querySelectorAll('.stock-take-input').forEach(input => {
-    // Remove old listener to prevent duplicates
     input.removeEventListener('input', input._stockTakeHandler);
     
     const handler = (e) => {
@@ -5639,13 +5720,11 @@ function renderStockTakeProductGrid() {
       if (input) {
         let currentVal = parseInt(input.value);
         if (isNaN(currentVal)) {
-          // If empty, use placeholder (current stock from products array)
           const product = products.find(p => p.id == productId);
           currentVal = product ? product.stock : 0;
         }
         const newVal = Math.max(0, currentVal - 1);
         input.value = newVal;
-        // Update stock take data directly
         updateStockTakeData(productId, newVal);
       }
       e.stopPropagation();
@@ -5663,13 +5742,11 @@ function renderStockTakeProductGrid() {
       if (input) {
         let currentVal = parseInt(input.value);
         if (isNaN(currentVal)) {
-          // If empty, use placeholder (current stock from products array)
           const product = products.find(p => p.id == productId);
           currentVal = product ? product.stock : 0;
         }
         const newVal = currentVal + 1;
         input.value = newVal;
-        // Update stock take data directly
         updateStockTakeData(productId, newVal);
       }
       e.stopPropagation();
@@ -5682,8 +5759,24 @@ function renderStockTakeProductGrid() {
 function updateStockTakeSummary() {
   // Update the counter and show differences
   const totalCounted = Object.keys(stockTakeData).length;
-  const indicator = document.querySelector('#stockTakeModeIndicator span');
-  if (indicator) indicator.innerText = `Counted: ${totalCounted} products`;
+  const diffCount = Object.values(stockTakeData).filter(d => d.difference !== 0).length;
+  const positiveDiff = Object.values(stockTakeData).filter(d => d.difference > 0).length;
+  const negativeDiff = Object.values(stockTakeData).filter(d => d.difference < 0).length;
+  
+  const indicator = document.querySelector('#stockTakeModeIndicator');
+  if (indicator) {
+    let statsHtml = `<strong>📋 Stock Take Mode</strong>`;
+    statsHtml += `<span style="display:block; font-size:0.9rem; color:#64748b;">Counted: ${totalCounted} products`;
+    
+    if (diffCount > 0) {
+      statsHtml += ` | <span style="color:#2c7a4b;">✅ ${positiveDiff} higher</span>`;
+      statsHtml += ` | <span style="color:#dc2626;">❌ ${negativeDiff} lower</span>`;
+      statsHtml += ` | <span style="color:#f59e0b;">📊 ${diffCount} differences</span>`;
+    }
+    statsHtml += `</span>`;
+    
+    indicator.innerHTML = statsHtml;
+  }
 }
 
 async function submitStockTake() {

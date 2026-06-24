@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -5886,9 +5886,11 @@ async function loadPendingStockTakeRequests(modal) {
   const list = modal.querySelector('#stockTakeRequestsList');
   if (!list) return;
   
+  // ✅ Clear the list first to show loading state
   list.innerHTML = '<div style="text-align:center; padding:20px;">Loading requests...</div>';
   
   try {
+    // ✅ Add cache-busting parameter to force fresh data
     const url = `${APPS_SCRIPT_URL}?action=getPendingStockTakeRequests&store=all&_=${Date.now()}`;
     const response = await fetch(url);
     const result = await response.json();
@@ -5978,7 +5980,7 @@ async function loadPendingStockTakeRequests(modal) {
         const employeeName = info.employee_name || 'Unknown';
         const requestId = info.requestId || 'unknown';
         
-        // ✅ Build table rows for this category - store category in each row and checkbox
+        // ✅ Build table rows for this category
         let tableRowsHtml = '';
         for (const item of items) {
           const diff = item.counted_stock - item.current_stock;
@@ -6002,7 +6004,7 @@ async function loadPendingStockTakeRequests(modal) {
           `;
         }
         
-        // ✅ Build the category section with data-category attribute
+        // ✅ Build the category section
         categorySectionsHtml += `
           <div style="background:white; border-radius:12px; padding:12px 16px; border:1px solid #e2e8f0; border-left:4px solid #8b5cf6;" data-category="${escapeHtml(category)}">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
@@ -6114,7 +6116,6 @@ async function loadPendingStockTakeRequests(modal) {
         const category = this.dataset.category;
         const isChecked = this.checked;
         
-        // Find all item checkboxes that belong to this category within this group
         const categorySection = this.closest('div[data-category]');
         if (categorySection) {
           const checkboxes = categorySection.querySelectorAll('.item-checkbox');
@@ -6133,7 +6134,6 @@ async function loadPendingStockTakeRequests(modal) {
         const categorySection = this.closest('div[data-category]');
         
         if (categorySection) {
-          // Update "Select All Category"
           const allCategoryItems = categorySection.querySelectorAll('.item-checkbox');
           const checkedCategoryItems = categorySection.querySelectorAll('.item-checkbox:checked');
           const selectAllCategory = categorySection.querySelector('.select-all-category-items');
@@ -6142,7 +6142,6 @@ async function loadPendingStockTakeRequests(modal) {
           }
         }
         
-        // Update "Select All Store"
         const allStoreItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]`);
         const checkedStoreItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]:checked`);
         const selectAllStore = document.querySelector(`.select-all-store-items[data-group="${groupId}"]`);
@@ -6289,7 +6288,7 @@ async function approveStoreGroup(groupId, modal) {
   const totalItems = Object.values(groupedByRequest).reduce((sum, items) => sum + items.length, 0);
   const categoryCount = Object.keys(groupedByRequest).length;
   
-  // Create a beautiful approval confirmation modal
+  // Show confirmation modal
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -6299,67 +6298,48 @@ async function approveStoreGroup(groupId, modal) {
     overlay.style.backdropFilter = 'blur(4px)';
     overlay.innerHTML = `
       <div class="modal-container" style="max-width: 600px; border-radius: 24px; padding: 0; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
-        <!-- Header - Green gradient -->
+        <!-- Header -->
         <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 24px 28px; display: flex; align-items: center; gap: 16px;">
           <div style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0;">
             ✅
           </div>
           <div>
-            <div style="color: white; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px;">Approve Stock Take</div>
-            <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-top: 2px;">Confirm approval of selected items</div>
+            <div style="color: white; font-size: 1.5rem; font-weight: 700;">Approve Stock Take</div>
+            <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-top: 2px;">${totalItems} items across ${categoryCount} categories</div>
           </div>
-          <button id="closeApproveModalBtn" style="margin-left: auto; background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">✕</button>
+          <button id="closeApproveModalBtn" style="margin-left: auto; background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer;">✕</button>
         </div>
         
         <!-- Body -->
         <div style="padding: 28px 28px 20px 28px; background: #f8fafc;">
-          <!-- Summary Cards -->
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
-            <div style="background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <div style="background: white; border-radius: 12px; padding: 16px; text-align: center;">
               <div style="font-size: 1.8rem; font-weight: 700; color: #059669;">${totalItems}</div>
-              <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Total Items</div>
+              <div style="font-size: 0.75rem; color: #64748b;">Total Items</div>
             </div>
-            <div style="background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <div style="background: white; border-radius: 12px; padding: 16px; text-align: center;">
               <div style="font-size: 1.8rem; font-weight: 700; color: #3b82f6;">${categoryCount}</div>
-              <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Categories</div>
+              <div style="font-size: 0.75rem; color: #64748b;">Categories</div>
             </div>
-            <div style="background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <div style="background: white; border-radius: 12px; padding: 16px; text-align: center;">
               <div style="font-size: 1.8rem; font-weight: 700; color: #8b5cf6;">${Object.keys(groupedByRequest).length}</div>
-              <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Submissions</div>
+              <div style="font-size: 0.75rem; color: #64748b;">Submissions</div>
             </div>
           </div>
           
-          <!-- Category breakdown -->
-          <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #e2e8f0;">
-            <div style="font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-bottom: 12px;">📂 Categories to Approve</div>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              ${Object.entries(groupedByRequest).map(([requestId, items]) => {
-                const category = items[0]?.category || 'Unknown';
-                const count = items.length;
-                return `
-                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: #f8fafc; border-radius: 8px;">
-                    <span style="font-weight: 500; font-size: 0.9rem;">📂 ${escapeHtml(category)}</span>
-                    <span style="background: #dbeafe; color: #1e40af; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">${count} items</span>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-          
-          <!-- Warning note -->
           <div style="background: #fefce8; border-radius: 12px; padding: 12px 16px; border-left: 4px solid #f59e0b; display: flex; align-items: flex-start; gap: 8px;">
             <span style="font-size: 1.2rem;">⚠️</span>
             <div>
               <div style="font-weight: 500; color: #92400e; font-size: 0.85rem;">Important</div>
-              <div style="color: #78350f; font-size: 0.8rem;">Approving will update stock levels for ${totalItems} item(s) across ${categoryCount} category(s). This action cannot be undone.</div>
+              <div style="color: #78350f; font-size: 0.8rem;">Approving will update stock levels for ${totalItems} item(s). This action cannot be undone.</div>
             </div>
           </div>
         </div>
         
         <!-- Footer -->
         <div style="padding: 16px 28px 24px 28px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
-          <button id="cancelApproveBtn" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Cancel</button>
-          <button id="confirmApproveBtn" class="modal-btn" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(5,150,105,0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(5,150,105,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(5,150,105,0.3)'">
+          <button id="cancelApproveBtn" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500;">Cancel</button>
+          <button id="confirmApproveBtn" class="modal-btn" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(5,150,105,0.3);">
             <span>✅</span> Confirm Approval
           </button>
         </div>
@@ -6384,9 +6364,9 @@ async function approveStoreGroup(groupId, modal) {
       try {
         let successCount = 0;
         let failCount = 0;
+        let errors = [];
         let updatedCategories = [];
         
-        // Process each request separately
         for (const [requestId, items] of Object.entries(groupedByRequest)) {
           const category = items[0]?.category || 'Unknown';
           const formData = new URLSearchParams();
@@ -6396,27 +6376,33 @@ async function approveStoreGroup(groupId, modal) {
           formData.append('approved_by_name', currentEmployee.name);
           formData.append('items', JSON.stringify(items));
           formData.append('partial_approval', 'true');
-          formData.append('approved_count', items.length);
+          formData.append('total_items', items.length.toString());
+          formData.append('approved_count', items.length.toString());
           
-          const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
-          const result = await response.json();
-          
-          if (result.success) {
-            successCount += items.length;
-            updatedCategories.push(category);
-          } else {
+          try {
+            const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+            const result = await response.json();
+            
+            if (result.success) {
+              successCount += items.length;
+              updatedCategories.push(category);
+            } else {
+              failCount += items.length;
+              errors.push(`Category "${category}": ${result.error || 'Unknown error'}`);
+            }
+          } catch (err) {
             failCount += items.length;
+            errors.push(`Category "${category}": Network error`);
           }
         }
         
-        // Show success modal with details
         await showAlertModal('✅ Approval Complete', 
           `<div style="text-align:left; padding:4px 0;">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
               <span style="font-size:2.5rem;">📋</span>
               <div>
-                <div style="font-weight:600; color:#0f172a; font-size:1.2rem;">Stock Take Approved</div>
-                <div style="font-size:0.9rem; color:#64748b;">${updatedCategories.length} category(s) updated</div>
+                <div style="font-weight:600; color:#0f172a; font-size:1.2rem;">Stock Take ${failCount === 0 ? 'Approved' : 'Partially Approved'}</div>
+                <div style="font-size:0.9rem; color:#64748b;">${updatedCategories.length} category(s) processed</div>
               </div>
             </div>
             <div style="background:#f0fdf4; border-radius:12px; padding:16px 20px; border-left:4px solid #059669;">
@@ -6431,23 +6417,39 @@ async function approveStoreGroup(groupId, modal) {
                 </div>
               ` : ''}
             </div>
-            ${updatedCategories.length > 0 ? `
-              <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:6px;">
-                ${updatedCategories.map(cat => `<span style="background:#dbeafe; color:#1e40af; padding:2px 10px; border-radius:12px; font-size:0.75rem;">📂 ${escapeHtml(cat)}</span>`).join('')}
+            ${errors.length > 0 ? `
+              <div style="background:#fef2f2; border-radius:8px; padding:12px 16px; margin-top:12px; border:1px solid #fecaca;">
+                <div style="font-weight:500; color:#dc2626; font-size:0.85rem;">⚠️ Errors:</div>
+                ${errors.map(err => `<div style="color:#475569; font-size:0.85rem; padding:2px 0;">• ${escapeHtml(err)}</div>`).join('')}
               </div>
             ` : ''}
           </div>`
         );
         
-        // Refresh the list and products
+        // ✅ FORCE REFRESH: Clear cache and reload
+        hideLoading();
+        showLoading('Refreshing stock take list...');
+        
+        // Close the approval modal first
+        const approvalModal = document.querySelector('.modal-overlay[style*="z-index: 9999"]');
+        if (approvalModal) approvalModal.remove();
+        
+        // ✅ CRITICAL: Force refresh by calling the function with the modal reference
+        // Wait a moment for the backend to process
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // ✅ Reload the pending requests with a fresh fetch
         await loadPendingStockTakeRequests(modal);
+        
+        // Refresh product display
         await fetchProductsFromSheet(true);
         renderProductGrid();
+        
+        hideLoading();
         
       } catch (err) {
         console.error(err);
         await showAlertModal('Error', 'Failed to approve selected items: ' + err.message);
-      } finally {
         hideLoading();
       }
     };
@@ -6456,14 +6458,223 @@ async function approveStoreGroup(groupId, modal) {
     cancelBtn.addEventListener('click', cleanup);
     closeBtn.addEventListener('click', cleanup);
     
-    // Enter key support
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) cleanup();
+    });
+  });
+}
+
+// --- Reject Store Group ---
+async function rejectStoreGroup(groupId, modal) {
+  const selectedItems = getSelectedItemsForGroup(groupId);
+  
+  if (selectedItems.length === 0) {
+    await showAlertModal('No Items Selected', 'Please select at least one item to reject.');
+    return;
+  }
+  
+  // Group by request ID for rejection
+  const groupedByRequest = {};
+  selectedItems.forEach(item => {
+    if (!groupedByRequest[item.request_id]) {
+      groupedByRequest[item.request_id] = [];
+    }
+    groupedByRequest[item.request_id].push(item);
+  });
+  
+  const totalItems = Object.values(groupedByRequest).reduce((sum, items) => sum + items.length, 0);
+  const categoryCount = Object.keys(groupedByRequest).length;
+  
+  // Show rejection reason modal
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '9999';
+    overlay.style.background = 'rgba(0,0,0,0.7)';
+    overlay.style.backdropFilter = 'blur(4px)';
+    overlay.innerHTML = `
+      <div class="modal-container" style="max-width: 600px; border-radius: 24px; padding: 0; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 24px 28px; display: flex; align-items: center; gap: 16px;">
+          <div style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0;">
+            ❌
+          </div>
+          <div>
+            <div style="color: white; font-size: 1.5rem; font-weight: 700;">Reject Stock Take</div>
+            <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-top: 2px;">${totalItems} items across ${categoryCount} categories</div>
+          </div>
+          <button id="closeRejectModalBtn2" style="margin-left: auto; background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer;">✕</button>
+        </div>
+        
+        <!-- Body -->
+        <div style="padding: 28px 28px 20px 28px; background: #f8fafc;">
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 600; color: #1e293b; font-size: 0.95rem; margin-bottom: 8px;">
+              📝 Rejection Reason <span style="color: #ef4444;">*</span>
+            </label>
+            <textarea id="rejectionReasonInput2" rows="4" 
+              placeholder="e.g., Please recount the items as the quantities seem incorrect."
+              style="width: 100%; padding: 14px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; resize: vertical; min-height: 100px; font-family: inherit; background: white;"
+              onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)';"
+              onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"></textarea>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+              <button class="quick-reason-btn2" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Count mismatch</button>
+              <button class="quick-reason-btn2" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Missing items</button>
+              <button class="quick-reason-btn2" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Incorrect count</button>
+              <button class="quick-reason-btn2" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Please recount</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="padding: 16px 28px 24px 28px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
+          <button id="cancelRejectBtn2" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500;">Cancel</button>
+          <button id="confirmRejectBtn2" class="modal-btn" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(239,68,68,0.3);">
+            <span>🗑️</span> Confirm Reject
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    
+    const textarea = overlay.querySelector('#rejectionReasonInput2');
+    const confirmBtn = overlay.querySelector('#confirmRejectBtn2');
+    const cancelBtn = overlay.querySelector('#cancelRejectBtn2');
+    const closeBtn = overlay.querySelector('#closeRejectModalBtn2');
+    
+    // Quick reason buttons
+    document.querySelectorAll('.quick-reason-btn2').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const reasonText = this.textContent;
+        const currentText = textarea.value.trim();
+        if (currentText) {
+          textarea.value = `${currentText}\n\n${reasonText}: Please verify the count and resubmit.`;
+        } else {
+          textarea.value = `${reasonText}: Please verify the count and resubmit.`;
+        }
+        textarea.focus();
+        textarea.dispatchEvent(new Event('focus'));
+      });
+    });
+    
+    setTimeout(() => textarea.focus(), 300);
+    
+    const cleanup = () => {
+      overlay.remove();
+      resolve();
+    };
+    
+    const handleConfirm = async () => {
+      const reason = textarea.value.trim() || 'No reason provided';
+      cleanup();
+      
+      showLoading('Rejecting selected items...');
+      
+      try {
+        let successCount = 0;
+        let failCount = 0;
+        let errors = [];
+        let rejectedCategories = [];
+        
+        for (const [requestId, items] of Object.entries(groupedByRequest)) {
+          const category = items[0]?.category || 'Unknown';
+          const formData = new URLSearchParams();
+          formData.append('action', 'rejectStockTake');
+          formData.append('request_id', requestId);
+          formData.append('rejected_by', currentEmployee.id);
+          formData.append('rejected_by_name', currentEmployee.name);
+          formData.append('reason', reason || 'No reason provided');
+          formData.append('items', JSON.stringify(items));
+          formData.append('partial_rejection', 'true');
+          formData.append('total_items', items.length.toString());
+          formData.append('rejected_count', items.length.toString());
+          
+          try {
+            const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+            const result = await response.json();
+            
+            if (result.success) {
+              successCount += items.length;
+              rejectedCategories.push(category);
+            } else {
+              failCount += items.length;
+              errors.push(`Category "${category}": ${result.error || 'Unknown error'}`);
+            }
+          } catch (err) {
+            failCount += items.length;
+            errors.push(`Category "${category}": Network error`);
+          }
+        }
+        
+        await showAlertModal('✅ Rejection Complete', 
+          `<div style="text-align:left; padding:4px 0;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+              <span style="font-size:2.5rem;">📋</span>
+              <div>
+                <div style="font-weight:600; color:#0f172a; font-size:1.2rem;">Stock Take ${failCount === 0 ? 'Rejected' : 'Partially Rejected'}</div>
+                <div style="font-size:0.9rem; color:#64748b;">${rejectedCategories.length} category(s) processed</div>
+              </div>
+            </div>
+            <div style="background:#fef2f2; border-radius:12px; padding:16px 20px; border-left:4px solid #ef4444;">
+              <div style="display:flex; justify-content:space-between; padding:4px 0;">
+                <span style="color:#64748b;">❌ Rejected Items</span>
+                <span style="font-weight:700; color:#dc2626;">${successCount}</span>
+              </div>
+              ${failCount > 0 ? `
+                <div style="display:flex; justify-content:space-between; padding:4px 0; border-top:1px solid #e2e8f0; margin-top:4px; padding-top:8px;">
+                  <span style="color:#64748b;">❌ Failed Items</span>
+                  <span style="font-weight:700; color:#ef4444;">${failCount}</span>
+                </div>
+              ` : ''}
+            </div>
+            <div style="background:#f8fafc; border-radius:8px; padding:12px 16px; margin-top:12px; border:1px solid #e2e8f0;">
+              <div style="font-weight:500; color:#1e293b; font-size:0.85rem;">📝 Rejection Reason:</div>
+              <div style="color:#475569; font-size:0.9rem; margin-top:4px;">${escapeHtml(reason)}</div>
+            </div>
+            ${errors.length > 0 ? `
+              <div style="background:#fef2f2; border-radius:8px; padding:12px 16px; margin-top:12px; border:1px solid #fecaca;">
+                <div style="font-weight:500; color:#dc2626; font-size:0.85rem;">⚠️ Errors:</div>
+                ${errors.map(err => `<div style="color:#475569; font-size:0.85rem; padding:2px 0;">• ${escapeHtml(err)}</div>`).join('')}
+              </div>
+            ` : ''}
+          </div>`
+        );
+        
+        // ✅ FORCE REFRESH: Clear cache and reload
+        hideLoading();
+        showLoading('Refreshing stock take list...');
+        
+        // Close the rejection modal first
+        const rejectModal = document.querySelector('.modal-overlay[style*="z-index: 9999"]');
+        if (rejectModal) rejectModal.remove();
+        
+        // ✅ CRITICAL: Force refresh by calling the function with the modal reference
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // ✅ Reload the pending requests with a fresh fetch
+        await loadPendingStockTakeRequests(modal);
+        
+        hideLoading();
+        
+      } catch (err) {
+        console.error(err);
+        await showAlertModal('Error', 'Failed to reject selected items: ' + err.message);
+        hideLoading();
+      }
+    };
+    
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', cleanup);
+    closeBtn.addEventListener('click', cleanup);
+    
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
         handleConfirm();
       }
-    }, { once: true });
+    });
     
-    // Close on overlay click
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) cleanup();
     });

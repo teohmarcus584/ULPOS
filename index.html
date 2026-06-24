@@ -6169,67 +6169,187 @@ async function approveStoreGroup(groupId, modal) {
   });
   
   const totalItems = Object.values(groupedByRequest).reduce((sum, items) => sum + items.length, 0);
+  const categoryCount = Object.keys(groupedByRequest).length;
   
-  const confirmed = await showConfirmModal(
-    'Approve Selected Items',
-    `Approve ${totalItems} item(s) across ${Object.keys(groupedByRequest).length} category submission(s)?\n\nThis will update stock for all selected items.`
-  );
-  
-  if (!confirmed) return;
-  
-  showLoading('Approving selected items...');
-  
-  try {
-    let successCount = 0;
-    let failCount = 0;
-    
-    // Process each request separately
-    for (const [requestId, items] of Object.entries(groupedByRequest)) {
-      const formData = new URLSearchParams();
-      formData.append('action', 'approveStockTake');
-      formData.append('request_id', requestId);
-      formData.append('approved_by', currentEmployee.id);
-      formData.append('approved_by_name', currentEmployee.name);
-      formData.append('items', JSON.stringify(items));
-      formData.append('partial_approval', 'true');
-      formData.append('approved_count', items.length);
-      
-      const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
-      const result = await response.json();
-      
-      if (result.success) {
-        successCount += items.length;
-      } else {
-        failCount += items.length;
-      }
-    }
-    
-    await showAlertModal('✅ Approval Complete', 
-      `<div style="text-align:left; padding:4px 0;">
-        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
-          <span style="font-size:2rem;">📋</span>
+  // Create a beautiful approval confirmation modal
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '9999';
+    overlay.style.background = 'rgba(0,0,0,0.7)';
+    overlay.style.backdropFilter = 'blur(4px)';
+    overlay.innerHTML = `
+      <div class="modal-container" style="max-width: 600px; border-radius: 24px; padding: 0; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+        <!-- Header - Green gradient -->
+        <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 24px 28px; display: flex; align-items: center; gap: 16px;">
+          <div style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0;">
+            ✅
+          </div>
           <div>
-            <div style="font-weight:600; color:#0f172a;">Stock Take Approved</div>
+            <div style="color: white; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px;">Approve Stock Take</div>
+            <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-top: 2px;">Confirm approval of selected items</div>
+          </div>
+          <button id="closeApproveModalBtn" style="margin-left: auto; background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">✕</button>
+        </div>
+        
+        <!-- Body -->
+        <div style="padding: 28px 28px 20px 28px; background: #f8fafc;">
+          <!-- Summary Cards -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
+            <div style="background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              <div style="font-size: 1.8rem; font-weight: 700; color: #059669;">${totalItems}</div>
+              <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Total Items</div>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              <div style="font-size: 1.8rem; font-weight: 700; color: #3b82f6;">${categoryCount}</div>
+              <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Categories</div>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              <div style="font-size: 1.8rem; font-weight: 700; color: #8b5cf6;">${Object.keys(groupedByRequest).length}</div>
+              <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Submissions</div>
+            </div>
+          </div>
+          
+          <!-- Category breakdown -->
+          <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #e2e8f0;">
+            <div style="font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-bottom: 12px;">📂 Categories to Approve</div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              ${Object.entries(groupedByRequest).map(([requestId, items]) => {
+                const category = items[0]?.category || 'Unknown';
+                const count = items.length;
+                return `
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: #f8fafc; border-radius: 8px;">
+                    <span style="font-weight: 500; font-size: 0.9rem;">📂 ${escapeHtml(category)}</span>
+                    <span style="background: #dbeafe; color: #1e40af; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">${count} items</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+          
+          <!-- Warning note -->
+          <div style="background: #fefce8; border-radius: 12px; padding: 12px 16px; border-left: 4px solid #f59e0b; display: flex; align-items: flex-start; gap: 8px;">
+            <span style="font-size: 1.2rem;">⚠️</span>
+            <div>
+              <div style="font-weight: 500; color: #92400e; font-size: 0.85rem;">Important</div>
+              <div style="color: #78350f; font-size: 0.8rem;">Approving will update stock levels for ${totalItems} item(s) across ${categoryCount} category(s). This action cannot be undone.</div>
+            </div>
           </div>
         </div>
-        <div style="background:#f0fdf4; border-radius:12px; padding:12px 16px; border-left:4px solid #2c7a4b; margin-top:8px;">
-          <div style="font-weight:500; color:#2c7a4b;">✅ Approved: ${successCount} item(s)</div>
-          ${failCount > 0 ? `<div style="font-weight:500; color:#ef4444;">❌ Failed: ${failCount} item(s)</div>` : ''}
+        
+        <!-- Footer -->
+        <div style="padding: 16px 28px 24px 28px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
+          <button id="cancelApproveBtn" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Cancel</button>
+          <button id="confirmApproveBtn" class="modal-btn" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(5,150,105,0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(5,150,105,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(5,150,105,0.3)'">
+            <span>✅</span> Confirm Approval
+          </button>
         </div>
-      </div>`
-    );
+      </div>
+    `;
+    document.body.appendChild(overlay);
     
-    // Refresh the list and products
-    await loadPendingStockTakeRequests(modal);
-    await fetchProductsFromSheet(true);
-    renderProductGrid();
+    const confirmBtn = overlay.querySelector('#confirmApproveBtn');
+    const cancelBtn = overlay.querySelector('#cancelApproveBtn');
+    const closeBtn = overlay.querySelector('#closeApproveModalBtn');
     
-  } catch (err) {
-    console.error(err);
-    await showAlertModal('Error', 'Failed to approve selected items: ' + err.message);
-  } finally {
-    hideLoading();
-  }
+    const cleanup = () => {
+      overlay.remove();
+      resolve();
+    };
+    
+    const handleConfirm = async () => {
+      cleanup();
+      
+      showLoading('Approving selected items...');
+      
+      try {
+        let successCount = 0;
+        let failCount = 0;
+        let updatedCategories = [];
+        
+        // Process each request separately
+        for (const [requestId, items] of Object.entries(groupedByRequest)) {
+          const category = items[0]?.category || 'Unknown';
+          const formData = new URLSearchParams();
+          formData.append('action', 'approveStockTake');
+          formData.append('request_id', requestId);
+          formData.append('approved_by', currentEmployee.id);
+          formData.append('approved_by_name', currentEmployee.name);
+          formData.append('items', JSON.stringify(items));
+          formData.append('partial_approval', 'true');
+          formData.append('approved_count', items.length);
+          
+          const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+          const result = await response.json();
+          
+          if (result.success) {
+            successCount += items.length;
+            updatedCategories.push(category);
+          } else {
+            failCount += items.length;
+          }
+        }
+        
+        // Show success modal with details
+        await showAlertModal('✅ Approval Complete', 
+          `<div style="text-align:left; padding:4px 0;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+              <span style="font-size:2.5rem;">📋</span>
+              <div>
+                <div style="font-weight:600; color:#0f172a; font-size:1.2rem;">Stock Take Approved</div>
+                <div style="font-size:0.9rem; color:#64748b;">${updatedCategories.length} category(s) updated</div>
+              </div>
+            </div>
+            <div style="background:#f0fdf4; border-radius:12px; padding:16px 20px; border-left:4px solid #059669;">
+              <div style="display:flex; justify-content:space-between; padding:4px 0;">
+                <span style="color:#64748b;">✅ Approved Items</span>
+                <span style="font-weight:700; color:#059669;">${successCount}</span>
+              </div>
+              ${failCount > 0 ? `
+                <div style="display:flex; justify-content:space-between; padding:4px 0; border-top:1px solid #e2e8f0; margin-top:4px; padding-top:8px;">
+                  <span style="color:#64748b;">❌ Failed Items</span>
+                  <span style="font-weight:700; color:#ef4444;">${failCount}</span>
+                </div>
+              ` : ''}
+            </div>
+            ${updatedCategories.length > 0 ? `
+              <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:6px;">
+                ${updatedCategories.map(cat => `<span style="background:#dbeafe; color:#1e40af; padding:2px 10px; border-radius:12px; font-size:0.75rem;">📂 ${escapeHtml(cat)}</span>`).join('')}
+              </div>
+            ` : ''}
+          </div>`
+        );
+        
+        // Refresh the list and products
+        await loadPendingStockTakeRequests(modal);
+        await fetchProductsFromSheet(true);
+        renderProductGrid();
+        
+      } catch (err) {
+        console.error(err);
+        await showAlertModal('Error', 'Failed to approve selected items: ' + err.message);
+      } finally {
+        hideLoading();
+      }
+    };
+    
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', cleanup);
+    closeBtn.addEventListener('click', cleanup);
+    
+    // Enter key support
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        handleConfirm();
+      }
+    }, { once: true });
+    
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) cleanup();
+    });
+  });
 }
 
 // --- Reject Store Group ---

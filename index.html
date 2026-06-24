@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -6509,7 +6509,25 @@ async function rejectStoreGroup(groupId, modal) {
         
         <!-- Body -->
         <div style="padding: 28px 28px 20px 28px; background: #f8fafc;">
-          <div style="margin-bottom: 16px;">
+          <!-- Category breakdown -->
+          <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #e2e8f0;">
+            <div style="font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-bottom: 12px;">📂 Categories to Reject</div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              ${Object.entries(groupedByRequest).map(([requestId, items]) => {
+                const category = items[0]?.category || 'Unknown';
+                const count = items.length;
+                return `
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: #f8fafc; border-radius: 8px;">
+                    <span style="font-weight: 500; font-size: 0.9rem;">📂 ${escapeHtml(category)}</span>
+                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">${count} items</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+          
+          <!-- Rejection Reason -->
+          <div style="margin-bottom: 8px;">
             <label style="display: block; font-weight: 600; color: #1e293b; font-size: 0.95rem; margin-bottom: 8px;">
               📝 Rejection Reason <span style="color: #ef4444;">*</span>
             </label>
@@ -6649,10 +6667,10 @@ async function rejectStoreGroup(groupId, modal) {
         const rejectModal = document.querySelector('.modal-overlay[style*="z-index: 9999"]');
         if (rejectModal) rejectModal.remove();
         
-        // ✅ CRITICAL: Force refresh by calling the function with the modal reference
+        // ✅ CRITICAL: Wait for backend to process
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // ✅ Reload the pending requests with a fresh fetch
+        // ✅ RELOAD the pending requests with fresh data
         await loadPendingStockTakeRequests(modal);
         
         hideLoading();

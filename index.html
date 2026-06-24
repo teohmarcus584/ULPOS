@@ -6371,217 +6371,214 @@ async function rejectStoreGroup(groupId, modal) {
   });
   
   const totalItems = Object.values(groupedByRequest).reduce((sum, items) => sum + items.length, 0);
+  const categoryCount = Object.keys(groupedByRequest).length;
   
-  const reason = await showInputModal('Rejection Reason', 'Enter reason for rejecting selected items');
-  if (reason === null) return;
-  
-  const confirmed = await showConfirmModal(
-    'Reject Selected Items',
-    `Reject ${totalItems} item(s) across ${Object.keys(groupedByRequest).length} category submission(s)?\n\nThis will mark only the selected items as rejected.`
-  );
-  
-  if (!confirmed) return;
-  
-  showLoading('Rejecting selected items...');
-  
-  try {
-    let successCount = 0;
-    let failCount = 0;
-    
-    for (const [requestId, items] of Object.entries(groupedByRequest)) {
-      const formData = new URLSearchParams();
-      formData.append('action', 'rejectStockTake');
-      formData.append('request_id', requestId);
-      formData.append('rejected_by', currentEmployee.id);
-      formData.append('rejected_by_name', currentEmployee.name);
-      formData.append('reason', reason || 'No reason provided');
-      formData.append('items', JSON.stringify(items));
-      formData.append('partial_rejection', 'true');
-      formData.append('rejected_count', items.length);
-      
-      const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
-      const result = await response.json();
-      
-      if (result.success) {
-        successCount += items.length;
-      } else {
-        failCount += items.length;
-      }
-    }
-    
-    await showAlertModal('✅ Rejection Complete', 
-      `<div style="text-align:left; padding:4px 0;">
-        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
-          <span style="font-size:2rem;">📋</span>
-          <div>
-            <div style="font-weight:600; color:#0f172a;">Selected Items Rejected</div>
+  // Show rejection reason modal first
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '9999';
+    overlay.style.background = 'rgba(0,0,0,0.7)';
+    overlay.style.backdropFilter = 'blur(4px)';
+    overlay.innerHTML = `
+      <div class="modal-container" style="max-width: 600px; border-radius: 24px; padding: 0; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+        <!-- Header - Red gradient -->
+        <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 24px 28px; display: flex; align-items: center; gap: 16px;">
+          <div style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0;">
+            ❌
           </div>
+          <div>
+            <div style="color: white; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px;">Reject Stock Take</div>
+            <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-top: 2px;">${totalItems} items across ${categoryCount} categories</div>
+          </div>
+          <button id="closeRejectModalBtn2" style="margin-left: auto; background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">✕</button>
         </div>
-        <div style="background:#fef2f2; border-radius:12px; padding:12px 16px; border-left:4px solid #ef4444; margin-top:8px;">
-          <div style="font-weight:500; color:#dc2626;">❌ Rejected: ${successCount} item(s)</div>
-          ${failCount > 0 ? `<div style="font-weight:500; color:#ef4444;">❌ Failed: ${failCount} item(s)</div>` : ''}
-        </div>
-        <div style="background:#f8fafc; border-radius:8px; padding:8px 12px; margin-top:8px;">
-          <div style="font-weight:500; color:#1e293b; font-size:0.85rem;">📝 Reason:</div>
-          <div style="color:#475569; font-size:0.9rem;">${escapeHtml(reason)}</div>
-        </div>
-      </div>`
-    );
-    
-    await loadPendingStockTakeRequests(modal);
-    
-  } catch (err) {
-    console.error(err);
-    await showAlertModal('Error', 'Failed to reject selected items: ' + err.message);
-  } finally {
-    hideLoading();
-  }
-}
-// --- Helper: Update selected count for a request ---
-function updateSelectedCount(requestId) {
-  const checkedItems = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]:checked`);
-  const count = checkedItems.length;
-  
-  const approveBtn = document.querySelector(`.approve-selected-btn[data-request="${requestId}"]`);
-  const rejectBtn = document.querySelector(`.reject-selected-btn[data-request="${requestId}"]`);
-  
-  if (approveBtn) {
-    approveBtn.innerHTML = `✅ Approve Selected (${count})`;
-    approveBtn.disabled = count === 0;
-    approveBtn.style.opacity = count === 0 ? '0.5' : '1';
-  }
-  if (rejectBtn) {
-    rejectBtn.innerHTML = `❌ Reject Selected (${count})`;
-    rejectBtn.disabled = count === 0;
-    rejectBtn.style.opacity = count === 0 ? '0.5' : '1';
-  }
-}
-
-// --- Approve Selected Items ---
-async function approveSelectedItems(requestId, modal) {
-  // Get ALL checkboxes for this request first
-  const allCheckboxes = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]`);
-  const selectedCheckboxes = document.querySelectorAll(`.item-checkbox[data-request="${requestId}"]:checked`);
-  
-  // Debug: log the counts
-  console.log(`Total checkboxes: ${allCheckboxes.length}, Selected: ${selectedCheckboxes.length}`);
-  
-  if (selectedCheckboxes.length === 0) {
-    await showAlertModal('No Items Selected', 'Please select at least one item to approve.');
-    return;
-  }
-  
-  // Get the full request data
-  const requestData = await fetchRequestData(requestId);
-  if (!requestData) {
-    await showAlertModal('Error', 'Could not load request data.');
-    return;
-  }
-  
-  // ✅ FIX: Ensure items is an array (parse if it's a string)
-  let itemsArray = requestData.items;
-  if (typeof itemsArray === 'string') {
-    try {
-      itemsArray = JSON.parse(itemsArray);
-    } catch (e) {
-      console.error('Failed to parse items:', e);
-      itemsArray = [];
-    }
-  }
-  
-  // ✅ FIX: Ensure items is always an array
-  if (!Array.isArray(itemsArray)) {
-    itemsArray = [];
-  }
-  
-  // Debug: log the structure
-  console.log('Items array:', itemsArray);
-  console.log('First item product_id:', itemsArray[0]?.product_id);
-  
-  // Get the selected product IDs from checkboxes
-  const selectedProductIds = Array.from(selectedCheckboxes).map(cb => {
-    const productId = cb.dataset.product;
-    return String(productId);
-  });
-  
-  console.log('Selected product IDs:', selectedProductIds);
-  
-  // ✅ FIX: Filter items - compare as strings
-  const selectedItems = itemsArray.filter(item => {
-    const itemProductId = String(item.product_id);
-    return selectedProductIds.includes(itemProductId);
-  });
-  
-  // Debug: log selected items count
-  console.log(`Selected items count: ${selectedItems.length}`);
-  
-  if (selectedItems.length === 0) {
-    await showAlertModal('No Matching Items', 'Could not find matching items for the selected checkboxes. Please refresh and try again.');
-    return;
-  }
-  
-  const confirmed = await showConfirmModal(
-    'Approve Selected Items',
-    `Approve ${selectedItems.length} item(s) out of ${itemsArray.length} total?\n\nThis will update stock for the selected items only.`
-  );
-  
-  if (!confirmed) return;
-  
-  showLoading('Approving selected items...');
-  
-  try {
-    const formData = new URLSearchParams();
-    formData.append('action', 'approveStockTake');
-    formData.append('request_id', requestId);
-    formData.append('approved_by', currentEmployee.id);
-    formData.append('approved_by_name', currentEmployee.name);
-    // Only send the selected items
-    formData.append('items', JSON.stringify(selectedItems));
-    // Also send which items were selected (for partial approval tracking)
-    formData.append('partial_approval', 'true');
-    formData.append('total_items', itemsArray.length);
-    formData.append('approved_count', selectedItems.length);
-    
-    const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
-    const result = await response.json();
-    
-    // ✅ FIX: Calculate remainingItems HERE (outside the result.success check)
-    const remainingItems = itemsArray.length - selectedItems.length;
-    console.log(`Remaining items: ${remainingItems}`);
-    
-    if (result.success) {
-      await showAlertModal('✅ Partial Approval Successful', 
-        `<div style="text-align:left; padding:4px 0;">
-          <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
-            <span style="font-size:2rem;">📋</span>
-            <div>
-              <div style="font-weight:600; color:#0f172a;">Stock Take Partially Approved</div>
-              <div style="font-size:0.9rem; color:#64748b;">Request ID: ${requestId}</div>
+        
+        <!-- Body -->
+        <div style="padding: 28px 28px 20px 28px; background: #f8fafc;">
+          <!-- Summary Cards -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
+            <div style="background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              <div style="font-size: 1.8rem; font-weight: 700; color: #ef4444;">${totalItems}</div>
+              <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Total Items</div>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              <div style="font-size: 1.8rem; font-weight: 700; color: #3b82f6;">${categoryCount}</div>
+              <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Categories</div>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              <div style="font-size: 1.8rem; font-weight: 700; color: #8b5cf6;">${Object.keys(groupedByRequest).length}</div>
+              <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Submissions</div>
             </div>
           </div>
-          <div style="background:#f0fdf4; border-radius:12px; padding:12px 16px; border-left:4px solid #2c7a4b; margin-top:8px;">
-            <div style="font-weight:500; color:#2c7a4b; margin-bottom:4px;">✅ Approved: ${selectedItems.length} item(s)</div>
-            <div style="font-weight:500; color:#ef4444; margin-bottom:4px;">⏳ Remaining: ${remainingItems} item(s)</div>
+          
+          <!-- Category breakdown -->
+          <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #e2e8f0;">
+            <div style="font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-bottom: 12px;">📂 Categories to Reject</div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              ${Object.entries(groupedByRequest).map(([requestId, items]) => {
+                const category = items[0]?.category || 'Unknown';
+                const count = items.length;
+                return `
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: #f8fafc; border-radius: 8px;">
+                    <span style="font-weight: 500; font-size: 0.9rem;">📂 ${escapeHtml(category)}</span>
+                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">${count} items</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
           </div>
-          <div style="margin-top:12px; font-size:0.85rem; color:#64748b;">
-            The remaining items are still pending review.
+          
+          <!-- Rejection Reason -->
+          <div style="margin-bottom: 8px;">
+            <label style="display: block; font-weight: 600; color: #1e293b; font-size: 0.95rem; margin-bottom: 8px;">
+              📝 Rejection Reason <span style="color: #ef4444;">*</span>
+            </label>
+            <textarea id="rejectionReasonInput2" rows="4" 
+              placeholder="e.g., Please recount the items as the quantities seem incorrect. Make sure to count all stock in the back room and display shelves."
+              style="width: 100%; padding: 14px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; resize: vertical; min-height: 100px; font-family: inherit; transition: all 0.3s ease; background: white;"
+              onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)';"
+              onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"></textarea>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+              <button class="quick-reason-btn2" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; color: #334155;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Count mismatch</button>
+              <button class="quick-reason-btn2" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; color: #334155;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Missing items</button>
+              <button class="quick-reason-btn2" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; color: #334155;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Incorrect count</button>
+              <button class="quick-reason-btn2" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; color: #334155;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Please recount</button>
+            </div>
           </div>
-        </div>`
-      );
-      // Refresh the list
-      await loadPendingStockTakeRequests(modal);
-      // Refresh product display
-      await fetchProductsFromSheet(true);
-      renderProductGrid();
-    } else {
-      throw new Error(result.error || 'Unknown error');
-    }
-  } catch (err) {
-    console.error(err);
-    await showAlertModal('Error', 'Failed to approve selected items: ' + err.message);
-  } finally {
-    hideLoading();
-  }
+        </div>
+        
+        <!-- Footer -->
+        <div style="padding: 16px 28px 24px 28px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
+          <button id="cancelRejectBtn2" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Cancel</button>
+          <button id="confirmRejectBtn2" class="modal-btn" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(239,68,68,0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(239,68,68,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(239,68,68,0.3)'">
+            <span>🗑️</span> Confirm Reject
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    
+    const textarea = overlay.querySelector('#rejectionReasonInput2');
+    const confirmBtn = overlay.querySelector('#confirmRejectBtn2');
+    const cancelBtn = overlay.querySelector('#cancelRejectBtn2');
+    const closeBtn = overlay.querySelector('#closeRejectModalBtn2');
+    
+    // Quick reason buttons
+    document.querySelectorAll('.quick-reason-btn2').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const reasonText = this.textContent;
+        const currentText = textarea.value.trim();
+        if (currentText) {
+          textarea.value = `${currentText}\n\n${reasonText}: Please verify the count and resubmit.`;
+        } else {
+          textarea.value = `${reasonText}: Please verify the count and resubmit.`;
+        }
+        textarea.focus();
+        textarea.dispatchEvent(new Event('focus'));
+      });
+    });
+    
+    setTimeout(() => textarea.focus(), 300);
+    
+    const cleanup = () => {
+      overlay.remove();
+      resolve();
+    };
+    
+    const handleConfirm = async () => {
+      const reason = textarea.value.trim() || 'No reason provided';
+      cleanup();
+      
+      showLoading('Rejecting selected items...');
+      
+      try {
+        let successCount = 0;
+        let failCount = 0;
+        let rejectedCategories = [];
+        
+        for (const [requestId, items] of Object.entries(groupedByRequest)) {
+          const category = items[0]?.category || 'Unknown';
+          const formData = new URLSearchParams();
+          formData.append('action', 'rejectStockTake');
+          formData.append('request_id', requestId);
+          formData.append('rejected_by', currentEmployee.id);
+          formData.append('rejected_by_name', currentEmployee.name);
+          formData.append('reason', reason || 'No reason provided');
+          formData.append('items', JSON.stringify(items));
+          formData.append('partial_rejection', 'true');
+          formData.append('rejected_count', items.length);
+          
+          const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
+          const result = await response.json();
+          
+          if (result.success) {
+            successCount += items.length;
+            rejectedCategories.push(category);
+          } else {
+            failCount += items.length;
+          }
+        }
+        
+        await showAlertModal('✅ Rejection Complete', 
+          `<div style="text-align:left; padding:4px 0;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+              <span style="font-size:2.5rem;">📋</span>
+              <div>
+                <div style="font-weight:600; color:#0f172a; font-size:1.2rem;">Selected Items Rejected</div>
+                <div style="font-size:0.9rem; color:#64748b;">${rejectedCategories.length} category(s) rejected</div>
+              </div>
+            </div>
+            <div style="background:#fef2f2; border-radius:12px; padding:16px 20px; border-left:4px solid #ef4444;">
+              <div style="display:flex; justify-content:space-between; padding:4px 0;">
+                <span style="color:#64748b;">❌ Rejected Items</span>
+                <span style="font-weight:700; color:#dc2626;">${successCount}</span>
+              </div>
+              ${failCount > 0 ? `
+                <div style="display:flex; justify-content:space-between; padding:4px 0; border-top:1px solid #e2e8f0; margin-top:4px; padding-top:8px;">
+                  <span style="color:#64748b;">❌ Failed Items</span>
+                  <span style="font-weight:700; color:#ef4444;">${failCount}</span>
+                </div>
+              ` : ''}
+            </div>
+            <div style="background:#f8fafc; border-radius:8px; padding:12px 16px; margin-top:12px; border:1px solid #e2e8f0;">
+              <div style="font-weight:500; color:#1e293b; font-size:0.85rem;">📝 Rejection Reason:</div>
+              <div style="color:#475569; font-size:0.9rem; margin-top:4px;">${escapeHtml(reason)}</div>
+            </div>
+            ${rejectedCategories.length > 0 ? `
+              <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:6px;">
+                ${rejectedCategories.map(cat => `<span style="background:#fee2e2; color:#991b1b; padding:2px 10px; border-radius:12px; font-size:0.75rem;">📂 ${escapeHtml(cat)}</span>`).join('')}
+              </div>
+            ` : ''}
+          </div>`
+        );
+        
+        await loadPendingStockTakeRequests(modal);
+        
+      } catch (err) {
+        console.error(err);
+        await showAlertModal('Error', 'Failed to reject selected items: ' + err.message);
+      } finally {
+        hideLoading();
+      }
+    };
+    
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', cleanup);
+    closeBtn.addEventListener('click', cleanup);
+    
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleConfirm();
+      }
+    });
+    
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) cleanup();
+    });
+  });
 }
 
 // --- Reject Selected Items ---

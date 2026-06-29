@@ -5521,23 +5521,21 @@ async function fetchReceipts(store, employeeId, from, to, search) {
 }
 
 // ==================== STOCK TAKE FEATURE ====================
+// ==================== STOCK TAKE FEATURE - FIXED ====================
 let stockTakeMode = false;
-let stockTakeData = {};  // 👈 CHANGE: Use an object instead of array, keyed by product_id
+let stockTakeData = {};
 
 function toggleStockTakeMode() {
   stockTakeMode = !stockTakeMode;
   if (stockTakeMode) {
-    // Enter stock take mode
-    stockTakeData = {};  // Reset as empty object
+    stockTakeData = {};
     document.getElementById('stockTakeModeIndicator').style.display = 'block';
     document.getElementById('submitStockTakeBtn').style.display = 'block';
-    // Show products with input fields for counting
     renderStockTakeProductGrid();
   } else {
-    // Exit stock take mode
     document.getElementById('stockTakeModeIndicator').style.display = 'none';
     document.getElementById('submitStockTakeBtn').style.display = 'none';
-    renderProductGrid(); // back to normal view
+    renderProductGrid();
   }
 }
 
@@ -5558,6 +5556,7 @@ function renderStockTakeProductGrid() {
     return;
   }
   
+  // Build HTML (same as before)
   const countedCount = Object.keys(stockTakeData).length;
   let diffCount = 0, positiveDiff = 0, negativeDiff = 0;
   Object.values(stockTakeData).forEach(data => {
@@ -5605,7 +5604,7 @@ function renderStockTakeProductGrid() {
     }
     
     html += `
-      <div class="product-card" data-id="${prod.id}" style="border: ${borderColor}; background: ${diffBg}; transition: all 0.3s ease;">
+      <div class="product-card stock-take-card" data-id="${prod.id}" style="border: ${borderColor}; background: ${diffBg};">
         <div class="product-name">${escapeHtml(prod.name)}</div>
         <div class="product-category">${escapeHtml(prod.category)}</div>
         <div class="product-price">RM ${prod.price.toFixed(2)}</div>
@@ -5627,33 +5626,34 @@ function renderStockTakeProductGrid() {
   
   html += '</div>';
   
-  // Store scroll position
+  // ✅ SAVE SCROLL POSITION
   const scrollContainer = productGridEl.parentElement;
-  const scrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+  const savedScroll = scrollContainer ? scrollContainer.scrollTop : 0;
   
+  // ✅ REPLACE HTML
   productGridEl.innerHTML = html;
   productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
   
+  // ✅ RESTORE SCROLL POSITION
   if (scrollContainer) {
-    scrollContainer.scrollTop = scrollTop;
+    scrollContainer.scrollTop = savedScroll;
   }
   
-  // --- Setup event listeners ---
-  setupStockTakeListeners();
+  // ✅ ATTACH EVENT LISTENERS - JUST LIKE NORMAL CHECKOUT!
+  attachStockTakeEvents();
 }
 
-// --- SEPARATE FUNCTION for setting up listeners ---
-function setupStockTakeListeners() {
-  // Remove old listeners using a flag
+// ✅ SEPARATE FUNCTION for event listeners (like normal checkout)
+function attachStockTakeEvents() {
+  // --- PLUS/MINUS buttons using event delegation ---
   const grid = document.getElementById('stockTakeGrid');
   if (!grid) return;
   
-  // Remove any existing listeners
+  // Remove old listener if exists
   if (grid._clickHandler) {
     grid.removeEventListener('click', grid._clickHandler);
   }
   
-  // --- CLICK DELEGATION for + and - buttons ---
   grid._clickHandler = function(e) {
     const btn = e.target.closest('.stock-take-btn');
     if (!btn) return;
@@ -5675,7 +5675,7 @@ function setupStockTakeListeners() {
     let newVal = action === 'inc' ? currentVal + 1 : Math.max(0, currentVal - 1);
     input.value = newVal;
     
-    // Update data
+    // Update data and UI - NO RE-RENDER!
     const product = products.find(p => p.id == productId);
     if (product) {
       stockTakeData[productId] = {
@@ -5686,22 +5686,19 @@ function setupStockTakeListeners() {
         counted_stock: newVal,
         difference: newVal - product.stock
       };
-      // Update UI without re-rendering
-      updateProductCardUI(productId);
+      updateSingleCard(productId);
     }
   };
   
   grid.addEventListener('click', grid._clickHandler);
   
-  // --- INPUT CHANGE listeners ---
+  // --- INPUT change listeners ---
   document.querySelectorAll('.stock-take-input').forEach(input => {
-    // Remove old listener
     if (input._changeHandler) {
       input.removeEventListener('change', input._changeHandler);
       input.removeEventListener('input', input._inputHandler);
     }
     
-    // Change handler (when user presses Enter or leaves field)
     input._changeHandler = function(e) {
       const productId = this.dataset.id;
       let value = parseInt(this.value);
@@ -5721,11 +5718,10 @@ function setupStockTakeListeners() {
           counted_stock: value,
           difference: value - product.stock
         };
-        updateProductCardUI(productId);
+        updateSingleCard(productId);
       }
     };
     
-    // Input handler (real-time as user types)
     input._inputHandler = function(e) {
       const productId = this.dataset.id;
       const value = parseInt(this.value);
@@ -5740,7 +5736,7 @@ function setupStockTakeListeners() {
             counted_stock: value,
             difference: value - product.stock
           };
-          updateProductCardUI(productId);
+          updateSingleCard(productId);
         }
       }
     };
@@ -5750,17 +5746,17 @@ function setupStockTakeListeners() {
   });
 }
 
-// --- UPDATE only the card's UI - NO re-render ---
-function updateProductCardUI(productId) {
-  const existing = stockTakeData[productId];
-  if (!existing) return;
+// ✅ UPDATE ONLY ONE CARD - NO RE-RENDER!
+function updateSingleCard(productId) {
+  const data = stockTakeData[productId];
+  if (!data) return;
   
-  const card = document.querySelector(`.product-card[data-id="${productId}"]`);
+  const card = document.querySelector(`.stock-take-card[data-id="${productId}"]`);
   if (!card) return;
   
-  const diffColor = existing.difference > 0 ? '#2c7a4b' : existing.difference < 0 ? '#dc2626' : '#64748b';
-  const diffText = existing.difference > 0 ? `+${existing.difference} higher` : existing.difference < 0 ? `${existing.difference} lower` : '✓ Matches';
-  const diffBg = existing.difference > 0 ? '#f0fdf4' : existing.difference < 0 ? '#fef2f2' : '#f8fafc';
+  const diffColor = data.difference > 0 ? '#2c7a4b' : data.difference < 0 ? '#dc2626' : '#64748b';
+  const diffText = data.difference > 0 ? `+${data.difference} higher` : data.difference < 0 ? `${data.difference} lower` : '✓ Matches';
+  const diffBg = data.difference > 0 ? '#f0fdf4' : data.difference < 0 ? '#fef2f2' : '#f8fafc';
   
   // Update badge
   const badge = card.querySelector('.diff-badge');
@@ -5774,9 +5770,9 @@ function updateProductCardUI(productId) {
   // Update input
   const input = card.querySelector('.stock-take-input');
   if (input) {
-    input.value = existing.counted_stock;
-    const borderColor = existing.difference !== 0 ? (existing.difference > 0 ? '#2c7a4b' : '#dc2626') : '#10b981';
-    const bgColor = existing.difference !== 0 ? (existing.difference > 0 ? '#f0fdf4' : '#fef2f2') : '#f0fdf4';
+    input.value = data.counted_stock;
+    const borderColor = data.difference !== 0 ? (data.difference > 0 ? '#2c7a4b' : '#dc2626') : '#10b981';
+    const bgColor = data.difference !== 0 ? (data.difference > 0 ? '#f0fdf4' : '#fef2f2') : '#f0fdf4';
     input.style.borderColor = borderColor;
     input.style.background = bgColor;
   }
@@ -5784,11 +5780,11 @@ function updateProductCardUI(productId) {
   // Update hint
   const hint = card.querySelector('.stock-hint');
   if (hint) {
-    if (existing.difference > 0) {
-      hint.textContent = `📈 Counted ${existing.difference} more than system`;
+    if (data.difference > 0) {
+      hint.textContent = `📈 Counted ${data.difference} more than system`;
       hint.style.color = '#2c7a4b';
-    } else if (existing.difference < 0) {
-      hint.textContent = `📉 Counted ${Math.abs(existing.difference)} less than system`;
+    } else if (data.difference < 0) {
+      hint.textContent = `📉 Counted ${Math.abs(data.difference)} less than system`;
       hint.style.color = '#dc2626';
     } else {
       hint.textContent = '✅ Count matches system';
@@ -5796,15 +5792,15 @@ function updateProductCardUI(productId) {
     }
   }
   
-  // Update card border and background
-  card.style.border = existing.difference !== 0 ? (existing.difference > 0 ? '2px solid #2c7a4b' : '2px solid #dc2626') : '1px solid #e2e8f0';
-  card.style.background = existing.difference !== 0 ? (existing.difference > 0 ? '#f0fdf4' : '#fef2f2') : '#f8fafc';
+  // Update card
+  card.style.border = data.difference !== 0 ? (data.difference > 0 ? '2px solid #2c7a4b' : '2px solid #dc2626') : '1px solid #e2e8f0';
+  card.style.background = data.difference !== 0 ? (data.difference > 0 ? '#f0fdf4' : '#fef2f2') : '#f8fafc';
   
-  // Update header stats
+  // Update header
   updateStockTakeSummary();
 }
+
 function updateStockTakeSummary() {
-  // Update the counter and show differences
   const totalCounted = Object.keys(stockTakeData).length;
   const diffCount = Object.values(stockTakeData).filter(d => d.difference !== 0).length;
   const positiveDiff = Object.values(stockTakeData).filter(d => d.difference > 0).length;
@@ -5814,14 +5810,12 @@ function updateStockTakeSummary() {
   if (indicator) {
     let statsHtml = `<strong>📋 Stock Take Mode</strong>`;
     statsHtml += `<span style="display:block; font-size:0.9rem; color:#64748b;">Counted: ${totalCounted} products`;
-    
     if (diffCount > 0) {
       statsHtml += ` | <span style="color:#2c7a4b;">✅ ${positiveDiff} higher</span>`;
       statsHtml += ` | <span style="color:#dc2626;">❌ ${negativeDiff} lower</span>`;
       statsHtml += ` | <span style="color:#f59e0b;">📊 ${diffCount} differences</span>`;
     }
     statsHtml += `</span>`;
-    
     indicator.innerHTML = statsHtml;
   }
 }

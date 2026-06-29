@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -5837,8 +5837,7 @@ function renderStockTakeProductGrid() {
     btn._incHandler = handler;
     btn.addEventListener('click', handler);
   });
-}}
-}
+}  // <-- This is the ONLY closing brace for the function
 function updateStockTakeSummary() {
   // Update the counter and show differences
   const totalCounted = Object.keys(stockTakeData).length;

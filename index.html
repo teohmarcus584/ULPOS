@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -5642,11 +5642,11 @@ function renderStockTakeProductGrid() {
         ` : ''}
         
         <div style="margin-top:8px; display:flex; align-items:center; justify-content:center; gap:8px;">
-          <button class="stock-take-dec-btn" data-id="${prod.id}" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:30px; font-weight:bold; font-size:1.2rem; cursor:pointer; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">−</button>
+          <button type="button" class="stock-take-dec-btn" data-id="${prod.id}" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:30px; font-weight:bold; font-size:1.2rem; cursor:pointer; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">−</button>
           <input type="number" class="stock-take-input" data-id="${prod.id}" 
                  value="${countedValue}" placeholder="${prod.stock}" 
                  style="width:80px; padding:8px; border-radius:20px; border:2px solid ${existing ? (difference !== 0 ? (difference > 0 ? '#2c7a4b' : '#dc2626') : '#10b981') : '#cbd5e1'}; text-align:center; font-weight:600; transition: all 0.3s ease; background:${existing ? (difference !== 0 ? (difference > 0 ? '#f0fdf4' : '#fef2f2') : '#f0fdf4') : 'white'};">
-          <button class="stock-take-inc-btn" data-id="${prod.id}" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:30px; font-weight:bold; font-size:1.2rem; cursor:pointer; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">+</button>
+          <button type="button" class="stock-take-inc-btn" data-id="${prod.id}" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:30px; font-weight:bold; font-size:1.2rem; cursor:pointer; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">+</button>
         </div>
         
         <!-- Quick comparison hint -->
@@ -5669,8 +5669,17 @@ function renderStockTakeProductGrid() {
   
   html += '</div>';
   
+  // Store the current scroll position BEFORE replacing the HTML
+  const scrollContainer = productGridEl.parentElement;
+  const scrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+  
   productGridEl.innerHTML = html;
   productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
+  
+  // Restore scroll position AFTER replacing the HTML
+  if (scrollContainer) {
+    scrollContainer.scrollTop = scrollTop;
+  }
   
   // --- Helper function to update stock take data ---
   function updateStockTakeData(productId, newValue) {
@@ -5692,29 +5701,89 @@ function renderStockTakeProductGrid() {
     
     // Update the display
     updateStockTakeSummary();
-    // Re-render to show updated colors
+    // Re-render to show updated colors - but we need to maintain scroll position
+    const currentScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
     renderStockTakeProductGrid();
+    if (scrollContainer) {
+      // Use requestAnimationFrame to ensure DOM is updated before setting scroll
+      requestAnimationFrame(() => {
+        scrollContainer.scrollTop = currentScrollTop;
+      });
+    }
   }
   
-  // Attach input listeners
+  // Attach input listeners with proper event handling
   document.querySelectorAll('.stock-take-input').forEach(input => {
-    input.removeEventListener('input', input._stockTakeHandler);
+    // Remove existing listener if any
+    if (input._stockTakeHandler) {
+      input.removeEventListener('input', input._stockTakeHandler);
+      input.removeEventListener('change', input._stockTakeChangeHandler);
+    }
     
+    // Input handler - updates in real-time
     const handler = (e) => {
       const productId = input.dataset.id;
       const value = parseInt(input.value);
       if (!isNaN(value) && value >= 0) {
+        // Save current scroll position
+        const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
         updateStockTakeData(productId, value);
+        // Restore scroll after re-render
+        requestAnimationFrame(() => {
+          if (scrollContainer) {
+            scrollContainer.scrollTop = currentScroll;
+          }
+        });
       }
+      e.stopPropagation();
+      e.preventDefault();
     };
+    
+    // Change handler - for when user types and presses Enter or leaves field
+    const changeHandler = (e) => {
+      const productId = input.dataset.id;
+      let value = parseInt(input.value);
+      if (isNaN(value) || value < 0) {
+        // If invalid, reset to current stock
+        const product = products.find(p => p.id == productId);
+        if (product) {
+          input.value = product.stock;
+          value = product.stock;
+        } else {
+          input.value = 0;
+          value = 0;
+        }
+      }
+      const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
+      updateStockTakeData(productId, value);
+      requestAnimationFrame(() => {
+        if (scrollContainer) {
+          scrollContainer.scrollTop = currentScroll;
+        }
+      });
+      e.stopPropagation();
+    };
+    
     input._stockTakeHandler = handler;
+    input._stockTakeChangeHandler = changeHandler;
     input.addEventListener('input', handler);
+    input.addEventListener('change', changeHandler);
+    
+    // Prevent focus scrolling issues
+    input.addEventListener('focus', (e) => {
+      // Store current scroll on focus
+      if (scrollContainer) {
+        input._focusScrollTop = scrollContainer.scrollTop;
+      }
+    });
   });
   
   // Attach decrement button listeners
   document.querySelectorAll('.stock-take-dec-btn').forEach(btn => {
     btn.removeEventListener('click', btn._decHandler);
     const handler = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const productId = btn.dataset.id;
       const input = document.querySelector(`.stock-take-input[data-id="${productId}"]`);
       if (input) {
@@ -5725,9 +5794,16 @@ function renderStockTakeProductGrid() {
         }
         const newVal = Math.max(0, currentVal - 1);
         input.value = newVal;
+        // Save scroll position before update
+        const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
         updateStockTakeData(productId, newVal);
+        // Restore scroll after re-render
+        requestAnimationFrame(() => {
+          if (scrollContainer) {
+            scrollContainer.scrollTop = currentScroll;
+          }
+        });
       }
-      e.stopPropagation();
     };
     btn._decHandler = handler;
     btn.addEventListener('click', handler);
@@ -5737,6 +5813,8 @@ function renderStockTakeProductGrid() {
   document.querySelectorAll('.stock-take-inc-btn').forEach(btn => {
     btn.removeEventListener('click', btn._incHandler);
     const handler = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const productId = btn.dataset.id;
       const input = document.querySelector(`.stock-take-input[data-id="${productId}"]`);
       if (input) {
@@ -5747,14 +5825,19 @@ function renderStockTakeProductGrid() {
         }
         const newVal = currentVal + 1;
         input.value = newVal;
+        const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
         updateStockTakeData(productId, newVal);
+        requestAnimationFrame(() => {
+          if (scrollContainer) {
+            scrollContainer.scrollTop = currentScroll;
+          }
+        });
       }
-      e.stopPropagation();
     };
     btn._incHandler = handler;
     btn.addEventListener('click', handler);
   });
-}
+}}
 
 function updateStockTakeSummary() {
   // Update the counter and show differences

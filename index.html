@@ -5681,28 +5681,7 @@ function renderStockTakeProductGrid() {
     scrollContainer.scrollTop = scrollTop;
   }
   
-  // --- Helper function to update stock take data WITHOUT full re-render ---
-  function updateStockTakeData(productId, newValue) {
-    const product = products.find(p => p.id == productId);
-    if (!product) return;
-    
-    const currentStock = product.stock;
-    
-    stockTakeData[productId] = {
-      product_id: product.id,
-      product_name: product.name,
-      category: product.category,
-      current_stock: currentStock,
-      counted_stock: newValue,
-      difference: newValue - currentStock
-    };
-    
-    // ✅ UPDATE ONLY THE SPECIFIC PRODUCT CARD - NO FULL RE-RENDER
-    updateSingleProductCard(productId);
-    updateStockTakeSummary();
-  }
-  
-  // ✅ NEW FUNCTION: Update only one product card
+  // --- NEW: Update only the specific product card without full re-render ---
   function updateSingleProductCard(productId) {
     const product = products.find(p => p.id == productId);
     if (!product) return;
@@ -5715,11 +5694,10 @@ function renderStockTakeProductGrid() {
     
     // Update the difference badge
     const diffBadge = card.querySelector('div[style*="margin: 4px 0 8px 0;"]');
-    const diffColor = existing.difference > 0 ? '#2c7a4b' : existing.difference < 0 ? '#dc2626' : '#64748b';
-    const diffText = existing.difference > 0 ? `+${existing.difference} higher` : existing.difference < 0 ? `${existing.difference} lower` : '✓ Matches';
-    const diffBg = existing.difference > 0 ? '#f0fdf4' : existing.difference < 0 ? '#fef2f2' : '#f8fafc';
-    
     if (diffBadge) {
+      const diffColor = existing.difference > 0 ? '#2c7a4b' : existing.difference < 0 ? '#dc2626' : '#64748b';
+      const diffText = existing.difference > 0 ? `+${existing.difference} higher` : existing.difference < 0 ? `${existing.difference} lower` : '✓ Matches';
+      const diffBg = existing.difference > 0 ? '#f0fdf4' : existing.difference < 0 ? '#fef2f2' : '#f8fafc';
       diffBadge.textContent = diffText;
       diffBadge.style.color = diffColor;
       diffBadge.style.background = diffBg;
@@ -5750,13 +5728,34 @@ function renderStockTakeProductGrid() {
       }
     }
     
-    // Update the card border
+    // Update the card border and background
     const borderStyle = existing.difference !== 0 ? (existing.difference > 0 ? '2px solid #2c7a4b' : '2px solid #dc2626') : '1px solid #e2e8f0';
     card.style.border = borderStyle;
     card.style.background = existing.difference !== 0 ? (existing.difference > 0 ? '#f0fdf4' : '#fef2f2') : '#f8fafc';
   }
   
-  // Attach input listeners with proper event handling
+  // --- NEW: Update stock take data WITHOUT full re-render ---
+  function updateStockTakeData(productId, newValue) {
+    const product = products.find(p => p.id == productId);
+    if (!product) return;
+    
+    const currentStock = product.stock;
+    
+    stockTakeData[productId] = {
+      product_id: product.id,
+      product_name: product.name,
+      category: product.category,
+      current_stock: currentStock,
+      counted_stock: newValue,
+      difference: newValue - currentStock
+    };
+    
+    // ✅ Only update the specific product card - NO full re-render!
+    updateSingleProductCard(productId);
+    updateStockTakeSummary();
+  }
+  
+  // Attach input listeners
   document.querySelectorAll('.stock-take-input').forEach(input => {
     if (input._stockTakeHandler) {
       input.removeEventListener('input', input._stockTakeHandler);

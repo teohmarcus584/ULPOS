@@ -5681,13 +5681,11 @@ function renderStockTakeProductGrid() {
     scrollContainer.scrollTop = scrollTop;
   }
   
-  // --- Helper function to update stock take data ---
+  // --- Helper function to update stock take data WITHOUT full re-render ---
   function updateStockTakeData(productId, newValue) {
-    // Get the product from the current products array
     const product = products.find(p => p.id == productId);
     if (!product) return;
     
-    // Always use the product's current stock as the baseline
     const currentStock = product.stock;
     
     stockTakeData[productId] = {
@@ -5699,52 +5697,86 @@ function renderStockTakeProductGrid() {
       difference: newValue - currentStock
     };
     
-    // Update the display
+    // ✅ UPDATE ONLY THE SPECIFIC PRODUCT CARD - NO FULL RE-RENDER
+    updateSingleProductCard(productId);
     updateStockTakeSummary();
-    // Re-render to show updated colors - but we need to maintain scroll position
-    const currentScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
-    renderStockTakeProductGrid();
-    if (scrollContainer) {
-      // Use requestAnimationFrame to ensure DOM is updated before setting scroll
-      requestAnimationFrame(() => {
-        scrollContainer.scrollTop = currentScrollTop;
-      });
+  }
+  
+  // ✅ NEW FUNCTION: Update only one product card
+  function updateSingleProductCard(productId) {
+    const product = products.find(p => p.id == productId);
+    if (!product) return;
+    
+    const card = document.querySelector(`.product-card[data-id="${productId}"]`);
+    if (!card) return;
+    
+    const existing = stockTakeData[productId];
+    if (!existing) return;
+    
+    // Update the difference badge
+    const diffBadge = card.querySelector('div[style*="margin: 4px 0 8px 0;"]');
+    const diffColor = existing.difference > 0 ? '#2c7a4b' : existing.difference < 0 ? '#dc2626' : '#64748b';
+    const diffText = existing.difference > 0 ? `+${existing.difference} higher` : existing.difference < 0 ? `${existing.difference} lower` : '✓ Matches';
+    const diffBg = existing.difference > 0 ? '#f0fdf4' : existing.difference < 0 ? '#fef2f2' : '#f8fafc';
+    
+    if (diffBadge) {
+      diffBadge.textContent = diffText;
+      diffBadge.style.color = diffColor;
+      diffBadge.style.background = diffBg;
+      diffBadge.style.borderColor = diffColor;
     }
+    
+    // Update the input field style
+    const input = card.querySelector('.stock-take-input');
+    if (input) {
+      const borderColor = existing.difference !== 0 ? (existing.difference > 0 ? '#2c7a4b' : '#dc2626') : '#10b981';
+      const bgColor = existing.difference !== 0 ? (existing.difference > 0 ? '#f0fdf4' : '#fef2f2') : '#f0fdf4';
+      input.style.borderColor = borderColor;
+      input.style.background = bgColor;
+    }
+    
+    // Update the hint text
+    const hint = card.querySelector('div[style*="margin-top:6px;"]');
+    if (hint) {
+      if (existing.difference > 0) {
+        hint.textContent = `📈 Counted ${existing.difference} more than system`;
+        hint.style.color = '#2c7a4b';
+      } else if (existing.difference < 0) {
+        hint.textContent = `📉 Counted ${Math.abs(existing.difference)} less than system`;
+        hint.style.color = '#dc2626';
+      } else {
+        hint.textContent = '✅ Count matches system';
+        hint.style.color = '#2c7a4b';
+      }
+    }
+    
+    // Update the card border
+    const borderStyle = existing.difference !== 0 ? (existing.difference > 0 ? '2px solid #2c7a4b' : '2px solid #dc2626') : '1px solid #e2e8f0';
+    card.style.border = borderStyle;
+    card.style.background = existing.difference !== 0 ? (existing.difference > 0 ? '#f0fdf4' : '#fef2f2') : '#f8fafc';
   }
   
   // Attach input listeners with proper event handling
   document.querySelectorAll('.stock-take-input').forEach(input => {
-    // Remove existing listener if any
     if (input._stockTakeHandler) {
       input.removeEventListener('input', input._stockTakeHandler);
       input.removeEventListener('change', input._stockTakeChangeHandler);
     }
     
-    // Input handler - updates in real-time
     const handler = (e) => {
       const productId = input.dataset.id;
       const value = parseInt(input.value);
       if (!isNaN(value) && value >= 0) {
-        // Save current scroll position
-        const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
         updateStockTakeData(productId, value);
-        // Restore scroll after re-render
-        requestAnimationFrame(() => {
-          if (scrollContainer) {
-            scrollContainer.scrollTop = currentScroll;
-          }
-        });
       }
       e.stopPropagation();
       e.preventDefault();
     };
     
-    // Change handler - for when user types and presses Enter or leaves field
     const changeHandler = (e) => {
       const productId = input.dataset.id;
       let value = parseInt(input.value);
       if (isNaN(value) || value < 0) {
-        // If invalid, reset to current stock
         const product = products.find(p => p.id == productId);
         if (product) {
           input.value = product.stock;
@@ -5754,13 +5786,7 @@ function renderStockTakeProductGrid() {
           value = 0;
         }
       }
-      const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
       updateStockTakeData(productId, value);
-      requestAnimationFrame(() => {
-        if (scrollContainer) {
-          scrollContainer.scrollTop = currentScroll;
-        }
-      });
       e.stopPropagation();
     };
     
@@ -5768,14 +5794,6 @@ function renderStockTakeProductGrid() {
     input._stockTakeChangeHandler = changeHandler;
     input.addEventListener('input', handler);
     input.addEventListener('change', changeHandler);
-    
-    // Prevent focus scrolling issues
-    input.addEventListener('focus', (e) => {
-      // Store current scroll on focus
-      if (scrollContainer) {
-        input._focusScrollTop = scrollContainer.scrollTop;
-      }
-    });
   });
   
   // Attach decrement button listeners
@@ -5794,15 +5812,7 @@ function renderStockTakeProductGrid() {
         }
         const newVal = Math.max(0, currentVal - 1);
         input.value = newVal;
-        // Save scroll position before update
-        const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
         updateStockTakeData(productId, newVal);
-        // Restore scroll after re-render
-        requestAnimationFrame(() => {
-          if (scrollContainer) {
-            scrollContainer.scrollTop = currentScroll;
-          }
-        });
       }
     };
     btn._decHandler = handler;
@@ -5825,19 +5835,13 @@ function renderStockTakeProductGrid() {
         }
         const newVal = currentVal + 1;
         input.value = newVal;
-        const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
         updateStockTakeData(productId, newVal);
-        requestAnimationFrame(() => {
-          if (scrollContainer) {
-            scrollContainer.scrollTop = currentScroll;
-          }
-        });
       }
     };
     btn._incHandler = handler;
     btn.addEventListener('click', handler);
   });
-} // <-- END of renderStockTakeProductGrid function (ONE closing brace only)
+}
 function updateStockTakeSummary() {
   // Update the counter and show differences
   const totalCounted = Object.keys(stockTakeData).length;

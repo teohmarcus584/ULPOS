@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2226,7 +2226,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzxHBWHjKtMeCptihRUmiCNFFJR1NTEkzzcqpWSUMuilP9iYuvkUowfQw72Q4Znh1tT-Q/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5FWYooOnHFTVaJ9jBtDXjkGIkN3Z8UYcU1MNDuSKZ7tFX_9zvxQaPrulGHyA2UQh6NA/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -4389,10 +4389,20 @@ function loadPendingSales() {
 
 // Save a sale to the queue
 function queueSale(transaction) {
-  pendingSales.push(transaction);
-  localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
-  // Try to sync immediately (if online)
-  syncPendingSales();
+  // Only queue if we're offline or save fails
+  if (!navigator.onLine) {
+    pendingSales.push(transaction);
+    localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
+    showAlertModal('Offline', 'You are offline. Sale has been queued and will sync when online.');
+  } else {
+    // Try to save directly, fallback to queue
+    saveTransactionToSheet(transaction).then(success => {
+      if (!success) {
+        pendingSales.push(transaction);
+        localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
+      }
+    });
+  }
 }
 
 // Attempt to send all pending sales
@@ -5195,8 +5205,10 @@ async function completeCheckout(paymentMethod, cashReceived) {
       sales_person_id: salesPersonId,
     };
 
-    queueSale(transaction);
-    const success = true; // optimistic
+    // ✅ FIX: Save directly, NO QUEUE
+    showLoading('Processing transaction...');
+    const success = await saveTransactionToSheet(transaction);
+    hideLoading();
 
     if (success) {
       // Update local stock
@@ -5233,23 +5245,23 @@ async function completeCheckout(paymentMethod, cashReceived) {
       invalidateAllReportCaches();
 
       const fakeReceipt = {
-  transaction_id: transaction.transaction_id,
-  timestamp: transaction.timestamp,
-  items: transaction.items,
-  total: transaction.total,
-  payment_method: transaction.payment_method,
-  store: transaction.store,
-  employee_id: transaction.employee_id,
-  employee_name: transaction.employee_name,
-  refunded: false,
-  discount: transaction.discount,
-  buy2_free1_discount: transaction.buy2_free1_discount,
-  buy3_free1_discount: transaction.buy3_free1_discount,
-  custom_discount: transaction.custom_discount,
-  staff_discount: transaction.staff_discount,
-  sales_person_name: transaction.sales_person_name,
-  sales_person_id: transaction.sales_person_id
-};
+        transaction_id: transaction.transaction_id,
+        timestamp: transaction.timestamp,
+        items: transaction.items,
+        total: transaction.total,
+        payment_method: transaction.payment_method,
+        store: transaction.store,
+        employee_id: transaction.employee_id,
+        employee_name: transaction.employee_name,
+        refunded: false,
+        discount: transaction.discount,
+        buy2_free1_discount: transaction.buy2_free1_discount,
+        buy3_free1_discount: transaction.buy3_free1_discount,
+        custom_discount: transaction.custom_discount,
+        staff_discount: transaction.staff_discount,
+        sales_person_name: transaction.sales_person_name,
+        sales_person_id: transaction.sales_person_id
+      };
       if (!cachedReceipts) cachedReceipts = [];
       cachedReceipts.unshift(fakeReceipt);
 
@@ -5272,12 +5284,17 @@ async function completeCheckout(paymentMethod, cashReceived) {
         openLuckyDraw(transactionId, selectedCustomer?.id);
         luckyModal.style.display = 'none';
       };
-if (pendingPrize && pendingPrize.isPromo && pendingPrize.code) {
-  await usePromoVoucherAfterSale(pendingPrize.code);
-}
+      
+      if (pendingPrize && pendingPrize.isPromo && pendingPrize.code) {
+        await usePromoVoucherAfterSale(pendingPrize.code);
+      }
+      
       clearCart();
     } else {
-      await showAlertModal('Error', 'Failed to record sale. Check network / Apps Script.');
+      // ✅ Only queue if save failed (offline fallback)
+      pendingSales.push(transaction);
+      localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
+      await showAlertModal('Error', 'Failed to record sale. It has been queued for retry.');
     }
   } catch (err) {
     console.error('Checkout error:', err);
@@ -5299,7 +5316,6 @@ if (pendingPrize && pendingPrize.isPromo && pendingPrize.code) {
     formData.append("cash_received", transaction.cash_received || '');
     formData.append("timestamp", transaction.timestamp);
     formData.append("store", currentStore);
-    // ✅ Use the logged‑in cashier's ID (from transaction)
     formData.append("employee_id", transaction.employee_id);
     formData.append("discount", transaction.discount || 0);
     formData.append("buy2_free1_discount", transaction.buy2_free1_discount || 0);
@@ -5308,7 +5324,6 @@ if (pendingPrize && pendingPrize.isPromo && pendingPrize.code) {
     formData.append("staff_discount", transaction.staff_discount || 0);
     formData.append("prize_claimed", transaction.prize_claimed ? JSON.stringify(transaction.prize_claimed) : '');
     if (transaction.customer_id) formData.append("customer_id", transaction.customer_id);
-    // ✅ Send sales person fields separately
     formData.append("sales_person_name", transaction.sales_person_name || '');
     formData.append("sales_person_id", transaction.sales_person_id || '');
 
@@ -5316,10 +5331,8 @@ if (pendingPrize && pendingPrize.isPromo && pendingPrize.code) {
     const result = await response.json();
     return result.success === true;
   } catch (err) {
-    console.error(err);
+    console.error('saveTransactionToSheet error:', err);
     return false;
-  } finally {
-    hideLoading();
   }
 }
 function getUTCDateString(date) {

@@ -10260,6 +10260,7 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
 });
 
 // Record Settlement button - COMPLETE VERSION WITH DUPLICATE PREVENTION
+// Record Settlement button - HANDLE BACKEND DUPLICATE RESPONSE
 document.getElementById('recordSettlementBtn')?.addEventListener('click', async () => {
   showLoading('Recording settlement...');
   
@@ -10278,26 +10279,6 @@ document.getElementById('recordSettlementBtn')?.addEventListener('click', async 
   const todayStr = getLocalDateString(new Date());
 
   try {
-    // ✅ STEP 1: CHECK FOR DUPLICATE BEFORE SENDING
-    showLoading('Checking for existing settlement...');
-    
-    // Check if settlement already exists for this store/date
-    const checkUrl = `${APPS_SCRIPT_URL}?action=getSettlementStatus&store=${store}&date=${todayStr}&_=${Date.now()}`;
-    const checkResponse = await fetch(checkUrl);
-    const checkResult = await checkResponse.json();
-    
-    if (checkResult.success && checkResult.settled) {
-      hideLoading();
-      await showAlertModal('Duplicate Settlement', 
-        `⚠️ Settlement for ${store} on ${todayStr} has already been recorded.\n\n` +
-        `If you need to view it, check the settlement history.`);
-      document.getElementById('settlementModal').style.display = 'none';
-      return;
-    }
-
-    // ✅ STEP 2: NO DUPLICATE FOUND - PROCEED WITH RECORDING
-    showLoading('Recording settlement...');
-    
     const formData = new URLSearchParams();
     formData.append('action', 'recordSettlement');
     formData.append('store', store);
@@ -10316,22 +10297,29 @@ document.getElementById('recordSettlementBtn')?.addEventListener('click', async 
 
     const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
     const result = await response.json();
+    
+    console.log('📥 Settlement Response:', result);
 
-    // ✅ STEP 3: HANDLE DUPLICATE RESPONSE (BACKUP CHECK)
+    // ✅ Handle duplicate response from backend
     if (result.duplicated) {
       hideLoading();
-      await showAlertModal('Duplicate Settlement', 
-        `⚠️ Settlement for ${store} on ${todayStr} has already been recorded.\n\n` +
-        `If you need to view it, check the settlement history.`);
+      await showAlertModal('Settlement Already Done', 
+        `⚠️ ${result.message || 'Settlement already recorded for today.'}\n\n` +
+        `If there are unsettled bills, please check with your manager.`);
       document.getElementById('settlementModal').style.display = 'none';
       await refreshSettlementTotals(store);
       return;
     }
 
     if (result.success) {
-      await showAlertModal('Settlement Recorded', `✅ Settlement for ${store} on ${todayStr} has been saved.`);
+      let message = `✅ Settlement for ${store} on ${todayStr} has been saved.`;
+      if (result.unsettled_count !== undefined && result.unsettled_count > 0) {
+        message += `\n\n📊 ${result.unsettled_count} unsettled bill(s) were settled.`;
+        message += `\n💰 Total: RM ${result.unsettled_total.toFixed(2)}`;
+      }
+      await showAlertModal('Settlement Recorded', message);
 
-      // ✅ Check printer connection before printing
+      // Check printer connection
       if (!isPrinterConnected) {
         showLoading('Printer not connected. Opening Bluetooth selection...');
         try {
@@ -10347,7 +10335,7 @@ document.getElementById('recordSettlementBtn')?.addEventListener('click', async 
         }
       }
 
-      // ✅ Print settlement report
+      // Print settlement report
       const totals = {
         cashSystem: sysCash,
         cardSystem: sysCard,

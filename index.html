@@ -10169,6 +10169,7 @@ document.getElementById('closeAdminReportModal')?.addEventListener('click', () =
   });
 
 // Settlement Check button - COMPLETE VERSION WITH DUPLICATE PREVENTION
+// Settlement Check button - REMOVE the duplicate check
 document.getElementById('checkSettlementBtn')?.addEventListener('click', async () => {
   // Clear any previous error styling
   const errorFields = ['actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
@@ -10177,7 +10178,7 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
     if (el) el.classList.remove('error-field');
   });
 
-  // Get actual values from input fields
+  // Get actual values
   const actualCash = parseFloat(document.getElementById('actualCash').value);
   const actualCard = parseFloat(document.getElementById('actualCard').value);
   const actualQR = parseFloat(document.getElementById('actualQR').value);
@@ -10199,7 +10200,7 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
   let errors = [];
   let wrongFields = [];
 
-  // Check for discrepancies
+  // Check discrepancies (admin vs non-admin)
   if (currentEmployee.isAdmin) {
     if (Math.abs(actualCash - sysCash) > 0.01) {
       errors.push(`Cash: system RM ${sysCash.toFixed(2)} vs actual RM ${actualCash.toFixed(2)}`);
@@ -10218,7 +10219,6 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
       wrongFields.push('actualAlipay');
     }
   } else {
-    // Non-admin: simpler error messages
     if (Math.abs(actualCash - sysCash) > 0.01) {
       errors.push('Cash: WRONG, COUNT AGAIN');
       wrongFields.push('actualCash');
@@ -10237,7 +10237,7 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
     }
   }
 
-  // Highlight fields with errors
+  // Highlight error fields
   wrongFields.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('error-field');
@@ -10252,14 +10252,17 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
     return;
   }
 
+  // ✅ REMOVED: Settlement duplicate check - Let backend handle it
+  
   // If no errors, proceed to record
   setSettlementFieldsEnabled(false);
   document.getElementById('settlementError').style.display = 'none';
   document.getElementById('checkSettlementBtn').style.display = 'none';
   document.getElementById('recordSettlementBtn').style.display = 'block';
+  
+  console.log('✅ Settlement check passed. Ready to record.');
 });
 
-// Record Settlement button - COMPLETE VERSION WITH DUPLICATE PREVENTION
 // Record Settlement button - HANDLE BACKEND DUPLICATE RESPONSE
 document.getElementById('recordSettlementBtn')?.addEventListener('click', async () => {
   showLoading('Recording settlement...');

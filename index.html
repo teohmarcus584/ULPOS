@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2226,7 +2226,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTNcyi1Hyh9E1xO-1S3XrhqPACqJbLP0QRrU7gZN8qJLRdXdgle0r8VZZqKgUAbl3vuQ/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4j9_haCilFm8iQ7o3Ha14CXNvvIzXrQpYmbIsYrpus08SKJwt-XGvt24xys81Tr4ihA/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -10168,25 +10168,29 @@ document.getElementById('closeAdminReportModal')?.addEventListener('click', () =
     }
   });
 
- // Settlement Check button
+// Settlement Check button - COMPLETE VERSION WITH DUPLICATE PREVENTION
 document.getElementById('checkSettlementBtn')?.addEventListener('click', async () => {
+  // Clear any previous error styling
   const errorFields = ['actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
   errorFields.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('error-field');
   });
 
+  // Get actual values from input fields
   const actualCash = parseFloat(document.getElementById('actualCash').value);
   const actualCard = parseFloat(document.getElementById('actualCard').value);
   const actualQR = parseFloat(document.getElementById('actualQR').value);
   const actualAlipay = parseFloat(document.getElementById('actualAlipay').value);
 
+  // Validate all fields are filled
   if (isNaN(actualCash) || isNaN(actualCard) || isNaN(actualQR) || isNaN(actualAlipay)) {
     document.getElementById('settlementError').innerHTML = '❌ Please fill in all actual settlement amounts.';
     document.getElementById('settlementError').style.display = 'block';
     return;
   }
 
+  // Get system totals
   const sysCash = parseFloat(document.getElementById('sysCash').innerText.replace('RM ', '')) || 0;
   const sysCard = parseFloat(document.getElementById('sysCard').innerText.replace('RM ', '')) || 0;
   const sysQR = parseFloat(document.getElementById('sysQR').innerText.replace('RM ', '')) || 0;
@@ -10195,6 +10199,7 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
   let errors = [];
   let wrongFields = [];
 
+  // Check for discrepancies
   if (currentEmployee.isAdmin) {
     if (Math.abs(actualCash - sysCash) > 0.01) {
       errors.push(`Cash: system RM ${sysCash.toFixed(2)} vs actual RM ${actualCash.toFixed(2)}`);
@@ -10213,29 +10218,32 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
       wrongFields.push('actualAlipay');
     }
   } else {
+    // Non-admin: simpler error messages
     if (Math.abs(actualCash - sysCash) > 0.01) {
-      errors.push('Cash: WRONG , COUNT AGAIN');
+      errors.push('Cash: WRONG, COUNT AGAIN');
       wrongFields.push('actualCash');
     }
     if (Math.abs(actualCard - sysCard) > 0.01) {
-      errors.push('Card: WRONG , COUNT AGAIN');
+      errors.push('Card: WRONG, COUNT AGAIN');
       wrongFields.push('actualCard');
     }
     if (Math.abs(actualQR - sysQR) > 0.01) {
-      errors.push('QR Pay: WRONG , COUNT AGAIN');
+      errors.push('QR Pay: WRONG, COUNT AGAIN');
       wrongFields.push('actualQR');
     }
     if (Math.abs(actualAlipay - sysAlipay) > 0.01) {
-      errors.push('Alipay: WRONG , COUNT AGAIN');
+      errors.push('Alipay: WRONG, COUNT AGAIN');
       wrongFields.push('actualAlipay');
     }
   }
 
+  // Highlight fields with errors
   wrongFields.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('error-field');
   });
 
+  // Show errors if any
   if (errors.length > 0) {
     document.getElementById('settlementError').innerHTML = errors.join('<br>');
     document.getElementById('settlementError').style.display = 'block';
@@ -10243,14 +10251,18 @@ document.getElementById('checkSettlementBtn')?.addEventListener('click', async (
     document.getElementById('checkSettlementBtn').style.display = 'block';
     return;
   }
+
+  // If no errors, proceed to record
   setSettlementFieldsEnabled(false);
   document.getElementById('settlementError').style.display = 'none';
   document.getElementById('checkSettlementBtn').style.display = 'none';
   document.getElementById('recordSettlementBtn').style.display = 'block';
 });
-// Record Settlement button
+
+// Record Settlement button - COMPLETE VERSION WITH DUPLICATE PREVENTION
 document.getElementById('recordSettlementBtn')?.addEventListener('click', async () => {
   showLoading('Recording settlement...');
+  
   const store = document.getElementById('settlementStoreSelect').value;
   const pettyCash = parseFloat(document.getElementById('pettyCashFloat').value) || 0;
   const actualCash = parseFloat(document.getElementById('actualCash').value);
@@ -10266,6 +10278,26 @@ document.getElementById('recordSettlementBtn')?.addEventListener('click', async 
   const todayStr = getLocalDateString(new Date());
 
   try {
+    // ✅ STEP 1: CHECK FOR DUPLICATE BEFORE SENDING
+    showLoading('Checking for existing settlement...');
+    
+    // Check if settlement already exists for this store/date
+    const checkUrl = `${APPS_SCRIPT_URL}?action=getSettlementStatus&store=${store}&date=${todayStr}&_=${Date.now()}`;
+    const checkResponse = await fetch(checkUrl);
+    const checkResult = await checkResponse.json();
+    
+    if (checkResult.success && checkResult.settled) {
+      hideLoading();
+      await showAlertModal('Duplicate Settlement', 
+        `⚠️ Settlement for ${store} on ${todayStr} has already been recorded.\n\n` +
+        `If you need to view it, check the settlement history.`);
+      document.getElementById('settlementModal').style.display = 'none';
+      return;
+    }
+
+    // ✅ STEP 2: NO DUPLICATE FOUND - PROCEED WITH RECORDING
+    showLoading('Recording settlement...');
+    
     const formData = new URLSearchParams();
     formData.append('action', 'recordSettlement');
     formData.append('store', store);
@@ -10285,8 +10317,19 @@ document.getElementById('recordSettlementBtn')?.addEventListener('click', async 
     const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData });
     const result = await response.json();
 
+    // ✅ STEP 3: HANDLE DUPLICATE RESPONSE (BACKUP CHECK)
+    if (result.duplicated) {
+      hideLoading();
+      await showAlertModal('Duplicate Settlement', 
+        `⚠️ Settlement for ${store} on ${todayStr} has already been recorded.\n\n` +
+        `If you need to view it, check the settlement history.`);
+      document.getElementById('settlementModal').style.display = 'none';
+      await refreshSettlementTotals(store);
+      return;
+    }
+
     if (result.success) {
-      await showAlertModal('Settlement Recorded', `Settlement for ${store} on ${todayStr} has been saved.`);
+      await showAlertModal('Settlement Recorded', `✅ Settlement for ${store} on ${todayStr} has been saved.`);
 
       // ✅ Check printer connection before printing
       if (!isPrinterConnected) {
@@ -10296,14 +10339,15 @@ document.getElementById('recordSettlementBtn')?.addEventListener('click', async 
           hideLoading();
         } catch (err) {
           hideLoading();
-          await showAlertModal('Printer Connection Failed', 'Could not connect to printer. Settlement recorded but report not printed.');
+          await showAlertModal('Printer Connection Failed', 
+            '⚠️ Could not connect to printer.\nSettlement recorded but report not printed.');
           document.getElementById('settlementModal').style.display = 'none';
           await refreshSettlementTotals(store);
           return;
         }
       }
 
-      // ✅ Print settlement report – pass the captured pettyCash variable directly
+      // ✅ Print settlement report
       const totals = {
         cashSystem: sysCash,
         cardSystem: sysCard,
@@ -10314,7 +10358,7 @@ document.getElementById('recordSettlementBtn')?.addEventListener('click', async 
         cardActual: actualCard,
         qrActual: actualQR,
         alipayActual: actualAlipay,
-        pettyCash: pettyCash   // <-- use the captured value
+        pettyCash: pettyCash
       };
       await printSettlementReport(store, todayStr, totals);
 
@@ -10324,8 +10368,9 @@ document.getElementById('recordSettlementBtn')?.addEventListener('click', async 
       throw new Error(result.error || 'Unknown error');
     }
   } catch (err) {
-    console.error(err);
-    await showAlertModal('Error', 'Failed to record settlement: ' + err.message);
+    console.error('Settlement error:', err);
+    hideLoading();
+    await showAlertModal('Error', '❌ Failed to record settlement: ' + err.message);
   } finally {
     hideLoading();
   }

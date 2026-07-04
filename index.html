@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3071,23 +3072,6 @@ function resetLoginBarcodeBuffer() {
     clearTimeout(loginBarcodeTimer);
     loginBarcodeTimer = null;
   }
-}
-// Place this at the VERY TOP of your script, before anything else
-function setSettlementFieldsEnabled(enabled) {
-  const fields = ['settlementStoreSelect', 'pettyCashFloat', 'actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
-  const isNonAdmin = !currentEmployee?.isAdmin;
-  fields.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      if (id === 'settlementStoreSelect' && isNonAdmin) {
-        el.disabled = true;
-      } else {
-        el.disabled = !enabled;
-      }
-    }
-  });
-  const checkBtn = document.getElementById('checkSettlementBtn');
-  if (checkBtn) checkBtn.disabled = !enabled;
 }
 // Fetch all settlement records for a specific store
 async function fetchSettlementsForStore(store) {
@@ -8781,7 +8765,6 @@ async function openSettlementModal() {
  async function refreshSettlementTotals(store, silent = false) {
   const todayStr = getUTCDateString(new Date());
   const report = await fetchSalesReport(store, 'all', todayStr, todayStr, true, silent);
-  
   if (report) {
     const cash = report.cashTotal !== undefined ? report.cashTotal : 0;
     const card = report.cardTotal !== undefined ? report.cardTotal : 0;
@@ -8807,65 +8790,19 @@ async function openSettlementModal() {
       const sysNetTotal = document.getElementById('sysNetTotal');
       if (sysNetTotal) sysNetTotal.innerText = `RM ${netTotal.toFixed(2)}`;
 
-      // ✅ CHECK FOR UNSETTLED BILLS FIRST
-      const unsettledCount = await getUnsettledBillCount(store);
-      console.log(`📊 Unsettled bills for ${store}: ${unsettledCount}`);
-      
       const alreadySettled = await checkSettlementStatus(store, todayStr);
-      
-      // ✅ Only block if settlement exists AND no unsettled bills
-      if (alreadySettled && unsettledCount === 0) {
-        // ❌ BLOCK - Settlement exists and no unsettled bills
+      if (alreadySettled) {
         const settlementError = document.getElementById('settlementError');
         if (settlementError) {
           settlementError.innerHTML = '⚠️ Settlement has already been recorded for today. No further settlement allowed.';
           settlementError.style.display = 'block';
-          settlementError.style.color = '#ef4444';
         }
         const checkBtn = document.getElementById('checkSettlementBtn');
-        if (checkBtn) {
-          checkBtn.disabled = true;
-          checkBtn.style.display = 'block';
-        }
+        if (checkBtn) checkBtn.disabled = true;
         const recordBtn = document.getElementById('recordSettlementBtn');
         if (recordBtn) recordBtn.style.display = 'none';
         setSettlementFieldsEnabled(false);
-        
-      } else if (alreadySettled && unsettledCount > 0) {
-        // ✅ ALLOW - Settlement exists but has unsettled bills
-        const settlementError = document.getElementById('settlementError');
-        if (settlementError) {
-          settlementError.innerHTML = `⚠️ Settlement already recorded but ${unsettledCount} unsettled bill(s) found. You can re-settle.`;
-          settlementError.style.display = 'block';
-          settlementError.style.color = '#f59e0b'; // Amber color for warning
-        }
-        // Enable everything
-        setSettlementFieldsEnabled(true);
-        const actualCash = document.getElementById('actualCash');
-        if (actualCash) actualCash.value = '';
-        const actualCard = document.getElementById('actualCard');
-        if (actualCard) actualCard.value = '';
-        const actualQR = document.getElementById('actualQR');
-        if (actualQR) actualQR.value = '';
-        const actualAlipay = document.getElementById('actualAlipay');
-        if (actualAlipay) actualAlipay.value = '';
-        const pettyCash = document.getElementById('pettyCashFloat');
-        if (pettyCash) pettyCash.value = '0.00';
-        const checkBtn = document.getElementById('checkSettlementBtn');
-        if (checkBtn) {
-          checkBtn.style.display = 'block';
-          checkBtn.disabled = false;
-        }
-        const recordBtn = document.getElementById('recordSettlementBtn');
-        if (recordBtn) recordBtn.style.display = 'none';
-        const errorFields = ['actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
-        errorFields.forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.classList.remove('error-field');
-        });
-        
       } else {
-        // ✅ ALLOW - No settlement exists
         setSettlementFieldsEnabled(true);
         const actualCash = document.getElementById('actualCash');
         if (actualCash) actualCash.value = '';
@@ -8900,17 +8837,26 @@ async function openSettlementModal() {
     console.error('refreshSettlementTotals: report is null');
   }
 }
-async function getUnsettledBillCount(store) {
-  try {
-    const url = `${APPS_SCRIPT_URL}?action=getUnsettledBillCount&store=${store}`;
-    const response = await fetch(url);
-    const result = await response.json();
-    return result.success ? result.count : 0;
-  } catch (err) {
-    console.error('Error getting unsettled bill count:', err);
-    return 0;
+
+  let currentSettlementTotals = null;
+
+  function setSettlementFieldsEnabled(enabled) {
+    const fields = ['settlementStoreSelect', 'pettyCashFloat', 'actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
+    const isNonAdmin = !currentEmployee?.isAdmin;
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (id === 'settlementStoreSelect' && isNonAdmin) {
+          el.disabled = true;
+        } else {
+          el.disabled = !enabled;
+        }
+      }
+    });
+    const checkBtn = document.getElementById('checkSettlementBtn');
+    if (checkBtn) checkBtn.disabled = !enabled;
   }
-}
+
 // ==================== PRINTER SETUP ====================
 let gattServer = null;
 let printerCharacteristic = null;

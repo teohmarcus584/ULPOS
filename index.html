@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -3071,6 +3071,23 @@ function resetLoginBarcodeBuffer() {
     clearTimeout(loginBarcodeTimer);
     loginBarcodeTimer = null;
   }
+}
+// Place this at the VERY TOP of your script, before anything else
+function setSettlementFieldsEnabled(enabled) {
+  const fields = ['settlementStoreSelect', 'pettyCashFloat', 'actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
+  const isNonAdmin = !currentEmployee?.isAdmin;
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      if (id === 'settlementStoreSelect' && isNonAdmin) {
+        el.disabled = true;
+      } else {
+        el.disabled = !enabled;
+      }
+    }
+  });
+  const checkBtn = document.getElementById('checkSettlementBtn');
+  if (checkBtn) checkBtn.disabled = !enabled;
 }
 // Fetch all settlement records for a specific store
 async function fetchSettlementsForStore(store) {
@@ -8764,6 +8781,7 @@ async function openSettlementModal() {
  async function refreshSettlementTotals(store, silent = false) {
   const todayStr = getUTCDateString(new Date());
   const report = await fetchSalesReport(store, 'all', todayStr, todayStr, true, silent);
+  
   if (report) {
     const cash = report.cashTotal !== undefined ? report.cashTotal : 0;
     const card = report.cardTotal !== undefined ? report.cardTotal : 0;
@@ -8797,18 +8815,24 @@ async function openSettlementModal() {
       
       // ✅ Only block if settlement exists AND no unsettled bills
       if (alreadySettled && unsettledCount === 0) {
+        // ❌ BLOCK - Settlement exists and no unsettled bills
         const settlementError = document.getElementById('settlementError');
         if (settlementError) {
           settlementError.innerHTML = '⚠️ Settlement has already been recorded for today. No further settlement allowed.';
           settlementError.style.display = 'block';
+          settlementError.style.color = '#ef4444';
         }
         const checkBtn = document.getElementById('checkSettlementBtn');
-        if (checkBtn) checkBtn.disabled = true;
+        if (checkBtn) {
+          checkBtn.disabled = true;
+          checkBtn.style.display = 'block';
+        }
         const recordBtn = document.getElementById('recordSettlementBtn');
         if (recordBtn) recordBtn.style.display = 'none';
         setSettlementFieldsEnabled(false);
+        
       } else if (alreadySettled && unsettledCount > 0) {
-        // ✅ Allow settlement if there are unsettled bills
+        // ✅ ALLOW - Settlement exists but has unsettled bills
         const settlementError = document.getElementById('settlementError');
         if (settlementError) {
           settlementError.innerHTML = `⚠️ Settlement already recorded but ${unsettledCount} unsettled bill(s) found. You can re-settle.`;
@@ -8839,8 +8863,9 @@ async function openSettlementModal() {
           const el = document.getElementById(id);
           if (el) el.classList.remove('error-field');
         });
+        
       } else {
-        // ✅ No settlement exists - normal flow
+        // ✅ ALLOW - No settlement exists
         setSettlementFieldsEnabled(true);
         const actualCash = document.getElementById('actualCash');
         if (actualCash) actualCash.value = '';

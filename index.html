@@ -1641,7 +1641,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
- 
+
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -2226,7 +2226,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9Cj_rRexKskdImOg2vr7p2l4Zjj9bief_B2NDZItWmqnZSnBnR3PzYsLJ7BaUYGeU2A/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKbOQ5eBnTzRoX0B0xstycvT0xG-gS9M5b7LcVmaD55VmtoMJ7aiuujPAJHbs0MYkGLA/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -8789,8 +8789,14 @@ async function openSettlementModal() {
       const sysNetTotal = document.getElementById('sysNetTotal');
       if (sysNetTotal) sysNetTotal.innerText = `RM ${netTotal.toFixed(2)}`;
 
+      // ✅ CHECK FOR UNSETTLED BILLS FIRST
+      const unsettledCount = await getUnsettledBillCount(store);
+      console.log(`📊 Unsettled bills for ${store}: ${unsettledCount}`);
+      
       const alreadySettled = await checkSettlementStatus(store, todayStr);
-      if (alreadySettled) {
+      
+      // ✅ Only block if settlement exists AND no unsettled bills
+      if (alreadySettled && unsettledCount === 0) {
         const settlementError = document.getElementById('settlementError');
         if (settlementError) {
           settlementError.innerHTML = '⚠️ Settlement has already been recorded for today. No further settlement allowed.';
@@ -8801,7 +8807,40 @@ async function openSettlementModal() {
         const recordBtn = document.getElementById('recordSettlementBtn');
         if (recordBtn) recordBtn.style.display = 'none';
         setSettlementFieldsEnabled(false);
+      } else if (alreadySettled && unsettledCount > 0) {
+        // ✅ Allow settlement if there are unsettled bills
+        const settlementError = document.getElementById('settlementError');
+        if (settlementError) {
+          settlementError.innerHTML = `⚠️ Settlement already recorded but ${unsettledCount} unsettled bill(s) found. You can re-settle.`;
+          settlementError.style.display = 'block';
+          settlementError.style.color = '#f59e0b'; // Amber color for warning
+        }
+        // Enable everything
+        setSettlementFieldsEnabled(true);
+        const actualCash = document.getElementById('actualCash');
+        if (actualCash) actualCash.value = '';
+        const actualCard = document.getElementById('actualCard');
+        if (actualCard) actualCard.value = '';
+        const actualQR = document.getElementById('actualQR');
+        if (actualQR) actualQR.value = '';
+        const actualAlipay = document.getElementById('actualAlipay');
+        if (actualAlipay) actualAlipay.value = '';
+        const pettyCash = document.getElementById('pettyCashFloat');
+        if (pettyCash) pettyCash.value = '0.00';
+        const checkBtn = document.getElementById('checkSettlementBtn');
+        if (checkBtn) {
+          checkBtn.style.display = 'block';
+          checkBtn.disabled = false;
+        }
+        const recordBtn = document.getElementById('recordSettlementBtn');
+        if (recordBtn) recordBtn.style.display = 'none';
+        const errorFields = ['actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
+        errorFields.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.remove('error-field');
+        });
       } else {
+        // ✅ No settlement exists - normal flow
         setSettlementFieldsEnabled(true);
         const actualCash = document.getElementById('actualCash');
         if (actualCash) actualCash.value = '';
@@ -8836,26 +8875,17 @@ async function openSettlementModal() {
     console.error('refreshSettlementTotals: report is null');
   }
 }
-
-  let currentSettlementTotals = null;
-
-  function setSettlementFieldsEnabled(enabled) {
-    const fields = ['settlementStoreSelect', 'pettyCashFloat', 'actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
-    const isNonAdmin = !currentEmployee?.isAdmin;
-    fields.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-        if (id === 'settlementStoreSelect' && isNonAdmin) {
-          el.disabled = true;
-        } else {
-          el.disabled = !enabled;
-        }
-      }
-    });
-    const checkBtn = document.getElementById('checkSettlementBtn');
-    if (checkBtn) checkBtn.disabled = !enabled;
+async function getUnsettledBillCount(store) {
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=getUnsettledBillCount&store=${store}`;
+    const response = await fetch(url);
+    const result = await response.json();
+    return result.success ? result.count : 0;
+  } catch (err) {
+    console.error('Error getting unsettled bill count:', err);
+    return 0;
   }
-
+}
 // ==================== PRINTER SETUP ====================
 let gattServer = null;
 let printerCharacteristic = null;

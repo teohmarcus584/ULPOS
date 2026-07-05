@@ -1638,6 +1638,65 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   border-left: 4px solid #ef4444;
   box-shadow: 0 1px 3px rgba(239,68,68,0.2);
 }
+/* Stock take list view */
+.product-list .stock-take-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  gap: 12px;
+}
+
+.product-list .stock-take-card .product-name {
+  flex: 2;
+  min-width: 120px;
+  margin-bottom: 0;
+}
+
+.product-list .stock-take-card .product-category {
+  min-width: 100px;
+}
+
+.product-list .stock-take-card .product-price {
+  min-width: 80px;
+  margin: 0;
+}
+
+.product-list .stock-take-card .product-stock {
+  min-width: 80px;
+  margin: 0;
+}
+
+.product-list .stock-take-card .diff-badge {
+  margin: 0 !important;
+}
+
+.product-list .stock-take-card > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Mobile responsive */
+@media (max-width: 780px) {
+  .product-list .stock-take-card {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  .product-list .stock-take-card .product-name,
+  .product-list .stock-take-card .product-category,
+  .product-list .stock-take-card .product-price,
+  .product-list .stock-take-card .product-stock {
+    text-align: center;
+    min-width: auto;
+  }
+  .product-list .stock-take-card > div:last-child {
+    justify-content: center;
+  }
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -5616,7 +5675,9 @@ function renderStockTakeProductGrid() {
     </div>
   `;
   
-  html += '<div class="product-grid" id="stockTakeGrid">';
+  // ✅ FIX: Use the correct class based on viewMode
+  const containerClass = viewMode === 'grid' ? 'product-grid' : 'product-list';
+  html += `<div class="${containerClass}" id="stockTakeGrid">`;
   
   filtered.forEach(prod => {
     const existing = stockTakeData[prod.id];
@@ -5634,8 +5695,11 @@ function renderStockTakeProductGrid() {
       diffColor = '#94a3b8'; diffBg = '#ffffff'; borderColor = '1px solid #e2e8f0'; diffText = 'Not counted';
     }
     
+    // ✅ FIX: Add list-view specific class when in list mode
+    const cardClass = viewMode === 'grid' ? 'product-card' : 'product-card product-list-card';
+    
     html += `
-      <div class="product-card stock-take-card" data-id="${prod.id}" style="border: ${borderColor}; background: ${diffBg};">
+      <div class="${cardClass} stock-take-card" data-id="${prod.id}" style="border: ${borderColor}; background: ${diffBg};">
         <div class="product-name">${escapeHtml(prod.name)}</div>
         <div class="product-category">${escapeHtml(prod.category)}</div>
         <div class="product-price">RM ${prod.price.toFixed(2)}</div>
@@ -5670,7 +5734,7 @@ function renderStockTakeProductGrid() {
     scrollContainer.scrollTop = savedScroll;
   }
   
-  // ✅ ATTACH EVENT LISTENERS - JUST LIKE NORMAL CHECKOUT!
+  // ✅ ATTACH EVENT LISTENERS
   attachStockTakeEvents();
 }
 

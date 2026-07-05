@@ -1700,7 +1700,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-
+ 
 <body>
 <!-- Store Select Modal -->
 <div id="storeSelectModal" class="modal-overlay" style="display: flex;">
@@ -5700,7 +5700,7 @@ function renderStockTakeProductGrid() {
       <div class="${cardClass} stock-take-card" data-id="${prod.id}" style="border: ${borderColor}; background: ${diffBg};">
         <div class="product-name">${escapeHtml(prod.name)}</div>
         <div class="product-category">${escapeHtml(prod.category)}</div>
-        <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+        <!-- ✅ PRICE HIDDEN IN STOCK TAKE MODE -->
         <div class="product-stock" style="font-weight:600; color:#0f172a;">📊 System: ${prod.stock}</div>
         <div class="diff-badge" style="margin: 4px 0 8px 0; font-weight:700; color:${diffColor}; font-size:0.9rem; background:${diffBg}; padding:2px 12px; border-radius:12px; display:inline-block; border:1px solid ${diffColor};">
           ${diffText}

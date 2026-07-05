@@ -2285,7 +2285,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoOdc5UGfYB0UzNU5eSEAeMyT_DbIswfKFkUzYfpQerfGf7dD01fAl-FeXH0Ur6JoL/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx_y0SoLIHKUuf2_duL6PfYW17fOvhIEU1cN0EuPn-DgQhblHjMJw92UclHvXEY2TZ8og/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -9309,7 +9309,19 @@ commands.push(0x1B, 0x61, 0x01);    // center alignment
     return false;
   }
 }
-
+function getProductCountByStore(store) {
+  // This would require a backend call to get the count
+  // Or you can just display the total products loaded
+  return products.length;
+}
+// In the POS header or product panel
+function updateStoreProductCount() {
+  const count = products.length;
+  const countElement = document.getElementById('productCountDisplay');
+  if (countElement) {
+    countElement.innerText = `${count} products`;
+  }
+}
 async function connectPrinter() {
   return new Promise(async (resolve, reject) => {
     try {
@@ -9373,10 +9385,14 @@ window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer
 function renderProductGrid() {
   const searchTerm = searchInput.value.toLowerCase();
   const selectedCategory = categorySelect.value;
- if (stockTakeMode) {
+  
+  // ✅ Check stock take mode FIRST
+  if (stockTakeMode) {
     renderStockTakeProductGrid();
     return;
   }
+  
+  // ✅ Category view mode (when "All Categories" is selected and NOT in inventory mode)
   if (selectedCategory === 'all' && !inventoryMode) {
     const categories = [...new Set(products.map(p => p.category))];
     let filteredCategories = categories;
@@ -9424,11 +9440,13 @@ function renderProductGrid() {
     return;
   }
 
+  // ✅ Show/hide back button
   const backBtn = document.getElementById('backToCategoriesBtn');
   if (backBtn) {
     backBtn.style.display = (selectedCategory !== 'all' && !inventoryMode) ? 'inline-flex' : 'none';
   }
 
+  // ✅ NOW define filtered (AFTER all the early returns)
   let filtered = products.slice();
   if (selectedCategory !== 'all') {
     filtered = filtered.filter(p => p.category === selectedCategory);
@@ -9440,6 +9458,7 @@ function renderProductGrid() {
     filtered = filtered.filter(p => p.stock < LOW_STOCK_THRESHOLD);
   }
 
+  // ✅ Check if products are loading
   if (products.length === 0) {
     productGridEl.innerHTML = `
       <div style="text-align:center; padding:20px;">
@@ -9453,12 +9472,27 @@ function renderProductGrid() {
     return;
   }
 
+  // ✅ Check if filtered is empty (NO PRODUCTS for this store due to highlighting)
+  if (filtered.length === 0 && products.length > 0) {
+    productGridEl.innerHTML = `
+      <div style="text-align:center; padding:20px; color:#64748b;">
+        <div style="font-size:2rem; margin-bottom:12px;">📦</div>
+        <div>No products available for this store.</div>
+        <div style="font-size:0.85rem; margin-top:8px;">Please highlight products in the Google Sheet.</div>
+      </div>
+    `;
+    productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
+    return;
+  }
+
+  // ✅ Check if no products match filters
   if (filtered.length === 0) {
     productGridEl.innerHTML = '<div style="text-align:center; padding:20px;">No products match your filters.</div>';
     productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
     return;
   }
 
+  // ✅ Build product grid/list
   let html = '';
   filtered.forEach(prod => {
     const isLowStock = prod.stock < LOW_STOCK_THRESHOLD;
@@ -9475,65 +9509,66 @@ function renderProductGrid() {
           <button class="inventory-btn inc-stock" data-id="${prod.id}">+</button>
         </div>
       </div>`;
-   } else {
-  // Determine the additional visual class:
-  let additionalClass = '';
-  if (!inventoryMode && prod.stock <= 0) {
-    additionalClass = 'out-of-stock-card';
-  } else if (inventoryMode && prod.stock < LOW_STOCK_THRESHOLD) {
-    additionalClass = 'low-stock-card';   // keep inventory low‑stock style
-  }
-  const stockStatus = `📦 Stock: ${prod.stock}`;
-  html += `<div class="product-card ${additionalClass}" data-id="${prod.id}">
-      <div class="product-name">${escapeHtml(prod.name)}</div>
-      <div class="product-category">${escapeHtml(prod.category)}</div>
-      <div class="product-price">RM ${prod.price.toFixed(2)}</div>
-      <div class="product-stock">${stockStatus}</div>
-    </div>`;
-}
+    } else {
+      // Determine the additional visual class:
+      let additionalClass = '';
+      if (!inventoryMode && prod.stock <= 0) {
+        additionalClass = 'out-of-stock-card';
+      } else if (inventoryMode && prod.stock < LOW_STOCK_THRESHOLD) {
+        additionalClass = 'low-stock-card';
+      }
+      const stockStatus = `📦 Stock: ${prod.stock}`;
+      html += `<div class="product-card ${additionalClass}" data-id="${prod.id}">
+        <div class="product-name">${escapeHtml(prod.name)}</div>
+        <div class="product-category">${escapeHtml(prod.category)}</div>
+        <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+        <div class="product-stock">${stockStatus}</div>
+      </div>`;
+    }
   });
 
   productGridEl.innerHTML = html;
   productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
 
+  // ✅ Inventory mode event listeners
   if (inventoryMode) {
     // Helper to update stock from a new numeric value
-const updateStockForProduct = (productId, newStock, delta) => {
-    const product = products.find(p => p.id == productId);
-    if (!product) return;
-    const oldStock = product.stock;
-    if (newStock === oldStock) return;
+    const updateStockForProduct = (productId, newStock, delta) => {
+      const product = products.find(p => p.id == productId);
+      if (!product) return;
+      const oldStock = product.stock;
+      if (newStock === oldStock) return;
 
-    // Apply immediate local update
-    product.stock = newStock;
+      // Apply immediate local update
+      product.stock = newStock;
 
-    // Update input field if present
-    const inputField = document.querySelector(`.stock-input[data-id="${productId}"]`);
-    if (inputField) inputField.value = newStock;
+      // Update input field if present
+      const inputField = document.querySelector(`.stock-input[data-id="${productId}"]`);
+      if (inputField) inputField.value = newStock;
 
-    // Debounce the history logging and server sync
-    debouncedStockChange(productId, product, delta, newStock);
+      // Debounce the history logging and server sync
+      debouncedStockChange(productId, product, delta, newStock);
 
-    // Schedule server update (still debounced – we keep it separate)
-    scheduleStockUpdate(productId, newStock);
+      // Schedule server update (still debounced – we keep it separate)
+      scheduleStockUpdate(productId, newStock);
 
-    // Refresh low‑stock category highlighting
-    refreshCategoryHighlighting();
-};
+      // Refresh low‑stock category highlighting
+      refreshCategoryHighlighting();
+    };
 
     // Dec button
     document.querySelectorAll('.dec-stock').forEach(btn => {
-     btn.addEventListener('click', (e) => {
-    const id = btn.dataset.id;
-    const input = document.querySelector(`.stock-input[data-id="${id}"]`);
-    if (input) {
-        let newVal = parseInt(input.value) - 1;
-        if (isNaN(newVal)) newVal = 0;
-        if (newVal < 0) newVal = 0;
-        updateStockForProduct(id, newVal, -1);
-    }
-    e.stopPropagation();
-});
+      btn.addEventListener('click', (e) => {
+        const id = btn.dataset.id;
+        const input = document.querySelector(`.stock-input[data-id="${id}"]`);
+        if (input) {
+          let newVal = parseInt(input.value) - 1;
+          if (isNaN(newVal)) newVal = 0;
+          if (newVal < 0) newVal = 0;
+          updateStockForProduct(id, newVal, -1);
+        }
+        e.stopPropagation();
+      });
     });
 
     // Inc button

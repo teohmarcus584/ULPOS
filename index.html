@@ -2573,7 +2573,7 @@ function setCachedStoreReport(store, from, to, data) {
 // Automatically select closest store when the modal appears
 (async function autoSelectOnLoad() {
  loadAndCacheEmployees().catch(console.warn);
-  preloadAllStoresData(); // 👈 add this line
+  
   const storeDisplaySpan = document.getElementById('selectedStoreDisplay');
   const storeValueHidden = document.getElementById('initialStoreValue');
   const retryBtn = document.getElementById('retryLocationBtn');
@@ -4003,49 +4003,103 @@ async function addNewProduct() {
 
   // ==================== PRELOAD ALL STORES IN BACKGROUND ====================
   async function preloadAllStoresData() {
-    const stores = ["queens", "sunshine", "gurney_paragon"];
-    stores.forEach(store => {
-      preloadProductsForStore(store).catch(err => console.warn(`Preload failed for ${store}:`, err));
-    });
-  }
+  const stores = ["queens", "sunshine", "gurney_paragon"];
+  // Preload in parallel with Promise.allSettled to prevent one failure from stopping others
+  const results = await Promise.allSettled(
+    stores.map(store => preloadProductsForStore(store))
+  );
+  
+  // Log summary
+  const succeeded = results.filter(r => r.status === 'fulfilled').length;
+  const failed = results.filter(r => r.status === 'rejected').length;
+  console.log(`📊 Preload summary: ${succeeded} succeeded, ${failed} failed`);
+}
 
-  async function preloadProductsForStore(store) {
-    try {
-      const cacheKey = `products_${store}`;
-      const now = Date.now();
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        const { timestamp, products: cachedProducts } = JSON.parse(cached);
-      if (now - timestamp < 60 * 1000) {   // 1 second
-          const empResponse = await fetch(`${APPS_SCRIPT_URL}?action=getEmployees`);
-          const empResult = await empResponse.json();
+ async function preloadProductsForStore(store) {
+  try {
+    const cacheKey = `products_${store}`;
+    const now = Date.now();
+    const cached = localStorage.getItem(cacheKey);
+    
+    // Check cache first
+    if (cached) {
+      const { timestamp, products: cachedProducts } = JSON.parse(cached);
+      // Use cache if less than 5 minutes old
+      if (now - timestamp < 5 * 60 * 1000) {
+        const empResponse = await fetch(`${APPS_SCRIPT_URL}?action=getEmployees`).catch(() => null);
+        let employees = [];
+        if (empResponse) {
+          const empResult = await empResponse.json().catch(() => ({}));
           if (empResult.success) {
-            preloadedDataMap[store] = {
-              products: cachedProducts,
-              employees: empResult.employees
-            };
-          } else {
-            preloadedDataMap[store] = { products: cachedProducts, employees: [] };
+            employees = empResult.employees;
           }
-          return;
         }
+        preloadedDataMap[store] = {
+          products: cachedProducts,
+          employees: employees
+        };
+        return;
       }
+    }
+    
+    // Fetch fresh data with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    try {
       const url = `${APPS_SCRIPT_URL}?action=getInitialData&store=${store}&_=${now}`;
-      const response = await fetch(url);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const result = await response.json();
       if (result.success) {
-  // Sort products alphabetically by name
-  const sortedProducts = result.products.sort((a, b) => a.name.localeCompare(b.name));
-  preloadedDataMap[store] = {
-    products: sortedProducts,
-    employees: result.employees
-  };
-  localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: sortedProducts }));
-}
-    } catch (err) {
-      console.error(`Preload failed for ${store}:`, err);
+        const sortedProducts = result.products.sort((a, b) => a.name.localeCompare(b.name));
+        preloadedDataMap[store] = {
+          products: sortedProducts,
+          employees: result.employees || []
+        };
+        localStorage.setItem(cacheKey, JSON.stringify({ 
+          timestamp: now, 
+          products: sortedProducts 
+        }));
+        console.log(`✅ Preloaded ${sortedProducts.length} products for ${store}`);
+      } else {
+        throw new Error(result.error || 'Invalid response');
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        console.warn(`⏱️ Preload timeout for ${store}`);
+      } else {
+        throw fetchError;
+      }
+    }
+  } catch (err) {
+    // ✅ SILENTLY FAIL - don't show error to user
+    console.warn(`⚠️ Preload failed for ${store}:`, err.message);
+    // Try to use cached data if available even if expired
+    try {
+      const cacheKey = `products_${store}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const { products: cachedProducts } = JSON.parse(cached);
+        if (cachedProducts && cachedProducts.length > 0) {
+          preloadedDataMap[store] = {
+            products: cachedProducts,
+            employees: []
+          };
+          console.log(`📦 Using stale cache for ${store} (${cachedProducts.length} products)`);
+        }
+      }
+    } catch (cacheErr) {
+      // Ignore cache errors too
     }
   }
+}
 
   // ==================== INITIAL DATA LOAD ====================
  async function loadInitialData() {

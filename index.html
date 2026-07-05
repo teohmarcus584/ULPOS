@@ -5661,7 +5661,7 @@ function renderStockTakeProductGrid() {
     <div id="stockTakeHeader" style="margin-bottom:16px; padding:12px 16px; background:#f0fdf4; border-radius:16px; border:1px solid #10b981; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
       <div>
         <strong style="font-size:1.1rem;">📋 Stock Take Mode</strong>
-        <span style="font-size:0.9rem; color:#64748b; margin-left:12px;">Products: ${filtered.length} | Counted: ${countedCount}</span>
+        <span style="font-size:0.9rem; color:#64748b; margin-left:12px;">Products: ${filtered.length} | ✅ Counted: ${countedCount}</span>
       </div>
       <div style="display:flex; gap:16px; font-size:0.85rem;">
         ${diffCount > 0 ? `
@@ -5675,7 +5675,6 @@ function renderStockTakeProductGrid() {
     </div>
   `;
   
-  // ✅ FIX: Use the correct class based on viewMode
   const containerClass = viewMode === 'grid' ? 'product-grid' : 'product-list';
   html += `<div class="${containerClass}" id="stockTakeGrid">`;
   
@@ -5695,7 +5694,6 @@ function renderStockTakeProductGrid() {
       diffColor = '#94a3b8'; diffBg = '#ffffff'; borderColor = '1px solid #e2e8f0'; diffText = 'Not counted';
     }
     
-    // ✅ FIX: Add list-view specific class when in list mode
     const cardClass = viewMode === 'grid' ? 'product-card' : 'product-card product-list-card';
     
     html += `
@@ -5703,11 +5701,11 @@ function renderStockTakeProductGrid() {
         <div class="product-name">${escapeHtml(prod.name)}</div>
         <div class="product-category">${escapeHtml(prod.category)}</div>
         <div class="product-price">RM ${prod.price.toFixed(2)}</div>
-        <div class="product-stock" style="font-weight:600; color:#0f172a;">Current: ${prod.stock}</div>
+        <div class="product-stock" style="font-weight:600; color:#0f172a;">📊 System: ${prod.stock}</div>
         <div class="diff-badge" style="margin: 4px 0 8px 0; font-weight:700; color:${diffColor}; font-size:0.9rem; background:${diffBg}; padding:2px 12px; border-radius:12px; display:inline-block; border:1px solid ${diffColor};">
           ${diffText}
         </div>
-        <div style="margin-top:8px; display:flex; align-items:center; justify-content:center; gap:8px;">
+        <div style="margin-top:8px; display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;">
           <button type="button" class="stock-take-btn" data-action="dec" data-id="${prod.id}" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:30px; font-weight:bold; font-size:1.2rem; cursor:pointer;">−</button>
           <input type="number" class="stock-take-input" data-id="${prod.id}" value="${countedValue}" placeholder="${prod.stock}" style="width:80px; padding:8px; border-radius:20px; border:2px solid ${existing ? (difference !== 0 ? (difference > 0 ? '#2c7a4b' : '#dc2626') : '#10b981') : '#cbd5e1'}; text-align:center; font-weight:600; background:${existing ? (difference !== 0 ? (difference > 0 ? '#f0fdf4' : '#fef2f2') : '#f0fdf4') : 'white'};">
           <button type="button" class="stock-take-btn" data-action="inc" data-id="${prod.id}" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:30px; font-weight:bold; font-size:1.2rem; cursor:pointer;">+</button>
@@ -5721,20 +5719,20 @@ function renderStockTakeProductGrid() {
   
   html += '</div>';
   
-  // ✅ SAVE SCROLL POSITION
+  // SAVE SCROLL POSITION
   const scrollContainer = productGridEl.parentElement;
   const savedScroll = scrollContainer ? scrollContainer.scrollTop : 0;
   
-  // ✅ REPLACE HTML
+  // REPLACE HTML
   productGridEl.innerHTML = html;
   productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
   
-  // ✅ RESTORE SCROLL POSITION
+  // RESTORE SCROLL POSITION
   if (scrollContainer) {
     scrollContainer.scrollTop = savedScroll;
   }
   
-  // ✅ ATTACH EVENT LISTENERS
+  // ATTACH EVENT LISTENERS
   attachStockTakeEvents();
 }
 

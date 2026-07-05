@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1638,65 +1639,6 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   border-left: 4px solid #ef4444;
   box-shadow: 0 1px 3px rgba(239,68,68,0.2);
 }
-/* Stock take list view */
-.product-list .stock-take-card {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  gap: 12px;
-}
-
-.product-list .stock-take-card .product-name {
-  flex: 2;
-  min-width: 120px;
-  margin-bottom: 0;
-}
-
-.product-list .stock-take-card .product-category {
-  min-width: 100px;
-}
-
-.product-list .stock-take-card .product-price {
-  min-width: 80px;
-  margin: 0;
-}
-
-.product-list .stock-take-card .product-stock {
-  min-width: 80px;
-  margin: 0;
-}
-
-.product-list .stock-take-card .diff-badge {
-  margin: 0 !important;
-}
-
-.product-list .stock-take-card > div:last-child {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Mobile responsive */
-@media (max-width: 780px) {
-  .product-list .stock-take-card {
-    flex-direction: column;
-    align-items: stretch;
-    text-align: center;
-  }
-  .product-list .stock-take-card .product-name,
-  .product-list .stock-take-card .product-category,
-  .product-list .stock-take-card .product-price,
-  .product-list .stock-take-card .product-stock {
-    text-align: center;
-    min-width: auto;
-  }
-  .product-list .stock-take-card > div:last-child {
-    justify-content: center;
-  }
-}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -2285,7 +2227,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <script>
 
   // ==================== CONFIGURATION ====================
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyaeachY3R5xZaObXuNJQ40-z-9G4RioFMmIcltW5bFoSeoeE06sGUL5HR-nkCk-IIXkQ/exec"; // REPLACE WITH YOUR URL
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9Cj_rRexKskdImOg2vr7p2l4Zjj9bief_B2NDZItWmqnZSnBnR3PzYsLJ7BaUYGeU2A/exec"; // REPLACE WITH YOUR URL
 
 // Haversine distance in km
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -2573,7 +2515,7 @@ function setCachedStoreReport(store, from, to, data) {
 // Automatically select closest store when the modal appears
 (async function autoSelectOnLoad() {
  loadAndCacheEmployees().catch(console.warn);
-  
+  preloadAllStoresData(); // 👈 add this line
   const storeDisplaySpan = document.getElementById('selectedStoreDisplay');
   const storeValueHidden = document.getElementById('initialStoreValue');
   const retryBtn = document.getElementById('retryLocationBtn');
@@ -3130,23 +3072,6 @@ function resetLoginBarcodeBuffer() {
     clearTimeout(loginBarcodeTimer);
     loginBarcodeTimer = null;
   }
-}
-// Place this at the VERY TOP of your script, before anything else
-function setSettlementFieldsEnabled(enabled) {
-  const fields = ['settlementStoreSelect', 'pettyCashFloat', 'actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
-  const isNonAdmin = !currentEmployee?.isAdmin;
-  fields.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      if (id === 'settlementStoreSelect' && isNonAdmin) {
-        el.disabled = true;
-      } else {
-        el.disabled = !enabled;
-      }
-    }
-  });
-  const checkBtn = document.getElementById('checkSettlementBtn');
-  if (checkBtn) checkBtn.disabled = !enabled;
 }
 // Fetch all settlement records for a specific store
 async function fetchSettlementsForStore(store) {
@@ -4003,103 +3928,49 @@ async function addNewProduct() {
 
   // ==================== PRELOAD ALL STORES IN BACKGROUND ====================
   async function preloadAllStoresData() {
-  const stores = ["queens", "sunshine", "gurney_paragon"];
-  // Preload in parallel with Promise.allSettled to prevent one failure from stopping others
-  const results = await Promise.allSettled(
-    stores.map(store => preloadProductsForStore(store))
-  );
-  
-  // Log summary
-  const succeeded = results.filter(r => r.status === 'fulfilled').length;
-  const failed = results.filter(r => r.status === 'rejected').length;
-  console.log(`📊 Preload summary: ${succeeded} succeeded, ${failed} failed`);
-}
+    const stores = ["queens", "sunshine", "gurney_paragon"];
+    stores.forEach(store => {
+      preloadProductsForStore(store).catch(err => console.warn(`Preload failed for ${store}:`, err));
+    });
+  }
 
- async function preloadProductsForStore(store) {
-  try {
-    const cacheKey = `products_${store}`;
-    const now = Date.now();
-    const cached = localStorage.getItem(cacheKey);
-    
-    // Check cache first
-    if (cached) {
-      const { timestamp, products: cachedProducts } = JSON.parse(cached);
-      // Use cache if less than 5 minutes old
-      if (now - timestamp < 5 * 60 * 1000) {
-        const empResponse = await fetch(`${APPS_SCRIPT_URL}?action=getEmployees`).catch(() => null);
-        let employees = [];
-        if (empResponse) {
-          const empResult = await empResponse.json().catch(() => ({}));
-          if (empResult.success) {
-            employees = empResult.employees;
-          }
-        }
-        preloadedDataMap[store] = {
-          products: cachedProducts,
-          employees: employees
-        };
-        return;
-      }
-    }
-    
-    // Fetch fresh data with timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-    
-    try {
-      const url = `${APPS_SCRIPT_URL}?action=getInitialData&store=${store}&_=${now}`;
-      const response = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      if (result.success) {
-        const sortedProducts = result.products.sort((a, b) => a.name.localeCompare(b.name));
-        preloadedDataMap[store] = {
-          products: sortedProducts,
-          employees: result.employees || []
-        };
-        localStorage.setItem(cacheKey, JSON.stringify({ 
-          timestamp: now, 
-          products: sortedProducts 
-        }));
-        console.log(`✅ Preloaded ${sortedProducts.length} products for ${store}`);
-      } else {
-        throw new Error(result.error || 'Invalid response');
-      }
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      if (fetchError.name === 'AbortError') {
-        console.warn(`⏱️ Preload timeout for ${store}`);
-      } else {
-        throw fetchError;
-      }
-    }
-  } catch (err) {
-    // ✅ SILENTLY FAIL - don't show error to user
-    console.warn(`⚠️ Preload failed for ${store}:`, err.message);
-    // Try to use cached data if available even if expired
+  async function preloadProductsForStore(store) {
     try {
       const cacheKey = `products_${store}`;
+      const now = Date.now();
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
-        const { products: cachedProducts } = JSON.parse(cached);
-        if (cachedProducts && cachedProducts.length > 0) {
-          preloadedDataMap[store] = {
-            products: cachedProducts,
-            employees: []
-          };
-          console.log(`📦 Using stale cache for ${store} (${cachedProducts.length} products)`);
+        const { timestamp, products: cachedProducts } = JSON.parse(cached);
+      if (now - timestamp < 60 * 1000) {   // 1 second
+          const empResponse = await fetch(`${APPS_SCRIPT_URL}?action=getEmployees`);
+          const empResult = await empResponse.json();
+          if (empResult.success) {
+            preloadedDataMap[store] = {
+              products: cachedProducts,
+              employees: empResult.employees
+            };
+          } else {
+            preloadedDataMap[store] = { products: cachedProducts, employees: [] };
+          }
+          return;
         }
       }
-    } catch (cacheErr) {
-      // Ignore cache errors too
+      const url = `${APPS_SCRIPT_URL}?action=getInitialData&store=${store}&_=${now}`;
+      const response = await fetch(url);
+      const result = await response.json();
+      if (result.success) {
+  // Sort products alphabetically by name
+  const sortedProducts = result.products.sort((a, b) => a.name.localeCompare(b.name));
+  preloadedDataMap[store] = {
+    products: sortedProducts,
+    employees: result.employees
+  };
+  localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, products: sortedProducts }));
+}
+    } catch (err) {
+      console.error(`Preload failed for ${store}:`, err);
     }
   }
-}
 
   // ==================== INITIAL DATA LOAD ====================
  async function loadInitialData() {
@@ -4373,6 +4244,7 @@ async function fetchProductsFromSheet(force = false) {
       statusDiv.className = 'sync-status error';
     }
   }
+
 async function printSettlementReport(store, date, totals) {
   if (!isPrinterConnected || !printerCharacteristic) {
     await showAlertModal('Printer not connected', 'Settlement recorded but could not print report. Please connect printer.');
@@ -4398,38 +4270,36 @@ async function printSettlementReport(store, date, totals) {
     lines.push(separator);
     lines.push('SYSTEM TOTALS');
     lines.push(dash);
-    lines.push(`Cash      : RM ${(totals.cashSystem || 0).toFixed(2)}`);
-    lines.push(`Card      : RM ${(totals.cardSystem || 0).toFixed(2)}`);
-    lines.push(`QR Pay    : RM ${(totals.qrSystem || 0).toFixed(2)}`);
-    lines.push(`Alipay    : RM ${(totals.alipaySystem || 0).toFixed(2)}`);
-    lines.push(`Refunds   : RM ${(totals.refundSystem || 0).toFixed(2)}`);
+    lines.push(`Cash      : RM ${totals.cashSystem.toFixed(2)}`);
+    lines.push(`Card      : RM ${totals.cardSystem.toFixed(2)}`);
+    lines.push(`QR Pay    : RM ${totals.qrSystem.toFixed(2)}`);
+    lines.push(`Alipay    : RM ${totals.alipaySystem.toFixed(2)}`);
+    lines.push(`Refunds   : RM ${totals.refundSystem.toFixed(2)}`);
     lines.push(separator);
     lines.push('ACTUAL COUNTS');
     lines.push(dash);
-    lines.push(`Cash      : RM ${(totals.cashActual || 0).toFixed(2)}`);
-    lines.push(`Card      : RM ${(totals.cardActual || 0).toFixed(2)}`);
-    lines.push(`QR Pay    : RM ${(totals.qrActual || 0).toFixed(2)}`);
-    lines.push(`Alipay    : RM ${(totals.alipayActual || 0).toFixed(2)}`);
+    lines.push(`Cash      : RM ${totals.cashActual.toFixed(2)}`);
+    lines.push(`Card      : RM ${totals.cardActual.toFixed(2)}`);
+    lines.push(`QR Pay    : RM ${totals.qrActual.toFixed(2)}`);
+    lines.push(`Alipay    : RM ${totals.alipayActual.toFixed(2)}`);
     lines.push(separator);
     lines.push('DISCREPANCIES');
     lines.push(dash);
-    const cashDiff = (totals.cashActual || 0) - (totals.cashSystem || 0);
-    const cardDiff = (totals.cardActual || 0) - (totals.cardSystem || 0);
-    const qrDiff = (totals.qrActual || 0) - (totals.qrSystem || 0);
-    const alipayDiff = (totals.alipayActual || 0) - (totals.alipaySystem || 0);
+    const cashDiff = totals.cashActual - totals.cashSystem;
+    const cardDiff = totals.cardActual - totals.cardSystem;
+    const qrDiff = totals.qrActual - totals.qrSystem;
+    const alipayDiff = totals.alipayActual - totals.alipaySystem;
     lines.push(`Cash   : ${cashDiff >= 0 ? '+' : ''}RM ${cashDiff.toFixed(2)}`);
     lines.push(`Card   : ${cardDiff >= 0 ? '+' : ''}RM ${cardDiff.toFixed(2)}`);
     lines.push(`QR Pay : ${qrDiff >= 0 ? '+' : ''}RM ${qrDiff.toFixed(2)}`);
     lines.push(`Alipay : ${alipayDiff >= 0 ? '+' : ''}RM ${alipayDiff.toFixed(2)}`);
     lines.push(separator);
-    // ✅ FIX: Safely display petty cash
-    const pettyCashValue = parseFloat(totals.pettyCash) || 0;
-    lines.push(`Petty Cash Float : RM ${pettyCashValue.toFixed(2)}`);
+    lines.push(`Petty Cash Float : RM ${totals.pettyCash.toFixed(2)}`);
     lines.push(separator);
     lines.push('COLLECTED AMOUNT');
     lines.push(dash);
-    const totalActual = (totals.cashActual || 0) + (totals.cardActual || 0) + (totals.qrActual || 0) + (totals.alipayActual || 0);
-    lines.push(`TOTAL SALES : RM ${totalActual.toFixed(2)}`);
+    const totalActual = totals.cashActual + totals.cardActual + totals.qrActual + totals.alipayActual;
+   lines.push(`TOTAL SALES : RM ${totalActual.toFixed(2)}`);
     lines.push(separator);
     lines.push('SIGNATURE');
     lines.push('_________________');
@@ -5715,7 +5585,7 @@ function renderStockTakeProductGrid() {
     <div id="stockTakeHeader" style="margin-bottom:16px; padding:12px 16px; background:#f0fdf4; border-radius:16px; border:1px solid #10b981; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
       <div>
         <strong style="font-size:1.1rem;">📋 Stock Take Mode</strong>
-        <span style="font-size:0.9rem; color:#64748b; margin-left:12px;">Products: ${filtered.length} | ✅ Counted: ${countedCount}</span>
+        <span style="font-size:0.9rem; color:#64748b; margin-left:12px;">Products: ${filtered.length} | Counted: ${countedCount}</span>
       </div>
       <div style="display:flex; gap:16px; font-size:0.85rem;">
         ${diffCount > 0 ? `
@@ -5729,8 +5599,7 @@ function renderStockTakeProductGrid() {
     </div>
   `;
   
-  const containerClass = viewMode === 'grid' ? 'product-grid' : 'product-list';
-  html += `<div class="${containerClass}" id="stockTakeGrid">`;
+  html += '<div class="product-grid" id="stockTakeGrid">';
   
   filtered.forEach(prod => {
     const existing = stockTakeData[prod.id];
@@ -5748,18 +5617,16 @@ function renderStockTakeProductGrid() {
       diffColor = '#94a3b8'; diffBg = '#ffffff'; borderColor = '1px solid #e2e8f0'; diffText = 'Not counted';
     }
     
-    const cardClass = viewMode === 'grid' ? 'product-card' : 'product-card product-list-card';
-    
     html += `
-      <div class="${cardClass} stock-take-card" data-id="${prod.id}" style="border: ${borderColor}; background: ${diffBg};">
+      <div class="product-card stock-take-card" data-id="${prod.id}" style="border: ${borderColor}; background: ${diffBg};">
         <div class="product-name">${escapeHtml(prod.name)}</div>
         <div class="product-category">${escapeHtml(prod.category)}</div>
-        <!-- ✅ PRICE HIDDEN IN STOCK TAKE MODE -->
-        <div class="product-stock" style="font-weight:600; color:#0f172a;">📊 System: ${prod.stock}</div>
+        <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+        <div class="product-stock" style="font-weight:600; color:#0f172a;">Current: ${prod.stock}</div>
         <div class="diff-badge" style="margin: 4px 0 8px 0; font-weight:700; color:${diffColor}; font-size:0.9rem; background:${diffBg}; padding:2px 12px; border-radius:12px; display:inline-block; border:1px solid ${diffColor};">
           ${diffText}
         </div>
-        <div style="margin-top:8px; display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;">
+        <div style="margin-top:8px; display:flex; align-items:center; justify-content:center; gap:8px;">
           <button type="button" class="stock-take-btn" data-action="dec" data-id="${prod.id}" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:30px; font-weight:bold; font-size:1.2rem; cursor:pointer;">−</button>
           <input type="number" class="stock-take-input" data-id="${prod.id}" value="${countedValue}" placeholder="${prod.stock}" style="width:80px; padding:8px; border-radius:20px; border:2px solid ${existing ? (difference !== 0 ? (difference > 0 ? '#2c7a4b' : '#dc2626') : '#10b981') : '#cbd5e1'}; text-align:center; font-weight:600; background:${existing ? (difference !== 0 ? (difference > 0 ? '#f0fdf4' : '#fef2f2') : '#f0fdf4') : 'white'};">
           <button type="button" class="stock-take-btn" data-action="inc" data-id="${prod.id}" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:30px; font-weight:bold; font-size:1.2rem; cursor:pointer;">+</button>
@@ -5773,20 +5640,20 @@ function renderStockTakeProductGrid() {
   
   html += '</div>';
   
-  // SAVE SCROLL POSITION
+  // ✅ SAVE SCROLL POSITION
   const scrollContainer = productGridEl.parentElement;
   const savedScroll = scrollContainer ? scrollContainer.scrollTop : 0;
   
-  // REPLACE HTML
+  // ✅ REPLACE HTML
   productGridEl.innerHTML = html;
   productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
   
-  // RESTORE SCROLL POSITION
+  // ✅ RESTORE SCROLL POSITION
   if (scrollContainer) {
     scrollContainer.scrollTop = savedScroll;
   }
   
-  // ATTACH EVENT LISTENERS
+  // ✅ ATTACH EVENT LISTENERS - JUST LIKE NORMAL CHECKOUT!
   attachStockTakeEvents();
 }
 
@@ -8898,7 +8765,6 @@ async function openSettlementModal() {
  async function refreshSettlementTotals(store, silent = false) {
   const todayStr = getUTCDateString(new Date());
   const report = await fetchSalesReport(store, 'all', todayStr, todayStr, true, silent);
-  
   if (report) {
     const cash = report.cashTotal !== undefined ? report.cashTotal : 0;
     const card = report.cardTotal !== undefined ? report.cardTotal : 0;
@@ -8924,65 +8790,19 @@ async function openSettlementModal() {
       const sysNetTotal = document.getElementById('sysNetTotal');
       if (sysNetTotal) sysNetTotal.innerText = `RM ${netTotal.toFixed(2)}`;
 
-      // ✅ CHECK FOR UNSETTLED BILLS FIRST
-      const unsettledCount = await getUnsettledBillCount(store);
-      console.log(`📊 Unsettled bills for ${store}: ${unsettledCount}`);
-      
       const alreadySettled = await checkSettlementStatus(store, todayStr);
-      
-      // ✅ Only block if settlement exists AND no unsettled bills
-      if (alreadySettled && unsettledCount === 0) {
-        // ❌ BLOCK - Settlement exists and no unsettled bills
+      if (alreadySettled) {
         const settlementError = document.getElementById('settlementError');
         if (settlementError) {
           settlementError.innerHTML = '⚠️ Settlement has already been recorded for today. No further settlement allowed.';
           settlementError.style.display = 'block';
-          settlementError.style.color = '#ef4444';
         }
         const checkBtn = document.getElementById('checkSettlementBtn');
-        if (checkBtn) {
-          checkBtn.disabled = true;
-          checkBtn.style.display = 'block';
-        }
+        if (checkBtn) checkBtn.disabled = true;
         const recordBtn = document.getElementById('recordSettlementBtn');
         if (recordBtn) recordBtn.style.display = 'none';
         setSettlementFieldsEnabled(false);
-        
-      } else if (alreadySettled && unsettledCount > 0) {
-        // ✅ ALLOW - Settlement exists but has unsettled bills
-        const settlementError = document.getElementById('settlementError');
-        if (settlementError) {
-          settlementError.innerHTML = `⚠️ Settlement already recorded but ${unsettledCount} unsettled bill(s) found. You can re-settle.`;
-          settlementError.style.display = 'block';
-          settlementError.style.color = '#f59e0b'; // Amber color for warning
-        }
-        // Enable everything
-        setSettlementFieldsEnabled(true);
-        const actualCash = document.getElementById('actualCash');
-        if (actualCash) actualCash.value = '';
-        const actualCard = document.getElementById('actualCard');
-        if (actualCard) actualCard.value = '';
-        const actualQR = document.getElementById('actualQR');
-        if (actualQR) actualQR.value = '';
-        const actualAlipay = document.getElementById('actualAlipay');
-        if (actualAlipay) actualAlipay.value = '';
-        const pettyCash = document.getElementById('pettyCashFloat');
-        if (pettyCash) pettyCash.value = '0.00';
-        const checkBtn = document.getElementById('checkSettlementBtn');
-        if (checkBtn) {
-          checkBtn.style.display = 'block';
-          checkBtn.disabled = false;
-        }
-        const recordBtn = document.getElementById('recordSettlementBtn');
-        if (recordBtn) recordBtn.style.display = 'none';
-        const errorFields = ['actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
-        errorFields.forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.classList.remove('error-field');
-        });
-        
       } else {
-        // ✅ ALLOW - No settlement exists
         setSettlementFieldsEnabled(true);
         const actualCash = document.getElementById('actualCash');
         if (actualCash) actualCash.value = '';
@@ -9017,17 +8837,26 @@ async function openSettlementModal() {
     console.error('refreshSettlementTotals: report is null');
   }
 }
-async function getUnsettledBillCount(store) {
-  try {
-    const url = `${APPS_SCRIPT_URL}?action=getUnsettledBillCount&store=${store}`;
-    const response = await fetch(url);
-    const result = await response.json();
-    return result.success ? result.count : 0;
-  } catch (err) {
-    console.error('Error getting unsettled bill count:', err);
-    return 0;
+
+  let currentSettlementTotals = null;
+
+  function setSettlementFieldsEnabled(enabled) {
+    const fields = ['settlementStoreSelect', 'pettyCashFloat', 'actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
+    const isNonAdmin = !currentEmployee?.isAdmin;
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (id === 'settlementStoreSelect' && isNonAdmin) {
+          el.disabled = true;
+        } else {
+          el.disabled = !enabled;
+        }
+      }
+    });
+    const checkBtn = document.getElementById('checkSettlementBtn');
+    if (checkBtn) checkBtn.disabled = !enabled;
   }
-}
+
 // ==================== PRINTER SETUP ====================
 let gattServer = null;
 let printerCharacteristic = null;
@@ -9363,19 +9192,7 @@ commands.push(0x1B, 0x61, 0x01);    // center alignment
     return false;
   }
 }
-function getProductCountByStore(store) {
-  // This would require a backend call to get the count
-  // Or you can just display the total products loaded
-  return products.length;
-}
-// In the POS header or product panel
-function updateStoreProductCount() {
-  const count = products.length;
-  const countElement = document.getElementById('productCountDisplay');
-  if (countElement) {
-    countElement.innerText = `${count} products`;
-  }
-}
+
 async function connectPrinter() {
   return new Promise(async (resolve, reject) => {
     try {
@@ -9439,14 +9256,10 @@ window.printerAPI = { isConnected: false, printReceipt: printReceipt, openDrawer
 function renderProductGrid() {
   const searchTerm = searchInput.value.toLowerCase();
   const selectedCategory = categorySelect.value;
-  
-  // ✅ Check stock take mode FIRST
-  if (stockTakeMode) {
+ if (stockTakeMode) {
     renderStockTakeProductGrid();
     return;
   }
-  
-  // ✅ Category view mode (when "All Categories" is selected and NOT in inventory mode)
   if (selectedCategory === 'all' && !inventoryMode) {
     const categories = [...new Set(products.map(p => p.category))];
     let filteredCategories = categories;
@@ -9494,13 +9307,11 @@ function renderProductGrid() {
     return;
   }
 
-  // ✅ Show/hide back button
   const backBtn = document.getElementById('backToCategoriesBtn');
   if (backBtn) {
     backBtn.style.display = (selectedCategory !== 'all' && !inventoryMode) ? 'inline-flex' : 'none';
   }
 
-  // ✅ NOW define filtered (AFTER all the early returns)
   let filtered = products.slice();
   if (selectedCategory !== 'all') {
     filtered = filtered.filter(p => p.category === selectedCategory);
@@ -9512,7 +9323,6 @@ function renderProductGrid() {
     filtered = filtered.filter(p => p.stock < LOW_STOCK_THRESHOLD);
   }
 
-  // ✅ Check if products are loading
   if (products.length === 0) {
     productGridEl.innerHTML = `
       <div style="text-align:center; padding:20px;">
@@ -9526,27 +9336,12 @@ function renderProductGrid() {
     return;
   }
 
-  // ✅ Check if filtered is empty (NO PRODUCTS for this store due to highlighting)
-  if (filtered.length === 0 && products.length > 0) {
-    productGridEl.innerHTML = `
-      <div style="text-align:center; padding:20px; color:#64748b;">
-        <div style="font-size:2rem; margin-bottom:12px;">📦</div>
-        <div>No products available for this store.</div>
-        <div style="font-size:0.85rem; margin-top:8px;">Please highlight products in the Google Sheet.</div>
-      </div>
-    `;
-    productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
-    return;
-  }
-
-  // ✅ Check if no products match filters
   if (filtered.length === 0) {
     productGridEl.innerHTML = '<div style="text-align:center; padding:20px;">No products match your filters.</div>';
     productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
     return;
   }
 
-  // ✅ Build product grid/list
   let html = '';
   filtered.forEach(prod => {
     const isLowStock = prod.stock < LOW_STOCK_THRESHOLD;
@@ -9563,66 +9358,65 @@ function renderProductGrid() {
           <button class="inventory-btn inc-stock" data-id="${prod.id}">+</button>
         </div>
       </div>`;
-    } else {
-      // Determine the additional visual class:
-      let additionalClass = '';
-      if (!inventoryMode && prod.stock <= 0) {
-        additionalClass = 'out-of-stock-card';
-      } else if (inventoryMode && prod.stock < LOW_STOCK_THRESHOLD) {
-        additionalClass = 'low-stock-card';
-      }
-      const stockStatus = `📦 Stock: ${prod.stock}`;
-      html += `<div class="product-card ${additionalClass}" data-id="${prod.id}">
-        <div class="product-name">${escapeHtml(prod.name)}</div>
-        <div class="product-category">${escapeHtml(prod.category)}</div>
-        <div class="product-price">RM ${prod.price.toFixed(2)}</div>
-        <div class="product-stock">${stockStatus}</div>
-      </div>`;
-    }
+   } else {
+  // Determine the additional visual class:
+  let additionalClass = '';
+  if (!inventoryMode && prod.stock <= 0) {
+    additionalClass = 'out-of-stock-card';
+  } else if (inventoryMode && prod.stock < LOW_STOCK_THRESHOLD) {
+    additionalClass = 'low-stock-card';   // keep inventory low‑stock style
+  }
+  const stockStatus = `📦 Stock: ${prod.stock}`;
+  html += `<div class="product-card ${additionalClass}" data-id="${prod.id}">
+      <div class="product-name">${escapeHtml(prod.name)}</div>
+      <div class="product-category">${escapeHtml(prod.category)}</div>
+      <div class="product-price">RM ${prod.price.toFixed(2)}</div>
+      <div class="product-stock">${stockStatus}</div>
+    </div>`;
+}
   });
 
   productGridEl.innerHTML = html;
   productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
 
-  // ✅ Inventory mode event listeners
   if (inventoryMode) {
     // Helper to update stock from a new numeric value
-    const updateStockForProduct = (productId, newStock, delta) => {
-      const product = products.find(p => p.id == productId);
-      if (!product) return;
-      const oldStock = product.stock;
-      if (newStock === oldStock) return;
+const updateStockForProduct = (productId, newStock, delta) => {
+    const product = products.find(p => p.id == productId);
+    if (!product) return;
+    const oldStock = product.stock;
+    if (newStock === oldStock) return;
 
-      // Apply immediate local update
-      product.stock = newStock;
+    // Apply immediate local update
+    product.stock = newStock;
 
-      // Update input field if present
-      const inputField = document.querySelector(`.stock-input[data-id="${productId}"]`);
-      if (inputField) inputField.value = newStock;
+    // Update input field if present
+    const inputField = document.querySelector(`.stock-input[data-id="${productId}"]`);
+    if (inputField) inputField.value = newStock;
 
-      // Debounce the history logging and server sync
-      debouncedStockChange(productId, product, delta, newStock);
+    // Debounce the history logging and server sync
+    debouncedStockChange(productId, product, delta, newStock);
 
-      // Schedule server update (still debounced – we keep it separate)
-      scheduleStockUpdate(productId, newStock);
+    // Schedule server update (still debounced – we keep it separate)
+    scheduleStockUpdate(productId, newStock);
 
-      // Refresh low‑stock category highlighting
-      refreshCategoryHighlighting();
-    };
+    // Refresh low‑stock category highlighting
+    refreshCategoryHighlighting();
+};
 
     // Dec button
     document.querySelectorAll('.dec-stock').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const id = btn.dataset.id;
-        const input = document.querySelector(`.stock-input[data-id="${id}"]`);
-        if (input) {
-          let newVal = parseInt(input.value) - 1;
-          if (isNaN(newVal)) newVal = 0;
-          if (newVal < 0) newVal = 0;
-          updateStockForProduct(id, newVal, -1);
-        }
-        e.stopPropagation();
-      });
+     btn.addEventListener('click', (e) => {
+    const id = btn.dataset.id;
+    const input = document.querySelector(`.stock-input[data-id="${id}"]`);
+    if (input) {
+        let newVal = parseInt(input.value) - 1;
+        if (isNaN(newVal)) newVal = 0;
+        if (newVal < 0) newVal = 0;
+        updateStockForProduct(id, newVal, -1);
+    }
+    e.stopPropagation();
+});
     });
 
     // Inc button

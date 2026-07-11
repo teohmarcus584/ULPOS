@@ -5295,13 +5295,17 @@ async function completeCheckout(paymentMethod, cashReceived) {
         await window.printerAPI.printReceipt(transactionWithName, 2);
       }
 
-      document.getElementById('luckyTxId').innerText = transactionId;
-      const luckyModal = document.getElementById('luckyDrawModal');
-      luckyModal.style.display = 'flex';
-      document.getElementById('openLuckyDrawBtn').onclick = () => {
-        openLuckyDraw(transactionId, selectedCustomer?.id);
-        luckyModal.style.display = 'none';
-      };
+    // COMMENTED OUT: Lucky Draw modal after sales
+/*
+document.getElementById('luckyTxId').innerText = transactionId;
+const luckyModal = document.getElementById('luckyDrawModal');
+luckyModal.style.display = 'flex';
+document.getElementById('openLuckyDrawBtn').onclick = () => {
+  openLuckyDraw(transactionId, selectedCustomer?.id);
+  luckyModal.style.display = 'none';
+};
+*/
+// Lucky Draw disabled per request
       
       if (pendingPrize && pendingPrize.isPromo && pendingPrize.code) {
         await usePromoVoucherAfterSale(pendingPrize.code);
@@ -11058,7 +11062,9 @@ document.getElementById('checkReceiptBtn').addEventListener('click', checkReceip
   if (closeLuckyDrawPrintModal) closeLuckyDrawPrintModal.addEventListener('click', closeLuckyDrawPrintModalFunc);
   if (closeLuckyDrawPrintModalBtn) closeLuckyDrawPrintModalBtn.addEventListener('click', closeLuckyDrawPrintModalFunc);
 
- if (printPrizeVoucherBtn) {
+// COMMENTED OUT: Print Prize Voucher functionality
+/*
+if (printPrizeVoucherBtn) {
   printPrizeVoucherBtn.addEventListener('click', async () => {
     const receiptNumber = document.getElementById('luckyDrawReceiptNumber').innerText;
     if (!receiptNumber) {
@@ -11113,6 +11119,7 @@ document.getElementById('checkReceiptBtn').addEventListener('click', checkReceip
     }
   });
 }
+*/
   document.getElementById('customerBtn').addEventListener('click', showCustomerModal);
   document.getElementById('findCustomerBtn').addEventListener('click', findCustomer);
   document.getElementById('saveCustomerBtn').addEventListener('click', saveCustomerFromModal);

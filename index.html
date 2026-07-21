@@ -8748,16 +8748,7 @@ async function openSettlementModal() {
       });
     }
 
-    const todayStr = getLocalDateString(new Date());
-    const alreadySettled = await checkSettlementStatus(store, todayStr);
-
-    if (alreadySettled) {
-      loadingMsg.style.display = 'none';
-      if (totalsContainer) totalsContainer.style.display = 'block';
-      await showAlertModal('Settlement Already Done', 'Settlement has already been recorded for today. No further settlement allowed.');
-      modal.style.display = 'none';
-      return;
-    }
+    
 
     await refreshSettlementTotals(store);
     loadingMsg.style.display = 'none';
@@ -8815,35 +8806,17 @@ async function openSettlementModal() {
       const sysNetTotal = document.getElementById('sysNetTotal');
       if (sysNetTotal) sysNetTotal.innerText = `RM ${netTotal.toFixed(2)}`;
 
-      // ✅ CHECK FOR UNSETTLED BILLS FIRST
+      // ✅ REMOVED: The today date check - allow settlement anytime
+      // The backend will handle duplicate settlement attempts
       const unsettledCount = await getUnsettledBillCount(store);
       console.log(`📊 Unsettled bills for ${store}: ${unsettledCount}`);
-      
-      const alreadySettled = await checkSettlementStatus(store, todayStr);
-      
-      // ✅ Only block if settlement exists AND no unsettled bills
-      if (alreadySettled && unsettledCount === 0) {
-        // ❌ BLOCK - Settlement exists and no unsettled bills
+
+      // ✅ ALWAYS ALLOW settlement if there are unsettled bills
+      if (unsettledCount > 0) {
+        // ✅ ALLOW - There are unsettled bills, can settle
         const settlementError = document.getElementById('settlementError');
         if (settlementError) {
-          settlementError.innerHTML = '⚠️ Settlement has already been recorded for today. No further settlement allowed.';
-          settlementError.style.display = 'block';
-          settlementError.style.color = '#ef4444';
-        }
-        const checkBtn = document.getElementById('checkSettlementBtn');
-        if (checkBtn) {
-          checkBtn.disabled = true;
-          checkBtn.style.display = 'block';
-        }
-        const recordBtn = document.getElementById('recordSettlementBtn');
-        if (recordBtn) recordBtn.style.display = 'none';
-        setSettlementFieldsEnabled(false);
-        
-      } else if (alreadySettled && unsettledCount > 0) {
-        // ✅ ALLOW - Settlement exists but has unsettled bills
-        const settlementError = document.getElementById('settlementError');
-        if (settlementError) {
-          settlementError.innerHTML = `⚠️ Settlement already recorded but ${unsettledCount} unsettled bill(s) found. You can re-settle.`;
+          settlementError.innerHTML = `📊 ${unsettledCount} unsettled bill(s) found. You can settle them now.`;
           settlementError.style.display = 'block';
           settlementError.style.color = '#f59e0b'; // Amber color for warning
         }
@@ -8871,9 +8844,8 @@ async function openSettlementModal() {
           const el = document.getElementById(id);
           if (el) el.classList.remove('error-field');
         });
-        
       } else {
-        // ✅ ALLOW - No settlement exists
+        // ✅ ALLOW - No settlement exists, can settle
         setSettlementFieldsEnabled(true);
         const actualCash = document.getElementById('actualCash');
         if (actualCash) actualCash.value = '';

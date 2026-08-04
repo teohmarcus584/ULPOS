@@ -1638,6 +1638,252 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   border-left: 4px solid #ef4444;
   box-shadow: 0 1px 3px rgba(239,68,68,0.2);
 }
+/* ============================================================
+   RECEIPT PRINT ANIMATION - Add to your CSS
+   ============================================================ */
+
+.receipt-print-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    background: white;
+    border-radius: 24px;
+    padding: 36px 44px 32px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    max-width: 90vw;
+    min-width: 320px;
+    animation: modalPop 0.3s ease-out;
+}
+
+@keyframes modalPop {
+    0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.printer-icon {
+    font-size: 4rem;
+    margin-bottom: 8px;
+    display: block;
+    animation: printerPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes printerPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+}
+
+.printing-status {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+.printing-subtitle {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-bottom: 12px;
+}
+
+.paper-animation {
+    width: 100%;
+    max-width: 320px;
+    height: 130px;
+    background: #f1f5f9;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+    position: relative;
+    overflow: hidden;
+    margin: 8px 0 16px 0;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.paper-slot {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 14px;
+    background: #cbd5e1;
+    border-top: 2px solid #94a3b8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+}
+
+.paper-slot::before,
+.paper-slot::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: #64748b;
+    border-radius: 50%;
+    opacity: 0.4;
+}
+
+.paper-strip {
+    position: absolute;
+    bottom: 14px;
+    left: 4px;
+    right: 4px;
+    background: white;
+    border-radius: 4px 4px 0 0;
+    padding: 8px 12px;
+    font-size: 0.6rem;
+    font-family: 'Courier New', monospace;
+    color: #1e293b;
+    line-height: 1.5;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+    border-left: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+}
+
+.paper-strip.animating {
+    animation: paperSlideUp 2.8s ease-in-out forwards;
+}
+
+@keyframes paperSlideUp {
+    0% { height: 0; opacity: 0; transform: translateY(0); }
+    12% { height: 16px; opacity: 1; transform: translateY(0); }
+    40% { height: 44px; opacity: 1; transform: translateY(0); }
+    70% { height: 75px; opacity: 1; transform: translateY(0); }
+    100% { height: 75px; opacity: 1; transform: translateY(0); }
+}
+
+.paper-strip .line {
+    display: block;
+    padding: 1px 0;
+    border-bottom: 1px dashed #f1f5f9;
+    font-size: 0.55rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.paper-strip .line:last-child { border-bottom: none; }
+.paper-strip .line.bold { font-weight: 700; }
+.paper-strip .line.center { text-align: center; }
+.paper-strip .line.total { font-weight: 700; font-size: 0.7rem; color: #059669; }
+
+.progress-wrapper {
+    width: 100%;
+    max-width: 320px;
+    margin: 4px 0 12px 0;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 5px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #059669, #10b981, #34d399);
+    border-radius: 10px;
+    transition: width 0.15s ease;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+.cancel-print-btn {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 40px;
+    padding: 8px 24px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: #475569;
+    transition: all 0.2s ease;
+    margin-top: 4px;
+}
+
+.cancel-print-btn:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.cancel-print-btn:active {
+    transform: scale(0.96);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .receipt-print-container {
+        background: #16213e;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+    }
+    .printing-status { color: #e2e8f0; }
+    .paper-animation {
+        background: #1e293b;
+        border-color: #334155;
+    }
+    .paper-slot {
+        background: #475569;
+        border-top-color: #64748b;
+    }
+    .paper-slot::before,
+    .paper-slot::after {
+        background: #94a3b8;
+    }
+    .paper-strip {
+        background: #1e293b;
+        color: #e2e8f0;
+        border-left-color: #334155;
+        border-right-color: #334155;
+    }
+    .paper-strip .line {
+        border-bottom-color: #2d3748;
+    }
+    .paper-strip .line.total {
+        color: #34d399;
+    }
+    .progress-bar {
+        background: #334155;
+    }
+    .cancel-print-btn {
+        background: #334155;
+        color: #e2e8f0;
+    }
+    .cancel-print-btn:hover {
+        background: #475569;
+    }
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+    .receipt-print-container {
+        padding: 28px 20px 24px;
+        min-width: unset;
+        width: 92vw;
+    }
+    .printer-icon { font-size: 3rem; }
+    .printing-status { font-size: 1.1rem; }
+    .paper-animation {
+        height: 110px;
+        max-width: 100%;
+    }
+    .progress-wrapper { max-width: 100%; }
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -4947,30 +5193,38 @@ function openLuckyDraw(transactionId, customerId) {
 }
 
 async function reprintReceipt(receipt) {
-  // Check printer connection – if not connected, try to connect automatically
-  if (!isPrinterConnected) {
-    showLoading('Printer not connected. Opening Bluetooth selection...');
-    try {
-      await connectPrinter();
-      hideLoading();
-    } catch (err) {
-      hideLoading();
-      await showAlertModal('Connection Failed', 'Could not connect to printer. Please try again.');
-      return;
+    // Check printer connection – if not connected, try to connect automatically
+    if (!isPrinterConnected) {
+        const connectNow = await showConfirmModal(
+            '🖨️ Printer Not Connected',
+            'Would you like to connect a printer to reprint the receipt?'
+        );
+        if (!connectNow) {
+            await showAlertModal('Cancelled', 'You can reprint later from Receipts.');
+            return;
+        }
+        
+        showLoading('Opening Bluetooth selection...');
+        try {
+            await connectPrinter();
+            hideLoading();
+        } catch (err) {
+            hideLoading();
+            await showAlertModal('Connection Failed', 'Could not connect to printer. Please try again.');
+            return;
+        }
     }
-  }
 
-  if (!window.printerAPI || !window.printerAPI.printReceipt) {
-    await showAlertModal('Printer Error', 'Printer not connected or print function unavailable.');
-    return;
-  }
-  const success = await window.printerAPI.printReceipt(receipt, 1);
-  if (success) {
-    // Silent success – no alert
-    // await showAlertModal('Reprint', 'Receipt reprinted successfully.');
-  } else {
-    await showAlertModal('Error', 'Failed to reprint. Check printer connection.');
-  }
+    if (!window.printerAPI || !window.printerAPI.printReceipt) {
+        await showAlertModal('Printer Error', 'Printer not connected or print function unavailable.');
+        return;
+    }
+    
+    // Use animation for reprint
+    const success = await printReceiptWithAnimation(receipt, 1);
+    if (!success) {
+        await showAlertModal('Error', 'Failed to reprint. Check printer connection.');
+    }
 }
   // ==================== CHECKOUT ====================
  async function startCheckout() {
@@ -5169,6 +5423,154 @@ async function loadCollectionHistory(fromDate = null, toDate = null) {
     historyContainer.innerHTML = '<div style="text-align: center; color: #ef4444;">Failed to load history.</div>';
   }
 }
+
+// ============================================================
+//  PRINT RECEIPT WITH ANIMATION - Add this function
+// ============================================================
+
+async function printReceiptWithAnimation(transaction, copies = 1) {
+    return new Promise(async (resolve) => {
+        // Check if printer is connected
+        if (!isPrinterConnected || !window.printerAPI?.isConnected) {
+            resolve(false);
+            return;
+        }
+
+        // Create and show the print animation modal
+        const printContainer = document.createElement('div');
+        printContainer.className = 'receipt-print-container';
+        printContainer.id = 'printAnimationContainer';
+        
+        // Build the receipt preview lines
+        const itemLines = (transaction.items || []).slice(0, 4).map(item => 
+            `<span class="line">${escapeHtml(item.name || 'Item')} x${item.quantity || 1}   RM ${((item.price || 0) * (item.quantity || 1)).toFixed(2)}</span>`
+        ).join('');
+        
+        const moreItems = (transaction.items || []).length > 4 
+            ? `<span class="line">... and ${(transaction.items || []).length - 4} more items</span>` 
+            : '';
+        
+        printContainer.innerHTML = `
+            <div class="printer-icon" id="printAnimIcon">🖨️</div>
+            <div class="printing-status" id="printAnimStatus">🖨️ Printing Receipt...</div>
+            <div class="printing-subtitle" id="printAnimSubtitle">Please wait, paper is feeding out</div>
+            <div class="paper-animation">
+                <div class="paper-strip" id="printAnimPaper">
+                    <span class="line center bold">═══ ${escapeHtml(transaction.store || 'UL PERFUMERIE')} ═══</span>
+                    <span class="line center" id="txnLine">${escapeHtml(transaction.transaction_id || '')}</span>
+                    ${itemLines}
+                    ${moreItems}
+                    <span class="line total">TOTAL RM ${(transaction.total || 0).toFixed(2)}</span>
+                    <span class="line center">Thank you!</span>
+                </div>
+                <div class="paper-slot"></div>
+            </div>
+            <div class="progress-wrapper">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="printAnimProgress"></div>
+                </div>
+                <div class="progress-label">
+                    <span id="printAnimProgressText">0%</span>
+                    <span id="printAnimProgressStatus">⏳ Feeding paper...</span>
+                </div>
+            </div>
+            <button class="cancel-print-btn" id="printAnimCancel">✕ Cancel</button>
+        `;
+        document.body.appendChild(printContainer);
+        printContainer.style.display = 'flex';
+
+        let cancelled = false;
+        let progress = 0;
+
+        // Cancel button
+        document.getElementById('printAnimCancel')?.addEventListener('click', () => {
+            cancelled = true;
+            printContainer.style.display = 'none';
+            printContainer.remove();
+            resolve(false);
+        });
+
+        // Animate paper
+        const paperStrip = document.getElementById('printAnimPaper');
+        if (paperStrip) {
+            paperStrip.classList.add('animating');
+        }
+
+        try {
+            // Animate progress while printing
+            const progressInterval = setInterval(() => {
+                if (cancelled) {
+                    clearInterval(progressInterval);
+                    return;
+                }
+                progress += Math.random() * 12 + 3;
+                if (progress > 100) progress = 100;
+                document.getElementById('printAnimProgress').style.width = progress + '%';
+                document.getElementById('printAnimProgressText').textContent = Math.round(progress) + '%';
+
+                // Update status text based on progress
+                const statusEl = document.getElementById('printAnimProgressStatus');
+                if (statusEl) {
+                    if (progress < 30) statusEl.textContent = '⏳ Feeding paper...';
+                    else if (progress < 60) statusEl.textContent = '📝 Printing content...';
+                    else if (progress < 85) statusEl.textContent = '📄 Almost done...';
+                    else statusEl.textContent = '✂️ Cutting...';
+                }
+
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                }
+            }, 150);
+
+            // Actually print to the physical printer
+            const result = await window.printerAPI.printReceipt(transaction, copies);
+
+            clearInterval(progressInterval);
+
+            if (!cancelled) {
+                // Complete the animation
+                document.getElementById('printAnimProgress').style.width = '100%';
+                document.getElementById('printAnimProgressText').textContent = '100%';
+                document.getElementById('printAnimProgressStatus').textContent = '✅ Done!';
+
+                // Update status
+                const statusEl = document.getElementById('printAnimStatus');
+                if (statusEl) {
+                    statusEl.textContent = '✅ Receipt Printed!';
+                    statusEl.style.color = '#059669';
+                }
+                document.getElementById('printAnimSubtitle').textContent = 'Paper has been fully fed out';
+
+                // Ensure paper is fully out
+                if (paperStrip) {
+                    paperStrip.style.height = '75px';
+                    paperStrip.style.opacity = '1';
+                }
+
+                // Remove after delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                printContainer.style.display = 'none';
+                printContainer.remove();
+                resolve(true);
+            }
+        } catch (err) {
+            console.error('Print error:', err);
+            // Update status to error
+            const statusEl = document.getElementById('printAnimStatus');
+            if (statusEl) {
+                statusEl.textContent = '❌ Print Failed';
+                statusEl.style.color = '#ef4444';
+            }
+            document.getElementById('printAnimSubtitle').textContent = 'Please check printer connection';
+
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            printContainer.style.display = 'none';
+            printContainer.remove();
+            resolve(false);
+        }
+    });
+}
 async function completeCheckout(paymentMethod, cashReceived) {
   if (checkoutLock) {
     console.warn('Checkout already in progress, ignoring duplicate call.');
@@ -5290,10 +5692,43 @@ async function completeCheckout(paymentMethod, cashReceived) {
 
       fetchAndCacheReceipts();
 
-      if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
-        const transactionWithName = { ...transaction, employee_name: currentEmployee.name };
-        await window.printerAPI.printReceipt(transactionWithName, 2);
-      }
+    // ✅ PRINT WITH ANIMATION - Replace the old print code
+if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
+    const transactionWithName = { 
+        ...transaction, 
+        employee_name: currentEmployee.name,
+        store: currentStore
+    };
+    
+    // Show the print animation
+    await printReceiptWithAnimation(transactionWithName, 2);
+} else {
+    // ❌ PRINTER NOT CONNECTED - Show prompt
+    const connectNow = await showConfirmModal(
+        '🖨️ Printer Not Connected',
+        'Would you like to connect a printer to print the receipt now?<br><br>You can also print later from the Receipts section.'
+    );
+    
+    if (connectNow) {
+        showLoading('Opening Bluetooth selection...');
+        try {
+            await connectPrinter();
+            hideLoading();
+            await showAlertModal('✅ Connected', 'Printer connected successfully!');
+            
+            // Retry printing with animation
+            const transactionWithName = { 
+                ...transaction, 
+                employee_name: currentEmployee.name,
+                store: currentStore
+            };
+            await printReceiptWithAnimation(transactionWithName, 2);
+        } catch (err) {
+            hideLoading();
+            await showAlertModal('❌ Connection Failed', 'Could not connect to printer. You can print later from Receipts.');
+        }
+    }
+}
 
     // COMMENTED OUT: Lucky Draw modal after sales
 /*

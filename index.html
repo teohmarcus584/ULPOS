@@ -5625,134 +5625,200 @@ async function completeCheckout(paymentMethod, cashReceived) {
       sales_person_id: salesPersonId,
     };
 
-    // ✅ FIX: Save directly, NO QUEUE
+    // ============================================================
+    // 1️⃣ STEP 1: PRINT RECEIPT FIRST (BEFORE saving to sheet)
+    // ============================================================
+    
+    let receiptPrinted = false;
+    
+    if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
+        const transactionWithName = { 
+            ...transaction, 
+            employee_name: currentEmployee.name,
+            store: currentStore
+        };
+        
+        // Show the print animation
+        receiptPrinted = await printReceiptWithAnimation(transactionWithName, 2);
+        
+        if (receiptPrinted) {
+            console.log('✅ Receipt printed successfully');
+        } else {
+            console.warn('⚠️ Receipt printing failed or was cancelled');
+        }
+    } else {
+        // ❌ PRINTER NOT CONNECTED - Show prompt
+        const connectNow = await showConfirmModal(
+            '🖨️ Printer Not Connected',
+            'Would you like to connect a printer to print the receipt now?<br><br>You can also print later from the Receipts section.'
+        );
+        
+        if (connectNow) {
+            showLoading('Opening Bluetooth selection...');
+            try {
+                await connectPrinter();
+                hideLoading();
+                await showAlertModal('✅ Connected', 'Printer connected successfully!');
+                
+                // Retry printing with animation
+                const transactionWithName = { 
+                    ...transaction, 
+                    employee_name: currentEmployee.name,
+                    store: currentStore
+                };
+                receiptPrinted = await printReceiptWithAnimation(transactionWithName, 2);
+                
+                if (receiptPrinted) {
+                    console.log('✅ Receipt printed after connection');
+                }
+            } catch (err) {
+                hideLoading();
+                await showAlertModal('❌ Connection Failed', 'Could not connect to printer. You can print later from Receipts.');
+            }
+        } else {
+            // User chose not to connect - show reminder
+            await showAlertModal('📋 Reminder', 'Receipt was not printed. You can reprint later from the Receipts section.');
+        }
+    }
+
+    // ============================================================
+    // 2️⃣ STEP 2: CLEAR CART IMMEDIATELY (BEFORE saving)
+    // ============================================================
+    
+    clearCart();
+
+    // ============================================================
+    // 3️⃣ STEP 3: SAVE TRANSACTION TO GOOGLE SHEETS
+    // ============================================================
+    
     showLoading('Processing transaction...');
     const success = await saveTransactionToSheet(transaction);
     hideLoading();
 
     if (success) {
-      // Update local stock
-      for (let item of saleItems) {
-        const product = products.find(p => p.id == item.id);
-        if (product) {
-          const oldStock = product.stock;
-          const newStock = oldStock - item.quantity;
-          product.stock = newStock;
-          checkAndNotifyOutOfStock(product.id, product.name, newStock);
+        // ============================================================
+        // 4️⃣ STEP 4: UPDATE LOCAL STOCK
+        // ============================================================
+        
+        for (let item of saleItems) {
+            const product = products.find(p => p.id == item.id);
+            if (product) {
+                const oldStock = product.stock;
+                const newStock = oldStock - item.quantity;
+                product.stock = newStock;
+                checkAndNotifyOutOfStock(product.id, product.name, newStock);
+            }
         }
-      }
 
-      localStorage.setItem(`products_${currentStore}`, JSON.stringify({
-        timestamp: Date.now(),
-        products: products
-      }));
-      renderProductGrid();
+        localStorage.setItem(`products_${currentStore}`, JSON.stringify({
+            timestamp: Date.now(),
+            products: products
+        }));
+        renderProductGrid();
 
-      if (selectedCustomer && selectedCustomer.id) {
-        const POINTS_PER_RM = 1;
-        const pointsEarned = Math.floor(totalAmount * POINTS_PER_RM);
-        if (pointsEarned > 0) {
-          selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
-          updateCustomerDisplay();
+        // ============================================================
+        // 5️⃣ STEP 5: UPDATE CUSTOMER POINTS
+        // ============================================================
+        
+        if (selectedCustomer && selectedCustomer.id) {
+            const POINTS_PER_RM = 1;
+            const pointsEarned = Math.floor(totalAmount * POINTS_PER_RM);
+            if (pointsEarned > 0) {
+                selectedCustomer.points = (selectedCustomer.points || 0) + pointsEarned;
+                updateCustomerDisplay();
+            }
         }
-      }
 
-      if (pendingPrize) {
-        await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
-        pendingPrize = null;
-      }
-
-      invalidateAllReportCaches();
-
-      const fakeReceipt = {
-        transaction_id: transaction.transaction_id,
-        timestamp: transaction.timestamp,
-        items: transaction.items,
-        total: transaction.total,
-        payment_method: transaction.payment_method,
-        store: transaction.store,
-        employee_id: transaction.employee_id,
-        employee_name: transaction.employee_name,
-        refunded: false,
-        discount: transaction.discount,
-        buy2_free1_discount: transaction.buy2_free1_discount,
-        buy3_free1_discount: transaction.buy3_free1_discount,
-        custom_discount: transaction.custom_discount,
-        staff_discount: transaction.staff_discount,
-        sales_person_name: transaction.sales_person_name,
-        sales_person_id: transaction.sales_person_id
-      };
-      if (!cachedReceipts) cachedReceipts = [];
-      cachedReceipts.unshift(fakeReceipt);
-
-      const receiptsModal = document.getElementById('receiptsModal');
-      if (receiptsModal && receiptsModal.style.display === 'flex') {
-        renderReceiptsList(cachedReceipts);
-      }
-
-      fetchAndCacheReceipts();
-
-    // ✅ PRINT WITH ANIMATION - Replace the old print code
-if (window.printerAPI?.isConnected && window.printerAPI.printReceipt) {
-    const transactionWithName = { 
-        ...transaction, 
-        employee_name: currentEmployee.name,
-        store: currentStore
-    };
-    
-    // Show the print animation
-    await printReceiptWithAnimation(transactionWithName, 2);
-} else {
-    // ❌ PRINTER NOT CONNECTED - Show prompt
-    const connectNow = await showConfirmModal(
-        '🖨️ Printer Not Connected',
-        'Would you like to connect a printer to print the receipt now?<br><br>You can also print later from the Receipts section.'
-    );
-    
-    if (connectNow) {
-        showLoading('Opening Bluetooth selection...');
-        try {
-            await connectPrinter();
-            hideLoading();
-            await showAlertModal('✅ Connected', 'Printer connected successfully!');
-            
-            // Retry printing with animation
-            const transactionWithName = { 
-                ...transaction, 
-                employee_name: currentEmployee.name,
-                store: currentStore
-            };
-            await printReceiptWithAnimation(transactionWithName, 2);
-        } catch (err) {
-            hideLoading();
-            await showAlertModal('❌ Connection Failed', 'Could not connect to printer. You can print later from Receipts.');
+        // ============================================================
+        // 6️⃣ STEP 6: CLAIM PRIZE (if applicable)
+        // ============================================================
+        
+        if (pendingPrize) {
+            await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
+            pendingPrize = null;
         }
-    }
-}
 
-    // COMMENTED OUT: Lucky Draw modal after sales
-/*
-document.getElementById('luckyTxId').innerText = transactionId;
-const luckyModal = document.getElementById('luckyDrawModal');
-luckyModal.style.display = 'flex';
-document.getElementById('openLuckyDrawBtn').onclick = () => {
-  openLuckyDraw(transactionId, selectedCustomer?.id);
-  luckyModal.style.display = 'none';
-};
-*/
-// Lucky Draw disabled per request
-      
-      if (pendingPrize && pendingPrize.isPromo && pendingPrize.code) {
-        await usePromoVoucherAfterSale(pendingPrize.code);
-      }
-      
-      clearCart();
+        if (pendingPrize && pendingPrize.isPromo && pendingPrize.code) {
+            await usePromoVoucherAfterSale(pendingPrize.code);
+        }
+
+        // ============================================================
+        // 🔴 LUCKY DRAW (COMMENTED OUT - KEPT FOR REFERENCE)
+        // ============================================================
+        
+        // COMMENTED OUT: Lucky Draw modal after sales
+        /*
+        document.getElementById('luckyTxId').innerText = transactionId;
+        const luckyModal = document.getElementById('luckyDrawModal');
+        luckyModal.style.display = 'flex';
+        document.getElementById('openLuckyDrawBtn').onclick = () => {
+          openLuckyDraw(transactionId, selectedCustomer?.id);
+          luckyModal.style.display = 'none';
+        };
+        */
+        // Lucky Draw disabled per request
+
+        invalidateAllReportCaches();
+
+        // ============================================================
+        // 7️⃣ STEP 7: UPDATE RECEIPTS CACHE
+        // ============================================================
+        
+        const fakeReceipt = {
+            transaction_id: transaction.transaction_id,
+            timestamp: transaction.timestamp,
+            items: transaction.items,
+            total: transaction.total,
+            payment_method: transaction.payment_method,
+            store: transaction.store,
+            employee_id: transaction.employee_id,
+            employee_name: transaction.employee_name,
+            refunded: false,
+            discount: transaction.discount,
+            buy2_free1_discount: transaction.buy2_free1_discount,
+            buy3_free1_discount: transaction.buy3_free1_discount,
+            custom_discount: transaction.custom_discount,
+            staff_discount: transaction.staff_discount,
+            sales_person_name: transaction.sales_person_name,
+            sales_person_id: transaction.sales_person_id
+        };
+        if (!cachedReceipts) cachedReceipts = [];
+        cachedReceipts.unshift(fakeReceipt);
+
+        const receiptsModal = document.getElementById('receiptsModal');
+        if (receiptsModal && receiptsModal.style.display === 'flex') {
+            renderReceiptsList(cachedReceipts);
+        }
+
+        fetchAndCacheReceipts();
+
+        // ============================================================
+        // 8️⃣ STEP 8: SHOW SUCCESS MESSAGE
+        // ============================================================
+        
+        if (receiptPrinted) {
+            await showAlertModal('✅ Transaction Complete', 
+                `Receipt printed successfully!\n\nTransaction: ${transactionId}\nTotal: RM ${totalAmount.toFixed(2)}`
+            );
+        } else {
+            await showAlertModal('✅ Transaction Complete', 
+                `Transaction saved successfully!\n\nTransaction: ${transactionId}\nTotal: RM ${totalAmount.toFixed(2)}\n\n📋 Remember to reprint receipt from Receipts section.`
+            );
+        }
+
     } else {
-      // ✅ Only queue if save failed (offline fallback)
-      pendingSales.push(transaction);
-      localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
-      await showAlertModal('Error', 'Failed to record sale. It has been queued for retry.');
+        // ============================================================
+        // 9️⃣ STEP 9: OFFLINE FALLBACK - Queue the transaction
+        // ============================================================
+        
+        pendingSales.push(transaction);
+        localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
+        await showAlertModal('⚠️ Offline', 
+            'Failed to record sale. It has been queued for retry.\n\n' +
+            `Transaction: ${transactionId}\nTotal: RM ${totalAmount.toFixed(2)}`
+        );
     }
+
   } catch (err) {
     console.error('Checkout error:', err);
     await showAlertModal('Error', 'An error occurred during checkout. Please try again.');

@@ -5290,7 +5290,7 @@ async function checkSettlementStatus(store, date) {
       .select('*')
       .eq('store', store)
       .eq('date', date)
-      .maybeSingle();  // Use maybeSingle() instead of select()
+      .maybeSingle();
     
     if (error) {
       console.error('❌ Settlement check error:', error);
@@ -5306,9 +5306,13 @@ async function checkSettlementStatus(store, date) {
     const isCollected = data.collected === true;
     console.log(`📊 Settlement found: collected = ${isCollected}`);
     
+    // ✅ Check if status is 'recorded' or 'collected'
+    const isRecorded = data.status === 'recorded' || data.status === 'collected';
+    
     return { 
       exists: true, 
       isCollected: isCollected,
+      isRecorded: isRecorded,
       settlement: data 
     };
     
@@ -5520,12 +5524,73 @@ async function openSettlementModal() {
       });
     }
 
+    // ✅ FIRST: Check if settlement already exists and is collected
+    const date = getLocalDateString(new Date());
+    const settlementStatus = await checkSettlementStatus(store, date);
+    
+    if (settlementStatus.exists && settlementStatus.isCollected) {
+      // ✅ Settlement already collected - show zero and disable everything
+      console.log('ℹ️ Settlement already collected for today');
+      
+      // ✅ Set all totals to RM 0.00
+      document.getElementById('sysCash').innerText = 'RM 0.00';
+      document.getElementById('sysCard').innerText = 'RM 0.00';
+      document.getElementById('sysQR').innerText = 'RM 0.00';
+      document.getElementById('sysAlipay').innerText = 'RM 0.00';
+      document.getElementById('sysRefund').innerText = 'RM 0.00';
+      document.getElementById('sysNetTotal').innerText = 'RM 0.00';
+      
+      // ✅ Disable all input fields
+      const allFields = ['actualCash', 'actualCard', 'actualQR', 'actualAlipay', 'pettyCashFloat'];
+      allFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.disabled = true;
+          el.placeholder = 'Settlement already collected';
+        }
+      });
+      
+      // ✅ Hide check button and show message
+      document.getElementById('checkSettlementBtn').style.display = 'none';
+      document.getElementById('recordSettlementBtn').style.display = 'none';
+      
+      // ✅ Show message
+      const settlementError = document.getElementById('settlementError');
+      settlementError.innerHTML = `
+        ✅ This store has already been settled for today.<br>
+        <span style="font-size: 0.85rem; color: #64748b;">
+          Collected on: ${new Date(settlementStatus.settlement.collected_at).toLocaleString()}<br>
+          Collected by: ${settlementStatus.settlement.collected_by || 'Unknown'}
+        </span>
+      `;
+      settlementError.style.display = 'block';
+      settlementError.style.color = '#2c7a4b'; // Green color for success message
+      
+      loadingMsg.style.display = 'none';
+      return;
+    }
+    
+    // ✅ If not settled yet, load the totals normally
     await refreshSettlementTotals(store);
     loadingMsg.style.display = 'none';
     if (!currentEmployee.isAdmin) {
       const netTotalRow = document.getElementById('sysNetTotal')?.parentElement;
       if (netTotalRow) netTotalRow.style.display = 'block';
     }
+    
+    // ✅ Enable fields (they were disabled above)
+    const enableFields = ['actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
+    enableFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.disabled = false;
+        el.placeholder = id === 'actualCash' ? 'Enter cash amount' : 
+                        id === 'actualCard' ? 'Enter card amount' :
+                        id === 'actualQR' ? 'Enter QR amount' : 'Enter Alipay amount';
+      }
+    });
+    document.getElementById('checkSettlementBtn').disabled = false;
+    
   } catch (err) {
     console.error(err);
     loadingMsg.style.display = 'none';

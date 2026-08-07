@@ -10128,6 +10128,25 @@ document.getElementById('recordSettlementBtn').addEventListener('click', async (
   
   showLoading('Marking as collected...');
   try {
+    // ✅ First, check if any selected are already collected
+    const { data: checkData, error: checkError } = await supabase
+      .from('settlements')
+      .select('id, collected')
+      .in('id', selectedIds);
+    
+    if (checkError) throw checkError;
+    
+    const alreadyCollected = checkData.filter(s => s.collected === true);
+    if (alreadyCollected.length > 0) {
+      await showAlertModal('⚠️ Already Collected', 
+        `${alreadyCollected.length} settlement(s) are already marked as collected.\n` +
+        `Please refresh and try again.`
+      );
+      hideLoading();
+      await loadAllUnsettledCash();
+      return;
+    }
+    
     // ✅ Update the settlements table
     const { error } = await supabase
       .from('settlements')
@@ -10136,7 +10155,8 @@ document.getElementById('recordSettlementBtn').addEventListener('click', async (
         collected_by: currentEmployee?.name || 'Unknown',
         collected_at: new Date().toISOString()
       })
-      .in('id', selectedIds);
+      .in('id', selectedIds)
+      .eq('collected', false);  // ✅ Only update if not already collected
     
     if (error) throw error;
     

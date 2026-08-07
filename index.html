@@ -8786,96 +8786,91 @@ async function updateNonAdminReport(from, to) {
   console.log('Employee:', currentEmployee.name, 'ID:', currentEmployee.id);
   console.log('Date range:', from, 'to', to);
   
-  // ✅ Store Total Sales = SPECIFIC store only (for display only)
+  // Store Total Sales = SPECIFIC store only (for display only)
   const store = currentStore;
   const storeTotals = await fetchSalesReport(store, 'all', from, to, false, true);
   if (storeTotals) {
-    document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(storeTotals.refundTotal || 0).toFixed(2)}`;
+    document.getElementById('adminReportRefundTotal').innerText = 'RM ' + Math.abs(storeTotals.refundTotal || 0).toFixed(2);
     document.getElementById('adminReportRefundedBills').innerText = storeTotals.refundedTransactionCount || 0;
     document.getElementById('adminReportTransactionCount').innerText = storeTotals.transactionCount || 0;
     document.getElementById('adminReportTotalItems').innerText = storeTotals.totalItems || 0;
   }
   
-  // ✅ My Sales = Employee sales across ALL stores - NO filters except employee_id and date
-  let query = supabase
-    .from('transactions')
-    .select('*')  // Get ALL columns
-    .eq('employee_id', currentEmployee.id)  // ✅ ONLY filter by employee_id
-    .gt('total', 0); // Only positive totals (exclude refunds)
-    // ✅ NO store filter - get ALL stores
-    // ✅ NO refunded filter - include all sales
-  
-  if (from) {
-    const fromDate = new Date(from + 'T00:00:00+08:00');
-    query = query.gte('timestamp', fromDate.toISOString());
-  }
-  if (to) {
-    const toDate = new Date(to + 'T23:59:59+08:00');
-    query = query.lte('timestamp', toDate.toISOString());
-  }
-  
+  // MY Sales = Employee sales across ALL stores
   try {
+    // Build the query
+    let query = supabase
+      .from('transactions')
+      .select('*')
+      .eq('employee_id', currentEmployee.id)
+      .gt('total', 0);
+    
+    // Add date filters if provided
+    if (from) {
+      const fromDate = new Date(from + 'T00:00:00+08:00');
+      query = query.gte('timestamp', fromDate.toISOString());
+    }
+    if (to) {
+      const toDate = new Date(to + 'T23:59:59+08:00');
+      query = query.lte('timestamp', toDate.toISOString());
+    }
+    
+    // Execute query
     const { data, error } = await query;
     
     if (error) {
-      console.error('❌ Error fetching employee sales:', error);
+      console.error('Error fetching employee sales:', error);
       return;
     }
     
-    console.log(`📊 Found ${data?.length || 0} transactions for employee ${currentEmployee.name}`);
+    console.log('Found ' + (data?.length || 0) + ' transactions for employee ' + currentEmployee.name);
     
     let mySales = 0;
     let storeBreakdown = {};
     let totalItems = 0;
     
-    for (const tx of data || []) {
+    // Process each transaction
+    for (let i = 0; i < (data || []).length; i++) {
+      const tx = data[i];
       const total = parseFloat(tx.total) || 0;
-      mySales += total;
+      mySales = mySales + total;
       
-      // Track per store for breakdown
+      // Track per store
       const storeName = tx.store || 'Unknown';
       storeBreakdown[storeName] = (storeBreakdown[storeName] || 0) + total;
       
       // Count items
       if (tx.items && Array.isArray(tx.items)) {
-        for (const item of tx.items) {
-          totalItems += parseInt(item.quantity) || 0;
+        for (let j = 0; j < tx.items.length; j++) {
+          const item = tx.items[j];
+          totalItems = totalItems + (parseInt(item.quantity) || 0);
         }
       }
     }
     
-    console.log(`👤 Employee ${currentEmployee.name} sales across all stores: RM ${mySales.toFixed(2)}`);
-    console.log('📊 Store breakdown:', storeBreakdown);
-    console.log('📦 Total items sold:', totalItems);
+    console.log('Employee ' + currentEmployee.name + ' sales across all stores: RM ' + mySales.toFixed(2));
+    console.log('Store breakdown:', storeBreakdown);
+    console.log('Total items sold:', totalItems);
     
-    // ✅ Update the report total to show employee's sales across ALL stores
+    // Update the report total
     const reportTotal = document.getElementById('adminReportTotalSales');
     if (reportTotal) {
-      reportTotal.innerText = `RM ${mySales.toFixed(2)}`;
+      reportTotal.innerText = 'RM ' + mySales.toFixed(2);
     }
     
     // Update the employee stats card
     const empTotalElem = document.getElementById('nonAdminEmployeeTotal');
     if (empTotalElem) {
-      empTotalElem.innerText = `RM ${mySales.toFixed(2)}`;
+      empTotalElem.innerText = 'RM ' + mySales.toFixed(2);
     }
     
-    // Update the first stat item label
-    const firstStatItem = document.querySelector('#adminReportModal .stat-item:first-child');
-    if (firstStatItem) {
-      const labelSpan = firstStatItem.querySelector('span:first-child');
-      if (labelSpan) {
-        labelSpan.innerText = `👤 My Sales (All Stores):`;
-      }
-    }
-    
-    // ✅ Update transaction count to show ALL transactions for this employee
+    // Update transaction count
     const txCountElem = document.getElementById('adminReportTransactionCount');
     if (txCountElem) {
       txCountElem.innerText = data?.length || 0;
     }
     
-    // ✅ Update items sold
+    // Update items sold
     const itemsSoldElem = document.getElementById('adminReportTotalItems');
     if (itemsSoldElem) {
       itemsSoldElem.innerText = totalItems || 0;
@@ -8887,7 +8882,6 @@ async function updateNonAdminReport(from, to) {
   
   // Show product details if visible
   if (productDetailsVisible) {
-    // ✅ Product sales for this employee across ALL stores
     const productData = await fetchProductSalesReport('all', currentEmployee.id, from, to);
     renderProductDetails(productData);
   }
@@ -8896,21 +8890,20 @@ async function updateNonAdminReport(from, to) {
 async function updateNonAdminStatsCards(from, to) {
   if (!currentEmployee || currentEmployee.isAdmin) return;
   
-  console.log('🔄 Updating non-admin stats cards...');
+  console.log('Updating non-admin stats cards...');
   console.log('Current employee:', currentEmployee);
   
-  // ✅ Store Total Sales = SPECIFIC store only (the employee's store)
-  const store = currentStore; // Employee's assigned store
+  // Store Total Sales = SPECIFIC store only
+  const store = currentStore;
   const storeTotals = await fetchSalesReport(store, 'all', from, to, false, true);
   const storeTotalElem = document.getElementById('nonAdminStoreTotal');
   const storeNameElem = document.getElementById('nonAdminStoreName');
   
   if (storeTotalElem && storeTotals) {
-    storeTotalElem.innerText = `RM ${storeTotals.totalSales.toFixed(2)}`;
-    console.log(`🏪 Store total for ${store}: RM ${storeTotals.totalSales.toFixed(2)}`);
+    storeTotalElem.innerText = 'RM ' + storeTotals.totalSales.toFixed(2);
+    console.log('Store total for ' + store + ': RM ' + storeTotals.totalSales.toFixed(2));
   }
   if (storeNameElem) {
-    // Show the specific store name
     const storeNames = {
       queens: 'Queens',
       sunshine: 'Sunshine',
@@ -8919,71 +8912,61 @@ async function updateNonAdminStatsCards(from, to) {
     storeNameElem.innerText = storeNames[store] || store;
   }
   
-  // ✅ My Sales = Employee sales across ALL stores
-  let query = supabase
-    .from('transactions')
-    .select('employee_id, total, employee_name, store')
-    // ✅ NO store filter - get ALL stores for this employee
-  
-  if (from) {
-    const fromDate = new Date(from + 'T00:00:00+08:00');
-    query = query.gte('timestamp', fromDate.toISOString());
-  }
-  if (to) {
-    const toDate = new Date(to + 'T23:59:59+08:00');
-    query = query.lte('timestamp', toDate.toISOString());
-  }
-  
+  // My Sales = Employee sales across ALL stores
   try {
+    let query = supabase
+      .from('transactions')
+      .select('employee_id, total, employee_name, store')
+    
+    if (from) {
+      const fromDate = new Date(from + 'T00:00:00+08:00');
+      query = query.gte('timestamp', fromDate.toISOString());
+    }
+    if (to) {
+      const toDate = new Date(to + 'T23:59:59+08:00');
+      query = query.lte('timestamp', toDate.toISOString());
+    }
+    
     const { data, error } = await query;
     
     if (error) {
-      console.error('❌ Error fetching employee transactions:', error);
+      console.error('Error fetching employee transactions:', error);
       return;
     }
     
-    console.log(`📊 Found ${data?.length || 0} transactions across all stores`);
+    console.log('Found ' + (data?.length || 0) + ' transactions across all stores');
     
     let mySales = 0;
     const employeeId = String(currentEmployee.id);
     
-    // ✅ Calculate total sales for this employee across ALL stores
-    for (const tx of data || []) {
+    for (let i = 0; i < (data || []).length; i++) {
+      const tx = data[i];
       const total = parseFloat(tx.total) || 0;
       const txEmployeeId = String(tx.employee_id);
       
       if (total > 0 && txEmployeeId === employeeId) {
-        mySales += total;
-        console.log(`💰 Found sale: RM ${total.toFixed(2)} at ${tx.store || 'unknown store'}`);
+        mySales = mySales + total;
+        console.log('Found sale: RM ' + total.toFixed(2) + ' at ' + (tx.store || 'unknown store'));
       }
     }
     
-    console.log(`👤 My sales across all stores: RM ${mySales.toFixed(2)}`);
+    console.log('My sales across all stores: RM ' + mySales.toFixed(2));
     
     // Update UI
     const empTotalElem = document.getElementById('nonAdminEmployeeTotal');
     const empNameElem = document.getElementById('nonAdminEmployeeName');
     
     if (empTotalElem) {
-      empTotalElem.innerText = `RM ${mySales.toFixed(2)}`;
+      empTotalElem.innerText = 'RM ' + mySales.toFixed(2);
     }
     if (empNameElem) {
       empNameElem.innerText = currentEmployee.name || 'Unknown';
     }
     
-    // ✅ Update the main report total to show employee's sales across ALL stores
+    // Update the main report total
     const reportTotal = document.getElementById('adminReportTotalSales');
     if (reportTotal) {
-      reportTotal.innerText = `RM ${mySales.toFixed(2)}`;
-    }
-    
-    // Update the first stat item label
-    const firstStatItem = document.querySelector('#adminReportModal .stat-item:first-child');
-    if (firstStatItem) {
-      const labelSpan = firstStatItem.querySelector('span:first-child');
-      if (labelSpan) {
-        labelSpan.innerText = `👤 My Sales (All Stores):`;
-      }
+      reportTotal.innerText = 'RM ' + mySales.toFixed(2);
     }
     
   } catch (err) {

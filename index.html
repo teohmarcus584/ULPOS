@@ -5310,11 +5310,16 @@ async function checkSettlementStatus(store, date) {
     const isCollectedStatus = data.status === 'collected';
     
     // ✅ Check if there are any unsettled transactions for this date
+    // ✅ FIX: Use timestamp range instead of date column
+    const startDate = new Date(date + 'T00:00:00+08:00');
+    const endDate = new Date(date + 'T23:59:59+08:00');
+    
     const { data: txData, error: txError } = await supabase
       .from('transactions')
       .select('settled')
       .eq('store', store)
-      .eq('date', date)
+      .gte('timestamp', startDate.toISOString())
+      .lte('timestamp', endDate.toISOString())
       .eq('settled', false)
       .limit(1);
     
@@ -5478,13 +5483,17 @@ async function getUnsettledTransactionCount(store, date) {
   try {
     console.log(`🔍 Checking unsettled transactions for ${store} on ${date}`);
     
-    // Get all transactions for this store and date
+    // ✅ FIX: Use timestamp range instead of date column
+    const startDate = new Date(date + 'T00:00:00+08:00');
+    const endDate = new Date(date + 'T23:59:59+08:00');
+    
+    // Get all transactions for this store and date range
     const { data, error } = await supabase
       .from('transactions')
       .select('settled')
       .eq('store', store)
-      .gte('timestamp', `${date}T00:00:00+08:00`)
-      .lte('timestamp', `${date}T23:59:59+08:00`);
+      .gte('timestamp', startDate.toISOString())
+      .lte('timestamp', endDate.toISOString());
     
     if (error) {
       console.error('Error checking unsettled transactions:', error);
@@ -9632,7 +9641,6 @@ async function recordSettlement(store, date, pettyCashFloat, cashSystem, cardSys
           qr_actual: parseFloat(qrActual) || 0,
           alipay_actual: parseFloat(alipayActual) || 0,
           status: 'recorded',
-          // ✅ Keep collected as false until cash collection
           collected: false,
           collected_by: null,
           collected_at: null
@@ -9670,7 +9678,7 @@ async function recordSettlement(store, date, pettyCashFloat, cashSystem, cardSys
           qr_actual: parseFloat(qrActual) || 0,
           alipay_actual: parseFloat(alipayActual) || 0,
           status: 'recorded',
-          collected: false,  // ✅ Default to not collected
+          collected: false,
           collected_by: null,
           collected_at: null
         }])
@@ -9686,14 +9694,18 @@ async function recordSettlement(store, date, pettyCashFloat, cashSystem, cardSys
     }
     
     // ✅ Mark ALL transactions for this store and date as settled
+    // ✅ FIX: Use timestamp range instead of date column
+    const startDate = new Date(date + 'T00:00:00+08:00');
+    const endDate = new Date(date + 'T23:59:59+08:00');
+    
     const { error: updateError } = await supabase
       .from('transactions')
       .update({ 
         settled: true 
       })
       .eq('store', store)
-      .gte('timestamp', `${date}T00:00:00+08:00`)
-      .lte('timestamp', `${date}T23:59:59+08:00`)
+      .gte('timestamp', startDate.toISOString())
+      .lte('timestamp', endDate.toISOString())
       .eq('settled', false);
     
     if (updateError) {
@@ -9708,7 +9720,8 @@ async function recordSettlement(store, date, pettyCashFloat, cashSystem, cardSys
     console.error('❌ recordSettlement error:', err);
     return { success: false, error: err.message };
   }
-}// ==================== PENDING SALES ====================
+}
+// ==================== PENDING SALES ====================
 
 let pendingSales = [];
 

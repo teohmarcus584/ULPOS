@@ -8032,20 +8032,25 @@ async function fetchSalesChartData(store, employeeId, from, to) {
 async function fetchProductSalesReport(store, employeeId, from, to) {
   try {
     console.log('📊 Fetching product sales report...');
+    console.log('Store filter:', store, 'Employee filter:', employeeId);
     
     let query = supabase
       .from('transactions')
       .select('*')
       .gt('total', 0);  // ✅ EXCLUDE refunds (negative totals)
     
-    // ✅ Only filter by store if it's NOT 'all'
-    if (store && store !== 'all') {
+    // ✅ Only filter by store if it's NOT 'all' AND NOT null
+    if (store && store !== 'all' && store !== 'null' && store !== undefined) {
       query = query.eq('store', store);
+      console.log('✅ Filtering by store:', store);
+    } else {
+      console.log('✅ No store filter - getting ALL stores');
     }
-    // ✅ If store is 'all', don't filter by store
     
-    if (employeeId && employeeId !== 'all') {
+    // ✅ Filter by employee if provided
+    if (employeeId && employeeId !== 'all' && employeeId !== 'null' && employeeId !== undefined) {
       query = query.eq('employee_id', employeeId);
+      console.log('✅ Filtering by employee:', employeeId);
     }
     
     if (from) {
@@ -8060,7 +8065,7 @@ async function fetchProductSalesReport(store, employeeId, from, to) {
     const { data, error } = await query;
     if (error) throw error;
     
-    console.log(`📊 Found ${data?.length || 0} transactions (excluding refunds)`);
+    console.log(`📊 Found ${data?.length || 0} transactions`);
     
     const productMap = new Map();
     let totalPaidItems = 0;
@@ -8587,21 +8592,24 @@ async function openReportsModal() {
 
     const allStatItems = document.querySelectorAll('#adminReportModal .stat-item');
     allStatItems.forEach(item => item.style.display = 'flex');
-  } else {
-    if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
-    if (reportFiltersDiv) reportFiltersDiv.style.display = 'none';
-    const nonAdminCardsDiv = document.getElementById('nonAdminStatsCards');
-    if (nonAdminCardsDiv) nonAdminCardsDiv.style.display = 'block';
-    if (productToggle) productToggle.style.display = 'block';
-    if (nonAdminDateRangeDiv) nonAdminDateRangeDiv.style.display = 'block';
+ } else {
+  if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
+  if (reportFiltersDiv) reportFiltersDiv.style.display = 'none';
+  const nonAdminCardsDiv = document.getElementById('nonAdminStatsCards');
+  if (nonAdminCardsDiv) nonAdminCardsDiv.style.display = 'block';
+  if (productToggle) productToggle.style.display = 'block';
+  if (nonAdminDateRangeDiv) nonAdminDateRangeDiv.style.display = 'block';
 
-    hidePaymentRowsForNonAdmin();
+  hidePaymentRowsForNonAdmin();
 
-    const totalSalesStatItem = document.querySelector('#adminReportModal .stat-item:first-child');
-    if (totalSalesStatItem) {
-      const labelSpan = totalSalesStatItem.querySelector('span:first-child');
-      if (labelSpan) labelSpan.innerText = 'My Total Sales:';
+  // ✅ Change the label for non-admin
+  const totalSalesStatItem = document.querySelector('#adminReportModal .stat-item:first-child');
+  if (totalSalesStatItem) {
+    const labelSpan = totalSalesStatItem.querySelector('span:first-child');
+    if (labelSpan) {
+      labelSpan.innerText = '👤 My Sales (All Stores):';
     }
+  }
 
     const rangeSelect = document.getElementById('nonAdminDateRangeSelect');
     const customDiv = document.getElementById('nonAdminCustomDateRange');
@@ -8778,24 +8786,24 @@ async function updateNonAdminReport(from, to) {
   console.log('Employee:', currentEmployee.name, 'ID:', currentEmployee.id);
   console.log('Date range:', from, 'to', to);
   
-  // ✅ Store Total Sales = SPECIFIC store only
+  // ✅ Store Total Sales = SPECIFIC store only (for display only)
   const store = currentStore;
   const storeTotals = await fetchSalesReport(store, 'all', from, to, false, true);
   if (storeTotals) {
-    // Update the refund and transaction stats for the specific store
     document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(storeTotals.refundTotal || 0).toFixed(2)}`;
     document.getElementById('adminReportRefundedBills').innerText = storeTotals.refundedTransactionCount || 0;
     document.getElementById('adminReportTransactionCount').innerText = storeTotals.transactionCount || 0;
     document.getElementById('adminReportTotalItems').innerText = storeTotals.totalItems || 0;
   }
   
-  // ✅ My Sales = Employee sales across ALL stores
+  // ✅ My Sales = Employee sales across ALL stores - NO filters except employee_id and date
   let query = supabase
     .from('transactions')
-    .select('total, store')
-    .eq('employee_id', currentEmployee.id)
+    .select('*')  // Get ALL columns
+    .eq('employee_id', currentEmployee.id)  // ✅ ONLY filter by employee_id
     .gt('total', 0); // Only positive totals (exclude refunds)
     // ✅ NO store filter - get ALL stores
+    // ✅ NO refunded filter - include all sales
   
   if (from) {
     const fromDate = new Date(from + 'T00:00:00+08:00');
@@ -8814,8 +8822,11 @@ async function updateNonAdminReport(from, to) {
       return;
     }
     
+    console.log(`📊 Found ${data?.length || 0} transactions for employee ${currentEmployee.name}`);
+    
     let mySales = 0;
     let storeBreakdown = {};
+    let totalItems = 0;
     
     for (const tx of data || []) {
       const total = parseFloat(tx.total) || 0;
@@ -8824,10 +8835,18 @@ async function updateNonAdminReport(from, to) {
       // Track per store for breakdown
       const storeName = tx.store || 'Unknown';
       storeBreakdown[storeName] = (storeBreakdown[storeName] || 0) + total;
+      
+      // Count items
+      if (tx.items && Array.isArray(tx.items)) {
+        for (const item of tx.items) {
+          totalItems += parseInt(item.quantity) || 0;
+        }
+      }
     }
     
     console.log(`👤 Employee ${currentEmployee.name} sales across all stores: RM ${mySales.toFixed(2)}`);
     console.log('📊 Store breakdown:', storeBreakdown);
+    console.log('📦 Total items sold:', totalItems);
     
     // ✅ Update the report total to show employee's sales across ALL stores
     const reportTotal = document.getElementById('adminReportTotalSales');
@@ -8848,6 +8867,18 @@ async function updateNonAdminReport(from, to) {
       if (labelSpan) {
         labelSpan.innerText = `👤 My Sales (All Stores):`;
       }
+    }
+    
+    // ✅ Update transaction count to show ALL transactions for this employee
+    const txCountElem = document.getElementById('adminReportTransactionCount');
+    if (txCountElem) {
+      txCountElem.innerText = data?.length || 0;
+    }
+    
+    // ✅ Update items sold
+    const itemsSoldElem = document.getElementById('adminReportTotalItems');
+    if (itemsSoldElem) {
+      itemsSoldElem.innerText = totalItems || 0;
     }
     
   } catch (err) {

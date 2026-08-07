@@ -8778,17 +8778,18 @@ async function updateNonAdminReport(from, to) {
   console.log('Employee:', currentEmployee.name, 'ID:', currentEmployee.id);
   console.log('Date range:', from, 'to', to);
   
-  // ✅ Get totals for ALL stores
-  const storeTotals = await fetchSalesReport('all', 'all', from, to, false, true);
+  // ✅ Store Total Sales = SPECIFIC store only
+  const store = currentStore;
+  const storeTotals = await fetchSalesReport(store, 'all', from, to, false, true);
   if (storeTotals) {
-    document.getElementById('adminReportTotalSales').innerText = `RM ${storeTotals.totalSales.toFixed(2)}`;
+    // Update the refund and transaction stats for the specific store
     document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(storeTotals.refundTotal || 0).toFixed(2)}`;
     document.getElementById('adminReportRefundedBills').innerText = storeTotals.refundedTransactionCount || 0;
     document.getElementById('adminReportTransactionCount').innerText = storeTotals.transactionCount || 0;
     document.getElementById('adminReportTotalItems').innerText = storeTotals.totalItems || 0;
   }
   
-  // ✅ Calculate employee's sales across ALL stores
+  // ✅ My Sales = Employee sales across ALL stores
   let query = supabase
     .from('transactions')
     .select('total, store')
@@ -8828,7 +8829,7 @@ async function updateNonAdminReport(from, to) {
     console.log(`👤 Employee ${currentEmployee.name} sales across all stores: RM ${mySales.toFixed(2)}`);
     console.log('📊 Store breakdown:', storeBreakdown);
     
-    // Update the report total to show employee's sales
+    // ✅ Update the report total to show employee's sales across ALL stores
     const reportTotal = document.getElementById('adminReportTotalSales');
     if (reportTotal) {
       reportTotal.innerText = `RM ${mySales.toFixed(2)}`;
@@ -8855,7 +8856,7 @@ async function updateNonAdminReport(from, to) {
   
   // Show product details if visible
   if (productDetailsVisible) {
-    // ✅ Get product sales across ALL stores for this employee
+    // ✅ Product sales for this employee across ALL stores
     const productData = await fetchProductSalesReport('all', currentEmployee.id, from, to);
     renderProductDetails(productData);
   }
@@ -8867,24 +8868,31 @@ async function updateNonAdminStatsCards(from, to) {
   console.log('🔄 Updating non-admin stats cards...');
   console.log('Current employee:', currentEmployee);
   
-  // ✅ Get store totals - show ALL stores combined
-  const storeTotals = await fetchSalesReport('all', 'all', from, to, false, true);
+  // ✅ Store Total Sales = SPECIFIC store only (the employee's store)
+  const store = currentStore; // Employee's assigned store
+  const storeTotals = await fetchSalesReport(store, 'all', from, to, false, true);
   const storeTotalElem = document.getElementById('nonAdminStoreTotal');
   const storeNameElem = document.getElementById('nonAdminStoreName');
   
   if (storeTotalElem && storeTotals) {
     storeTotalElem.innerText = `RM ${storeTotals.totalSales.toFixed(2)}`;
-    console.log(`🏪 All stores total: RM ${storeTotals.totalSales.toFixed(2)}`);
+    console.log(`🏪 Store total for ${store}: RM ${storeTotals.totalSales.toFixed(2)}`);
   }
   if (storeNameElem) {
-    storeNameElem.innerText = 'All Stores';
+    // Show the specific store name
+    const storeNames = {
+      queens: 'Queens',
+      sunshine: 'Sunshine',
+      gurney_paragon: 'Gurney Paragon'
+    };
+    storeNameElem.innerText = storeNames[store] || store;
   }
   
-  // ✅ Get employee sales across ALL stores
+  // ✅ My Sales = Employee sales across ALL stores
   let query = supabase
     .from('transactions')
     .select('employee_id, total, employee_name, store')
-    // ✅ NO store filter - get ALL stores
+    // ✅ NO store filter - get ALL stores for this employee
   
   if (from) {
     const fromDate = new Date(from + 'T00:00:00+08:00');
@@ -8913,7 +8921,6 @@ async function updateNonAdminStatsCards(from, to) {
       const total = parseFloat(tx.total) || 0;
       const txEmployeeId = String(tx.employee_id);
       
-      // ✅ Match by employee_id (no store filter)
       if (total > 0 && txEmployeeId === employeeId) {
         mySales += total;
         console.log(`💰 Found sale: RM ${total.toFixed(2)} at ${tx.store || 'unknown store'}`);
@@ -8933,13 +8940,13 @@ async function updateNonAdminStatsCards(from, to) {
       empNameElem.innerText = currentEmployee.name || 'Unknown';
     }
     
-    // ✅ Also update the main report total
+    // ✅ Update the main report total to show employee's sales across ALL stores
     const reportTotal = document.getElementById('adminReportTotalSales');
     if (reportTotal) {
       reportTotal.innerText = `RM ${mySales.toFixed(2)}`;
     }
     
-    // ✅ Update the first stat item label
+    // Update the first stat item label
     const firstStatItem = document.querySelector('#adminReportModal .stat-item:first-child');
     if (firstStatItem) {
       const labelSpan = firstStatItem.querySelector('span:first-child');

@@ -5256,7 +5256,7 @@ function updateReceipts() {
   } else {
     // ✅ Non-admin: force to their specific store
     store = currentStore;  // Use the employee's assigned store
-    employeeId = currentEmployee.id;  // Only show their own receipts
+    employeeId = currentEmployee.id;  // ✅ Force to their own ID (store filter)
   }
 
   const rangeSelect = document.getElementById('receiptsDateRangeSelect');
@@ -10017,6 +10017,8 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('sideInventoryBtn').addEventListener('click', wrapMenuAction(() => { toggleInventoryMode(); }));
  // ==================== OPEN RECEIPTS MODAL ====================
 
+// ==================== OPEN RECEIPTS MODAL ====================
+
 document.getElementById('sideReceiptsBtn').addEventListener('click', wrapMenuAction(async () => {
   const modal = document.getElementById('receiptsModal');
   if (modal) {
@@ -10057,7 +10059,7 @@ document.getElementById('sideReceiptsBtn').addEventListener('click', wrapMenuAct
 
   // ✅ Handle Admin vs Non-Admin UI
   if (currentEmployee?.isAdmin) {
-    // ADMIN: Show store and employee filters
+    // ADMIN: Show store and employee filters (enabled)
     const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
     const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
     if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'flex';
@@ -10094,6 +10096,13 @@ document.getElementById('sideReceiptsBtn').addEventListener('click', wrapMenuAct
     if (receiptsStore) {
       receiptsStore.value = currentStore;
       receiptsStore.disabled = true;  // Non-admin cannot change store
+    }
+    
+    // ✅ Force employee filter to current employee
+    const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
+    if (receiptsEmpSelect) {
+      receiptsEmpSelect.value = currentEmployee.id;
+      receiptsEmpSelect.disabled = true;  // Non-admin cannot change employee
     }
   }
 

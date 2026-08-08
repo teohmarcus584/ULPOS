@@ -3905,27 +3905,30 @@ async function completeCheckout(paymentMethod, cashReceived) {
       total: (item.quantity - item.freeQuantity) * item.product.price
     }));
 
-   // Inside completeCheckout function, when creating the transaction object:
-const transaction = {
-  transaction_id: transactionId,
-  items: saleItems,
-  total: totalAmount,
-  payment_method: paymentMethod,
-  cash_received: cashReceived || 0,
-  timestamp: new Date().toISOString(),
-  discount: discountAmount || 0,
-  buy2_free1_discount: buy2Free1Discount || 0,
-  buy3_free1_discount: buy3Free1Discount || 0,
-  custom_discount: customDiscount || 0,
-  staff_discount: staffDiscount || 0,
-  prize_claimed: claimedReceiptInfo || null,
-  customer_id: selectedCustomer ? selectedCustomer.id : null,
-  store: currentStore,
-  employee_id: currentEmployee.id,
-  employee_name: currentEmployee.name,  // ✅ IMPORTANT: Add this
-  sales_person_name: salesPersonName || '',
-  sales_person_id: salesPersonId || ''
-};
+    const transaction = {
+      transaction_id: transactionId,
+      items: saleItems,
+      total: totalAmount,
+      payment_method: paymentMethod,
+      cash_received: cashReceived || 0,
+      timestamp: new Date().toISOString(),
+      discount: discountAmount || 0,
+      buy2_free1_discount: buy2Free1Discount || 0,
+      buy3_free1_discount: buy3Free1Discount || 0,
+      custom_discount: customDiscount || 0,
+      staff_discount: staffDiscount || 0,
+      prize_claimed: claimedReceiptInfo ? {
+        receipt: claimedReceiptInfo.receipt,
+        value: claimedReceiptInfo.value,
+        name: claimedReceiptInfo.name
+      } : null,
+      customer_id: selectedCustomer ? selectedCustomer.id : null,
+      store: currentStore,
+      employee_id: currentEmployee.id,
+      employee_name: currentEmployee.name,
+      sales_person_name: salesPersonName || '',
+      sales_person_id: salesPersonId || ''
+    };
 
     // Print receipt
     let receiptPrinted = false;
@@ -3977,18 +3980,16 @@ const transaction = {
     hideLoading();
 
     if (success) {
-  for (let item of saleItems) {
-    const product = products.find(p => p.id == item.id);
-    if (product) {
-      const oldStock = product.stock;
-      const newStock = oldStock - item.quantity;
-      product.stock = newStock;
-      checkAndNotifyOutOfStock(product.id, product.name, newStock);
-    }
-  }
-  
-  // ✅ Save to Lucky Draw if eligible
-  await saveToLuckyDraw(transaction);
+      // Update stock
+      for (let item of saleItems) {
+        const product = products.find(p => p.id == item.id);
+        if (product) {
+          const oldStock = product.stock;
+          const newStock = oldStock - item.quantity;
+          product.stock = newStock;
+          checkAndNotifyOutOfStock(product.id, product.name, newStock);
+        }
+      }
 
       localStorage.setItem(`products_${currentStore}`, JSON.stringify({
         timestamp: Date.now(),
@@ -3996,6 +3997,7 @@ const transaction = {
       }));
       renderProductGrid();
 
+      // Customer points
       if (selectedCustomer && selectedCustomer.id) {
         const POINTS_PER_RM = 1;
         const pointsEarned = Math.floor(totalAmount * POINTS_PER_RM);
@@ -4005,9 +4007,56 @@ const transaction = {
         }
       }
 
-      if (pendingPrize) {
-        await claimPrizeAfterSale(pendingPrize.receipt, pendingPrize.value, totalAmount);
-        pendingPrize = null;
+      // ============================================================
+      // ✅ MARK PRIZE AS CLAIMED AFTER SUCCESSFUL CHECKOUT
+      // ============================================================
+      const prizeToClaim = pendingPrize || window._pendingPrize;
+
+      if (prizeToClaim && prizeToClaim.receipt && !prizeToClaim.claimed) {
+        console.log('🎯 ========================================');
+        console.log('🎯 FOUND PRIZE TO CLAIM!');
+        console.log('🎯 Receipt:', prizeToClaim.receipt);
+        console.log('🎯 Value:', prizeToClaim.value);
+        console.log('🎯 Name:', prizeToClaim.name);
+        console.log('🎯 ========================================');
+        
+        try {
+          const claimed = await claimPrizeAfterSale(
+            prizeToClaim.receipt, 
+            prizeToClaim.value, 
+            totalAmount
+          );
+          
+          if (claimed) {
+            console.log('✅ Prize marked as claimed successfully!');
+            prizeToClaim.claimed = true;
+            pendingPrize = null;
+            window._pendingPrize = null;
+            claimedReceiptInfo = null;
+            
+            // ✅ Show success message
+            await showAlertModal('🎉 Prize Claimed!', 
+              `Your prize has been successfully claimed!\n\n` +
+              `Receipt: ${prizeToClaim.receipt}\n` +
+              `Prize: ${prizeToClaim.name}`
+            );
+          } else {
+            console.warn('⚠️ Failed to mark prize as claimed');
+            await showAlertModal('⚠️ Prize Claim Warning', 
+              'Transaction completed but prize was NOT marked as claimed.\n\n' +
+              `Receipt: ${prizeToClaim.receipt}\n` +
+              `Prize: ${prizeToClaim.name}\n\n` +
+              'Please manually claim the prize from the Receipts section.'
+            );
+          }
+        } catch (err) {
+          console.error('Error claiming prize:', err);
+        }
+      } else {
+        console.log('ℹ️ No pending prize to claim');
+        if (prizeToClaim) {
+          console.log('prizeToClaim exists but claimed is already:', prizeToClaim.claimed);
+        }
       }
 
       if (pendingPrize && pendingPrize.isPromo && pendingPrize.code) {
@@ -4032,7 +4081,8 @@ const transaction = {
         custom_discount: transaction.custom_discount,
         staff_discount: transaction.staff_discount,
         sales_person_name: transaction.sales_person_name,
-        sales_person_id: transaction.sales_person_id
+        sales_person_id: transaction.sales_person_id,
+        prize_claimed: prizeToClaim || null  // ✅ Add this line
       };
       if (!cachedReceipts) cachedReceipts = [];
       cachedReceipts.unshift(fakeReceipt);
@@ -4043,6 +4093,9 @@ const transaction = {
       }
 
       fetchAndCacheReceipts();
+
+      // Show Lucky Draw modal if transaction qualifies
+      await saveToLuckyDraw(transaction);
 
       if (receiptPrinted) {
         await showAlertModal('✅ Transaction Complete', 
@@ -6737,6 +6790,8 @@ async function checkReceiptForClaim() {
     return;
   }
   
+  console.log('🔍 Checking receipt for claim:', receipt);
+  
   try {
     const { data, error } = await supabase
       .from('lucky_draw_prizes')
@@ -6744,19 +6799,45 @@ async function checkReceiptForClaim() {
       .eq('receipt', receipt)
       .maybeSingle();
     
-    if (error || !data) {
+    if (error) {
+      console.error('Error checking receipt:', error);
+      showClaimError('Error checking receipt. Please try again.');
+      return;
+    }
+    
+    if (!data) {
       showClaimError('Receipt not found in lucky draw.');
       return;
     }
     
-    if (data.claimed) {
-      showClaimError('This prize has already been claimed.');
+    console.log('📋 Found lucky draw entry:', data);
+    
+    // ✅ Check if already claimed - ONE TIME USE
+    if (data.claimed === true) {
+      showClaimError('❌ This prize has already been claimed and cannot be used again.');
       return;
     }
     
+    // ✅ Check if expired (30 days)
+    const createdDate = new Date(data.created_at);
+    const today = new Date();
+    const diffDays = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays > 30) {
+      showClaimError(`❌ This prize has expired (${diffDays} days ago). Valid for 30 days only.`);
+      return;
+    }
+    
+    // Store the receipt data for later use
     window.pendingClaimReceipt = data;
-    window.pendingPrizeValue = parseFloat(data.discount_value);
-    window.pendingPrizeLabel = data.prize_label;
+    window.pendingPrizeValue = parseFloat(data.discount_value) || 38;
+    window.pendingPrizeLabel = data.prize_label || 'RM 38 FREE GIFT';
+    
+    console.log('✅ Prize ready to claim:', {
+      receipt: receipt,
+      value: window.pendingPrizeValue,
+      label: window.pendingPrizeLabel
+    });
     
     document.getElementById('claimStep1').style.display = 'none';
     document.getElementById('claimStep2').style.display = 'block';
@@ -6766,40 +6847,121 @@ async function checkReceiptForClaim() {
     prizeSelect.innerHTML = `<option value="${window.pendingPrizeValue}">${window.pendingPrizeLabel} - RM ${window.pendingPrizeValue}</option>`;
     
   } catch (err) {
-    console.error(err);
-    showClaimError('Connection error.');
+    console.error('Connection error:', err);
+    showClaimError('Connection error. Please try again.');
   }
 }
-
+async function isPrizeAlreadyClaimed(receiptNumber) {
+  try {
+    const { data, error } = await supabase
+      .from('lucky_draw_prizes')
+      .select('claimed, claimed_at')
+      .eq('receipt', receiptNumber)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Error checking prize status:', error);
+      return false;
+    }
+    
+    return data ? data.claimed === true : false;
+  } catch (err) {
+    console.error('Error checking prize status:', err);
+    return false;
+  }
+}
 function applyPrizeToCart() {
-  if (!window.pendingClaimReceipt) return;
+  if (!window.pendingClaimReceipt) {
+    console.error('❌ No pending claim receipt found');
+    showClaimError('No prize to claim. Please try again.');
+    return;
+  }
+  
   const prizeValue = window.pendingPrizeValue || 38;
   const prizeText = window.pendingPrizeLabel || `RM ${prizeValue} FREE GIFT`;
+  const receiptNumber = window.pendingClaimReceipt.receipt;
 
-  pendingPrize = { receipt: window.pendingClaimReceipt.receipt, value: prizeValue, name: prizeText };
+  console.log('🎁 Applying prize to cart:', {
+    receipt: receiptNumber,
+    prizeValue: prizeValue,
+    prizeText: prizeText
+  });
+
+  // ✅ Store the prize info - will be claimed after checkout
+  pendingPrize = { 
+    receipt: receiptNumber, 
+    value: prizeValue, 
+    name: prizeText,
+    claimed: false  // Will be marked after successful checkout
+  };
+  
+  // ✅ Store in global variable for completeCheckout
+  window._pendingPrize = pendingPrize;
+  
   discountAmount = prizeValue;
   claimedReceiptInfo = pendingPrize;
   updateCartUI();
 
-  showAlertModal('Prize Applied', `Discount of RM ${prizeValue.toFixed(2)} has been applied to this sale.`);
+  showAlertModal('Prize Applied', `✅ Discount of RM ${prizeValue.toFixed(2)} has been applied to this sale.\n\nThe prize will be claimed after checkout.`);
   document.getElementById('claimPrizeModal').style.display = 'none';
 }
 
 async function claimPrizeAfterSale(receipt, prizeValue, finalTotal) {
   try {
-    const { error } = await supabase
+    console.log('========================================');
+    console.log('🎯 CLAIM PRIZE FUNCTION CALLED!');
+    console.log('📋 Receipt:', receipt);
+    console.log('📋 Prize Value:', prizeValue);
+    console.log('========================================');
+    
+    // ✅ Check if already claimed
+    const { data: checkData, error: checkError } = await supabase
+      .from('lucky_draw_prizes')
+      .select('claimed, id, prize_label')
+      .eq('receipt', receipt)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error('❌ Error checking prize status:', checkError);
+      return false;
+    }
+    
+    console.log('📋 Found prize data:', checkData);
+    
+    if (!checkData) {
+      console.error('❌ No prize found for receipt:', receipt);
+      return false;
+    }
+    
+    if (checkData.claimed === true) {
+      console.log('⚠️ Prize already claimed! ID:', checkData.id);
+      return true;
+    }
+    
+    // ✅ Update the lucky_draw_prizes table - mark as claimed
+    console.log('🔄 Updating prize to claimed=true...');
+    const { data, error } = await supabase
       .from('lucky_draw_prizes')
       .update({
         claimed: true,
-        claimed_at: new Date().toISOString(),
-        purchase_total: finalTotal
+        claimed_at: new Date().toISOString()
       })
-      .eq('receipt', receipt);
+      .eq('receipt', receipt)
+      .select();
     
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error marking prize as claimed:', error);
+      return false;
+    }
+    
+    console.log('✅ Prize marked as claimed successfully!');
+    console.log('📋 Updated data:', data);
+    console.log('========================================');
     return true;
+    
   } catch (err) {
-    console.error('Error claiming prize:', err);
+    console.error('❌ Error claiming prize:', err);
+    console.log('========================================');
     return false;
   }
 }
@@ -8467,7 +8629,7 @@ async function fetchProductSalesReport(store, employeeId, from, to) {
     
     // Filter by sales_person_id if provided
     if (employeeId && employeeId !== 'all') {
-      query = query.eq('sales_person_id', employeeId);  // ✅ Use sales_person_id!
+      query = query.eq('sales_person_id', employeeId);
       console.log('Filtering by sales_person_id:', employeeId);
     }
     
@@ -8485,89 +8647,93 @@ async function fetchProductSalesReport(store, employeeId, from, to) {
     
     console.log('Found transactions:', data ? data.length : 0);
     
+    // ✅ Safety check - if no data, return empty array
+    if (!data || data.length === 0) {
+      console.log('No transactions found');
+      return [];
+    }
+    
     const productMap = new Map();
     let totalPaidItems = 0;
     
-    if (data) {
-      for (let i = 0; i < data.length; i++) {
-        const receipt = data[i];
-        if (receipt.total < 0) continue;
-        if (receipt.refunded === true) continue;
-        if (!receipt.items || !Array.isArray(receipt.items) || receipt.items.length === 0) continue;
+    for (let i = 0; i < data.length; i++) {
+      const receipt = data[i];
+      if (receipt.total < 0) continue;
+      if (receipt.refunded === true) continue;
+      if (!receipt.items || !Array.isArray(receipt.items) || receipt.items.length === 0) continue;
+      
+      const luckyDrawDiscount = parseFloat(receipt.discount) || 0;
+      const carPromoDiscount = parseFloat(receipt.buy2_free1_discount) || 0;
+      const perfumePromoDiscount = parseFloat(receipt.buy3_free1_discount) || 0;
+      const customDiscount = parseFloat(receipt.custom_discount) || 0;
+      const staffDiscount = parseFloat(receipt.staff_discount) || 0;
+      const otherDiscounts = luckyDrawDiscount + customDiscount + staffDiscount;
+      
+      const paidItems = [];
+      let originalSubtotal = 0;
+      
+      for (let j = 0; j < receipt.items.length; j++) {
+        const item = receipt.items[j];
+        const price = parseFloat(item.price) || 0;
+        const quantity = parseInt(item.quantity) || 0;
+        const freeQuantity = parseInt(item.free_quantity) || 0;
+        const paidQty = quantity - freeQuantity;
         
-        const luckyDrawDiscount = parseFloat(receipt.discount) || 0;
-        const carPromoDiscount = parseFloat(receipt.buy2_free1_discount) || 0;
-        const perfumePromoDiscount = parseFloat(receipt.buy3_free1_discount) || 0;
-        const customDiscount = parseFloat(receipt.custom_discount) || 0;
-        const staffDiscount = parseFloat(receipt.staff_discount) || 0;
-        const otherDiscounts = luckyDrawDiscount + customDiscount + staffDiscount;
+        if (paidQty <= 0) continue;
         
-        const paidItems = [];
-        let originalSubtotal = 0;
+        totalPaidItems = totalPaidItems + paidQty;
         
-        for (let j = 0; j < receipt.items.length; j++) {
-          const item = receipt.items[j];
-          const price = parseFloat(item.price) || 0;
-          const quantity = parseInt(item.quantity) || 0;
-          const freeQuantity = parseInt(item.free_quantity) || 0;
-          const paidQty = quantity - freeQuantity;
-          
-          if (paidQty <= 0) continue;
-          
-          totalPaidItems = totalPaidItems + paidQty;
-          
-          const origTotal = paidQty * price;
-          originalSubtotal = originalSubtotal + origTotal;
-          paidItems.push({
-            id: item.id,
-            name: item.name,
-            category: item.category || "Uncategorized",
-            paidQty: paidQty,
-            origTotal: origTotal,
-            price: price
-          });
+        const origTotal = paidQty * price;
+        originalSubtotal = originalSubtotal + origTotal;
+        paidItems.push({
+          id: item.id,
+          name: item.name,
+          category: item.category || "Uncategorized",
+          paidQty: paidQty,
+          origTotal: origTotal,
+          price: price
+        });
+      }
+      
+      if (paidItems.length === 0) continue;
+      
+      if (carPromoDiscount > 0) {
+        const targetItem = paidItems.find(function(item) { return item.category === "CAR AROMATIC"; });
+        if (targetItem) {
+          const newTotal = Math.max(0, targetItem.origTotal - carPromoDiscount);
+          targetItem.origTotal = newTotal;
         }
-        
-        if (paidItems.length === 0) continue;
-        
-        if (carPromoDiscount > 0) {
-          const targetItem = paidItems.find(function(item) { return item.category === "CAR AROMATIC"; });
-          if (targetItem) {
-            const newTotal = Math.max(0, targetItem.origTotal - carPromoDiscount);
-            targetItem.origTotal = newTotal;
-          }
+      }
+      
+      if (perfumePromoDiscount > 0) {
+        const targetItem = paidItems.find(function(item) { return item.category === "15ML PERFUME EDP"; });
+        if (targetItem) {
+          const newTotal = Math.max(0, targetItem.origTotal - perfumePromoDiscount);
+          targetItem.origTotal = newTotal;
         }
-        
-        if (perfumePromoDiscount > 0) {
-          const targetItem = paidItems.find(function(item) { return item.category === "15ML PERFUME EDP"; });
-          if (targetItem) {
-            const newTotal = Math.max(0, targetItem.origTotal - perfumePromoDiscount);
-            targetItem.origTotal = newTotal;
-          }
-        }
-        
-        if (otherDiscounts > 0 && originalSubtotal > 0) {
-          const ratio = 1 - (otherDiscounts / originalSubtotal);
-          for (let k = 0; k < paidItems.length; k++) {
-            paidItems[k].origTotal = paidItems[k].origTotal * ratio;
-          }
-        }
-        
+      }
+      
+      if (otherDiscounts > 0 && originalSubtotal > 0) {
+        const ratio = 1 - (otherDiscounts / originalSubtotal);
         for (let k = 0; k < paidItems.length; k++) {
-          const item = paidItems[k];
-          const id = item.id;
-          if (productMap.has(id)) {
-            const existing = productMap.get(id);
-            existing.quantity = existing.quantity + item.paidQty;
-            existing.total = existing.total + item.origTotal;
-          } else {
-            productMap.set(id, {
-              name: item.name,
-              category: item.category,
-              quantity: item.paidQty,
-              total: item.origTotal
-            });
-          }
+          paidItems[k].origTotal = paidItems[k].origTotal * ratio;
+        }
+      }
+      
+      for (let k = 0; k < paidItems.length; k++) {
+        const item = paidItems[k];
+        const id = item.id;
+        if (productMap.has(id)) {
+          const existing = productMap.get(id);
+          existing.quantity = existing.quantity + item.paidQty;
+          existing.total = existing.total + item.origTotal;
+        } else {
+          productMap.set(id, {
+            name: item.name,
+            category: item.category,
+            quantity: item.paidQty,
+            total: item.origTotal
+          });
         }
       }
     }
@@ -8630,7 +8796,17 @@ function renderProductDetails(productsData) {
   const tbody = document.getElementById('productDetailsBody');
   if (!tbody) return;
   
-  const sortedData = [...(productsData || [])].sort((a, b) => b.quantity - a.quantity);
+  // ✅ Add safety check for productsData
+  if (!productsData || !Array.isArray(productsData)) {
+    tbody.innerHTML = `<tr>
+      <td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;">
+        📭 No product data available.
+      </td>
+    </tr>`;
+    return;
+  }
+  
+  const sortedData = [...productsData].sort((a, b) => b.quantity - a.quantity);
   
   if (sortedData.length === 0) {
     tbody.innerHTML = `<tr>
@@ -8657,14 +8833,14 @@ function renderProductDetails(productsData) {
     </tr>`;
   });
   
-  // ✅ Add summary row with correct totals
+  // Add summary row with correct totals
   html += `<tr style="font-weight: 700; border-top: 2px solid #e2e8f0; background: #f1f5f9;">
     <td colspan="2" style="text-align: right; font-size: 1.1rem;">📊 TOTAL</td>
     <td style="text-align: right; font-size: 1.1rem; color: #0f172a;">${totalQuantity}</td>
     <td style="text-align: right; font-size: 1.1rem; color: #2c7a4b;">RM ${totalRevenue.toFixed(2)}</td>
   </tr>`;
   
-  // ✅ Add note if there's a discrepancy
+  // Add note if there's a discrepancy
   const totalItemsDisplay = document.getElementById('adminReportTotalItems');
   if (totalItemsDisplay) {
     const reportedTotal = parseInt(totalItemsDisplay.innerText) || 0;

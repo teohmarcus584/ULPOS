@@ -2111,11 +2111,18 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
 <div id="luckyDrawPrintModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 400px;">
     <span class="close-modal" id="closeLuckyDrawPrintModal">×</span>
-    <div class="modal-title">🎉 Congratulations!</div>
+    <div class="modal-title">🎉 Print Lucky Draw Voucher</div>
     <div id="luckyDrawPrintContent">
-      <p>You have won a Lucky Draw prize!</p>
       <p>Receipt ID: <strong id="luckyDrawReceiptNumber"></strong></p>
-      <div class="modal-buttons"><button id="printPrizeVoucherBtn" class="modal-btn modal-btn-primary">🖨️ Print Voucher</button><button id="closeLuckyDrawPrintModalBtn" class="modal-btn modal-btn-secondary">Close</button></div>
+      <p>Prize: <strong id="luckyDrawPrizeLabel">Waiting for spin...</strong></p>
+      <p style="font-size: 0.85rem; color: #64748b; margin-top: 8px;">
+        The customer will spin the wheel on the Lucky Draw page.
+        Once they win, click Print Voucher below.
+      </p>
+      <div class="modal-buttons">
+        <button id="printPrizeVoucherBtn" class="modal-btn modal-btn-primary">🖨️ Print Voucher</button>
+        <button id="closeLuckyDrawPrintModalBtn" class="modal-btn modal-btn-secondary">Close</button>
+      </div>
     </div>
   </div>
 </div>
@@ -3779,7 +3786,93 @@ function showPaymentModal(totalAmount) {
     checkoutLock = false;
   };
 }
-
+async function saveTransactionToSheet(transaction) {
+  try {
+    console.log('💾 Saving transaction:', transaction.transaction_id);
+    
+    // 1. Save to transactions table
+    const { data, error } = await supabase
+      .from('transactions')
+      .insert([{
+        transaction_id: transaction.transaction_id,
+        timestamp: transaction.timestamp,
+        items: transaction.items || [],
+        total: transaction.total || 0,
+        payment_method: transaction.payment_method || 'Cash',
+        cash_received: transaction.cash_received || 0,
+        store: transaction.store || 'queens',
+        employee_id: transaction.employee_id,
+        employee_name: transaction.employee_name || currentEmployee?.name || '',
+        settled: transaction.settled || false,
+        refunded: transaction.refunded || false,
+        refund_of: transaction.refund_of || '',
+        original_payment_method: transaction.original_payment_method || '',
+        customer_id: transaction.customer_id || '',
+        points_awarded: transaction.points_awarded || 0,
+        discount: transaction.discount || 0,
+        buy2_free1_discount: transaction.buy2_free1_discount || 0,
+        buy3_free1_discount: transaction.buy3_free1_discount || 0,
+        custom_discount: transaction.custom_discount || 0,
+        refunded_by: transaction.refunded_by || '',
+        staff_discount: transaction.staff_discount || 0,
+        sales_person_name: transaction.sales_person_name || '',
+        sales_person_id: transaction.sales_person_id || ''
+      }])
+      .select();
+    
+    if (error) {
+      console.error('❌ Save transaction error:', error);
+      return false;
+    }
+    
+    console.log('✅ Transaction saved:', data);
+    
+    // 2. ✅ IRS Reporting for Card and Alipay
+    const paymentMethod = String(transaction.payment_method).toLowerCase();
+    
+    if (paymentMethod === 'card' || paymentMethod === 'alipay') {
+      console.log(`📋 Saving to IRS report for ${transaction.payment_method}`);
+      
+      // ✅ Generate the invoice number
+      const invoiceNo = await getNextIRSInvoiceNumber();
+      
+      console.log(`📋 Using invoice number: ${invoiceNo}`);
+      
+      // In saveTransactionToSheet, when saving to irs_reporting:
+const { data: irsData, error: irsError } = await supabase
+  .from('irs_reporting')
+  .insert([{
+    invoice_no: invoiceNo,  // ✅ This should be the new number
+    transaction_id: transaction.transaction_id,
+    timestamp: transaction.timestamp,
+    items: JSON.stringify(transaction.items || []),
+    total: transaction.total || 0,
+    store: transaction.store || 'queens',
+    employee_id: transaction.employee_id,
+    employee_name: transaction.employee_name || currentEmployee?.name || ''
+  }])
+  .select();
+      
+      if (irsError) {
+        console.error('❌ IRS reporting error:', irsError);
+        await showAlertModal('⚠️ IRS Report Warning', 
+          `Transaction saved but IRS report failed.\n` +
+          `Error: ${irsError.message}\n\n` +
+          `Transaction ID: ${transaction.transaction_id}\n` +
+          `Please manually record this transaction for IRS purposes.`
+        );
+      } else {
+        console.log(`✅ IRS report saved: ${invoiceNo}`, irsData);
+      }
+    }
+    
+    return true;
+    
+  } catch (err) {
+    console.error('❌ saveTransactionToSheet error:', err);
+    return false;
+  }
+}
 async function completeCheckout(paymentMethod, cashReceived) {
   if (checkoutLock) {
     console.warn('Checkout already in progress, ignoring duplicate call.');
@@ -3884,15 +3977,18 @@ const transaction = {
     hideLoading();
 
     if (success) {
-      for (let item of saleItems) {
-        const product = products.find(p => p.id == item.id);
-        if (product) {
-          const oldStock = product.stock;
-          const newStock = oldStock - item.quantity;
-          product.stock = newStock;
-          checkAndNotifyOutOfStock(product.id, product.name, newStock);
-        }
-      }
+  for (let item of saleItems) {
+    const product = products.find(p => p.id == item.id);
+    if (product) {
+      const oldStock = product.stock;
+      const newStock = oldStock - item.quantity;
+      product.stock = newStock;
+      checkAndNotifyOutOfStock(product.id, product.name, newStock);
+    }
+  }
+  
+  // ✅ Save to Lucky Draw if eligible
+  await saveToLuckyDraw(transaction);
 
       localStorage.setItem(`products_${currentStore}`, JSON.stringify({
         timestamp: Date.now(),
@@ -3976,101 +4072,20 @@ const transaction = {
   }
 }
 
-async function saveTransactionToSheet(transaction) {
-  try {
-    console.log('💾 Saving transaction:', transaction.transaction_id);
-    
-    // 1. Save to transactions table
-    const { data, error } = await supabase
-      .from('transactions')
-      .insert([{
-        transaction_id: transaction.transaction_id,
-        timestamp: transaction.timestamp,
-        items: transaction.items || [],
-        total: transaction.total || 0,
-        payment_method: transaction.payment_method || 'Cash',
-        cash_received: transaction.cash_received || 0,
-        store: transaction.store || 'queens',
-        employee_id: transaction.employee_id,
-        employee_name: transaction.employee_name || currentEmployee?.name || '',
-        settled: transaction.settled || false,
-        refunded: transaction.refunded || false,
-        refund_of: transaction.refund_of || '',
-        original_payment_method: transaction.original_payment_method || '',
-        customer_id: transaction.customer_id || '',
-        points_awarded: transaction.points_awarded || 0,
-        discount: transaction.discount || 0,
-        buy2_free1_discount: transaction.buy2_free1_discount || 0,
-        buy3_free1_discount: transaction.buy3_free1_discount || 0,
-        custom_discount: transaction.custom_discount || 0,
-        refunded_by: transaction.refunded_by || '',
-        staff_discount: transaction.staff_discount || 0,
-        sales_person_name: transaction.sales_person_name || '',
-        sales_person_id: transaction.sales_person_id || ''
-      }])
-      .select();
-    
-    if (error) {
-      console.error('❌ Save transaction error:', error);
-      return false;
-    }
-    
-    console.log('✅ Transaction saved:', data);
-    
-    // 2. ✅ IRS Reporting for Card and Alipay (NO payment_method column)
-    const paymentMethod = String(transaction.payment_method).toLowerCase();
-    
-    if (paymentMethod === 'card' || paymentMethod === 'alipay') {
-      console.log(`📋 Saving to IRS report for ${transaction.payment_method}`);
-      
-      try {
-        const invoiceNo = await getNextIRSInvoiceNumber();
-        
-        // ✅ Remove payment_method from IRS insert
-        const { error: irsError } = await supabase
-          .from('irs_reporting')
-          .insert([{
-            invoice_no: invoiceNo,
-            transaction_id: transaction.transaction_id,
-            timestamp: transaction.timestamp,
-            items: JSON.stringify(transaction.items || []),
-            total: transaction.total || 0,
-            store: transaction.store || 'queens',
-            employee_id: transaction.employee_id,
-            employee_name: transaction.employee_name || currentEmployee?.name || ''
-          }]);
-        
-        if (irsError) {
-          console.error('❌ IRS reporting error:', irsError);
-        } else {
-          console.log(`✅ IRS report saved: ${invoiceNo}`);
-        }
-      } catch (irsErr) {
-        console.error('❌ IRS reporting failed:', irsErr);
-      }
-    }
-    
-    return true;
-    
-  } catch (err) {
-    console.error('❌ saveTransactionToSheet error:', err);
-    return false;
-  }
-}
-
 async function getNextIRSInvoiceNumber() {
   try {
     console.log('📋 Getting next IRS invoice number...');
     
-    // ✅ Get ALL invoice numbers
+    // ✅ Get ALL invoice numbers - NO LIMIT
     const { data, error } = await supabase
       .from('irs_reporting')
       .select('invoice_no')
-      .order('invoice_no', { ascending: false });
+      .not('invoice_no', 'is', null);
     
     if (error) {
       console.error('❌ Error getting invoice numbers:', error);
-      throw error;
+      const timestamp = Date.now();
+      return `INV-${timestamp}`;
     }
     
     let highestNum = 0;
@@ -4078,19 +4093,13 @@ async function getNextIRSInvoiceNumber() {
     if (data && data.length > 0) {
       console.log(`📋 Found ${data.length} existing invoice numbers`);
       
-      // ✅ Extract all numbers and find the highest
-      for (const row of data) {
-        const invoice = row.invoice_no;
-        // Check both formats: INV-XXXX and REF-INV-XXXX
-        let match = invoice.match(/INV-(\d+)/);
-        if (match) {
-          const num = parseInt(match[1]);
-          if (num > highestNum) {
-            highestNum = num;
-          }
-        }
-        // Also check for REF-INV-XXXX format
-        match = invoice.match(/REF-INV-(\d+)/);
+      // ✅ Loop through EVERY invoice to find the highest number
+      for (let i = 0; i < data.length; i++) {
+        const invoice = data[i].invoice_no;
+        if (!invoice) continue;
+        
+        // ✅ Only match regular invoices (INV-XXXX), NOT refunds (REF-INV-XXXX)
+        const match = invoice.match(/^INV-(\d+)$/);
         if (match) {
           const num = parseInt(match[1]);
           if (num > highestNum) {
@@ -4099,25 +4108,353 @@ async function getNextIRSInvoiceNumber() {
         }
       }
       
-      console.log(`📊 Highest invoice number found: ${highestNum}`);
+      console.log(`📊 HIGHEST invoice number found: ${highestNum}`);
     } else {
-      console.log('📊 No existing invoices found, starting at 1');
+      console.log('📊 No invoices found, starting at 1');
     }
     
-    // ✅ Start from the highest number + 1
-    const nextNum = highestNum + 1;
-    const newInvoice = `INV-${String(nextNum).padStart(4, '0')}`;
+    // ✅ If no invoices found, start from 1
+    if (highestNum === 0) {
+      highestNum = 0;
+    }
     
-    console.log(`📋 New IRS invoice number: ${newInvoice}`);
+    const nextNum = highestNum + 1;
+    const newInvoice = `INV-${nextNum}`;
+    
+    console.log(`📋 NEW invoice number: ${newInvoice}`);
     return newInvoice;
     
   } catch (err) {
     console.error('❌ getNextIRSInvoiceNumber error:', err);
-    // Fallback: use timestamp
     const timestamp = Date.now();
-    const fallback = `INV-${timestamp}`;
-    console.log(`⚠️ Using fallback invoice number: ${fallback}`);
-    return fallback;
+    return `INV-${timestamp}`;
+  }
+}
+// ==================== LUCKY DRAW FUNCTIONS ====================
+
+// ==================== LUCKY DRAW FUNCTIONS ====================
+
+async function saveToLuckyDraw(transaction) {
+  try {
+    console.log('🎲 SAVE TO LUCKY DRAW CALLED!');
+    console.log('Transaction total:', transaction.total);
+    
+    // Check if transaction qualifies for lucky draw
+    const qualifies = transaction.total >= 100;
+    
+    if (!qualifies) {
+      console.log('❌ Transaction does not qualify for lucky draw (below RM 100)');
+      return false;
+    }
+    
+    console.log('✅ Transaction qualifies for Lucky Draw!');
+    
+    // Check if this transaction already has a lucky draw entry
+    const { data: existing, error: checkError } = await supabase
+      .from('lucky_draw_prizes')
+      .select('id, prize_label, discount_value')
+      .eq('receipt', transaction.transaction_id)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error('Error checking existing lucky draw:', checkError);
+    }
+    
+    // Store the transaction ID for later use
+    window._luckyDrawTransactionId = transaction.transaction_id;
+    
+    // If already exists, show the print modal directly
+    if (existing) {
+      console.log('Lucky draw entry already exists for this transaction');
+      console.log('Prize:', existing.prize_label, 'Value:', existing.discount_value);
+      
+      // Show the print modal with prize info
+      document.getElementById('luckyDrawReceiptNumber').innerText = transaction.transaction_id;
+      document.getElementById('luckyDrawPrizeLabel').innerText = existing.prize_label || 'RM 38 FREE GIFT';
+      document.getElementById('luckyDrawPrintModal').style.display = 'flex';
+      return true;
+    }
+    
+    // Show the lucky draw modal (with Go to Lucky Draw button)
+    console.log('✅ Showing Lucky Draw modal - customer needs to spin');
+    const txIdSpan = document.getElementById('luckyTxId');
+    if (txIdSpan) {
+      txIdSpan.innerText = transaction.transaction_id;
+    }
+    
+    const luckyModal = document.getElementById('luckyDrawModal');
+    if (luckyModal) {
+      luckyModal.style.display = 'flex';
+    }
+    
+    return true;
+    
+  } catch (err) {
+    console.error('Lucky draw error:', err);
+    return false;
+  }
+}
+
+// ==================== LUCKY DRAW EVENT LISTENERS ====================
+
+// Open Lucky Draw link AND show print modal
+document.getElementById('openLuckyDrawBtn').addEventListener('click', function() {
+  const txId = document.getElementById('luckyTxId').innerText;
+  
+  if (!txId || txId === '') {
+    showAlertModal('Error', 'No transaction ID found.');
+    return;
+  }
+  
+  // Store the transaction ID globally
+  window._luckyDrawTransactionId = txId;
+  
+  // Open the Lucky Draw page in a new tab
+  window.open(`https://teohmarcus584.github.io/salesanalysis/?receipt=${txId}`, '_blank');
+  
+  // Close the lucky draw modal
+  document.getElementById('luckyDrawModal').style.display = 'none';
+  
+  // Show the print modal with a message
+  document.getElementById('luckyDrawReceiptNumber').innerText = txId;
+  document.getElementById('luckyDrawPrizeLabel').innerText = 'Waiting for spin result...';
+  document.getElementById('luckyDrawPrintModal').style.display = 'flex';
+  
+  // Start checking for the lucky draw result
+  checkForLuckyDrawResult(txId);
+});
+
+// Close Lucky Draw Print Modal
+document.getElementById('closeLuckyDrawPrintModal').addEventListener('click', function() {
+  document.getElementById('luckyDrawPrintModal').style.display = 'none';
+  if (window._luckyDrawCheckInterval) {
+    clearInterval(window._luckyDrawCheckInterval);
+  }
+});
+
+document.getElementById('closeLuckyDrawPrintModalBtn').addEventListener('click', function() {
+  document.getElementById('luckyDrawPrintModal').style.display = 'none';
+  if (window._luckyDrawCheckInterval) {
+    clearInterval(window._luckyDrawCheckInterval);
+  }
+});
+
+// Print Prize Voucher
+document.getElementById('printPrizeVoucherBtn').addEventListener('click', async function() {
+  const receiptNumber = document.getElementById('luckyDrawReceiptNumber').innerText;
+  const prizeLabel = document.getElementById('luckyDrawPrizeLabel').innerText;
+  
+  if (!receiptNumber || receiptNumber === '') {
+    await showAlertModal('Error', 'No receipt number found.');
+    return;
+  }
+  
+  if (prizeLabel === 'Waiting for spin result...') {
+    await showAlertModal('Waiting', 'Please wait for the customer to spin and win a prize.');
+    return;
+  }
+  
+  // Check if the lucky draw entry exists
+  try {
+    const { data, error } = await supabase
+      .from('lucky_draw_prizes')
+      .select('*')
+      .eq('receipt', receiptNumber)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Error checking lucky draw:', error);
+      await showAlertModal('Error', 'Failed to check prize status.');
+      return;
+    }
+    
+    if (!data) {
+      await showAlertModal('Not Found', 'No lucky draw prize found for this receipt. Please make sure the customer has spun the wheel.');
+      return;
+    }
+    
+    // Check if printer is connected
+    if (!isPrinterConnected) {
+      showLoading('Printer not connected. Opening Bluetooth selection...');
+      try {
+        await connectPrinter();
+        hideLoading();
+      } catch (err) {
+        hideLoading();
+        await showAlertModal('Connection Failed', 'Could not connect to printer. Please try again.');
+        return;
+      }
+    }
+    
+    // Print the prize voucher
+    const prizeLabelToPrint = data.prize_label || 'RM 38 FREE GIFT';
+    const success = await printPrizeVoucher(prizeLabelToPrint, receiptNumber);
+    
+    if (success) {
+      await showAlertModal('Success', 'Lucky Draw voucher printed successfully!');
+      document.getElementById('luckyDrawPrintModal').style.display = 'none';
+      if (window._luckyDrawCheckInterval) {
+        clearInterval(window._luckyDrawCheckInterval);
+      }
+    } else {
+      await showAlertModal('Print Failed', 'Could not print voucher. Check printer connection.');
+    }
+    
+  } catch (err) {
+    console.error('Print voucher error:', err);
+    await showAlertModal('Error', 'Failed to print voucher: ' + err.message);
+  }
+});
+
+// Check for Lucky Draw Result (polling)
+// ==================== LUCKY DRAW CHECK FUNCTION ====================
+
+function checkForLuckyDrawResult(txId) {
+  console.log('🔍 Starting to check for lucky draw result for:', txId);
+  
+  // Clear any existing interval
+  if (window._luckyDrawCheckInterval) {
+    clearInterval(window._luckyDrawCheckInterval);
+    window._luckyDrawCheckInterval = null;
+  }
+  
+  let attempts = 0;
+  const maxAttempts = 60; // 60 * 2 seconds = 2 minutes max
+  
+  window._luckyDrawCheckInterval = setInterval(async function() {
+    attempts++;
+    console.log(`🔍 Checking attempt ${attempts}/${maxAttempts} for:`, txId);
+    
+    try {
+      const { data, error } = await supabase
+        .from('lucky_draw_prizes')
+        .select('prize_label, discount_value, claimed')
+        .eq('receipt', txId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Polling error:', error);
+        return;
+      }
+      
+      if (data) {
+        // Found the prize - update the print modal
+        console.log('✅ Lucky draw prize found!', data);
+        
+        // Update the print modal
+        document.getElementById('luckyDrawReceiptNumber').innerText = txId;
+        const prizeLabel = data.prize_label || 'RM 38 FREE GIFT';
+        document.getElementById('luckyDrawPrizeLabel').innerText = prizeLabel;
+        
+        // Enable the print button
+        const printBtn = document.getElementById('printPrizeVoucherBtn');
+        if (printBtn) {
+          printBtn.disabled = false;
+          printBtn.style.opacity = '1';
+        }
+        
+        // Clear the interval
+        if (window._luckyDrawCheckInterval) {
+          clearInterval(window._luckyDrawCheckInterval);
+          window._luckyDrawCheckInterval = null;
+        }
+        
+        // Show notification
+        await showAlertModal('🎉 Prize Ready!', 
+          `The customer has won: ${prizeLabel}\n\nClick "Print Voucher" to print the prize.`
+        );
+        
+      } else if (attempts >= maxAttempts) {
+        // Timeout - stop checking
+        console.log('⏰ Lucky draw check timed out');
+        if (window._luckyDrawCheckInterval) {
+          clearInterval(window._luckyDrawCheckInterval);
+          window._luckyDrawCheckInterval = null;
+        }
+        
+        document.getElementById('luckyDrawPrizeLabel').innerText = '⚠️ Spin not completed';
+        await showAlertModal('⏰ Timeout', 
+          'The customer has not completed the spin.\n\n' +
+          'Please make sure they spin the wheel on the Lucky Draw page.\n' +
+          'You can try again by clicking the Lucky Draw button again.'
+        );
+      }
+      
+    } catch (err) {
+      console.error('Polling error:', err);
+    }
+  }, 2000); // Check every 2 seconds
+}
+
+// Close Lucky Draw Modal
+function closeLuckyDrawModal() {
+  const modal = document.getElementById('luckyDrawModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+// Close when clicking overlay
+document.getElementById('luckyDrawModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeLuckyDrawModal();
+  }
+});
+
+// Add close button to lucky draw modal if it doesn't have one
+function addLuckyDrawCloseButton() {
+  const luckyModal = document.getElementById('luckyDrawModal');
+  const container = luckyModal?.querySelector('.modal-container');
+  if (container && !container.querySelector('.close-modal')) {
+    const closeBtn = document.createElement('span');
+    closeBtn.className = 'close-modal';
+    closeBtn.id = 'closeLuckyDrawModal';
+    closeBtn.innerHTML = '×';
+    closeBtn.style.cssText = 'position: absolute; top: 16px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; color: #64748b; line-height: 1; z-index: 10;';
+    container.prepend(closeBtn);
+    closeBtn.addEventListener('click', closeLuckyDrawModal);
+  }
+}
+
+// Call this after DOM is ready
+setTimeout(addLuckyDrawCloseButton, 500);
+async function getNextIRSInvoiceNumber() {
+  try {
+    console.log('📋 Getting next IRS invoice number...');
+    
+    // ✅ Get the single highest invoice number
+    const { data, error } = await supabase
+      .from('irs_reporting')
+      .select('invoice_no')
+      .ilike('invoice_no', 'INV-%')  // Only get regular invoices
+      .not('invoice_no', 'ilike', 'REF-%')  // Exclude refund invoices
+      .order('invoice_no', { ascending: false })
+      .limit(1);
+    
+    if (error) {
+      console.error('❌ Error getting invoice numbers:', error);
+      return `INV-${Date.now()}`;
+    }
+    
+    let highestNum = 0;
+    
+    if (data && data.length > 0 && data[0].invoice_no) {
+      const match = data[0].invoice_no.match(/INV-(\d+)/);
+      if (match) {
+        highestNum = parseInt(match[1]);
+        console.log(`📊 Highest invoice number: ${highestNum}`);
+      }
+    }
+    
+    const nextNum = highestNum + 1;
+    const newInvoice = `INV-${nextNum}`;
+    
+    console.log(`📋 NEW invoice number: ${newInvoice}`);
+    return newInvoice;
+    
+  } catch (err) {
+    console.error('❌ getNextIRSInvoiceNumber error:', err);
+    return `INV-${Date.now()}`;
   }
 }
 async function getNextTransactionNumber(store) {
@@ -4696,6 +5033,8 @@ async function fetchAndCacheReceipts() {
   }
 }
 
+// ==================== RECEIPT FUNCTIONS ====================
+
 async function fetchReceipts(store, employeeId, from, to, search) {
   try {
     console.log('Fetching receipts with filters...');
@@ -4707,13 +5046,11 @@ async function fetchReceipts(store, employeeId, from, to, search) {
       .select('*')
       .order('timestamp', { ascending: false });
     
-    // ✅ Filter by store if provided and not 'all'
     if (store && store !== 'all') {
       query = query.eq('store', store);
       console.log('Filtering by store:', store);
     }
     
-    // ✅ Filter by employee if provided and not 'all'
     if (employeeId && employeeId !== 'all') {
       query = query.eq('employee_id', employeeId);
       console.log('Filtering by employee:', employeeId);
@@ -4748,7 +5085,6 @@ async function fetchReceipts(store, employeeId, from, to, search) {
     cachedReceipts = data || [];
     renderReceiptsList(cachedReceipts);
     
-    // Hide loading message
     const msg = document.getElementById('receiptsLoadingMsg');
     if (msg) msg.style.display = 'none';
     
@@ -4760,8 +5096,12 @@ async function fetchReceipts(store, employeeId, from, to, search) {
   }
 }
 
+
+
 function renderReceiptsList(receipts) {
   const container = document.getElementById('receiptsList');
+  if (!container) return;
+  
   if (!receipts || !receipts.length) {
     container.innerHTML = '<div style="text-align:center; padding:30px;">No receipts found.</div>';
     return;
@@ -4805,7 +5145,6 @@ function renderReceiptsList(receipts) {
     for (const rec of dayReceipts) {
       const date = new Date(rec.timestamp).toLocaleString();
       
-      // ✅ FIX: Get employee name from cache or use employee_id
       let employeeName = rec.employee_name;
       if (!employeeName && rec.employee_id) {
         const emp = cachedEmployees.find(e => String(e.id) === String(rec.employee_id));
@@ -4820,8 +5159,6 @@ function renderReceiptsList(receipts) {
         : `<span class="receipt-id">${rec.transaction_id}</span>`;
 
       let itemsHtml = '<div class="receipt-items-list">';
-      
-      // ✅ FIX: Check if items exists and is an array
       const items = Array.isArray(rec.items) ? rec.items : [];
       
       if (items.length === 0) {
@@ -4932,13 +5269,14 @@ function renderReceiptsList(receipts) {
     });
   });
 
-  document.querySelectorAll('.lucky-reprint-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const txId = btn.dataset.txid;
-      e.stopPropagation();
-      await reprintLuckyDraw(txId);
-    });
+// In renderReceiptsList function, the lucky draw button:
+document.querySelectorAll('.lucky-reprint-btn').forEach(btn => {
+  btn.addEventListener('click', async (e) => {
+    const txId = btn.dataset.txid;
+    e.stopPropagation();
+    await reprintLuckyDraw(txId);
   });
+});
 
   document.querySelectorAll('.refund-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
@@ -5019,31 +5357,51 @@ async function processRefund(transactionId, store) {
       .update({ refunded: true })
       .eq('transaction_id', transactionId);
 
-// In processRefund function
+// In processRefund function, after saving the refund
 if (transaction.payment_method === 'Card' || transaction.payment_method === 'Alipay') {
   console.log(`📋 Saving refund to IRS report for ${transaction.payment_method}`);
   
-  // ✅ Use the same function to get next number
-  const invoiceNo = await getNextIRSInvoiceNumber();
-  const refundInvoiceNo = `REF-${invoiceNo}`;
+  let retryCount = 0;
+  const maxRetries = 3;
+  let saved = false;
   
-  const { error: irsError } = await supabase
-    .from('irs_reporting')
-    .insert([{
-      invoice_no: refundInvoiceNo,
-      transaction_id: refundId,
-      timestamp: new Date().toISOString(),
-      items: JSON.stringify(refundItems),
-      total: refundTotal,
-      store: store,
-      employee_id: currentEmployee.id,
-      employee_name: currentEmployee.name
-    }]);
-  
-  if (irsError) {
-    console.error('❌ IRS refund report error:', irsError);
-  } else {
-    console.log(`✅ IRS refund report saved: ${refundInvoiceNo}`);
+  while (!saved && retryCount < maxRetries) {
+    try {
+      const invoiceNo = await getNextIRSInvoiceNumber();
+      const refundInvoiceNo = `REF-${invoiceNo}`;
+      
+      const { error: irsError } = await supabase
+        .from('irs_reporting')
+        .insert([{
+          invoice_no: refundInvoiceNo,
+          transaction_id: refundId,
+          timestamp: new Date().toISOString(),
+          items: JSON.stringify(refundItems),
+          total: refundTotal,
+          store: store,
+          employee_id: currentEmployee.id,
+          employee_name: currentEmployee.name
+        }]);
+      
+      if (irsError) {
+        if (irsError.code === '23505') {
+          console.warn(`⚠️ Duplicate refund invoice number, retrying... (${retryCount + 1}/${maxRetries})`);
+          retryCount++;
+          await new Promise(resolve => setTimeout(resolve, 200));
+          continue;
+        }
+        console.error('❌ IRS refund report error:', irsError);
+        break;
+      } else {
+        console.log(`✅ IRS refund report saved: ${refundInvoiceNo}`);
+        saved = true;
+        break;
+      }
+    } catch (irsErr) {
+      console.error('❌ IRS refund reporting failed:', irsErr);
+      retryCount++;
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
   }
 }
 
@@ -5180,48 +5538,82 @@ async function reprintReceipt(receipt) {
 }
 
 async function reprintLuckyDraw(txId) {
-  if (!isPrinterConnected) {
-    showLoading('Printer not connected. Opening Bluetooth selection...');
-    try {
-      await connectPrinter();
-      hideLoading();
-    } catch (err) {
-      hideLoading();
-      await showAlertModal('Connection Failed', 'Could not connect to printer. Please try again.');
-      return;
-    }
-  }
-
+  console.log('🔄 Reprint Lucky Draw called for:', txId);
+  
   try {
+    // ✅ First, check if the lucky draw entry exists
     const { data, error } = await supabase
-      .from('transactions')
+      .from('lucky_draw_prizes')
       .select('*')
-      .eq('transaction_id', txId)
-      .single();
+      .eq('receipt', txId)
+      .maybeSingle();
     
-    if (error || !data) {
-      await showAlertModal('Not Found', 'Transaction not found.');
-      return;
-    }
-
-    if (data.claimed === true) {
-      await showAlertModal('Already Claimed', 'This lucky draw prize has already been claimed and cannot be reprinted.');
+    if (error) {
+      console.error('Error checking lucky draw:', error);
+      await showAlertModal('Error', 'Failed to check lucky draw status.');
       return;
     }
     
-    const prizeLabel = data.prize_label || data.prize || 'RM 38 FREE GIFT';
-    if (!window.printerAPI || !window.printerAPI.printPrizeVoucher) {
-      await showAlertModal('Printer Error', 'Printer not connected or print function unavailable.');
+    // ✅ If entry exists, print the voucher
+    if (data) {
+      console.log('✅ Lucky draw entry found:', data);
+      
+      if (data.claimed === true) {
+        await showAlertModal('Already Claimed', 'This lucky draw prize has already been claimed and cannot be reprinted.');
+        return;
+      }
+      
+      // Check printer connection
+      if (!isPrinterConnected) {
+        showLoading('Printer not connected. Opening Bluetooth selection...');
+        try {
+          await connectPrinter();
+          hideLoading();
+        } catch (err) {
+          hideLoading();
+          await showAlertModal('Connection Failed', 'Could not connect to printer. Please try again.');
+          return;
+        }
+      }
+      
+      const prizeLabel = data.prize_label || 'RM 38 FREE GIFT';
+      const success = await printPrizeVoucher(prizeLabel, txId);
+      
+      if (success) {
+        await showAlertModal('Success', 'Lucky Draw voucher reprinted successfully!');
+      } else {
+        await showAlertModal('Print Failed', 'Could not print voucher. Check printer connection.');
+      }
       return;
     }
     
-    const success = await window.printerAPI.printPrizeVoucher(prizeLabel, txId);
-    if (!success) {
-      await showAlertModal('Print Failed', 'Could not print voucher. Check printer connection.');
-    }
+    // ✅ No entry found - redirect to Lucky Draw page
+    console.log('ℹ️ No lucky draw entry found - redirecting to spin page');
+    
+    // Store the transaction ID globally
+    window._luckyDrawTransactionId = txId;
+    
+    // Show the print modal with waiting status
+    document.getElementById('luckyDrawReceiptNumber').innerText = txId;
+    document.getElementById('luckyDrawPrizeLabel').innerText = 'Waiting for spin result...';
+    document.getElementById('luckyDrawPrintModal').style.display = 'flex';
+    
+    // Open the Lucky Draw page in a new tab
+    window.open(`https://teohmarcus584.github.io/salesanalysis/?receipt=${txId}`, '_blank');
+    
+    // Show info message
+    await showAlertModal('🎲 Lucky Draw', 
+      `The customer needs to spin the wheel on the Lucky Draw page.\n\n` +
+      `Once they win, the voucher will be ready to print.\n` +
+      `The print modal will update automatically.`
+    );
+    
+    // Start checking for the lucky draw result
+    checkForLuckyDrawResult(txId);
+    
   } catch (err) {
-    console.error(err);
-    await showAlertModal('Error', 'Failed to reprint lucky draw: ' + err.message);
+    console.error('Reprint Lucky Draw error:', err);
+    await showAlertModal('Error', 'Failed to process Lucky Draw: ' + err.message);
   }
 }
 
@@ -5245,7 +5637,7 @@ function updateReceipts() {
   let store;
   let employeeId = 'all';
   
-  // ✅ For non-admin: Force to their specific store, but show ALL employees
+  // ✅ For non-admin: Force to their specific store, show ALL employees in that store
   if (currentEmployee?.isAdmin) {
     // Admin can select store and employee
     const receiptsStore = document.getElementById('receiptsStoreSelect');
@@ -5254,7 +5646,7 @@ function updateReceipts() {
     const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
     employeeId = receiptsEmpSelect ? receiptsEmpSelect.value : 'all';
   } else {
-    // ✅ Non-admin: force to their specific store
+    // ✅ Non-admin: force to their specific store, show ALL employees in that store
     store = currentStore;  // Use the employee's assigned store
     employeeId = 'all';    // ✅ Show ALL employees in this store!
   }
@@ -5301,7 +5693,6 @@ function updateReceipts() {
   // ✅ Pass the correct store and employee filters
   fetchReceipts(store, employeeId, from, to, search);
 }
-
 // ==================== SETTLEMENT ====================
 
 let currentSettlementTotals = null;
@@ -10034,12 +10425,6 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('sideInventoryBtn').addEventListener('click', wrapMenuAction(() => { toggleInventoryMode(); }));
  // ==================== OPEN RECEIPTS MODAL ====================
 
-// ==================== OPEN RECEIPTS MODAL ====================
-
-// ==================== OPEN RECEIPTS MODAL ====================
-
-// ==================== OPEN RECEIPTS MODAL ====================
-
 document.getElementById('sideReceiptsBtn').addEventListener('click', wrapMenuAction(async () => {
   const modal = document.getElementById('receiptsModal');
   if (modal) {
@@ -10098,6 +10483,13 @@ document.getElementById('sideReceiptsBtn').addEventListener('click', wrapMenuAct
         receiptsEmpSelect.appendChild(opt);
       });
     }
+    
+    // Enable store select for admin
+    const receiptsStore = document.getElementById('receiptsStoreSelect');
+    if (receiptsStore) {
+      receiptsStore.disabled = false;
+    }
+    
   } else {
     // ✅ NON-ADMIN: Hide employee filter (only show store filter)
     const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
@@ -10106,6 +10498,12 @@ document.getElementById('sideReceiptsBtn').addEventListener('click', wrapMenuAct
     // ✅ Show store filter but force to their store and disable it
     const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
     if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'flex';
+    
+    const receiptsStore = document.getElementById('receiptsStoreSelect');
+    if (receiptsStore) {
+      receiptsStore.value = currentStore;
+      receiptsStore.disabled = true;  // Non-admin cannot change store
+    }
   }
 
   // ✅ Populate store dropdowns (this will handle non-admin showing only their store)

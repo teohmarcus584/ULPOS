@@ -5243,9 +5243,9 @@ async function fetchReceiptById(txId) {
 
 function updateReceipts() {
   let store;
-  let employeeId = 'all';
+  let employeeId = 'all';  // ✅ Default to 'all' employees
   
-  // ✅ For non-admin, ALWAYS use their specific store
+  // ✅ For non-admin: Force to their specific store, but show ALL employees
   if (currentEmployee?.isAdmin) {
     // Admin can select store and employee
     const receiptsStore = document.getElementById('receiptsStoreSelect');
@@ -5254,9 +5254,9 @@ function updateReceipts() {
     const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
     employeeId = receiptsEmpSelect ? receiptsEmpSelect.value : 'all';
   } else {
-    // ✅ Non-admin: force to their specific store
+    // ✅ Non-admin: force to their specific store, but show ALL employees
     store = currentStore;  // Use the employee's assigned store
-    employeeId = currentEmployee.id;  // ✅ Force to their own ID (store filter)
+    employeeId = 'all';    // ✅ Show ALL employees in this store!
   }
 
   const rangeSelect = document.getElementById('receiptsDateRangeSelect');
@@ -10019,6 +10019,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ==================== OPEN RECEIPTS MODAL ====================
 
+// ==================== OPEN RECEIPTS MODAL ====================
+
 document.getElementById('sideReceiptsBtn').addEventListener('click', wrapMenuAction(async () => {
   const modal = document.getElementById('receiptsModal');
   if (modal) {
@@ -10085,24 +10087,18 @@ document.getElementById('sideReceiptsBtn').addEventListener('click', wrapMenuAct
     }
     
   } else {
-    // ✅ NON-ADMIN: Hide store and employee filters, force to their store
+    // ✅ NON-ADMIN: Hide employee filter (only show store filter)
     const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
-    const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
     if (receiptsEmpFilter) receiptsEmpFilter.style.display = 'none';
-    if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'none';
     
-    // ✅ Force store to current employee's store and disable it
+    // ✅ Show store filter but force to their store and disable it
+    const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
+    if (receiptsStoreFilter) receiptsStoreFilter.style.display = 'flex';
+    
     const receiptsStore = document.getElementById('receiptsStoreSelect');
     if (receiptsStore) {
       receiptsStore.value = currentStore;
       receiptsStore.disabled = true;  // Non-admin cannot change store
-    }
-    
-    // ✅ Force employee filter to current employee
-    const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
-    if (receiptsEmpSelect) {
-      receiptsEmpSelect.value = currentEmployee.id;
-      receiptsEmpSelect.disabled = true;  // Non-admin cannot change employee
     }
   }
 

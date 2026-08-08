@@ -5079,10 +5079,33 @@ let receiptPollingInterval = null;
 
 async function fetchAndCacheReceipts() {
   try {
-    const { data, error } = await supabase
+    // ✅ For non-admin, only fetch their store
+    let store = null;
+    let employeeId = null;
+    
+    if (currentEmployee && !currentEmployee.isAdmin) {
+      // Non-admin: only their store
+      store = currentStore;
+      employeeId = currentEmployee.id;
+      console.log('🔒 Non-admin fetching receipts for store:', store);
+    }
+    
+    let query = supabase
       .from('transactions')
       .select('*')
       .order('timestamp', { ascending: false });
+    
+    // ✅ Apply store filter for non-admin
+    if (store) {
+      query = query.eq('store', store);
+    }
+    
+    // ✅ Apply employee filter for non-admin
+    if (employeeId) {
+      query = query.eq('employee_id', employeeId);
+    }
+    
+    const { data, error } = await query;
     
     if (error) {
       console.error('❌ fetchAndCacheReceipts error:', error);
@@ -5091,7 +5114,7 @@ async function fetchAndCacheReceipts() {
     }
     
     cachedReceipts = data || [];
-    console.log(`✅ Loaded ${cachedReceipts.length} receipts`);
+    console.log(`✅ Loaded ${cachedReceipts.length} receipts${store ? ' for store: ' + store : ''}`);
     
     const modal = document.getElementById('receiptsModal');
     if (modal && modal.style.display === 'flex') {
@@ -5107,9 +5130,12 @@ async function fetchAndCacheReceipts() {
 
 async function fetchReceipts(store, employeeId, from, to, search) {
   try {
-    console.log('Fetching receipts with filters...');
+    console.log('📜 Fetching receipts with filters...');
     console.log('Store:', store);
     console.log('Employee:', employeeId);
+    console.log('From:', from);
+    console.log('To:', to);
+    console.log('Search:', search);
     
     let query = supabase
       .from('transactions')
@@ -5118,39 +5144,39 @@ async function fetchReceipts(store, employeeId, from, to, search) {
     
     if (store && store !== 'all') {
       query = query.eq('store', store);
-      console.log('Filtering by store:', store);
+      console.log('✅ Filtering by store:', store);
     }
     
     if (employeeId && employeeId !== 'all') {
       query = query.eq('employee_id', employeeId);
-      console.log('Filtering by employee:', employeeId);
+      console.log('✅ Filtering by employee:', employeeId);
     }
     
     if (from) {
       const fromDate = new Date(from + 'T00:00:00+08:00');
       query = query.gte('timestamp', fromDate.toISOString());
-      console.log('From date:', fromDate.toISOString());
+      console.log('✅ From date:', fromDate.toISOString());
     }
     if (to) {
       const toDate = new Date(to + 'T23:59:59+08:00');
       query = query.lte('timestamp', toDate.toISOString());
-      console.log('To date:', toDate.toISOString());
+      console.log('✅ To date:', toDate.toISOString());
     }
     
     if (search) {
       query = query.or(`transaction_id.ilike.%${search}%`);
-      console.log('Search term:', search);
+      console.log('✅ Search term:', search);
     }
     
     const { data, error } = await query;
     if (error) {
-      console.error('fetchReceipts error:', error);
+      console.error('❌ fetchReceipts error:', error);
       cachedReceipts = [];
       renderReceiptsList(cachedReceipts);
       return;
     }
     
-    console.log('Fetched receipts:', data ? data.length : 0);
+    console.log(`✅ Fetched receipts: ${data ? data.length : 0}`);
     
     cachedReceipts = data || [];
     renderReceiptsList(cachedReceipts);
@@ -5159,7 +5185,7 @@ async function fetchReceipts(store, employeeId, from, to, search) {
     if (msg) msg.style.display = 'none';
     
   } catch (err) {
-    console.error('fetchReceipts error:', err);
+    console.error('❌ fetchReceipts error:', err);
     cachedReceipts = [];
     renderReceiptsList(cachedReceipts);
     await showAlertModal('Error', 'Failed to load receipts.');
@@ -5707,7 +5733,7 @@ function updateReceipts() {
   let store;
   let employeeId = 'all';
   
-  // ✅ For non-admin: Force to their specific store, show ALL employees in that store
+  // ✅ For non-admin: Force to their specific store, but show ALL employees
   if (currentEmployee?.isAdmin) {
     // Admin can select store and employee
     const receiptsStore = document.getElementById('receiptsStoreSelect');
@@ -5716,9 +5742,16 @@ function updateReceipts() {
     const receiptsEmpSelect = document.getElementById('receiptsEmployeeSelect');
     employeeId = receiptsEmpSelect ? receiptsEmpSelect.value : 'all';
   } else {
-    // ✅ Non-admin: force to their specific store, show ALL employees in that store
+    // ✅ Non-admin: force to their specific store
     store = currentStore;  // Use the employee's assigned store
-    employeeId = 'all';    // ✅ Show ALL employees in this store!
+    employeeId = 'all';    // Show ALL employees in this store!
+    
+    // ✅ Also make sure the store select shows their store
+    const receiptsStore = document.getElementById('receiptsStoreSelect');
+    if (receiptsStore) {
+      receiptsStore.value = currentStore;
+      receiptsStore.disabled = true;
+    }
   }
 
   const rangeSelect = document.getElementById('receiptsDateRangeSelect');
@@ -5890,7 +5923,7 @@ async function refreshSettlementTotals(store, silent = false) {
     return { settled: true, totals: null };
   }
   
-  // ✅ If NOT settled, fetch and show the actual totals
+  // ✅ If NOT settled, fetch and show the actual totals (including refunds)
   console.log('ℹ️ No settlement yet - showing actual totals');
   
   const report = await fetchSalesReport(store, 'all', todayStr, todayStr, false, silent);
@@ -5898,6 +5931,7 @@ async function refreshSettlementTotals(store, silent = false) {
   console.log('Report from fetchSalesReport:', report);
   
   if (report) {
+    // ✅ Use the net totals from the report (which already includes refunds)
     const cash = report.cashTotal || 0;
     const card = report.cardTotal || 0;
     const qr = report.otherTotal || 0;
@@ -5920,7 +5954,7 @@ async function refreshSettlementTotals(store, silent = false) {
       const sysAlipay = document.getElementById('sysAlipay');
       if (sysAlipay) sysAlipay.innerText = `RM ${alipay.toFixed(2)}`;
       const sysRefund = document.getElementById('sysRefund');
-      if (sysRefund) sysRefund.innerText = `RM ${Math.abs(refund).toFixed(2)}`;
+      if (sysRefund) sysRefund.innerText = `RM ${refund.toFixed(2)}`;
 
       const sysNetTotal = document.getElementById('sysNetTotal');
       if (sysNetTotal) sysNetTotal.innerText = `RM ${netTotal.toFixed(2)}`;
@@ -8381,7 +8415,8 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
     let query = supabase
       .from('transactions')
       .select('*')
-      .gt('total', 0);  // ✅ EXCLUDE refunds (negative totals)
+      .eq('refunded', false)  // ✅ EXCLUDE refunded transactions
+      .gt('total', 0);  // ✅ Only positive totals
     
     if (store && store !== 'all') query = query.eq('store', store);
     if (employeeId && employeeId !== 'all') query = query.eq('employee_id', employeeId);
@@ -8401,7 +8436,7 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
       throw error;
     }
     
-    console.log(`📊 Found ${data?.length || 0} transactions (excluding refunds)`);
+    console.log(`📊 Found ${data?.length || 0} active transactions (excluding refunds)`);
     
     if (!data || data.length === 0) {
       console.log('ℹ️ No transactions found in date range');
@@ -8441,33 +8476,12 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
     let refundTotal = 0;
     let totalItems = 0;
     const refundedTransactionIds = new Set();
-    const refundTransactions = [];
     
-    // ✅ First pass: Find all refund transactions (they should already be excluded by .gt('total', 0))
-    // But let's double-check
-    for (const tx of data) {
-      const total = parseFloat(tx.total) || 0;
-      // Refunds should have been excluded, but just in case
-      if (total < 0) {
-        refundTransactions.push(tx);
-        if (tx.refund_of) {
-          refundedTransactionIds.add(tx.refund_of);
-        }
-        refundTotal += total;
-      }
-    }
-    
-    console.log(`📊 Found ${data.length - refundTransactions.length} sales, ${refundTransactions.length} refunds`);
-    console.log(`🔄 Refunded transaction IDs:`, [...refundedTransactionIds]);
-    
-    // ✅ Second pass: Calculate ALL sales (including refunded ones, but refunds are excluded)
+    // ✅ Calculate totals (all transactions are already active sales)
     for (const tx of data) {
       const total = parseFloat(tx.total) || 0;
       
-      // Skip refund transactions (they are negative, but should already be excluded)
-      if (total < 0) continue;
-      
-      // ✅ Count ALL sales (including ones that were refunded)
+      // ✅ All transactions should be positive (filtered by .gt('total', 0))
       totalSales += total;
       
       const payment = tx.payment_method;
@@ -8490,12 +8504,26 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
       }
     }
     
-    // ✅ Net total = ALL sales + refunds (refunds are negative, but excluded)
-    const netTotal = totalSales + refundTotal;
+    // ✅ Net total = totalSales (refunds are excluded)
+    const netTotal = totalSales;
     
-    console.log(`💰 Total Sales (all): RM ${totalSales.toFixed(2)}`);
-    console.log(`💰 Refund Total: RM ${refundTotal.toFixed(2)}`);
+    console.log(`💰 Total Sales: RM ${totalSales.toFixed(2)}`);
     console.log(`💰 Net Total: RM ${netTotal.toFixed(2)}`);
+    
+    // ✅ Get refund count from a separate query (for display purposes)
+    const { data: refundData, error: refundError } = await supabase
+      .from('transactions')
+      .select('refund_of')
+      .eq('store', store)
+      .lt('total', 0);
+    
+    if (!refundError && refundData) {
+      refundData.forEach(tx => {
+        if (tx.refund_of) {
+          refundedTransactionIds.add(tx.refund_of);
+        }
+      });
+    }
     
     const totals = {
       totalSales: totalSales,
@@ -8503,7 +8531,7 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
       cardTotal: cardTotal,
       otherTotal: otherTotal,
       alipayTotal: alipayTotal,
-      refundTotal: refundTotal,
+      refundTotal: 0,  // Refunds are excluded from totals
       refundedTransactionCount: refundedTransactionIds.size,
       transactionCount: data.length,
       totalItems: totalItems,
@@ -8516,7 +8544,7 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
       document.getElementById('adminReportCardTotal').innerText = `RM ${cardTotal.toFixed(2)}`;
       document.getElementById('adminReportQRTotal').innerText = `RM ${otherTotal.toFixed(2)}`;
       document.getElementById('adminReportAlipayTotal').innerText = `RM ${alipayTotal.toFixed(2)}`;
-      document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(refundTotal).toFixed(2)}`;
+      document.getElementById('adminReportRefundTotal').innerText = `RM 0.00`;
       document.getElementById('adminReportRefundedBills').innerText = refundedTransactionIds.size || 0;
       document.getElementById('adminReportTransactionCount').innerText = data.length || 0;
       document.getElementById('adminReportTotalItems').innerText = totalItems || 0;
@@ -8542,7 +8570,6 @@ async function fetchSalesReport(store, employeeId, from, to, unsettledOnly, sile
     if (!silent) hideLoading();
   }
 }
-
 async function fetchSalesChartData(store, employeeId, from, to) {
   try {
     let query = supabase
@@ -9402,7 +9429,7 @@ async function updateNonAdminReport(from, to) {
   console.log('Date range from:', from);
   console.log('Date range to:', to);
   
-  // Store Total Sales = SPECIFIC store only (for display only)
+  // ✅ Store Total Sales = SPECIFIC store only, EXCLUDING refunds
   const store = currentStore;
   const storeTotals = await fetchSalesReport(store, 'all', from, to, false, true);
   if (storeTotals) {
@@ -9412,14 +9439,16 @@ async function updateNonAdminReport(from, to) {
     document.getElementById('adminReportTotalItems').innerText = storeTotals.totalItems || 0;
   }
   
-  // My Sales = Employee sales across ALL stores filtered by sales_person_id
+  // ✅ My Sales = Employee sales across ALL stores, EXCLUDING refunded transactions
   try {
     // Build query WITHOUT store filter - use sales_person_id
+    // ✅ IMPORTANT: Exclude refunded transactions
     let query = supabase
       .from('transactions')
       .select('*')
-      .eq('sales_person_id', currentEmployee.id)  // ✅ Use sales_person_id!
-      .gt('total', 0);  // Exclude refunds
+      .eq('sales_person_id', currentEmployee.id)
+      .eq('refunded', false)  // ✅ ONLY active sales (exclude refunded)
+      .gt('total', 0);  // ✅ Only positive totals (exclude refunds)
     
     // Add date filters
     if (from) {
@@ -9521,7 +9550,7 @@ async function updateNonAdminStatsCards(from, to) {
   console.log('Employee:', currentEmployee.name);
   console.log('Employee ID:', currentEmployee.id);
   
-  // Store Total Sales = SPECIFIC store only
+  // ✅ Store Total Sales = SPECIFIC store only, EXCLUDING refunds
   const store = currentStore;
   const storeTotals = await fetchSalesReport(store, 'all', from, to, false, true);
   const storeTotalElem = document.getElementById('nonAdminStoreTotal');
@@ -9540,13 +9569,14 @@ async function updateNonAdminStatsCards(from, to) {
     storeNameElem.innerText = storeNames[store] || store;
   }
   
-  // My Sales = Employee sales across ALL stores filtered by sales_person_id
+  // ✅ My Sales = Employee sales across ALL stores, EXCLUDING refunds
   try {
     let query = supabase
       .from('transactions')
       .select('*')  // Get all columns
-      .eq('sales_person_id', currentEmployee.id)  // ✅ Use sales_person_id!
-      .gt('total', 0);  // Exclude refunds
+      .eq('sales_person_id', currentEmployee.id)
+      .eq('refunded', false)  // ✅ ONLY active sales (exclude refunded)
+      .gt('total', 0);  // ✅ Only positive totals (exclude refunds)
     
     if (from) {
       const fromDate = new Date(from + 'T00:00:00+08:00');
@@ -10246,7 +10276,11 @@ function updateSyncStatus(success, timestampMs) {
 
 function startReceiptPolling() {
   if (receiptPollingInterval) clearInterval(receiptPollingInterval);
+  
+  // ✅ First fetch with proper filters
   fetchAndCacheReceipts();
+  
+  // ✅ Then poll every 30 seconds with proper filters
   receiptPollingInterval = setInterval(fetchAndCacheReceipts, 30000);
 }
 

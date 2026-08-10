@@ -7941,7 +7941,7 @@ async function loadPendingStockTakeRequests(modal) {
         }
         
         categorySectionsHtml += `
-          <div style="background:white; border-radius:12px; padding:12px 16px; border:1px solid #e2e8f0; border-left:4px solid #8b5cf6; margin-bottom:12px;">
+          <div class="category-section" data-category="${escapeHtml(category)}" data-group="${groupId}" style="background:white; border-radius:12px; padding:12px 16px; border:1px solid #e2e8f0; border-left:4px solid #8b5cf6; margin-bottom:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-weight:600; color:#0f172a;">📂 ${escapeHtml(category)}</span>
@@ -7980,7 +7980,7 @@ async function loadPendingStockTakeRequests(modal) {
       }
       
       mainHtml += `
-        <div style="background:#f8fafc; border-radius:16px; padding:16px; margin-bottom:20px; border-left:4px solid #3b82f6;">
+        <div class="store-group" data-group="${groupId}" style="background:#f8fafc; border-radius:16px; padding:16px; margin-bottom:20px; border-left:4px solid #3b82f6;">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid #e2e8f0;">
             <div>
               <strong style="font-size:1.3rem;">🏪 ${storeDisplay}</strong>
@@ -8049,7 +8049,7 @@ async function loadPendingStockTakeRequests(modal) {
       });
     });
     
-    // 2. Category-level "Select All" checkbox
+    // 2. Category-level "Select All" checkbox - FIXED
     document.querySelectorAll('.select-all-category-items').forEach(selectAll => {
       selectAll.addEventListener('change', function(e) {
         e.stopPropagation();
@@ -8057,14 +8057,24 @@ async function loadPendingStockTakeRequests(modal) {
         const category = this.dataset.category;
         const isChecked = this.checked;
         
-        // Find the category section
-        const categorySection = this.closest('div[style*="border-left: 4px solid #8b5cf6"]');
+        // ✅ Find the category section using the data attributes
+        const categorySection = document.querySelector(`.category-section[data-category="${category}"][data-group="${groupId}"]`);
+        
         if (categorySection) {
           // Select/deselect all item checkboxes in this category
           const checkboxes = categorySection.querySelectorAll('.item-checkbox');
           checkboxes.forEach(cb => {
             cb.checked = isChecked;
           });
+        } else {
+          // Fallback: find by closest parent
+          const parentDiv = this.closest('.category-section');
+          if (parentDiv) {
+            const checkboxes = parentDiv.querySelectorAll('.item-checkbox');
+            checkboxes.forEach(cb => {
+              cb.checked = isChecked;
+            });
+          }
         }
         
         // Update store-level "Select All" checkbox state
@@ -8078,15 +8088,16 @@ async function loadPendingStockTakeRequests(modal) {
       cb.addEventListener('change', function(e) {
         e.stopPropagation();
         const groupId = this.dataset.group;
+        const category = this.dataset.category;
         
         // Update category-level "Select All" checkbox
-        const categorySection = this.closest('div[style*="border-left: 4px solid #8b5cf6"]');
+        const categorySection = document.querySelector(`.category-section[data-category="${category}"][data-group="${groupId}"]`);
         if (categorySection) {
           const allCategoryItems = categorySection.querySelectorAll('.item-checkbox');
           const checkedCategoryItems = categorySection.querySelectorAll('.item-checkbox:checked');
           const selectAllCategory = categorySection.querySelector('.select-all-category-items');
           if (selectAllCategory) {
-            selectAllCategory.checked = allCategoryItems.length === checkedCategoryItems.length;
+            selectAllCategory.checked = allCategoryItems.length > 0 && allCategoryItems.length === checkedCategoryItems.length;
           }
         }
         
@@ -8121,6 +8132,40 @@ async function loadPendingStockTakeRequests(modal) {
   } catch (err) {
     console.error(err);
     list.innerHTML = '<div style="text-align:center; padding:20px; color:#ef4444;">Failed to load requests.</div>';
+  }
+}
+
+// ✅ Helper function to update store-level "Select All" checkbox state
+function updateStoreSelectAllState(groupId) {
+  const allStoreItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]`);
+  const checkedStoreItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]:checked`);
+  const selectAllStore = document.querySelector(`.select-all-store-items[data-group="${groupId}"]`);
+  if (selectAllStore) {
+    selectAllStore.checked = allStoreItems.length > 0 && allStoreItems.length === checkedStoreItems.length;
+  }
+}
+
+// ✅ Updated updateStoreGroupCounts function
+function updateStoreGroupCounts(groupId) {
+  const checkedItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]:checked`);
+  const totalItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]`);
+  const count = checkedItems.length;
+  const total = totalItems.length;
+  
+  const approveBtn = document.querySelector(`.approve-store-group-btn[data-group="${groupId}"]`);
+  const rejectBtn = document.querySelector(`.reject-store-group-btn[data-group="${groupId}"]`);
+  
+  if (approveBtn) {
+    approveBtn.innerHTML = `✅ Approve Selected (${count}/${total})`;
+    approveBtn.disabled = count === 0;
+    approveBtn.style.opacity = count === 0 ? '0.5' : '1';
+    approveBtn.style.cursor = count === 0 ? 'not-allowed' : 'pointer';
+  }
+  if (rejectBtn) {
+    rejectBtn.innerHTML = `❌ Reject Selected (${count}/${total})`;
+    rejectBtn.disabled = count === 0;
+    rejectBtn.style.opacity = count === 0 ? '0.5' : '1';
+    rejectBtn.style.cursor = count === 0 ? 'not-allowed' : 'pointer';
   }
 }
 

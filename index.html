@@ -5849,33 +5849,7 @@ async function checkSettlementStatus(store, date) {
   try {
     console.log(`🔍 Checking settlement for store: ${store}, date: ${date}`);
     
-    // ✅ Get the settlement record
-    const { data, error } = await supabase
-      .from('settlements')
-      .select('*')
-      .eq('store', store)
-      .eq('date', date)
-      .maybeSingle();
-    
-    if (error) {
-      console.error('❌ Settlement check error:', error);
-      return { exists: false, isCollected: false, settlement: null };
-    }
-    
-    if (!data) {
-      console.log('ℹ️ No settlement found for this date');
-      return { exists: false, isCollected: false, settlement: null };
-    }
-    
-    // ✅ Check if collected (this means the settlement is complete)
-    const isCollected = data.collected === true;
-    console.log(`📊 Settlement found: collected = ${isCollected}`);
-    
-    // ✅ Also check if status is 'collected'
-    const isCollectedStatus = data.status === 'collected';
-    
-    // ✅ Check if there are any unsettled transactions for this date
-    // ✅ FIX: Use timestamp range instead of date column
+    // ✅ FIRST: Check if there are ANY unsettled transactions for this date
     const startDate = new Date(date + 'T00:00:00+08:00');
     const endDate = new Date(date + 'T23:59:59+08:00');
     
@@ -5885,22 +5859,68 @@ async function checkSettlementStatus(store, date) {
       .eq('store', store)
       .gte('timestamp', startDate.toISOString())
       .lte('timestamp', endDate.toISOString())
-      .eq('settled', false)
-      .limit(1);
+      .eq('settled', false);
+    
+    if (txError) {
+      console.error('❌ Error checking unsettled transactions:', txError);
+      return { exists: false, isCollected: false, settlement: null, hasUnsettled: false };
+    }
     
     const hasUnsettled = txData && txData.length > 0;
-    console.log(`📊 Has unsettled transactions: ${hasUnsettled}`);
+    console.log(`📊 Has unsettled transactions: ${hasUnsettled} (${txData?.length || 0} found)`);
     
-    return { 
-      exists: true, 
-      isCollected: isCollected || isCollectedStatus,
-      hasUnsettled: hasUnsettled,
-      settlement: data 
+    // ✅ If NO unsettled transactions, treat as fully settled - hide everything
+    if (!hasUnsettled) {
+      console.log('✅ All transactions for this date are settled - no settlement needed');
+      
+      // ✅ Check if a settlement record exists (for display purposes)
+      const { data: settlementData, error: settlementError } = await supabase
+        .from('settlements')
+        .select('*')
+        .eq('store', store)
+        .eq('date', date)
+        .maybeSingle();
+      
+      return {
+        exists: true,
+        isCollected: true,  // Treat as collected/complete
+        hasUnsettled: false,
+        settlement: settlementData || { collected: true, collected_by: 'System', collected_at: new Date().toISOString() }
+      };
+    }
+    
+    // ✅ If there ARE unsettled transactions, check if settlement record exists
+    const { data: settlementData, error: settlementError } = await supabase
+      .from('settlements')
+      .select('*')
+      .eq('store', store)
+      .eq('date', date)
+      .maybeSingle();
+    
+    if (settlementError) {
+      console.error('❌ Settlement check error:', settlementError);
+      return { exists: false, isCollected: false, settlement: null, hasUnsettled: true };
+    }
+    
+    if (!settlementData) {
+      console.log('ℹ️ No settlement found for this date but has unsettled transactions');
+      return { exists: false, isCollected: false, settlement: null, hasUnsettled: true };
+    }
+    
+    // ✅ Check if collected
+    const isCollected = settlementData.collected === true || settlementData.status === 'collected';
+    console.log(`📊 Settlement found: collected = ${isCollected}`);
+    
+    return {
+      exists: true,
+      isCollected: isCollected,
+      hasUnsettled: true,
+      settlement: settlementData
     };
     
   } catch (err) {
     console.error('❌ checkSettlementStatus error:', err);
-    return { exists: false, isCollected: false, settlement: null, error: err.message };
+    return { exists: false, isCollected: false, settlement: null, error: err.message, hasUnsettled: false };
   }
 }
 
@@ -5908,12 +5928,12 @@ async function refreshSettlementTotals(store, silent = false) {
   const todayStr = getLocalDateString(new Date());
   console.log(`Refreshing settlement totals for ${store} on ${todayStr}`);
   
-  // ✅ FIRST: Check if already settled/collected
+  // ✅ Check settlement status (now returns hasUnsettled flag)
   const settlementStatus = await checkSettlementStatus(store, todayStr);
   
-  // ✅ If already collected, show zero and disable everything
-  if (settlementStatus.exists && settlementStatus.isCollected) {
-    console.log('ℹ️ Settlement already collected - showing zero totals');
+  // ✅ If NO unsettled transactions OR already collected - show zero and disable everything
+  if (!settlementStatus.hasUnsettled || settlementStatus.isCollected) {
+    console.log('ℹ️ No unsettled transactions or already settled - showing zero totals');
     
     if (!silent) {
       // Set all totals to ZERO
@@ -5937,11 +5957,15 @@ async function refreshSettlementTotals(store, silent = false) {
         if (el) {
           el.disabled = true;
           el.value = '';
-          el.placeholder = 'Settlement already collected';
+          if (settlementStatus.isCollected) {
+            el.placeholder = 'Settlement already collected';
+          } else {
+            el.placeholder = 'All transactions are settled';
+          }
         }
       });
       
-      // Hide check button
+      // Hide buttons
       const checkBtn = document.getElementById('checkSettlementBtn');
       if (checkBtn) {
         checkBtn.style.display = 'none';
@@ -5953,13 +5977,19 @@ async function refreshSettlementTotals(store, silent = false) {
       // Show message
       const settlementError = document.getElementById('settlementError');
       if (settlementError) {
-        settlementError.innerHTML = `
-          ✅ This store has already been settled for today.<br>
-          <span style="font-size: 0.85rem; color: #64748b;">
-            Collected on: ${new Date(settlementStatus.settlement.collected_at).toLocaleString()}<br>
-            Collected by: ${settlementStatus.settlement.collected_by || 'Unknown'}
-          </span>
-        `;
+        let message = '✅ ';
+        if (settlementStatus.isCollected) {
+          message += 'This store has already been settled for today.';
+          if (settlementStatus.settlement) {
+            message += `<br><span style="font-size: 0.85rem; color: #64748b;">
+              Collected on: ${new Date(settlementStatus.settlement.collected_at).toLocaleString()}<br>
+              Collected by: ${settlementStatus.settlement.collected_by || 'Unknown'}
+            </span>`;
+          }
+        } else {
+          message += 'All transactions are settled. No settlement needed.';
+        }
+        settlementError.innerHTML = message;
         settlementError.style.display = 'block';
         settlementError.style.color = '#2c7a4b';
       }
@@ -5968,15 +5998,14 @@ async function refreshSettlementTotals(store, silent = false) {
     return { settled: true, totals: null };
   }
   
-  // ✅ If NOT settled, fetch and show the actual totals (including refunds)
-  console.log('ℹ️ No settlement yet - showing actual totals');
+  // ✅ If NOT settled and there ARE unsettled transactions, fetch totals
+  console.log('ℹ️ Has unsettled transactions - showing actual totals');
   
   const report = await fetchSalesReport(store, 'all', todayStr, todayStr, false, silent);
   
   console.log('Report from fetchSalesReport:', report);
   
   if (report) {
-    // ✅ Use the net totals from the report (which already includes refunds)
     const cash = report.cashTotal || 0;
     const card = report.cardTotal || 0;
     const qr = report.otherTotal || 0;

@@ -3290,12 +3290,12 @@ function renderStockTakeProductGrid() {
       html += `
         <div class="product-card stock-take-card ${lowStockClass}" data-id="${prod.id}" 
              style="background: ${cardBg}; border: 2px solid ${borderColor}; border-radius: 16px; padding: 12px; text-align: center;">
-          <div class="product-name" style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px;">${escapeHtml(prod.name)}</div>
+          <div class="product-name" style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; word-wrap: break-word;">${escapeHtml(prod.name)}</div>
           <div class="product-category" style="font-size: 0.7rem; color: #64748b; margin-bottom: 4px;">${escapeHtml(prod.category)}</div>
           <div class="product-price" style="font-size: 0.9rem; color: #2c7a4b; margin-bottom: 4px;">RM ${prod.price.toFixed(2)}</div>
           <div style="font-size: 0.75rem; margin-bottom: 8px;">
             System: ${prod.stock}
-            <span style="display: inline-block; margin-left: 4px; padding: 1px 6px; border-radius: 10px; font-size: 0.65rem; color: ${diffColor}; background: ${diffBg}; border: 1px solid ${diffColor};">
+            <span class="diff-badge" style="display: inline-block; margin-left: 4px; padding: 1px 6px; border-radius: 10px; font-size: 0.65rem; color: ${diffColor}; background: ${diffBg}; border: 1px solid ${diffColor};">
               ${diffText}
             </span>
           </div>
@@ -3308,7 +3308,7 @@ function renderStockTakeProductGrid() {
             <button class="stock-take-btn" data-id="${prod.id}" data-action="inc" 
                     style="background: #f1f5f9; border: none; width: 30px; height: 30px; border-radius: 30px; font-weight: bold; font-size: 1.1rem; cursor: pointer; touch-action: manipulation;">+</button>
           </div>
-          <div style="font-size: 0.65rem; color: ${diffColor}; margin-top: 4px;">
+          <div class="stock-hint" style="font-size: 0.65rem; color: ${diffColor}; margin-top: 4px;">
             ${diff !== 0 ? (diff > 0 ? `📈 +${diff}` : `📉 ${diff}`) : '✅ Matches'}
           </div>
         </div>
@@ -3316,7 +3316,7 @@ function renderStockTakeProductGrid() {
     });
     productGridEl.className = 'product-grid';
   } else {
-    // List view (existing code)
+    // List view for stock take
     filtered.forEach(prod => {
       const isLowStock = prod.stock < LOW_STOCK_THRESHOLD;
       const lowStockClass = isLowStock ? 'low-stock-card' : '';
@@ -3331,11 +3331,11 @@ function renderStockTakeProductGrid() {
       
       html += `
         <div class="product-card stock-take-card ${lowStockClass}" data-id="${prod.id}" 
-             style="border: 2px solid ${borderColor}; background: ${cardBg};">
-          <div class="product-name" style="font-size: 1rem; font-weight: 600;">${escapeHtml(prod.name)}</div>
-          <div class="product-category" style="font-size: 0.8rem; color: #64748b;">${escapeHtml(prod.category)}</div>
-          <div class="product-price" style="font-size: 0.9rem; color: #2c7a4b;">RM ${prod.price.toFixed(2)}</div>
-          <div class="product-stock" style="font-size: 0.85rem;">
+             style="border: 2px solid ${borderColor}; background: ${cardBg}; padding: 16px 20px;">
+          <div class="product-name" style="font-size: 1rem; font-weight: 600; margin-bottom: 4px;">${escapeHtml(prod.name)}</div>
+          <div class="product-category" style="font-size: 0.8rem; color: #64748b; margin-bottom: 4px;">${escapeHtml(prod.category)}</div>
+          <div class="product-price" style="font-size: 0.9rem; color: #2c7a4b; margin-bottom: 4px;">RM ${prod.price.toFixed(2)}</div>
+          <div class="product-stock" style="font-size: 0.85rem; margin-bottom: 8px;">
             System: ${prod.stock}
             <span class="diff-badge" style="display: inline-block; margin-left: 8px; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; color: ${diffColor}; background: ${diffBg}; border: 1px solid ${diffColor};">
               ${diffText}
@@ -7562,7 +7562,7 @@ function toggleStockTakeMode() {
 }
 
 function attachStockTakeEvents() {
-  // ✅ Use the correct container - productGridEl instead of stockTakeGrid
+  // ✅ Use the correct container - productGridEl
   const grid = productGridEl;
   if (!grid) return;
   
@@ -7667,50 +7667,58 @@ function updateSingleCard(productId) {
   const data = stockTakeData[productId];
   if (!data) return;
   
-  const card = document.querySelector(`.stock-take-card[data-id="${productId}"]`);
-  if (!card) return;
+  const cards = document.querySelectorAll(`.stock-take-card[data-id="${productId}"]`);
+  if (cards.length === 0) return;
   
   const diffColor = data.difference > 0 ? '#2c7a4b' : data.difference < 0 ? '#dc2626' : '#64748b';
-  const diffText = data.difference > 0 ? `+${data.difference} higher` : data.difference < 0 ? `${data.difference} lower` : '✓ Matches';
   const diffBg = data.difference > 0 ? '#f0fdf4' : data.difference < 0 ? '#fef2f2' : '#f8fafc';
+  const borderColor = data.difference !== 0 ? (data.difference > 0 ? '#2c7a4b' : '#dc2626') : '#e2e8f0';
+  const cardBg = data.difference !== 0 ? (data.difference > 0 ? '#f0fdf4' : '#fef2f2') : '#f8fafc';
   
-  const badge = card.querySelector('.diff-badge');
-  if (badge) {
-    badge.textContent = diffText;
-    badge.style.color = diffColor;
-    badge.style.background = diffBg;
-    badge.style.borderColor = diffColor;
-  }
-  
-  const input = card.querySelector('.stock-take-input');
-  if (input) {
-    input.value = data.counted_stock;
-    const borderColor = data.difference !== 0 ? (data.difference > 0 ? '#2c7a4b' : '#dc2626') : '#10b981';
-    const bgColor = data.difference !== 0 ? (data.difference > 0 ? '#f0fdf4' : '#fef2f2') : '#f0fdf4';
-    input.style.borderColor = borderColor;
-    input.style.background = bgColor;
-  }
-  
-  const hint = card.querySelector('.stock-hint');
-  if (hint) {
-    if (data.difference > 0) {
-      hint.textContent = `📈 Counted ${data.difference} more than system`;
-      hint.style.color = '#2c7a4b';
-    } else if (data.difference < 0) {
-      hint.textContent = `📉 Counted ${Math.abs(data.difference)} less than system`;
-      hint.style.color = '#dc2626';
-    } else {
-      hint.textContent = '✅ Count matches system';
-      hint.style.color = '#2c7a4b';
+  cards.forEach(card => {
+    // Update card border and background
+    card.style.border = `2px solid ${borderColor}`;
+    card.style.background = cardBg;
+    
+    // Update the input field
+    const input = card.querySelector('.stock-take-input');
+    if (input) {
+      input.value = data.counted_stock;
+      input.style.borderColor = borderColor;
+      input.style.background = cardBg;
     }
-  }
-  
-  card.style.border = data.difference !== 0 ? (data.difference > 0 ? '2px solid #2c7a4b' : '2px solid #dc2626') : '1px solid #e2e8f0';
-  card.style.background = data.difference !== 0 ? (data.difference > 0 ? '#f0fdf4' : '#fef2f2') : '#f8fafc';
-  
-  updateStockTakeSummary();
+    
+    // Update all diff badges (both grid and list view)
+    const diffBadges = card.querySelectorAll('.diff-badge');
+    diffBadges.forEach(badge => {
+      let text;
+      if (viewMode === 'grid') {
+        text = data.difference > 0 ? `+${data.difference}` : data.difference < 0 ? `${data.difference}` : '✓';
+      } else {
+        text = data.difference > 0 ? `+${data.difference} higher` : data.difference < 0 ? `${data.difference} lower` : '✓ Matches';
+      }
+      badge.textContent = text;
+      badge.style.color = diffColor;
+      badge.style.background = diffBg;
+      badge.style.borderColor = diffColor;
+    });
+    
+    // Update stock hint
+    const hint = card.querySelector('.stock-hint');
+    if (hint) {
+      let text;
+      if (viewMode === 'grid') {
+        text = data.difference > 0 ? `📈 +${data.difference}` : data.difference < 0 ? `📉 ${data.difference}` : '✅ Matches';
+      } else {
+        text = data.difference > 0 ? `📈 Counted ${data.difference} more than system` : 
+               data.difference < 0 ? `📉 Counted ${Math.abs(data.difference)} less than system` : 
+               '✅ Count matches system';
+      }
+      hint.textContent = text;
+      hint.style.color = diffColor;
+    }
+  });
 }
-
 function updateStockTakeSummary() {
   const totalCounted = Object.keys(stockTakeData).length;
   const diffCount = Object.values(stockTakeData).filter(d => d.difference !== 0).length;

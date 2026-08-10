@@ -6578,18 +6578,29 @@ async function printSettlementReport(store, date, totals) {
   }
 }
 
+// ==================== REPRINT SETTLEMENT FUNCTIONS ====================
+
 async function fetchSettlementsForStore(store) {
   try {
+    console.log(`🔍 Fetching settlements for store: ${store}`);
+    
+    // ✅ Get ALL settlements for this store, not just the latest ones
     const { data, error } = await supabase
       .from('settlements')
       .select('*')
       .eq('store', store)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .limit(100); // Get last 100 settlements
     
-    if (error) throw error;
+    if (error) {
+      console.error('❌ fetchSettlementsForStore error:', error);
+      throw error;
+    }
+    
+    console.log(`✅ Found ${data?.length || 0} settlements for ${store}`);
     return data || [];
   } catch (err) {
-    console.error('fetchSettlementsForStore error:', err);
+    console.error('❌ fetchSettlementsForStore error:', err);
     return [];
   }
 }
@@ -6599,78 +6610,207 @@ async function showReprintSettlementModal() {
   const select = document.getElementById('settlementDateSelect');
   const errorDiv = document.getElementById('reprintSettlementError');
   
+  // Determine which store to use
   let store = currentStore;
   if (!currentEmployee?.isAdmin) {
     store = initialStore;
   }
   
-  select.innerHTML = '<option value="">Loading settlements...</option>';
+  console.log(`📋 Opening reprint modal for store: ${store}`);
+  
+  // Show loading state
+  select.innerHTML = '<option value="">🔄 Loading settlements...</option>';
   errorDiv.style.display = 'none';
   modal.style.display = 'flex';
   
-  const settlements = await fetchSettlementsForStore(store);
-  if (settlements.length === 0) {
-    select.innerHTML = '<option value="">No previous settlements found</option>';
-    return;
+  try {
+    const settlements = await fetchSettlementsForStore(store);
+    
+    if (!settlements || settlements.length === 0) {
+      select.innerHTML = '<option value="">📭 No previous settlements found</option>';
+      return;
+    }
+    
+    console.log(`📋 Found ${settlements.length} settlements to display`);
+    
+    // Build the options list
+    let options = '';
+    let hasValidSettlements = false;
+    
+    settlements.forEach((s, index) => {
+      // Make sure we have valid data
+      if (!s.date) return;
+      
+      hasValidSettlements = true;
+      const displayDate = new Date(s.date).toLocaleDateString('en-MY', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+      
+      const employee = s.employee_name ? ` by ${s.employee_name}` : '';
+      const cashTotal = parseFloat(s.cash_actual) || 0;
+      const cardTotal = parseFloat(s.card_actual) || 0;
+      const qrTotal = parseFloat(s.qr_actual) || 0;
+      const alipayTotal = parseFloat(s.alipay_actual) || 0;
+      const total = cashTotal + cardTotal + qrTotal + alipayTotal;
+      
+      const status = s.collected === true ? '✅ Collected' : '⏳ Pending';
+      
+      // Store the full settlement data as JSON
+      const settlementJson = JSON.stringify(s).replace(/"/g, '&quot;');
+      
+      options += `<option value="${s.id}" data-settlement='${settlementJson}'>
+        ${displayDate}${employee} - RM ${total.toFixed(2)} (${status})
+      </option>`;
+    });
+    
+    if (!hasValidSettlements) {
+      select.innerHTML = '<option value="">📭 No valid settlements found</option>';
+      return;
+    }
+    
+    select.innerHTML = options;
+    console.log(`✅ Populated ${select.options.length} settlements`);
+    
+    // Auto-select the first one
+    if (select.options.length > 0) {
+      select.selectedIndex = 0;
+    }
+    
+  } catch (err) {
+    console.error('❌ Error loading settlements:', err);
+    select.innerHTML = '<option value="">❌ Error loading settlements</option>';
+    errorDiv.innerText = 'Failed to load settlement history. Please try again.';
+    errorDiv.style.display = 'block';
   }
-  
-  let options = '';
-  settlements.forEach(s => {
-    const displayDate = new Date(s.date).toLocaleDateString();
-    const employee = s.employee_name ? ` (by ${s.employee_name})` : '';
-    options += `<option value="${s.date}" data-settlement='${JSON.stringify(s)}'>${displayDate}${employee}</option>`;
-  });
-  select.innerHTML = options;
 }
 
 async function reprintSelectedSettlement() {
   const select = document.getElementById('settlementDateSelect');
   const selectedOption = select.options[select.selectedIndex];
-  if (!selectedOption || !selectedOption.value) {
-    const errorDiv = document.getElementById('reprintSettlementError');
-    errorDiv.innerText = 'Please select a settlement date.';
+  const errorDiv = document.getElementById('reprintSettlementError');
+  
+  // Validate selection
+  if (!selectedOption || !selectedOption.value || selectedOption.value === '') {
+    errorDiv.innerText = '❌ Please select a settlement to reprint.';
     errorDiv.style.display = 'block';
     return;
   }
   
-  const settlementData = JSON.parse(selectedOption.dataset.settlement);
-  const store = currentStore || initialStore;
+  // Parse the settlement data from the option
+  let settlementData;
+  try {
+    const dataAttr = selectedOption.dataset.settlement;
+    if (!dataAttr) {
+      throw new Error('No settlement data found');
+    }
+    settlementData = JSON.parse(dataAttr);
+  } catch (err) {
+    console.error('❌ Error parsing settlement data:', err);
+    errorDiv.innerText = '❌ Failed to parse settlement data. Please try again.';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  
+  console.log('📋 Reprinting settlement:', settlementData);
+  
+  // Determine store
+  const store = currentStore || initialStore || settlementData.store;
   const date = settlementData.date;
   
+  // Build totals object for printing
   const totals = {
     cashSystem: settlementData.cash_system || 0,
     cardSystem: settlementData.card_system || 0,
     qrSystem: settlementData.qr_system || 0,
     alipaySystem: settlementData.alipay_system || 0,
     refundSystem: settlementData.refund_system || 0,
-    cashActual: settlementData.cash_actual,
-    cardActual: settlementData.card_actual,
-    qrActual: settlementData.qr_actual,
-    alipayActual: settlementData.alipay_actual,
-    pettyCash: settlementData.petty_cash_float
+    cashActual: settlementData.cash_actual || 0,
+    cardActual: settlementData.card_actual || 0,
+    qrActual: settlementData.qr_actual || 0,
+    alipayActual: settlementData.alipay_actual || 0,
+    pettyCash: settlementData.petty_cash_float || 0
   };
   
-  if (!totals.refundSystem) totals.refundSystem = 0;
+  console.log('📋 Totals for printing:', totals);
   
+  // Check printer connection
   if (!isPrinterConnected) {
-    showLoading('Printer not connected. Opening Bluetooth selection...');
-    try {
-      await connectPrinter();
-      hideLoading();
-    } catch (err) {
-      hideLoading();
-      await showAlertModal('Connection Failed', 'Could not connect to printer. Please try again.');
+    const connectNow = await showConfirmModal(
+      '🖨️ Printer Not Connected',
+      'Would you like to connect a printer to print the settlement report?'
+    );
+    if (connectNow) {
+      showLoading('Opening Bluetooth selection...');
+      try {
+        await connectPrinter();
+        hideLoading();
+      } catch (err) {
+        hideLoading();
+        await showAlertModal('Connection Failed', 'Could not connect to printer. Please try again.');
+        return;
+      }
+    } else {
+      await showAlertModal('Cancelled', 'You can reprint later when a printer is connected.');
       return;
     }
   }
   
-  const printed = await printSettlementReport(store, date, totals);
-  if (printed) {
-    document.getElementById('reprintSettlementModal').style.display = 'none';
-  } else {
-    await showAlertModal('Error', 'Failed to print settlement. Check printer connection.');
+  // Print the settlement
+  showLoading('Printing settlement...');
+  try {
+    const printed = await printSettlementReportWithAnimation(store, date, totals);
+    hideLoading();
+    
+    if (printed) {
+      await showAlertModal('✅ Success', 'Settlement report printed successfully!');
+      document.getElementById('reprintSettlementModal').style.display = 'none';
+    } else {
+      await showAlertModal('❌ Print Failed', 'Failed to print settlement. Please check printer connection.');
+    }
+  } catch (err) {
+    hideLoading();
+    console.error('❌ Reprint error:', err);
+    await showAlertModal('Error', 'Failed to reprint settlement: ' + err.message);
   }
 }
+
+// ==================== EVENT LISTENERS ====================
+
+// Reprint Settlement button
+document.getElementById('reprintSettlementBtn').addEventListener('click', function() {
+  // Close the settlement modal first
+  const settlementModal = document.getElementById('settlementModal');
+  if (settlementModal) settlementModal.style.display = 'none';
+  
+  // Open the reprint modal
+  showReprintSettlementModal();
+});
+
+// Close reprint modal
+document.getElementById('closeReprintModal').addEventListener('click', function() {
+  document.getElementById('reprintSettlementModal').style.display = 'none';
+  // Re-open settlement modal if needed
+  openSettlementModal();
+});
+
+document.getElementById('cancelReprintSettlementBtn').addEventListener('click', function() {
+  document.getElementById('reprintSettlementModal').style.display = 'none';
+  openSettlementModal();
+});
+
+// Confirm reprint
+document.getElementById('confirmReprintSettlementBtn').addEventListener('click', reprintSelectedSettlement);
+
+// Also handle the modal overlay click to close
+document.getElementById('reprintSettlementModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    this.style.display = 'none';
+    openSettlementModal();
+  }
+});
 
 // ==================== COLLECTION ====================
 

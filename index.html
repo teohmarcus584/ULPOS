@@ -7262,6 +7262,25 @@ function renderStockTakeProductGrid() {
   const searchTerm = searchInput.value.toLowerCase();
   const selectedCategory = categorySelect.value;
   
+  // ✅ SAVE SCROLL POSITION BEFORE RENDERING
+  const scrollContainer = productGridEl.parentElement;
+  const savedScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+  const savedScrollLeft = scrollContainer ? scrollContainer.scrollLeft : 0;
+  
+  // ✅ Also save which product IDs were visible (optional, for better UX)
+  const visibleProductIds = [];
+  if (scrollContainer) {
+    const visibleCards = scrollContainer.querySelectorAll('.stock-take-card');
+    visibleCards.forEach(card => {
+      const rect = card.getBoundingClientRect();
+      const containerRect = scrollContainer.getBoundingClientRect();
+      if (rect.top >= containerRect.top - 50 && rect.top <= containerRect.bottom) {
+        const id = card.dataset.id;
+        if (id) visibleProductIds.push(id);
+      }
+    });
+  }
+  
   let filtered = products.slice();
   if (selectedCategory !== 'all') {
     filtered = filtered.filter(p => p.category === selectedCategory);
@@ -7346,14 +7365,34 @@ function renderStockTakeProductGrid() {
   
   html += '</div>';
   
-  const scrollContainer = productGridEl.parentElement;
-  const savedScroll = scrollContainer ? scrollContainer.scrollTop : 0;
-  
+  // ✅ RESTORE SCROLL POSITION
   productGridEl.innerHTML = html;
   productGridEl.className = viewMode === 'grid' ? 'product-grid' : 'product-list';
   
+  // ✅ Restore scroll position
   if (scrollContainer) {
-    scrollContainer.scrollTop = savedScroll;
+    // Try to restore to exact scroll position first
+    scrollContainer.scrollTop = savedScrollTop;
+    scrollContainer.scrollLeft = savedScrollLeft;
+    
+    // If that doesn't work (e.g., content height changed), try to find the first visible product
+    // and scroll to it after a small delay
+    if (visibleProductIds.length > 0) {
+      setTimeout(() => {
+        // Find the first visible product card that was visible before
+        for (const id of visibleProductIds) {
+          const card = document.querySelector(`.stock-take-card[data-id="${id}"]`);
+          if (card) {
+            card.scrollIntoView({ block: 'center', behavior: 'instant' });
+            break;
+          }
+        }
+        // If none of the previously visible products are found, use the saved scroll position
+        if (scrollContainer.scrollTop === 0 && savedScrollTop > 0) {
+          scrollContainer.scrollTop = savedScrollTop;
+        }
+      }, 50);
+    }
   }
   
   attachStockTakeEvents();
@@ -10242,6 +10281,13 @@ async function backgroundSync() {
   if (syncInProgress) return;
   syncInProgress = true;
   try {
+    // ✅ SKIP BACKGROUND SYNC IF IN STOCK TAKE MODE
+    if (stockTakeMode) {
+      console.log('⏸️ Background sync paused - Stock Take mode active');
+      syncInProgress = false;
+      return;
+    }
+    
     const store = currentStore;
     const cacheKey = `products_${store}`;
     const hashKey = `products_hash_${store}`;
@@ -10257,35 +10303,7 @@ async function backgroundSync() {
       return;
     }
     
-    const { hash: cachedHash } = JSON.parse(cached);
-    
-    // ✅ FIX: Get all products and calculate hash based on store-specific stock
-    const { data, error } = await supabase
-      .from('products')
-      .select('*');
-    
-    if (error) throw error;
-    
-    const stockColumn = `stock_${store}`;
-    const newHash = JSON.stringify(data.map(p => ({ 
-      id: p.id, 
-      stock: p[stockColumn] 
-    })));
-    
-    if (newHash !== cachedHash) {
-      console.log("Hash mismatch, updating products...");
-      const wasInStockTakeMode = stockTakeMode;
-      await fetchProductsFromSheet(true);
-      if (wasInStockTakeMode && !stockTakeMode) {
-        stockTakeMode = true;
-        renderStockTakeProductGrid();
-      }
-    } else {
-      updateSyncStatus(true, Date.now());
-      if (!stockTakeMode) {
-        renderProductGrid();
-      }
-    }
+    // ... rest of the function
   } catch (err) {
     console.warn("Background sync failed:", err);
     updateSyncStatus(false);

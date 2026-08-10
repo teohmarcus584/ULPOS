@@ -8439,7 +8439,7 @@ async function approveStoreGroup(groupId, modal) {
             <div style="color: white; font-size: 1.5rem; font-weight: 700;">Approve Stock Take</div>
             <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-top: 2px;">${totalItems} items across ${categoryCount} categories</div>
           </div>
-          <button id="closeApproveModalBtn" style="margin-left: auto; background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer;">✕</button>
+          <button id="closeApproveModalBtn2" style="margin-left: auto; background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer;">✕</button>
         </div>
         
         <div style="padding: 28px 28px 20px 28px; background: #f8fafc;">
@@ -8468,8 +8468,8 @@ async function approveStoreGroup(groupId, modal) {
         </div>
         
         <div style="padding: 16px 28px 24px 28px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
-          <button id="cancelApproveBtn" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500;">Cancel</button>
-          <button id="confirmApproveBtn" class="modal-btn" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(5,150,105,0.3);">
+          <button id="cancelApproveBtn2" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500;">Cancel</button>
+          <button id="confirmApproveBtn2" class="modal-btn" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(5,150,105,0.3);">
             <span>✅</span> Confirm Approval
           </button>
         </div>
@@ -8477,9 +8477,9 @@ async function approveStoreGroup(groupId, modal) {
     `;
     document.body.appendChild(overlay);
     
-    const confirmBtn = overlay.querySelector('#confirmApproveBtn');
-    const cancelBtn = overlay.querySelector('#cancelApproveBtn');
-    const closeBtn = overlay.querySelector('#closeApproveModalBtn');
+    const confirmBtn = overlay.querySelector('#confirmApproveBtn2');
+    const cancelBtn = overlay.querySelector('#cancelApproveBtn2');
+    const closeBtn = overlay.querySelector('#closeApproveModalBtn2');
     
     const cleanup = () => {
       overlay.remove();
@@ -8495,7 +8495,7 @@ async function approveStoreGroup(groupId, modal) {
         let successCount = 0;
         let failCount = 0;
         let errors = [];
-        let store = currentStore; // ✅ Get the current store
+        let store = currentStore;
         
         for (const [requestId, items] of Object.entries(groupedByRequest)) {
           const category = items[0]?.category || 'Unknown';
@@ -8503,7 +8503,7 @@ async function approveStoreGroup(groupId, modal) {
           try {
             // ✅ Update each product's stock for the specific store
             for (const item of items) {
-              const stockColumn = `stock_${store}`; // ✅ Use store-specific column
+              const stockColumn = `stock_${store}`;
               
               // Update the product in Supabase
               const { error } = await supabase
@@ -8520,7 +8520,6 @@ async function approveStoreGroup(groupId, modal) {
               const localProduct = products.find(p => p.id == item.product_id);
               if (localProduct) {
                 localProduct.stock = item.counted_stock;
-                // Also update the store-specific stock
                 localProduct[stockColumn] = item.counted_stock;
               }
               
@@ -8581,14 +8580,27 @@ async function approveStoreGroup(groupId, modal) {
         );
         
         hideLoading();
+        
+        // ✅ AUTO-REFRESH: Force refresh the stock take list
+        console.log('🔄 Auto-refreshing stock take list after approval...');
         showLoading('Refreshing stock take list...');
         
-        await new Promise(resolve => setTimeout(resolve, 500));
-        await loadPendingStockTakeRequests(modal);
+        // ✅ Clear any local cache
+        if (window._stockTakeCache) {
+          delete window._stockTakeCache;
+        }
         
-        // ✅ Refresh products
+        // ✅ Refresh the products
         await fetchProductsFromSheet(true);
         renderProductGrid();
+        
+        // ✅ Reload the pending requests with a fresh fetch
+        await loadPendingStockTakeRequests(modal);
+        
+        // ✅ Also refresh the stock take mode view if active
+        if (stockTakeMode) {
+          renderStockTakeProductGrid();
+        }
         
         hideLoading();
         
@@ -8617,7 +8629,6 @@ async function rejectStoreGroup(groupId, modal) {
     return;
   }
   
-  // ✅ Group selected items by request_id
   const groupedByRequest = {};
   selectedItems.forEach(item => {
     if (!groupedByRequest[item.request_id]) {
@@ -8646,7 +8657,7 @@ async function rejectStoreGroup(groupId, modal) {
             <div style="color: white; font-size: 1.5rem; font-weight: 700;">Reject Selected Items</div>
             <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-top: 2px;">${totalItems} item(s) from ${categoryCount} category(s)</div>
           </div>
-          <button id="closeRejectModalBtn4" style="margin-left: auto; background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer;">✕</button>
+          <button id="closeRejectModalBtn5" style="margin-left: auto; background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer;">✕</button>
         </div>
         
         <div style="padding: 28px 28px 20px 28px; background: #f8fafc;">
@@ -8666,23 +8677,23 @@ async function rejectStoreGroup(groupId, modal) {
             <label style="display: block; font-weight: 600; color: #1e293b; font-size: 0.95rem; margin-bottom: 8px;">
               📝 Rejection Reason <span style="color: #ef4444;">*</span>
             </label>
-            <textarea id="rejectionReasonInput4" rows="4" 
+            <textarea id="rejectionReasonInput5" rows="4" 
               placeholder="e.g., Please recount the items as the quantities seem incorrect."
               style="width: 100%; padding: 14px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; resize: vertical; min-height: 100px; font-family: inherit; background: white;"
               onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)';"
               onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"></textarea>
             <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
-              <button class="quick-reason-btn4" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Count mismatch</button>
-              <button class="quick-reason-btn4" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Missing items</button>
-              <button class="quick-reason-btn4" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Incorrect count</button>
-              <button class="quick-reason-btn4" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Wrong product</button>
+              <button class="quick-reason-btn5" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Count mismatch</button>
+              <button class="quick-reason-btn5" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Missing items</button>
+              <button class="quick-reason-btn5" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Incorrect count</button>
+              <button class="quick-reason-btn5" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Wrong product</button>
             </div>
           </div>
         </div>
         
         <div style="padding: 16px 28px 24px 28px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
-          <button id="cancelRejectBtn4" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500;">Cancel</button>
-          <button id="confirmRejectBtn4" class="modal-btn" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(239,68,68,0.3);">
+          <button id="cancelRejectBtn5" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500;">Cancel</button>
+          <button id="confirmRejectBtn5" class="modal-btn" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(239,68,68,0.3);">
             <span>🗑️</span> Confirm Reject (${totalItems} items)
           </button>
         </div>
@@ -8690,12 +8701,12 @@ async function rejectStoreGroup(groupId, modal) {
     `;
     document.body.appendChild(overlay);
     
-    const textarea = overlay.querySelector('#rejectionReasonInput4');
-    const confirmBtn = overlay.querySelector('#confirmRejectBtn4');
-    const cancelBtn = overlay.querySelector('#cancelRejectBtn4');
-    const closeBtn = overlay.querySelector('#closeRejectModalBtn4');
+    const textarea = overlay.querySelector('#rejectionReasonInput5');
+    const confirmBtn = overlay.querySelector('#confirmRejectBtn5');
+    const cancelBtn = overlay.querySelector('#cancelRejectBtn5');
+    const closeBtn = overlay.querySelector('#closeRejectModalBtn5');
     
-    document.querySelectorAll('.quick-reason-btn4').forEach(btn => {
+    document.querySelectorAll('.quick-reason-btn5').forEach(btn => {
       btn.addEventListener('click', function() {
         const reasonText = this.textContent;
         const currentText = textarea.value.trim();
@@ -8728,10 +8739,8 @@ async function rejectStoreGroup(groupId, modal) {
         let errors = [];
         let updatedRequests = new Set();
         
-        // ✅ Process each request separately
         for (const [requestId, items] of Object.entries(groupedByRequest)) {
           try {
-            // ✅ First, get the current request data
             const { data: requestData, error: fetchError } = await supabase
               .from('stock_take_requests')
               .select('*')
@@ -8743,7 +8752,6 @@ async function rejectStoreGroup(groupId, modal) {
               throw fetchError;
             }
             
-            // Parse the items
             let requestItems = requestData.items;
             if (typeof requestItems === 'string') {
               try { requestItems = JSON.parse(requestItems); } catch(e) { requestItems = []; }
@@ -8753,19 +8761,12 @@ async function rejectStoreGroup(groupId, modal) {
               throw new Error('No items found in request');
             }
             
-            // ✅ Get the product IDs of the items to reject
             const productIdsToReject = new Set(items.map(item => item.product_id));
-            
-            // ✅ Filter out the rejected items (keep the ones NOT being rejected)
             const remainingItems = requestItems.filter(item => !productIdsToReject.has(item.product_id));
             
             console.log(`📋 Request ${requestId}: ${requestItems.length} items total, ${items.length} to reject, ${remainingItems.length} remaining`);
             
-            // ✅ Check if there are any items left in the request
             if (remainingItems.length === 0) {
-              // ❌ All items are rejected - update status to 'rejected'
-              console.log(`❌ All items rejected for request ${requestId}, updating status to rejected`);
-              
               const { error: updateError } = await supabase
                 .from('stock_take_requests')
                 .update({
@@ -8782,14 +8783,10 @@ async function rejectStoreGroup(groupId, modal) {
               successCount += items.length;
               
             } else {
-              // ✅ Some items remain - update the request with the remaining items
-              console.log(`✅ Some items remain for request ${requestId}, updating items list`);
-              
               const { error: updateError } = await supabase
                 .from('stock_take_requests')
                 .update({
                   items: JSON.stringify(remainingItems)
-                  // ✅ Removed 'rejection_note' column - it doesn't exist
                 })
                 .eq('id', requestId);
               
@@ -8841,10 +8838,27 @@ async function rejectStoreGroup(groupId, modal) {
         );
         
         hideLoading();
+        
+        // ✅ AUTO-REFRESH: Force refresh the stock take list
+        console.log('🔄 Auto-refreshing stock take list after rejection...');
         showLoading('Refreshing stock take list...');
         
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // ✅ Clear any local cache
+        if (window._stockTakeCache) {
+          delete window._stockTakeCache;
+        }
+        
+        // ✅ Refresh the products
+        await fetchProductsFromSheet(true);
+        renderProductGrid();
+        
+        // ✅ Reload the pending requests with a fresh fetch
         await loadPendingStockTakeRequests(modal);
+        
+        // ✅ Also refresh the stock take mode view if active
+        if (stockTakeMode) {
+          renderStockTakeProductGrid();
+        }
         
         hideLoading();
         

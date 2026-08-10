@@ -8646,7 +8646,7 @@ async function rejectStoreGroup(groupId, modal) {
             <div style="color: white; font-size: 1.5rem; font-weight: 700;">Reject Selected Items</div>
             <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-top: 2px;">${totalItems} item(s) from ${categoryCount} category(s)</div>
           </div>
-          <button id="closeRejectModalBtn3" style="margin-left: auto; background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer;">✕</button>
+          <button id="closeRejectModalBtn4" style="margin-left: auto; background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer;">✕</button>
         </div>
         
         <div style="padding: 28px 28px 20px 28px; background: #f8fafc;">
@@ -8666,23 +8666,23 @@ async function rejectStoreGroup(groupId, modal) {
             <label style="display: block; font-weight: 600; color: #1e293b; font-size: 0.95rem; margin-bottom: 8px;">
               📝 Rejection Reason <span style="color: #ef4444;">*</span>
             </label>
-            <textarea id="rejectionReasonInput3" rows="4" 
+            <textarea id="rejectionReasonInput4" rows="4" 
               placeholder="e.g., Please recount the items as the quantities seem incorrect."
               style="width: 100%; padding: 14px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; resize: vertical; min-height: 100px; font-family: inherit; background: white;"
               onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)';"
               onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"></textarea>
             <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
-              <button class="quick-reason-btn3" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Count mismatch</button>
-              <button class="quick-reason-btn3" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Missing items</button>
-              <button class="quick-reason-btn3" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Incorrect count</button>
-              <button class="quick-reason-btn3" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Wrong product</button>
+              <button class="quick-reason-btn4" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Count mismatch</button>
+              <button class="quick-reason-btn4" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Missing items</button>
+              <button class="quick-reason-btn4" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Incorrect count</button>
+              <button class="quick-reason-btn4" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Wrong product</button>
             </div>
           </div>
         </div>
         
         <div style="padding: 16px 28px 24px 28px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
-          <button id="cancelRejectBtn3" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500;">Cancel</button>
-          <button id="confirmRejectBtn3" class="modal-btn" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(239,68,68,0.3);">
+          <button id="cancelRejectBtn4" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500;">Cancel</button>
+          <button id="confirmRejectBtn4" class="modal-btn" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(239,68,68,0.3);">
             <span>🗑️</span> Confirm Reject (${totalItems} items)
           </button>
         </div>
@@ -8690,12 +8690,12 @@ async function rejectStoreGroup(groupId, modal) {
     `;
     document.body.appendChild(overlay);
     
-    const textarea = overlay.querySelector('#rejectionReasonInput3');
-    const confirmBtn = overlay.querySelector('#confirmRejectBtn3');
-    const cancelBtn = overlay.querySelector('#cancelRejectBtn3');
-    const closeBtn = overlay.querySelector('#closeRejectModalBtn3');
+    const textarea = overlay.querySelector('#rejectionReasonInput4');
+    const confirmBtn = overlay.querySelector('#confirmRejectBtn4');
+    const cancelBtn = overlay.querySelector('#cancelRejectBtn4');
+    const closeBtn = overlay.querySelector('#closeRejectModalBtn4');
     
-    document.querySelectorAll('.quick-reason-btn3').forEach(btn => {
+    document.querySelectorAll('.quick-reason-btn4').forEach(btn => {
       btn.addEventListener('click', function() {
         const reasonText = this.textContent;
         const currentText = textarea.value.trim();
@@ -8788,9 +8788,8 @@ async function rejectStoreGroup(groupId, modal) {
               const { error: updateError } = await supabase
                 .from('stock_take_requests')
                 .update({
-                  items: JSON.stringify(remainingItems),
-                  // ✅ Add a note that some items were rejected
-                  rejection_note: `Some items were rejected: ${reason}`
+                  items: JSON.stringify(remainingItems)
+                  // ✅ Removed 'rejection_note' column - it doesn't exist
                 })
                 .eq('id', requestId);
               

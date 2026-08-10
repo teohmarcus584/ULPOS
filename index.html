@@ -7915,6 +7915,7 @@ async function loadPendingStockTakeRequests(modal) {
         const items = categoryMap[category];
         const date = items[0]?.timestamp ? new Date(items[0].timestamp).toLocaleString() : 'Unknown';
         const employeeName = items[0]?.employee_name || 'Unknown';
+        const categoryId = `cat_${groupId}_${category.replace(/\s/g, '_')}`;
         
         let tableRowsHtml = '';
         for (const item of items) {
@@ -7927,7 +7928,8 @@ async function loadPendingStockTakeRequests(modal) {
                 <input type="checkbox" class="item-checkbox" 
                        data-request="${item.request_id}" 
                        data-product="${item.product_id}" 
-                       data-group="${groupId}" 
+                       data-group="${groupId}"
+                       data-category="${category}"
                        checked>
               </td>
               <td style="padding:4px 6px; font-weight:500;">${escapeHtml(item.product_name || 'Unknown')}</td>
@@ -7939,7 +7941,7 @@ async function loadPendingStockTakeRequests(modal) {
         }
         
         categorySectionsHtml += `
-          <div style="background:white; border-radius:12px; padding:12px 16px; border:1px solid #e2e8f0; border-left:4px solid #8b5cf6;">
+          <div style="background:white; border-radius:12px; padding:12px 16px; border:1px solid #e2e8f0; border-left:4px solid #8b5cf6; margin-bottom:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-weight:600; color:#0f172a;">📂 ${escapeHtml(category)}</span>
@@ -7958,7 +7960,9 @@ async function loadPendingStockTakeRequests(modal) {
                     <th style="text-align:center; padding:4px 6px; width:36px;">
                       <input type="checkbox" class="select-all-category-items" 
                              data-category="${escapeHtml(category)}" 
-                             data-group="${groupId}" checked>
+                             data-group="${groupId}"
+                             data-category-id="${categoryId}"
+                             checked>
                     </th>
                     <th style="text-align:left; padding:4px 6px;">Product</th>
                     <th style="text-align:right; padding:4px 6px;">Current</th>
@@ -8020,42 +8024,63 @@ async function loadPendingStockTakeRequests(modal) {
     
     list.innerHTML = mainHtml;
     
+    // ============================================================
+    // ✅ FIXED: SELECT ALL / DESELECT ALL EVENT HANDLERS
+    // ============================================================
+    
+    // 1. Store-level "Select All" checkbox
     document.querySelectorAll('.select-all-store-items').forEach(selectAll => {
-      selectAll.addEventListener('change', function() {
+      selectAll.addEventListener('change', function(e) {
+        e.stopPropagation();
         const groupId = this.dataset.group;
         const isChecked = this.checked;
+        
+        // Select/deselect ALL checkboxes in this store group
         document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]`).forEach(cb => {
           cb.checked = isChecked;
         });
+        
+        // Also update all category-level "Select All" checkboxes
         document.querySelectorAll(`.select-all-category-items[data-group="${groupId}"]`).forEach(cb => {
           cb.checked = isChecked;
         });
+        
         updateStoreGroupCounts(groupId);
       });
     });
     
+    // 2. Category-level "Select All" checkbox
     document.querySelectorAll('.select-all-category-items').forEach(selectAll => {
-      selectAll.addEventListener('change', function() {
+      selectAll.addEventListener('change', function(e) {
+        e.stopPropagation();
         const groupId = this.dataset.group;
         const category = this.dataset.category;
         const isChecked = this.checked;
         
-        const categorySection = this.closest('div[data-category]');
+        // Find the category section
+        const categorySection = this.closest('div[style*="border-left: 4px solid #8b5cf6"]');
         if (categorySection) {
+          // Select/deselect all item checkboxes in this category
           const checkboxes = categorySection.querySelectorAll('.item-checkbox');
           checkboxes.forEach(cb => {
             cb.checked = isChecked;
           });
         }
+        
+        // Update store-level "Select All" checkbox state
+        updateStoreSelectAllState(groupId);
         updateStoreGroupCounts(groupId);
       });
     });
     
+    // 3. Individual item checkboxes
     document.querySelectorAll('.item-checkbox').forEach(cb => {
-      cb.addEventListener('change', function() {
+      cb.addEventListener('change', function(e) {
+        e.stopPropagation();
         const groupId = this.dataset.group;
-        const categorySection = this.closest('div[data-category]');
         
+        // Update category-level "Select All" checkbox
+        const categorySection = this.closest('div[style*="border-left: 4px solid #8b5cf6"]');
         if (categorySection) {
           const allCategoryItems = categorySection.querySelectorAll('.item-checkbox');
           const checkedCategoryItems = categorySection.querySelectorAll('.item-checkbox:checked');
@@ -8065,17 +8090,19 @@ async function loadPendingStockTakeRequests(modal) {
           }
         }
         
-        const allStoreItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]`);
-        const checkedStoreItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]:checked`);
-        const selectAllStore = document.querySelector(`.select-all-store-items[data-group="${groupId}"]`);
-        if (selectAllStore) {
-          selectAllStore.checked = allStoreItems.length === checkedStoreItems.length;
-        }
-        
+        // Update store-level "Select All" checkbox
+        updateStoreSelectAllState(groupId);
         updateStoreGroupCounts(groupId);
       });
     });
     
+    // 4. Store group count updates
+    document.querySelectorAll('.approve-store-group-btn, .reject-store-group-btn').forEach(btn => {
+      const groupId = btn.dataset.group;
+      updateStoreGroupCounts(groupId);
+    });
+    
+    // 5. APPROVE button handler
     document.querySelectorAll('.approve-store-group-btn').forEach(btn => {
       btn.addEventListener('click', function() {
         const groupId = this.dataset.group;
@@ -8083,16 +8110,12 @@ async function loadPendingStockTakeRequests(modal) {
       });
     });
     
+    // 6. REJECT button handler
     document.querySelectorAll('.reject-store-group-btn').forEach(btn => {
       btn.addEventListener('click', function() {
         const groupId = this.dataset.group;
         rejectStoreGroup(groupId, modal);
       });
-    });
-    
-    document.querySelectorAll('.approve-store-group-btn, .reject-store-group-btn').forEach(btn => {
-      const groupId = btn.dataset.group;
-      updateStoreGroupCounts(groupId);
     });
     
   } catch (err) {
@@ -8101,6 +8124,17 @@ async function loadPendingStockTakeRequests(modal) {
   }
 }
 
+// ✅ Helper function to update store-level "Select All" checkbox state
+function updateStoreSelectAllState(groupId) {
+  const allStoreItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]`);
+  const checkedStoreItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]:checked`);
+  const selectAllStore = document.querySelector(`.select-all-store-items[data-group="${groupId}"]`);
+  if (selectAllStore) {
+    selectAllStore.checked = allStoreItems.length > 0 && allStoreItems.length === checkedStoreItems.length;
+  }
+}
+
+// ✅ Updated updateStoreGroupCounts function
 function updateStoreGroupCounts(groupId) {
   const checkedItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]:checked`);
   const totalItems = document.querySelectorAll(`.item-checkbox[data-group="${groupId}"]`);
@@ -8114,11 +8148,13 @@ function updateStoreGroupCounts(groupId) {
     approveBtn.innerHTML = `✅ Approve Selected (${count}/${total})`;
     approveBtn.disabled = count === 0;
     approveBtn.style.opacity = count === 0 ? '0.5' : '1';
+    approveBtn.style.cursor = count === 0 ? 'not-allowed' : 'pointer';
   }
   if (rejectBtn) {
     rejectBtn.innerHTML = `❌ Reject Selected (${count}/${total})`;
     rejectBtn.disabled = count === 0;
     rejectBtn.style.opacity = count === 0 ? '0.5' : '1';
+    rejectBtn.style.cursor = count === 0 ? 'not-allowed' : 'pointer';
   }
 }
 

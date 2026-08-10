@@ -3271,48 +3271,91 @@ function renderStockTakeProductGrid() {
   }
   
   let html = '';
-  filtered.forEach(prod => {
-    const isLowStock = prod.stock < LOW_STOCK_THRESHOLD;
-    const lowStockClass = isLowStock ? 'low-stock-card' : '';
-    const stockTakeDataItem = stockTakeData[prod.id] || null;
-    const currentCount = stockTakeDataItem ? stockTakeDataItem.counted_stock : prod.stock;
-    const diff = stockTakeDataItem ? stockTakeDataItem.difference : 0;
-    const diffColor = diff > 0 ? '#2c7a4b' : diff < 0 ? '#dc2626' : '#64748b';
-    const diffText = diff > 0 ? `+${diff} higher` : diff < 0 ? `${diff} lower` : '✓ Matches';
-    const diffBg = diff > 0 ? '#f0fdf4' : diff < 0 ? '#fef2f2' : '#f8fafc';
-    const borderColor = diff !== 0 ? (diff > 0 ? '#2c7a4b' : '#dc2626') : '#e2e8f0';
-    const cardBg = diff !== 0 ? (diff > 0 ? '#f0fdf4' : '#fef2f2') : '#f8fafc';
-    
-    html += `
-      <div class="product-card stock-take-card ${lowStockClass}" data-id="${prod.id}" 
-           style="border: 2px solid ${borderColor}; background: ${cardBg};">
-        <div class="product-name" style="font-size: 1rem; font-weight: 600;">${escapeHtml(prod.name)}</div>
-        <div class="product-category" style="font-size: 0.8rem; color: #64748b;">${escapeHtml(prod.category)}</div>
-        <div class="product-price" style="font-size: 0.9rem; color: #2c7a4b;">RM ${prod.price.toFixed(2)}</div>
-        <div class="product-stock" style="font-size: 0.85rem;">
-          System: ${prod.stock}
-          <span class="diff-badge" style="display: inline-block; margin-left: 8px; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; color: ${diffColor}; background: ${diffBg}; border: 1px solid ${diffColor};">
-            ${diffText}
-          </span>
+  
+  // ✅ Check view mode - use grid or list
+  if (viewMode === 'grid') {
+    // Grid view for stock take
+    filtered.forEach(prod => {
+      const stockTakeDataItem = stockTakeData[prod.id] || null;
+      const currentCount = stockTakeDataItem ? stockTakeDataItem.counted_stock : prod.stock;
+      const diff = stockTakeDataItem ? stockTakeDataItem.difference : 0;
+      const diffColor = diff > 0 ? '#2c7a4b' : diff < 0 ? '#dc2626' : '#64748b';
+      const diffText = diff > 0 ? `+${diff} higher` : diff < 0 ? `${diff} lower` : '✓ Matches';
+      const diffBg = diff > 0 ? '#f0fdf4' : diff < 0 ? '#fef2f2' : '#f8fafc';
+      const borderColor = diff !== 0 ? (diff > 0 ? '#2c7a4b' : '#dc2626') : '#e2e8f0';
+      const cardBg = diff !== 0 ? (diff > 0 ? '#f0fdf4' : '#fef2f2') : '#f8fafc';
+      
+      html += `
+        <div class="stock-take-card" data-id="${prod.id}" 
+             style="background: ${cardBg}; border: 2px solid ${borderColor}; border-radius: 16px; padding: 12px; text-align: center;">
+          <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px;">${escapeHtml(prod.name)}</div>
+          <div style="font-size: 0.7rem; color: #64748b; margin-bottom: 4px;">${escapeHtml(prod.category)}</div>
+          <div style="font-size: 0.9rem; color: #2c7a4b; margin-bottom: 4px;">RM ${prod.price.toFixed(2)}</div>
+          <div style="font-size: 0.8rem; margin-bottom: 8px;">
+            System: ${prod.stock}
+            <span style="display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; color: ${diffColor}; background: ${diffBg}; border: 1px solid ${diffColor};">
+              ${diffText}
+            </span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; justify-content: center;">
+            <button class="stock-take-btn" data-id="${prod.id}" data-action="dec" 
+                    style="background: #f1f5f9; border: none; width: 28px; height: 28px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer;">−</button>
+            <input type="number" class="stock-take-input" data-id="${prod.id}" 
+                   value="${currentCount}" step="1" min="0" 
+                   style="width: 60px; text-align: center; border-radius: 20px; border: 2px solid ${borderColor}; padding: 4px; background: ${cardBg}; font-size: 0.9rem; font-weight: 600;">
+            <button class="stock-take-btn" data-id="${prod.id}" data-action="inc" 
+                    style="background: #f1f5f9; border: none; width: 28px; height: 28px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer;">+</button>
+          </div>
+          <div style="font-size: 0.7rem; color: ${diffColor}; margin-top: 4px;">
+            ${diff !== 0 ? (diff > 0 ? `📈 +${diff}` : `📉 ${diff}`) : '✅ Matches'}
+          </div>
         </div>
-        <div class="inventory-controls" style="display: flex; align-items: center; gap: 8px; justify-content: center; margin-top: 8px;">
-          <button class="stock-take-btn" data-id="${prod.id}" data-action="dec" 
-                  style="background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 30px; font-weight: bold; font-size: 1.2rem; cursor: pointer;">−</button>
-          <input type="number" class="stock-take-input" data-id="${prod.id}" 
-                 value="${currentCount}" step="1" min="0" 
-                 style="width: 70px; text-align: center; border-radius: 20px; border: 2px solid ${borderColor}; padding: 6px; background: ${cardBg}; font-size: 1rem; font-weight: 600;">
-          <button class="stock-take-btn" data-id="${prod.id}" data-action="inc" 
-                  style="background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 30px; font-weight: bold; font-size: 1.2rem; cursor: pointer;">+</button>
+      `;
+    });
+    productGridEl.className = 'product-grid';
+  } else {
+    // List view (existing code)
+    filtered.forEach(prod => {
+      const stockTakeDataItem = stockTakeData[prod.id] || null;
+      const currentCount = stockTakeDataItem ? stockTakeDataItem.counted_stock : prod.stock;
+      const diff = stockTakeDataItem ? stockTakeDataItem.difference : 0;
+      const diffColor = diff > 0 ? '#2c7a4b' : diff < 0 ? '#dc2626' : '#64748b';
+      const diffText = diff > 0 ? `+${diff} higher` : diff < 0 ? `${diff} lower` : '✓ Matches';
+      const diffBg = diff > 0 ? '#f0fdf4' : diff < 0 ? '#fef2f2' : '#f8fafc';
+      const borderColor = diff !== 0 ? (diff > 0 ? '#2c7a4b' : '#dc2626') : '#e2e8f0';
+      const cardBg = diff !== 0 ? (diff > 0 ? '#f0fdf4' : '#fef2f2') : '#f8fafc';
+      
+      html += `
+        <div class="product-card stock-take-card" data-id="${prod.id}" 
+             style="border: 2px solid ${borderColor}; background: ${cardBg};">
+          <div class="product-name" style="font-size: 1rem; font-weight: 600;">${escapeHtml(prod.name)}</div>
+          <div class="product-category" style="font-size: 0.8rem; color: #64748b;">${escapeHtml(prod.category)}</div>
+          <div class="product-price" style="font-size: 0.9rem; color: #2c7a4b;">RM ${prod.price.toFixed(2)}</div>
+          <div class="product-stock" style="font-size: 0.85rem;">
+            System: ${prod.stock}
+            <span class="diff-badge" style="display: inline-block; margin-left: 8px; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; color: ${diffColor}; background: ${diffBg}; border: 1px solid ${diffColor};">
+              ${diffText}
+            </span>
+          </div>
+          <div class="inventory-controls" style="display: flex; align-items: center; gap: 8px; justify-content: center; margin-top: 8px;">
+            <button class="stock-take-btn" data-id="${prod.id}" data-action="dec" 
+                    style="background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 30px; font-weight: bold; font-size: 1.2rem; cursor: pointer;">−</button>
+            <input type="number" class="stock-take-input" data-id="${prod.id}" 
+                   value="${currentCount}" step="1" min="0" 
+                   style="width: 70px; text-align: center; border-radius: 20px; border: 2px solid ${borderColor}; padding: 6px; background: ${cardBg}; font-size: 1rem; font-weight: 600;">
+            <button class="stock-take-btn" data-id="${prod.id}" data-action="inc" 
+                    style="background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 30px; font-weight: bold; font-size: 1.2rem; cursor: pointer;">+</button>
+          </div>
+          <div class="stock-hint" style="font-size: 0.75rem; color: ${diffColor}; margin-top: 4px; text-align: center;">
+            ${diff !== 0 ? (diff > 0 ? `📈 Counted ${diff} more than system` : `📉 Counted ${Math.abs(diff)} less than system`) : '✅ Count matches system'}
+          </div>
         </div>
-        <div class="stock-hint" style="font-size: 0.75rem; color: ${diffColor}; margin-top: 4px; text-align: center;">
-          ${diff !== 0 ? (diff > 0 ? `📈 Counted ${diff} more than system` : `📉 Counted ${Math.abs(diff)} less than system`) : '✅ Count matches system'}
-        </div>
-      </div>
-    `;
-  });
+      `;
+    });
+    productGridEl.className = 'product-list';
+  }
   
   productGridEl.innerHTML = html;
-  productGridEl.className = 'product-list';
   
   // Attach events
   attachStockTakeEvents();

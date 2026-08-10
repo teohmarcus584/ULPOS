@@ -8348,7 +8348,7 @@ function getSelectedItemsForGroup(groupId) {
   const selectedItems = [];
   
   selectedCheckboxes.forEach(cb => {
-    const categorySection = cb.closest('div[style*="border-left: 4px solid"]');
+    const categorySection = cb.closest('.category-section');
     let category = 'Unknown';
     let productName = '';
     let currentStock = 0;
@@ -8375,10 +8375,15 @@ function getSelectedItemsForGroup(groupId) {
       }
     }
     
-    if (category === 'Unknown' && productName) {
-      const product = products.find(p => p.name === productName);
-      if (product && product.category) {
-        category = product.category;
+    // Fallback: use data attributes from the checkbox
+    if (!productName) {
+      const productId = cb.dataset.product;
+      const product = products.find(p => p.id == productId);
+      if (product) {
+        productName = product.name;
+        if (!category || category === 'Unknown') {
+          category = product.category || 'Unknown';
+        }
       }
     }
     
@@ -8612,6 +8617,7 @@ async function rejectStoreGroup(groupId, modal) {
     return;
   }
   
+  // ✅ Group selected items by request_id
   const groupedByRequest = {};
   selectedItems.forEach(item => {
     if (!groupedByRequest[item.request_id]) {
@@ -8637,26 +8643,22 @@ async function rejectStoreGroup(groupId, modal) {
             ❌
           </div>
           <div>
-            <div style="color: white; font-size: 1.5rem; font-weight: 700;">Reject Stock Take</div>
-            <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-top: 2px;">${totalItems} items across ${categoryCount} categories</div>
+            <div style="color: white; font-size: 1.5rem; font-weight: 700;">Reject Selected Items</div>
+            <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-top: 2px;">${totalItems} item(s) from ${categoryCount} category(s)</div>
           </div>
-          <button id="closeRejectModalBtn2" style="margin-left: auto; background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer;">✕</button>
+          <button id="closeRejectModalBtn3" style="margin-left: auto; background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer;">✕</button>
         </div>
         
         <div style="padding: 28px 28px 20px 28px; background: #f8fafc;">
           <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #e2e8f0;">
-            <div style="font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-bottom: 12px;">📂 Categories to Reject</div>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              ${Object.entries(groupedByRequest).map(([requestId, items]) => {
-                const category = items[0]?.category || 'Unknown';
-                const count = items.length;
-                return `
-                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: #f8fafc; border-radius: 8px;">
-                    <span style="font-weight: 500; font-size: 0.9rem;">📂 ${escapeHtml(category)}</span>
-                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">${count} items</span>
-                  </div>
-                `;
-              }).join('')}
+            <div style="font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-bottom: 12px;">📂 Items to Reject</div>
+            <div style="display: flex; flex-direction: column; gap: 6px; max-height: 150px; overflow-y: auto;">
+              ${selectedItems.map(item => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 12px; background: #f8fafc; border-radius: 8px;">
+                  <span style="font-weight: 500; font-size: 0.85rem;">${escapeHtml(item.product_name || 'Unknown')}</span>
+                  <span style="color: #64748b; font-size: 0.75rem;">${escapeHtml(item.category || 'Uncategorized')}</span>
+                </div>
+              `).join('')}
             </div>
           </div>
           
@@ -8664,36 +8666,36 @@ async function rejectStoreGroup(groupId, modal) {
             <label style="display: block; font-weight: 600; color: #1e293b; font-size: 0.95rem; margin-bottom: 8px;">
               📝 Rejection Reason <span style="color: #ef4444;">*</span>
             </label>
-            <textarea id="rejectionReasonInput2" rows="4" 
+            <textarea id="rejectionReasonInput3" rows="4" 
               placeholder="e.g., Please recount the items as the quantities seem incorrect."
               style="width: 100%; padding: 14px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; resize: vertical; min-height: 100px; font-family: inherit; background: white;"
               onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)';"
               onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"></textarea>
             <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
-              <button class="quick-reason-btn2" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Count mismatch</button>
-              <button class="quick-reason-btn2" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Missing items</button>
-              <button class="quick-reason-btn2" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Incorrect count</button>
-              <button class="quick-reason-btn2" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Please recount</button>
+              <button class="quick-reason-btn3" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Count mismatch</button>
+              <button class="quick-reason-btn3" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Missing items</button>
+              <button class="quick-reason-btn3" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Incorrect count</button>
+              <button class="quick-reason-btn3" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 16px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;">Wrong product</button>
             </div>
           </div>
         </div>
         
         <div style="padding: 16px 28px 24px 28px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
-          <button id="cancelRejectBtn2" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500;">Cancel</button>
-          <button id="confirmRejectBtn2" class="modal-btn" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(239,68,68,0.3);">
-            <span>🗑️</span> Confirm Reject
+          <button id="cancelRejectBtn3" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500;">Cancel</button>
+          <button id="confirmRejectBtn3" class="modal-btn" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(239,68,68,0.3);">
+            <span>🗑️</span> Confirm Reject (${totalItems} items)
           </button>
         </div>
       </div>
     `;
     document.body.appendChild(overlay);
     
-    const textarea = overlay.querySelector('#rejectionReasonInput2');
-    const confirmBtn = overlay.querySelector('#confirmRejectBtn2');
-    const cancelBtn = overlay.querySelector('#cancelRejectBtn2');
-    const closeBtn = overlay.querySelector('#closeRejectModalBtn2');
+    const textarea = overlay.querySelector('#rejectionReasonInput3');
+    const confirmBtn = overlay.querySelector('#confirmRejectBtn3');
+    const cancelBtn = overlay.querySelector('#cancelRejectBtn3');
+    const closeBtn = overlay.querySelector('#closeRejectModalBtn3');
     
-    document.querySelectorAll('.quick-reason-btn2').forEach(btn => {
+    document.querySelectorAll('.quick-reason-btn3').forEach(btn => {
       btn.addEventListener('click', function() {
         const reasonText = this.textContent;
         const currentText = textarea.value.trim();
@@ -8718,43 +8720,100 @@ async function rejectStoreGroup(groupId, modal) {
       const reason = textarea.value.trim() || 'No reason provided';
       cleanup();
       
-      showLoading('Rejecting selected items...');
+      showLoading(`Rejecting ${totalItems} item(s)...`);
       
       try {
         let successCount = 0;
         let failCount = 0;
         let errors = [];
+        let updatedRequests = new Set();
         
+        // ✅ Process each request separately
         for (const [requestId, items] of Object.entries(groupedByRequest)) {
-          const category = items[0]?.category || 'Unknown';
-          
           try {
-            const { error } = await supabase
+            // ✅ First, get the current request data
+            const { data: requestData, error: fetchError } = await supabase
               .from('stock_take_requests')
-              .update({
-                status: 'rejected',
-                rejected_by: currentEmployee.id,
-                rejected_by_name: currentEmployee.name,
-                rejected_at: new Date().toISOString(),
-                rejection_reason: reason
-              })
-              .eq('id', requestId);
+              .select('*')
+              .eq('id', requestId)
+              .single();
             
-            if (error) throw error;
+            if (fetchError) {
+              console.error('Error fetching request:', fetchError);
+              throw fetchError;
+            }
             
-            successCount += items.length;
+            // Parse the items
+            let requestItems = requestData.items;
+            if (typeof requestItems === 'string') {
+              try { requestItems = JSON.parse(requestItems); } catch(e) { requestItems = []; }
+            }
+            
+            if (!requestItems || requestItems.length === 0) {
+              throw new Error('No items found in request');
+            }
+            
+            // ✅ Get the product IDs of the items to reject
+            const productIdsToReject = new Set(items.map(item => item.product_id));
+            
+            // ✅ Filter out the rejected items (keep the ones NOT being rejected)
+            const remainingItems = requestItems.filter(item => !productIdsToReject.has(item.product_id));
+            
+            console.log(`📋 Request ${requestId}: ${requestItems.length} items total, ${items.length} to reject, ${remainingItems.length} remaining`);
+            
+            // ✅ Check if there are any items left in the request
+            if (remainingItems.length === 0) {
+              // ❌ All items are rejected - update status to 'rejected'
+              console.log(`❌ All items rejected for request ${requestId}, updating status to rejected`);
+              
+              const { error: updateError } = await supabase
+                .from('stock_take_requests')
+                .update({
+                  status: 'rejected',
+                  rejected_by: currentEmployee.id,
+                  rejected_by_name: currentEmployee.name,
+                  rejected_at: new Date().toISOString(),
+                  rejection_reason: reason
+                })
+                .eq('id', requestId);
+              
+              if (updateError) throw updateError;
+              updatedRequests.add(requestId);
+              successCount += items.length;
+              
+            } else {
+              // ✅ Some items remain - update the request with the remaining items
+              console.log(`✅ Some items remain for request ${requestId}, updating items list`);
+              
+              const { error: updateError } = await supabase
+                .from('stock_take_requests')
+                .update({
+                  items: JSON.stringify(remainingItems),
+                  // ✅ Add a note that some items were rejected
+                  rejection_note: `Some items were rejected: ${reason}`
+                })
+                .eq('id', requestId);
+              
+              if (updateError) throw updateError;
+              updatedRequests.add(requestId);
+              successCount += items.length;
+            }
+            
           } catch (err) {
+            console.error(`Error processing request ${requestId}:`, err);
             failCount += items.length;
-            errors.push(`Category "${category}": ${err.message}`);
+            errors.push(`Request ${requestId}: ${err.message}`);
           }
         }
         
+        // Show result
         await showAlertModal('✅ Rejection Complete', 
           `<div style="text-align:left;">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
               <span style="font-size:2.5rem;">📋</span>
               <div>
-                <div style="font-weight:600; color:#0f172a; font-size:1.2rem;">Stock Take ${failCount === 0 ? 'Rejected' : 'Partially Rejected'}</div>
+                <div style="font-weight:600; color:#0f172a; font-size:1.2rem;">${failCount === 0 ? 'All Items Rejected Successfully' : 'Partial Rejection'}</div>
+                <div style="font-size:0.9rem; color:#64748b;">${totalItems} item(s) processed</div>
               </div>
             </div>
             <div style="background:#fef2f2; border-radius:12px; padding:16px 20px; border-left:4px solid #ef4444;">
@@ -8791,7 +8850,7 @@ async function rejectStoreGroup(groupId, modal) {
         hideLoading();
         
       } catch (err) {
-        console.error(err);
+        console.error('Rejection error:', err);
         await showAlertModal('Error', 'Failed to reject selected items: ' + err.message);
         hideLoading();
       }

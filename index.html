@@ -7632,35 +7632,61 @@ function showOutOfStockAlert(productName) {
   showAlertModal("⚠️ Out of Stock", `${productName} is now out of stock. Please restock.`);
 }
 
+// Replace the checkAndNotifyOutOfStock function with this:
+
 function checkAndNotifyOutOfStock(productId, productName, newStock) {
   const storeName = currentStore.charAt(0).toUpperCase() + currentStore.slice(1);
   const timestamp = new Date().toLocaleString();
 
-  if (newStock <= 0 && !alertedOutOfStockProducts.has(productId)) {
-    alertedOutOfStockProducts.add(productId);
-    const message = `❌ OUT OF STOCK ❌\nStore: ${storeName}\nProduct: ${productName}\nQuantity: ${newStock}\nTime: ${timestamp}`;
-    if (telegramAccounts) sendTelegramMessage(message);
-    if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
-      new Notification(`❌ Out of Stock`, { body: `${productName} is out of stock (${newStock} left).` });
-    } else if (notificationsEnabled) {
-      showOutOfStockAlert(`${productName} is out of stock (${newStock} left).`);
+  // Create a unique key per product per store
+  const alertKey = `${productId}_${currentStore}`;
+
+  // Check if we already sent a notification for this specific stock level
+  const lastNotifiedStockKey = `last_notified_stock_${alertKey}`;
+  const lastNotifiedStock = parseInt(localStorage.getItem(lastNotifiedStockKey) || '-1');
+
+  if (newStock <= 0 && !alertedOutOfStockProducts.has(alertKey)) {
+    // Only notify if the stock level changed (avoid repeated notifications)
+    if (lastNotifiedStock !== 0) {
+      alertedOutOfStockProducts.add(alertKey);
+      localStorage.setItem(lastNotifiedStockKey, '0');
+      
+      const message = `❌ OUT OF STOCK ❌\nStore: ${storeName}\nProduct: ${productName}\nQuantity: ${newStock}\nTime: ${timestamp}`;
+      if (telegramAccounts) sendTelegramMessage(message);
+      
+      if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
+        new Notification(`❌ Out of Stock`, { body: `${productName} is out of stock.` });
+      } else if (notificationsEnabled) {
+        showOutOfStockAlert(`${productName} is out of stock.`);
+      }
     }
-  } else if (newStock > 0 && newStock <= LOW_STOCK_THRESHOLD && !alertedLowStockProducts.has(productId)) {
-    alertedLowStockProducts.add(productId);
-    const message = `⚠️ LOW STOCK ⚠️\nStore: ${storeName}\nProduct: ${productName}\nQuantity left: ${newStock}\nTime: ${timestamp}`;
-    if (telegramAccounts) sendTelegramMessage(message);
-    if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
-      new Notification(`⚠️ Low Stock`, { body: `${productName} only ${newStock} left.` });
-    } else if (notificationsEnabled) {
-      showOutOfStockAlert(`${productName} only ${newStock} left.`);
+  } else if (newStock > 0 && newStock <= LOW_STOCK_THRESHOLD && !alertedLowStockProducts.has(alertKey)) {
+    // Only notify if the stock level changed
+    if (lastNotifiedStock !== newStock) {
+      alertedLowStockProducts.add(alertKey);
+      localStorage.setItem(lastNotifiedStockKey, String(newStock));
+      
+      const message = `⚠️ LOW STOCK ⚠️\nStore: ${storeName}\nProduct: ${productName}\nQuantity left: ${newStock}\nTime: ${timestamp}`;
+      if (telegramAccounts) sendTelegramMessage(message);
+      
+      if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
+        new Notification(`⚠️ Low Stock`, { body: `${productName} only ${newStock} left.` });
+      } else if (notificationsEnabled) {
+        showOutOfStockAlert(`${productName} only ${newStock} left.`);
+      }
     }
   }
 
-  if (newStock > LOW_STOCK_THRESHOLD && alertedLowStockProducts.has(productId)) {
-    alertedLowStockProducts.delete(productId);
-  }
-  if (newStock > 0 && alertedOutOfStockProducts.has(productId)) {
-    alertedOutOfStockProducts.delete(productId);
+  // Reset alert state when stock is above threshold
+  if (newStock > LOW_STOCK_THRESHOLD) {
+    if (alertedLowStockProducts.has(alertKey)) {
+      alertedLowStockProducts.delete(alertKey);
+      localStorage.removeItem(lastNotifiedStockKey);
+    }
+    if (alertedOutOfStockProducts.has(alertKey)) {
+      alertedOutOfStockProducts.delete(alertKey);
+      localStorage.removeItem(lastNotifiedStockKey);
+    }
   }
 }
 

@@ -10694,6 +10694,8 @@ async function bulkUpdateStock(productUpdates) {
 }
 // ==================== EDIT/ADD PRODUCT FUNCTIONS ====================
 
+// ==================== EDIT/ADD PRODUCT FUNCTIONS ====================
+
 let productEditMode = false; // false = Add mode, true = Edit mode
 
 function showAddProductModal() {
@@ -10736,7 +10738,7 @@ function showEditProductModal() {
   document.getElementById('editProductSelection').style.display = 'block';
   document.getElementById('productFormFields').style.display = 'block';
   
-  // Populate product dropdown
+  // Populate product dropdown with category grouping
   populateEditProductSelect();
   
   // Reset button styles
@@ -10753,16 +10755,44 @@ function populateEditProductSelect() {
   const select = document.getElementById('editProductSelect');
   if (!select) return;
   
-  // Sort products by name
+  // Group products by category
+  const groupedProducts = {};
   const sortedProducts = [...products].sort((a, b) => a.name.localeCompare(b.name));
   
-  select.innerHTML = '<option value="">-- Select a product --</option>';
   sortedProducts.forEach(product => {
-    const option = document.createElement('option');
-    option.value = product.id;
-    option.textContent = `${product.name} (${product.category}) - RM ${product.price.toFixed(2)}`;
-    select.appendChild(option);
+    const category = product.category || 'Uncategorized';
+    if (!groupedProducts[category]) {
+      groupedProducts[category] = [];
+    }
+    groupedProducts[category].push(product);
   });
+  
+  // Build the options with category headers
+  let html = '<option value="">-- Select a product --</option>';
+  
+  // Sort categories alphabetically
+  const sortedCategories = Object.keys(groupedProducts).sort();
+  
+  sortedCategories.forEach(category => {
+    const productsInCategory = groupedProducts[category];
+    
+    // Add category header with product count
+    html += `<optgroup label="━━━ 📂 ${category} (${productsInCategory.length}) ━━━" style="font-weight:700; color:#0f172a; background:#f1f5f9;">`;
+    
+    // Add products in this category (sorted by name)
+    productsInCategory.forEach(product => {
+      const stockStatus = product.stock <= 0 ? '🔴 Out of Stock' : 
+                          product.stock < 5 ? `🟡 ${product.stock} left` : 
+                          `📦 ${product.stock}`;
+      html += `<option value="${product.id}" style="padding-left:20px; ${product.stock <= 0 ? 'color:#ef4444;' : ''}">
+        ${product.name} - RM ${product.price.toFixed(2)} (${stockStatus})
+      </option>`;
+    });
+    
+    html += `</optgroup>`;
+  });
+  
+  select.innerHTML = html;
 }
 
 // When user selects a product to edit, populate the form

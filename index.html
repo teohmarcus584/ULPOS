@@ -3811,10 +3811,90 @@ async function clearStockHistory() {
     await showAlertModal('No History', 'There is no stock adjustment history to clear.');
     return;
   }
-  const confirmed = await showConfirmModal('Clear History', `Are you sure you want to permanently delete all stock history for store "${currentStore}"?`);
-  if (!confirmed) return;
-  stockHistory = [];
-  renderStockHistory();
+  
+  // ✅ Show confirmation with options
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.style.display = 'flex';
+  modal.innerHTML = `
+    <div class="modal-container" style="max-width: 500px;">
+      <div class="modal-title">🗑️ Clear Stock History</div>
+      <div class="modal-message" style="margin: 16px 0;">
+        <p>You have <strong>${stockHistory.length}</strong> stock adjustment records for store "${currentStore}".</p>
+        <p style="margin-top: 12px; color: #64748b; font-size: 0.9rem;">
+          Choose an option:
+        </p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin: 16px 0;">
+        <button id="clearLocalOnly" class="modal-btn modal-btn-secondary" style="width:100%;">
+          📋 Clear Display Only (Keep in Database)
+        </button>
+        <button id="clearPermanent" class="modal-btn" style="width:100%; background: #ef4444; color: white;">
+          🗑️ Permanently Delete from Database
+        </button>
+        <button id="cancelClearHistory" class="modal-btn modal-btn-secondary" style="width:100%;">
+          Cancel
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  return new Promise((resolve) => {
+    const cleanup = () => {
+      modal.remove();
+      resolve();
+    };
+    
+    modal.querySelector('#cancelClearHistory').addEventListener('click', cleanup);
+    
+    // ✅ Clear local only
+    modal.querySelector('#clearLocalOnly').addEventListener('click', async () => {
+      modal.remove();
+      stockHistory = [];
+      renderStockHistory();
+      await showAlertModal('✅ Cleared', 'Stock history display has been cleared. Records remain in the database.');
+      resolve();
+    });
+    
+    // ✅ Permanent delete from database
+    modal.querySelector('#clearPermanent').addEventListener('click', async () => {
+      modal.remove();
+      
+      const confirmPermanent = await showConfirmModal(
+        '⚠️ Confirm Permanent Deletion',
+        `Are you SURE you want to permanently delete ALL stock history for "${currentStore}" from the database?\n\nThis action cannot be undone!`
+      );
+      
+      if (!confirmPermanent) {
+        resolve();
+        return;
+      }
+      
+      showLoading('Deleting stock history...');
+      
+      try {
+        const { error } = await supabase
+          .from('stock_history')
+          .delete()
+          .eq('store', currentStore);
+        
+        if (error) throw error;
+        
+        stockHistory = [];
+        renderStockHistory();
+        
+        await showAlertModal('✅ Deleted', `All stock history for "${currentStore}" has been permanently deleted from the database.`);
+        
+      } catch (err) {
+        console.error('Error deleting stock history:', err);
+        await showAlertModal('Error', 'Failed to delete stock history: ' + err.message);
+      } finally {
+        hideLoading();
+      }
+      resolve();
+    });
+  });
 }
 
 // ==================== CART FUNCTIONS ====================

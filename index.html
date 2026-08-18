@@ -2134,7 +2134,9 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
       <img src="https://i.imgur.com/STBkLrm.jpeg" alt="POS System Logo" class="pos-logo" id="logoImage">
       <div class="store-selector-header">
         <label for="storeSelect">Store:</label>
-        <select id="storeSelect" class="store-header-select"><option value="queens">Queens</option><option value="sunshine">Sunshine</option><option value="gurney_paragon">Gurney Paragon</option></select>
+        <select id="storeSelect" class="store-header-select">
+  <option value="">Loading stores...</option>
+</select>
         <div id="syncStatus" class="sync-status"><i class="fas fa-database"></i> <span>Loading...</span></div>
       </div>
     </div>
@@ -2154,7 +2156,10 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search product...">
   <button id="refreshProductsPanelBtn" class="refresh-btn">🔄 Sync now</button>
   <button id="lowStockToggleBtn" class="low-stock-toggle">⚠️ Low Stock</button>
-  
+   <!-- ✅ PUT THE MANAGE STORES BUTTON RIGHT HERE -->
+    <button id="manageStoresBtn" class="cart-header-btn" style="display: none; background: #8b5cf6; color: white;">
+      🏪 Manage Stores
+    </button>
   <!-- ✅ ADD THIS BUTTON - Store Filter Toggle -->
   <button id="storeFilterToggleBtn" class="low-stock-toggle" style="display: none;">
     🏪 Store Filter: ON
@@ -2533,7 +2538,32 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
     <div class="modal-buttons"><button id="checkSettlementBtn" class="modal-btn modal-btn-primary">Check</button><button id="recordSettlementBtn" class="modal-btn modal-btn-primary" style="display: none;">Record Settlement</button> <button id="reprintSettlementBtn" class="modal-btn modal-btn-secondary">Settlement History</button><button id="closeSettlementModalBtn" class="modal-btn modal-btn-secondary">Cancel</button></div>
   </div>
 </div>
-
+<!-- Store Management Modal -->
+<div id="storeManagementModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 800px;">
+    <span class="close-modal" id="closeStoreManagementModal">×</span>
+    <div class="modal-title">🏪 Store Management</div>
+    
+    <!-- ✅ REPLACE the Add New Store form with this button -->
+    <div style="margin-bottom: 20px;">
+      <button id="openAddStoreBtn" class="modal-btn modal-btn-primary" style="width: 100%; padding: 14px; font-size: 1.1rem; background: linear-gradient(135deg, #059669 0%, #047857 100%); display: flex; align-items: center; justify-content: center; gap: 10px;">
+        <span style="font-size: 1.5rem;">➕</span> Add New Store
+      </button>
+    </div>
+    
+    <!-- Store List -->
+    <div style="max-height: 400px; overflow-y: auto;">
+      <h4 style="margin-bottom: 12px;">📋 Current Stores</h4>
+      <div id="storeListContainer">
+        <div style="text-align:center; padding:20px; color:#94a3b8;">Loading stores...</div>
+      </div>
+    </div>
+    
+    <div class="modal-buttons">
+      <button id="closeStoreManagementBtn" class="modal-btn modal-btn-secondary">Close</button>
+    </div>
+  </div>
+</div>
 <div id="collectionModal" class="modal-overlay">
   <div class="modal-container" style="max-width: 800px;">
     <span class="close-modal" id="closeCollectionModal">×</span>
@@ -2786,6 +2816,12 @@ let notificationsEnabled = false;
 let alertedOutOfStockProducts = new Set();
 let alertedLowStockProducts = new Set();
 let preloadedReportCache = null;
+// ✅ ADD THIS LINE HERE - Declare stores BEFORE fetchStores
+let stores = [];
+let storeIdToName = {};
+let storeNameToId = {};
+let storeFilterActive = true; // Default: ON (show only store-specific products)
+let showAllProductsInInventory = false; // Override in inventory mode
 // ==================== DOM ELEMENTS ====================
 const productGridEl = document.getElementById('productGrid');
 const cartContainer = document.getElementById('cartItemsContainer');
@@ -3261,49 +3297,143 @@ function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-async function autoSelectStoreByLocation() {
-  const storeCoords = {
-    queens:          { lat: 5.334932,  lng: 100.306625 },
-    gurney_paragon:  { lat: 5.434950,  lng: 100.310854 },
-    sunshine:        { lat: 5.398593,  lng: 100.286827 }
-  };
+// ============================================================
+// AUTO-SELECT ON LOAD (Dynamic Stores)
+// ============================================================
 
-  if (!navigator.geolocation) {
-    console.warn("Geolocation not supported");
-    return null;
+// Auto-select store on load
+(async function autoSelectOnLoad() {
+  loadAndCacheEmployees().catch(console.warn);
+  preloadAllStoresData();
+  const storeDisplaySpan = document.getElementById('selectedStoreDisplay');
+  const storeValueHidden = document.getElementById('initialStoreValue');
+  const retryBtn = document.getElementById('retryLocationBtn');
+  
+  if (!storeDisplaySpan || !storeValueHidden) return;
+
+  // ✅ Get dynamic store names from Supabase
+  const storesList = await fetchStores();
+  const storeNames = {};
+  storesList.forEach(s => {
+    storeNames[s.store_id] = s.name;
+  });
+
+  async function proceedToLogin(storeId) {
+    if (loginInProgress) return;
+    loginInProgress = true;
+
+    if (window.autoLoginTimeout) clearTimeout(window.autoLoginTimeout);
+
+    initialStore = storeId;
+    currentStore = storeId;
+    storeSelect.value = storeId;
+    document.getElementById('storeSelectModal').style.display = 'none';
+
+    document.getElementById('loginModal').style.display = 'flex';
+    document.getElementById('pinInput').focus();
+
+    loadAndCacheEmployees().catch(console.warn);
+
+    const preloaded = preloadedDataMap[storeId];
+    if (preloaded && preloaded.products && preloaded.products.length > 0) {
+      products = [...preloaded.products].sort((a, b) => a.name.localeCompare(b.name));
+
+      const categories = [...new Set(products.map(p => p.category))].sort();
+      categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
+      categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        categorySelect.appendChild(option);
+      });
+      renderProductGrid();
+
+      if (preloaded.employees && preloaded.employees.length > 0) {
+        employeeNameMap = {};
+        soldBySelectCart.innerHTML = '';
+        preloaded.employees.forEach(emp => {
+          employeeNameMap[emp.id] = emp.name;
+          const option = document.createElement('option');
+          option.value = emp.id;
+          option.textContent = `${emp.name} (ID: ${emp.id})`;
+          soldBySelectCart.appendChild(option);
+        });
+      } else {
+        fetchEmployees().then(employees => {
+          employeeNameMap = {};
+          soldBySelectCart.innerHTML = '';
+          employees.forEach(emp => {
+            employeeNameMap[emp.id] = emp.name;
+            const option = document.createElement('option');
+            option.value = emp.id;
+            option.textContent = `${emp.name} (ID: ${emp.id})`;
+            soldBySelectCart.appendChild(option);
+          });
+        });
+      }
+      initialDataPromise = Promise.resolve(true);
+    } else {
+      await loadInitialData();
+    }
   }
 
-  return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        let closestStore = null;
-        let minDistance = Infinity;
+  // ✅ FIXED: Use autoSelectStoreByLocationDynamic instead of autoSelectStoreByLocation
+  const closest = await autoSelectStoreByLocationDynamic();
+  if (closest && storeNames[closest]) {
+    storeDisplaySpan.innerText = storeNames[closest];
+    storeValueHidden.value = closest;
+    setTimeout(() => proceedToLogin(closest), 2000);
+  } else if (storesList.length > 0) {
+    // ✅ If GPS fails, use the first available store
+    const firstStore = storesList[0];
+    storeDisplaySpan.innerText = firstStore.name;
+    storeValueHidden.value = firstStore.store_id;
+    setTimeout(() => proceedToLogin(firstStore.store_id), 2000);
+  } else {
+    storeDisplaySpan.innerText = '❌ Could not detect location. Please allow GPS and retry.';
+    if (retryBtn) retryBtn.style.display = 'inline-block';
+  }
 
-        for (const [storeId, coords] of Object.entries(storeCoords)) {
-          const dist = getDistanceFromLatLon(latitude, longitude, coords.lat, coords.lng);
-          if (dist < minDistance) {
-            minDistance = dist;
-            closestStore = storeId;
-          }
-        }
-        resolve(closestStore);
-      },
-      (error) => {
-        console.warn("Location error:", error.message);
-        resolve(null);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  });
-}
+  if (retryBtn) {
+    retryBtn.onclick = async () => {
+      storeDisplaySpan.innerText = '📍 Loading location...';
+      retryBtn.style.display = 'none';
+      // ✅ FIXED: Use autoSelectStoreByLocationDynamic here too
+      const newClosest = await autoSelectStoreByLocationDynamic();
+      if (newClosest && storeNames[newClosest]) {
+        storeDisplaySpan.innerText = storeNames[newClosest];
+        storeValueHidden.value = newClosest;
+        setTimeout(() => proceedToLogin(newClosest), 2000);
+      } else if (storesList.length > 0) {
+        const firstStore = storesList[0];
+        storeDisplaySpan.innerText = firstStore.name;
+        storeValueHidden.value = firstStore.store_id;
+        setTimeout(() => proceedToLogin(firstStore.store_id), 2000);
+      } else {
+        storeDisplaySpan.innerText = '❌ Still failed. Please check GPS.';
+        retryBtn.style.display = 'inline-block';
+      }
+    };
+  }
+})();
 
 // ==================== PRODUCTS ====================
 
 async function fetchProductsFromSheet(force = false) {
   try {
     const store = currentStore;
-    const stockColumn = `stock_${store}`;
+    
+    // Find the store to get its slot number
+    const currentStoreObj = stores.find(s => s.store_id === store);
+    let stockColumn = `stock_${store}`; // Fallback for old stores
+    
+    if (currentStoreObj && currentStoreObj.slot_number) {
+      const slotNumStr = String(currentStoreObj.slot_number).padStart(2, '0');
+      stockColumn = `stock_store_${slotNumStr}`;
+      console.log(`📦 Using slot-based stock column: ${stockColumn}`);
+    } else {
+      console.log(`📦 Using fallback stock column: ${stockColumn}`);
+    }
     
     const { data, error } = await supabase
       .from('products')
@@ -3312,20 +3442,55 @@ async function fetchProductsFromSheet(force = false) {
     
     if (error) throw error;
     
-    products = data.map(p => ({
-      id: p.id,
-      name: p.name,
-      price: parseFloat(p.price),
-      stock: parseInt(p[stockColumn]) || 0,
-      category: p.category || "Uncategorized",
-      stock_queens: parseInt(p.stock_queens) || 0,
-      stock_sunshine: parseInt(p.stock_sunshine) || 0,
-      stock_gurney_paragon: parseInt(p.stock_gurney_paragon) || 0,
-      // ✅ Store availability
-      available_queens: p.available_queens !== false,
-      available_sunshine: p.available_sunshine !== false,
-      available_gurney_paragon: p.available_gurney_paragon !== false
-    }));
+    // ✅ Build product objects with BOTH slot-based AND old fields
+    products = data.map(p => {
+      const product = {
+        id: p.id,
+        name: p.name,
+        price: parseFloat(p.price),
+        stock: parseInt(p[stockColumn]) || 0,
+        category: p.category || "Uncategorized"
+      };
+      
+      // ✅ IMPORTANT: Add slot-based fields for ALL stores that have slots
+      stores.forEach(s => {
+        if (s.slot_number) {
+          const slotNumStr = String(s.slot_number).padStart(2, '0');
+          const availabilityKey = `available_store_${slotNumStr}`;
+          const stockKey = `stock_store_${slotNumStr}`;
+          product[availabilityKey] = p[availabilityKey] !== false;
+          product[stockKey] = parseInt(p[stockKey]) || 0;
+        }
+      });
+      
+      // ✅ ALSO add the old store-specific fields for compatibility
+      // This ensures old stores (Queens, Sunshine, Gurney) work
+      product.available_queens = p.available_queens !== false;
+      product.available_sunshine = p.available_sunshine !== false;
+      product.available_gurney_paragon = p.available_gurney_paragon !== false;
+      
+      // ✅ Also add stock for old stores
+      product.stock_queens = parseInt(p.stock_queens) || 0;
+      product.stock_sunshine = parseInt(p.stock_sunshine) || 0;
+      product.stock_gurney_paragon = parseInt(p.stock_gurney_paragon) || 0;
+      
+      return product;
+    });
+    
+    // ✅ Log for debugging
+    console.log('✅ Products loaded:', products.length);
+    if (products.length > 0) {
+      console.log('📋 First product availability:', {
+        name: products[0].name,
+        available_queens: products[0].available_queens,
+        available_sunshine: products[0].available_sunshine,
+        available_gurney_paragon: products[0].available_gurney_paragon,
+        available_store_01: products[0].available_store_01,
+        available_store_02: products[0].available_store_02,
+        available_store_03: products[0].available_store_03,
+        available_store_04: products[0].available_store_04
+      });
+    }
     
     updateCategoryDropdown();
     refreshCategoryHighlighting();
@@ -3336,19 +3501,6 @@ async function fetchProductsFromSheet(force = false) {
     await showAlertModal('Error', 'Failed to load products.');
     return false;
   }
-}
-let storeFilterActive = true; // Default: ON (show only store-specific products)
-let showAllProductsInInventory = false; // Override in inventory mode
-
-function toggleStoreFilter() {
-  storeFilterActive = !storeFilterActive;
-  const btn = document.getElementById('storeFilterToggleBtn');
-  if (btn) {
-    // ✅ Only show the button text, no indicator in sales mode
-    btn.textContent = storeFilterActive ? '🏪 Store Filter: ON' : '🏪 Store Filter: OFF';
-    btn.classList.toggle('active', storeFilterActive);
-  }
-  renderProductGrid();
 }
 // ==================== STOCK TAKE RENDER FUNCTION ====================
 
@@ -3479,9 +3631,17 @@ function renderProductGrid() {
   if (selectedCategory === 'all' && !inventoryMode && !searchTerm) {
     let categories = [...new Set(products.map(p => p.category))];
     
-    // Apply store filter to categories
+    // Apply store filter to categories - ✅ FIXED for both old and new stores
     if (storeFilterActive && !showAllProductsInInventory) {
-      const availabilityKey = `available_${currentStore}`;
+      const storeObj = stores.find(s => s.store_id === currentStore);
+      let availabilityKey = `available_${currentStore}`; // Default for old stores
+      
+      // If store has a slot, use slot-based field
+      if (storeObj && storeObj.slot_number) {
+        const slotNumStr = String(storeObj.slot_number).padStart(2, '0');
+        availabilityKey = `available_store_${slotNumStr}`;
+      }
+      
       const availableProducts = products.filter(p => p[availabilityKey] !== false);
       categories = [...new Set(availableProducts.map(p => p.category))];
     }
@@ -3541,8 +3701,17 @@ function renderProductGrid() {
   let filtered = products.slice();
   
   // 1. Store filter (only in normal mode, not when "Show All" is active)
+  // ✅ FIXED for both old and new stores
   if (storeFilterActive && !showAllProductsInInventory && !inventoryMode) {
-    const availabilityKey = `available_${currentStore}`;
+    const storeObj = stores.find(s => s.store_id === currentStore);
+    let availabilityKey = `available_${currentStore}`; // Default for old stores
+    
+    // If store has a slot, use slot-based field
+    if (storeObj && storeObj.slot_number) {
+      const slotNumStr = String(storeObj.slot_number).padStart(2, '0');
+      availabilityKey = `available_store_${slotNumStr}`;
+    }
+    
     filtered = filtered.filter(p => p[availabilityKey] !== false);
   }
   
@@ -3579,11 +3748,10 @@ function renderProductGrid() {
   if (filtered.length === 0) {
     let message = 'No products match your filters.';
     if (storeFilterActive && !inventoryMode && !showAllProductsInInventory) {
-      const storeNames = {
-        queens: 'Queens',
-        sunshine: 'Sunshine',
-        gurney_paragon: 'Gurney Paragon'
-      };
+      const storeNames = {};
+      stores.forEach(s => {
+        storeNames[s.store_id] = s.name;
+      });
       message = `No products available at ${storeNames[currentStore] || currentStore}. Try turning off the store filter.`;
     }
     productGridEl.innerHTML = `<div style="text-align:center; padding:20px;">${message}</div>`;
@@ -3596,11 +3764,10 @@ function renderProductGrid() {
   
   // Show store filter indicator - ONLY in inventory mode
   if (inventoryMode && storeFilterActive && !showAllProductsInInventory) {
-    const storeNames = {
-      queens: '🏬 Queens',
-      sunshine: '☀️ Sunshine',
-      gurney_paragon: '🏙️ Gurney Paragon'
-    };
+    const storeNames = {};
+    stores.forEach(s => {
+      storeNames[s.store_id] = s.name;
+    });
     const productCount = filtered.length;
     html += `<div style="font-size:0.8rem; color:#64748b; margin-bottom:12px; padding:6px 14px; background:#f1f5f9; border-radius:20px; display:inline-block;">
       📍 Showing ${productCount} product(s) available at ${storeNames[currentStore] || currentStore}
@@ -3615,11 +3782,18 @@ function renderProductGrid() {
       const isLowStock = prod.stock < LOW_STOCK_THRESHOLD;
       const lowStockClass = isLowStock ? 'low-stock-card' : '';
       
-      // Determine if any store is available
-      const hasQueens = prod.available_queens !== false;
-      const hasSunshine = prod.available_sunshine !== false;
-      const hasGurney = prod.available_gurney_paragon !== false;
-      const anyStoreAvailable = hasQueens || hasSunshine || hasGurney;
+      // Determine if any store is available (check both old and new systems)
+      let anyStoreAvailable = false;
+      stores.forEach(s => {
+        let field = `available_${s.store_id}`;
+        if (s.slot_number) {
+          const slotNumStr = String(s.slot_number).padStart(2, '0');
+          field = `available_store_${slotNumStr}`;
+        }
+        if (prod[field] !== false) {
+          anyStoreAvailable = true;
+        }
+      });
       
       html += `<div class="product-card ${lowStockClass}" data-id="${prod.id}" style="padding: 16px; ${!anyStoreAvailable ? 'opacity: 0.6; border-color: #ef4444;' : ''}">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
@@ -3636,23 +3810,37 @@ function renderProductGrid() {
           <div style="display: flex; flex-direction: column; gap: 6px; background: #f8fafc; padding: 8px 12px; border-radius: 12px; border: 1px solid #e2e8f0; min-width: 140px;">
             <div style="font-size: 0.7rem; font-weight: 600; color: #64748b; text-align: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">AVAILABLE AT</div>
             
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; padding: 2px 4px; border-radius: 4px; transition: background 0.2s; ${hasQueens ? 'background: rgba(44, 122, 75, 0.08);' : ''}">
-              <input type="checkbox" class="store-availability-checkbox" data-product="${prod.id}" data-store="queens" ${hasQueens ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6;">
-              <span>🏬 Queens</span>
-              <span style="margin-left: auto; font-size: 0.7rem; color: ${hasQueens ? '#2c7a4b' : '#ef4444'};">${hasQueens ? '✅' : '❌'}</span>
-            </label>
-            
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; padding: 2px 4px; border-radius: 4px; transition: background 0.2s; ${hasSunshine ? 'background: rgba(44, 122, 75, 0.08);' : ''}">
-              <input type="checkbox" class="store-availability-checkbox" data-product="${prod.id}" data-store="sunshine" ${hasSunshine ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6;">
-              <span>☀️ Sunshine</span>
-              <span style="margin-left: auto; font-size: 0.7rem; color: ${hasSunshine ? '#2c7a4b' : '#ef4444'};">${hasSunshine ? '✅' : '❌'}</span>
-            </label>
-            
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; padding: 2px 4px; border-radius: 4px; transition: background 0.2s; ${hasGurney ? 'background: rgba(44, 122, 75, 0.08);' : ''}">
-              <input type="checkbox" class="store-availability-checkbox" data-product="${prod.id}" data-store="gurney_paragon" ${hasGurney ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6;">
-              <span>🏙️ Gurney</span>
-              <span style="margin-left: auto; font-size: 0.7rem; color: ${hasGurney ? '#2c7a4b' : '#ef4444'};">${hasGurney ? '✅' : '❌'}</span>
-            </label>
+            ${stores.map(store => {
+              // ✅ Determine which field to use
+              let availabilityField = `available_${store.store_id}`; // Default for old stores
+              
+              // If store has a slot, use slot-based field
+              if (store.slot_number) {
+                const slotNumStr = String(store.slot_number).padStart(2, '0');
+                availabilityField = `available_store_${slotNumStr}`;
+              }
+              
+              const isAvailable = prod[availabilityField] !== false;
+              const storeName = store.name;
+              // Get emoji for store
+              let emoji = '🏪';
+              if (store.store_id === 'queens') emoji = '🏬';
+              else if (store.store_id === 'sunshine') emoji = '☀️';
+              else if (store.store_id === 'gurney_paragon') emoji = '🏙️';
+              
+              return `
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; padding: 2px 4px; border-radius: 4px; transition: background 0.2s; ${isAvailable ? 'background: rgba(44, 122, 75, 0.08);' : 'background: rgba(239, 68, 68, 0.08);'}">
+                  <input type="checkbox" 
+                         class="store-availability-checkbox" 
+                         data-product="${prod.id}" 
+                         data-store="${store.store_id}" 
+                         ${isAvailable ? 'checked' : ''} 
+                         style="width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6;">
+                  <span>${emoji} ${escapeHtml(storeName)}</span>
+                  <span style="margin-left: auto; font-size: 0.7rem; color: ${isAvailable ? '#2c7a4b' : '#ef4444'};">${isAvailable ? '✅' : '❌'}</span>
+                </label>
+              `;
+            }).join('')}
           </div>
         </div>
         <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
@@ -3786,28 +3974,37 @@ async function handleAvailabilityChange(e) {
   const cb = this;
   const productId = cb.dataset.product;
   const store = cb.dataset.store;
+  
+  // ✅ Get the current checked state
   const isChecked = cb.checked;
   
   // Find the product
   const product = products.find(p => p.id == productId);
-  if (!product) return;
+  if (!product) {
+    console.error('❌ Product not found:', productId);
+    return;
+  }
   
-  // Map store to database field
-  const fieldMap = {
-    'queens': 'available_queens',
-    'sunshine': 'available_sunshine',
-    'gurney_paragon': 'available_gurney_paragon'
-  };
+  // ✅ Determine which field to update
+  const storeObj = stores.find(s => s.store_id === store);
+  let availabilityField = `available_${store}`; // Default for old stores
   
-  const field = fieldMap[store];
-  if (!field) return;
+  // If store has a slot, use slot-based field
+  if (storeObj && storeObj.slot_number) {
+    const slotNumStr = String(storeObj.slot_number).padStart(2, '0');
+    availabilityField = `available_store_${slotNumStr}`;
+    console.log(`📦 Using slot-based availability column: ${availabilityField}`);
+  } else {
+    console.log(`📦 Using fallback availability column: ${availabilityField}`);
+  }
   
-  // Update the product object locally first (optimistic update)
-  product[field] = isChecked;
+  // ✅ Update the product object IMMEDIATELY (optimistic update)
+  product[availabilityField] = isChecked;
   
-  // Update the status indicator
+  // ✅ Update the UI IMMEDIATELY
   const label = cb.closest('label');
   const statusSpan = label ? label.querySelector('span:last-child') : null;
+  
   if (statusSpan) {
     statusSpan.textContent = isChecked ? '✅' : '❌';
     statusSpan.style.color = isChecked ? '#2c7a4b' : '#ef4444';
@@ -3816,14 +4013,20 @@ async function handleAvailabilityChange(e) {
     label.style.background = isChecked ? 'rgba(44, 122, 75, 0.08)' : 'rgba(239, 68, 68, 0.08)';
   }
   
+  // ✅ Keep the checkbox in the correct state
+  cb.checked = isChecked;
+  
   // Show loading indicator
   cb.disabled = true;
   cb.style.opacity = '0.5';
   
+  // Store the original state
+  const originalChecked = isChecked;
+  
   try {
     // ✅ Update Supabase
     const updateData = {};
-    updateData[field] = isChecked;
+    updateData[availabilityField] = isChecked;
     
     const { error } = await supabase
       .from('products')
@@ -3832,28 +4035,40 @@ async function handleAvailabilityChange(e) {
     
     if (error) {
       console.error('❌ Error updating store availability:', error);
-      // Revert the checkbox
-      cb.checked = !isChecked;
-      product[field] = !isChecked;
+      // Revert everything
+      cb.checked = !originalChecked;
+      product[availabilityField] = !originalChecked;
       if (statusSpan) {
-        statusSpan.textContent = !isChecked ? '✅' : '❌';
-        statusSpan.style.color = !isChecked ? '#2c7a4b' : '#ef4444';
+        statusSpan.textContent = !originalChecked ? '✅' : '❌';
+        statusSpan.style.color = !originalChecked ? '#2c7a4b' : '#ef4444';
       }
       if (label) {
-        label.style.background = !isChecked ? 'rgba(44, 122, 75, 0.08)' : 'rgba(239, 68, 68, 0.08)';
+        label.style.background = !originalChecked ? 'rgba(44, 122, 75, 0.08)' : 'rgba(239, 68, 68, 0.08)';
       }
       await showAlertModal('Error', 'Failed to update store availability: ' + error.message);
     } else {
       console.log(`✅ Store ${store} availability updated to ${isChecked} for product ${product.name}`);
       
+      // ✅ Make sure checkbox stays in the correct state
+      cb.checked = isChecked;
+      
       // Update the card appearance
       const card = cb.closest('.product-card');
       if (card) {
         // Check if any store is available
-        const hasQueens = product.available_queens !== false;
-        const hasSunshine = product.available_sunshine !== false;
-        const hasGurney = product.available_gurney_paragon !== false;
-        const anyStoreAvailable = hasQueens || hasSunshine || hasGurney;
+        let anyStoreAvailable = false;
+        
+        // Check both slot-based and old stores
+        stores.forEach(s => {
+          let field = `available_${s.store_id}`;
+          if (s.slot_number) {
+            const slotNumStr = String(s.slot_number).padStart(2, '0');
+            field = `available_store_${slotNumStr}`;
+          }
+          if (product[field] !== false) {
+            anyStoreAvailable = true;
+          }
+        });
         
         card.style.opacity = anyStoreAvailable ? '1' : '0.6';
         card.style.borderColor = anyStoreAvailable ? '' : '#ef4444';
@@ -3861,7 +4076,7 @@ async function handleAvailabilityChange(e) {
         // Update the product name badge
         const nameDiv = card.querySelector('.product-name');
         if (nameDiv) {
-          const currentText = nameDiv.textContent;
+          const currentText = nameDiv.textContent || '';
           if (!anyStoreAvailable) {
             if (!currentText.includes('🚫')) {
               nameDiv.textContent = currentText.replace('🚫', '').trim() + ' 🚫';
@@ -3890,22 +4105,90 @@ async function handleAvailabilityChange(e) {
           }
         }
       }
+      
+      // ✅ Sync after availability change
+      if (window._availabilitySyncTimeout) {
+        clearTimeout(window._availabilitySyncTimeout);
+      }
+      window._availabilitySyncTimeout = setTimeout(() => {
+        console.log('🔄 Syncing after availability update...');
+        backgroundSync(true).catch(err => {
+          console.warn('⚠️ Background sync after availability update failed:', err);
+        });
+        window._availabilitySyncTimeout = null;
+      }, 1000);
     }
   } catch (err) {
     console.error('❌ Error:', err);
-    cb.checked = !isChecked;
-    product[field] = !isChecked;
+    // Revert everything
+    cb.checked = !originalChecked;
+    product[availabilityField] = !originalChecked;
     if (statusSpan) {
-      statusSpan.textContent = !isChecked ? '✅' : '❌';
-      statusSpan.style.color = !isChecked ? '#2c7a4b' : '#ef4444';
+      statusSpan.textContent = !originalChecked ? '✅' : '❌';
+      statusSpan.style.color = !originalChecked ? '#2c7a4b' : '#ef4444';
     }
     if (label) {
-      label.style.background = !isChecked ? 'rgba(44, 122, 75, 0.08)' : 'rgba(239, 68, 68, 0.08)';
+      label.style.background = !originalChecked ? 'rgba(44, 122, 75, 0.08)' : 'rgba(239, 68, 68, 0.08)';
     }
   } finally {
     cb.disabled = false;
     cb.style.opacity = '1';
+    // ✅ Force the checkbox to the correct state
+    cb.checked = originalChecked;
+    // ✅ Also force update the status span again
+    if (statusSpan) {
+      statusSpan.textContent = originalChecked ? '✅' : '❌';
+      statusSpan.style.color = originalChecked ? '#2c7a4b' : '#ef4444';
+    }
   }
+}
+function refreshInventoryCheckboxes() {
+  console.log('🔄 Refreshing inventory checkboxes...');
+  
+  document.querySelectorAll('.store-availability-checkbox').forEach(cb => {
+    const productId = cb.dataset.product;
+    const store = cb.dataset.store;
+    const product = products.find(p => p.id == productId);
+    
+    if (!product) return;
+    
+    // Find the store's slot number
+    const storeObj = stores.find(s => s.store_id === store);
+    let availabilityField = `available_${store}`;
+    
+    if (storeObj && storeObj.slot_number) {
+      const slotNumStr = String(storeObj.slot_number).padStart(2, '0');
+      availabilityField = `available_store_${slotNumStr}`;
+    }
+    
+    // Get the actual value from the product object - use strict equality
+    const isAvailable = product[availabilityField] === true;
+    
+    // Update checkbox
+    cb.checked = isAvailable;
+    
+    // Update the status indicator
+    const label = cb.closest('label');
+    const statusSpan = label ? label.querySelector('span:last-child') : null;
+    if (statusSpan) {
+      statusSpan.textContent = isAvailable ? '✅' : '❌';
+      statusSpan.style.color = isAvailable ? '#2c7a4b' : '#ef4444';
+    }
+    if (label) {
+      label.style.background = isAvailable ? 'rgba(44, 122, 75, 0.08)' : 'rgba(239, 68, 68, 0.08)';
+    }
+    
+    // ✅ REMOVE OR COMMENT OUT THIS LINE:
+    // console.log(`📋 ${product.name} - ${store}: ${availabilityField} = ${isAvailable} (checkbox: ${cb.checked})`);
+  });
+}
+
+// Call this after fetching products or when entering inventory mode
+function enterInventoryMode() {
+  inventoryMode = true;
+  // ... rest of your inventory mode code ...
+  // Then refresh checkboxes
+  setTimeout(refreshInventoryCheckboxes, 100);
 }
 // ==================== HELPER FUNCTIONS FOR STORE AVAILABILITY ====================
 
@@ -3925,11 +4208,11 @@ function getStoreAvailabilityBadge(product) {
 function getStoreAvailabilityText(product) {
   if (!product) return '';
   
-  const storeNames = {
-    queens: '🏬 Queens',
-    sunshine: '☀️ Sunshine',
-    gurney_paragon: '🏙️ Gurney Paragon'
-  };
+  // Dynamic store names from Supabase
+const storeNames = {};
+stores.forEach(s => {
+  storeNames[s.store_id] = s.name;
+});
   
   const available = [];
   if (product.available_queens) available.push(storeNames.queens);
@@ -3954,12 +4237,20 @@ function updateStockForProduct(productId, newStock, delta) {
     return;
   }
 
+  // ✅ Find the current store's slot number
+  const currentStoreObj = stores.find(s => s.store_id === currentStore);
+  let stockColumn = `stock_${currentStore}`; // Fallback for old stores
+  
+  if (currentStoreObj && currentStoreObj.slot_number) {
+    const slotNumStr = String(currentStoreObj.slot_number).padStart(2, '0');
+    stockColumn = `stock_store_${slotNumStr}`;
+    console.log(`📦 Using slot-based stock column: ${stockColumn}`);
+  } else {
+    console.log(`📦 Using fallback stock column: ${stockColumn}`);
+  }
+
   // Update local product
   product.stock = newStock;
-  
-  // Update store-specific stock column
-  const store = currentStore;
-  const stockColumn = `stock_${store}`;
   product[stockColumn] = newStock;
 
   // Update input field if exists
@@ -3969,12 +4260,16 @@ function updateStockForProduct(productId, newStock, delta) {
   // Log stock change in history
   logStockChange(productId, product.name, product.category, oldStock, newStock, delta);
   
-  // ✅ UPDATE IN SUPABASE IMMEDIATELY
+  // ✅ UPDATE IN SUPABASE USING THE CORRECT COLUMN
   console.log(`📦 Updating stock for ${product.name}: ${oldStock} → ${newStock} (Δ${delta})`);
+  console.log(`📦 Using column: ${stockColumn}`);
+  
+  const updateData = {};
+  updateData[stockColumn] = newStock;
   
   supabase
     .from('products')
-    .update({ [stockColumn]: newStock })
+    .update(updateData)
     .eq('id', productId)
     .then(({ error }) => {
       if (error) {
@@ -3988,7 +4283,6 @@ function updateStockForProduct(productId, newStock, delta) {
         console.log('✅ Stock updated in Supabase for', product.name, 'new stock:', newStock);
         
         // ✅ SYNC AFTER SUCCESSFUL STOCK UPDATE - with debounce
-        // Debounce to avoid multiple syncs when updating multiple products quickly
         if (window._stockSyncTimeout) {
           clearTimeout(window._stockSyncTimeout);
         }
@@ -3998,7 +4292,7 @@ function updateStockForProduct(productId, newStock, delta) {
             console.warn('⚠️ Background sync after stock update failed:', err);
           });
           window._stockSyncTimeout = null;
-        }, 1000); // Wait 1 second after last stock change before syncing
+        }, 1000);
       }
     });
     
@@ -4709,7 +5003,9 @@ async function saveTransactionToSheet(transaction) {
       }
     }
     
-    // ✅ Also update stock in Supabase here as a backup
+    // ✅ REMOVE THIS SECTION - It's causing the error!
+    // The stock is already updated in completeCheckout()
+    /*
     console.log('📦 Updating stock in Supabase...');
     for (const item of transaction.items || []) {
       const product = products.find(p => p.id == item.id);
@@ -4729,6 +5025,7 @@ async function saveTransactionToSheet(transaction) {
         }
       }
     }
+    */
     
     return true;
     
@@ -4840,8 +5137,21 @@ async function completeCheckout(paymentMethod, cashReceived) {
     hideLoading();
 
     if (success) {
-      // ✅ STOCK UPDATE
+      // ✅ STOCK UPDATE - USING SLOT-BASED COLUMNS
       console.log('🔄 Updating stock for items...');
+      
+      // Find the current store's slot number
+      const currentStoreObj = stores.find(s => s.store_id === currentStore);
+      let stockColumn = `stock_${currentStore}`; // Fallback for old stores
+      
+      if (currentStoreObj && currentStoreObj.slot_number) {
+        const slotNumStr = String(currentStoreObj.slot_number).padStart(2, '0');
+        stockColumn = `stock_store_${slotNumStr}`;
+        console.log(`📦 Using slot-based stock column: ${stockColumn}`);
+      } else {
+        console.log(`📦 Using fallback stock column: ${stockColumn}`);
+      }
+      
       for (let item of saleItems) {
         const product = products.find(p => p.id == item.id);
         if (product) {
@@ -4849,19 +5159,23 @@ async function completeCheckout(paymentMethod, cashReceived) {
           const newStock = oldStock - item.quantity;
           product.stock = newStock;
           
-          // ✅ Also update the store-specific stock column
-          const store = currentStore;
-          const stockColumn = `stock_${store}`;
+          // Update the store-specific stock column
           product[stockColumn] = newStock;
           
-          // ✅ Update in Supabase
+          // ✅ Update in Supabase using the correct column
+          const updateData = {};
+          updateData[stockColumn] = newStock;
+          
           supabase
             .from('products')
-            .update({ [stockColumn]: newStock })
+            .update(updateData)
             .eq('id', product.id)
             .then(({ error }) => {
-              if (error) console.error('❌ Error updating stock for', product.name, error);
-              else console.log('✅ Stock updated for', product.name, 'new stock:', newStock);
+              if (error) {
+                console.error('❌ Error updating stock for', product.name, error);
+              } else {
+                console.log('✅ Stock updated for', product.name, 'new stock:', newStock);
+              }
             });
           
           checkAndNotifyOutOfStock(product.id, product.name, newStock);
@@ -4876,7 +5190,7 @@ async function completeCheckout(paymentMethod, cashReceived) {
         products: products
       }));
 
-      // ✅ SYNC AFTER SUCCESSFUL SALE - THIS IS THE KEY CHANGE
+      // ✅ SYNC AFTER SUCCESSFUL SALE
       console.log('🔄 Syncing data after sale...');
       try {
         await backgroundSync(true);
@@ -5322,21 +5636,8 @@ async function getNextIRSInvoiceNumber() {
 }
 async function getNextTransactionNumber(store) {
   try {
-    // Map store to prefix
-    const prefixMap = {
-      queens: 'TXN38',
-      sunshine: 'TXN39',
-      gurney_paragon: 'TXN40'
-    };
-    
-    const prefix = prefixMap[store];
-    if (!prefix) {
-      console.error(`❌ Unknown store: ${store}`);
-      const fallbackPrefix = store.substring(0, 3).toUpperCase();
-      const timestamp = Date.now();
-      const random = Math.floor(Math.random() * 1000);
-      return `${fallbackPrefix}-${timestamp}-${String(random).padStart(4, '0')}`;
-    }
+    // Get prefix dynamically
+    const prefix = await getStorePrefix(store);
     
     console.log(`🔍 Getting next transaction number for ${store} with prefix ${prefix}`);
     
@@ -5360,7 +5661,7 @@ async function getNextTransactionNumber(store) {
       // Extract all numbers and find the highest
       for (const row of data) {
         const id = row.transaction_id;
-        // Extract number from TXN38XXXXX format
+        // Extract number from PREFIXXXXXX format
         const match = id.match(new RegExp(`${prefix}(\\d+)`));
         if (match) {
           const num = parseInt(match[1]);
@@ -5388,12 +5689,7 @@ async function getNextTransactionNumber(store) {
   } catch (err) {
     console.error('❌ Failed to get transaction number:', err);
     // Fallback: use timestamp
-    const prefixMap = {
-      queens: 'TXN38',
-      sunshine: 'TXN39',
-      gurney_paragon: 'TXN40'
-    };
-    const prefix = prefixMap[store] || store.substring(0, 3).toUpperCase();
+    const prefix = await getStorePrefix(store);
     const timestamp = Date.now().toString().slice(-6);
     const fallbackId = `${prefix}${timestamp}`;
     console.log(`⚠️ Using fallback ID: ${fallbackId}`);
@@ -6316,80 +6612,127 @@ async function processRefund(transactionId, store) {
       .update({ refunded: true })
       .eq('transaction_id', transactionId);
 
-// In processRefund function, after saving the refund
-if (transaction.payment_method === 'Card' || transaction.payment_method === 'Alipay') {
-  console.log(`📋 Saving refund to IRS report for ${transaction.payment_method}`);
-  
-  let retryCount = 0;
-  const maxRetries = 3;
-  let saved = false;
-  
-  while (!saved && retryCount < maxRetries) {
-    try {
-      const invoiceNo = await getNextIRSInvoiceNumber();
-      const refundInvoiceNo = `REF-${invoiceNo}`;
+    // ✅ IRS Reporting for refunds (Card and Alipay)
+    if (transaction.payment_method === 'Card' || transaction.payment_method === 'Alipay') {
+      console.log(`📋 Saving refund to IRS report for ${transaction.payment_method}`);
       
-      const { error: irsError } = await supabase
-        .from('irs_reporting')
-        .insert([{
-          invoice_no: refundInvoiceNo,
-          transaction_id: refundId,
-          timestamp: new Date().toISOString(),
-          items: JSON.stringify(refundItems),
-          total: refundTotal,
-          store: store,
-          employee_id: currentEmployee.id,
-          employee_name: currentEmployee.name
-        }]);
+      let retryCount = 0;
+      const maxRetries = 3;
+      let saved = false;
       
-      if (irsError) {
-        if (irsError.code === '23505') {
-          console.warn(`⚠️ Duplicate refund invoice number, retrying... (${retryCount + 1}/${maxRetries})`);
+      while (!saved && retryCount < maxRetries) {
+        try {
+          const invoiceNo = await getNextIRSInvoiceNumber();
+          const refundInvoiceNo = `REF-${invoiceNo}`;
+          
+          const { error: irsError } = await supabase
+            .from('irs_reporting')
+            .insert([{
+              invoice_no: refundInvoiceNo,
+              transaction_id: refundId,
+              timestamp: new Date().toISOString(),
+              items: JSON.stringify(refundItems),
+              total: refundTotal,
+              store: store,
+              employee_id: currentEmployee.id,
+              employee_name: currentEmployee.name
+            }]);
+          
+          if (irsError) {
+            if (irsError.code === '23505') {
+              console.warn(`⚠️ Duplicate refund invoice number, retrying... (${retryCount + 1}/${maxRetries})`);
+              retryCount++;
+              await new Promise(resolve => setTimeout(resolve, 200));
+              continue;
+            }
+            console.error('❌ IRS refund report error:', irsError);
+            break;
+          } else {
+            console.log(`✅ IRS refund report saved: ${refundInvoiceNo}`);
+            saved = true;
+            break;
+          }
+        } catch (irsErr) {
+          console.error('❌ IRS refund reporting failed:', irsErr);
           retryCount++;
           await new Promise(resolve => setTimeout(resolve, 200));
-          continue;
         }
-        console.error('❌ IRS refund report error:', irsError);
-        break;
-      } else {
-        console.log(`✅ IRS refund report saved: ${refundInvoiceNo}`);
-        saved = true;
-        break;
       }
-    } catch (irsErr) {
-      console.error('❌ IRS refund reporting failed:', irsErr);
-      retryCount++;
-      await new Promise(resolve => setTimeout(resolve, 200));
     }
-  }
-}
 
-    // Restore stock
+    // ✅ RESTORE STOCK - USING SLOT-BASED COLUMNS
+    console.log('🔄 Restoring stock for refund...');
+    
+    // Find the store's slot number
+    const storeObj = stores.find(s => s.store_id === store);
+    let stockColumn = `stock_${store}`; // Fallback for old stores
+    
+    if (storeObj && storeObj.slot_number) {
+      const slotNumStr = String(storeObj.slot_number).padStart(2, '0');
+      stockColumn = `stock_store_${slotNumStr}`;
+      console.log(`📦 Using slot-based stock column for refund: ${stockColumn}`);
+    } else {
+      console.log(`📦 Using fallback stock column for refund: ${stockColumn}`);
+    }
+    
+    // Track which products were updated
+    const updatedProducts = [];
+    
     for (const item of transaction.items) {
       if (item.quantity > 0) {
+        // Get current stock from Supabase
         const { data: product, error: pError } = await supabase
           .from('products')
-          .select('stock')
+          .select('*')  // Get all columns
           .eq('id', item.id)
           .single();
         
         if (product && !pError) {
-          const newStock = (product.stock || 0) + item.quantity;
-          await supabase
+          const currentStock = parseInt(product[stockColumn]) || 0;
+          const newStock = currentStock + item.quantity;
+          
+          // Update stock in Supabase
+          const updateData = {};
+          updateData[stockColumn] = newStock;
+          
+          const { error: updateError } = await supabase
             .from('products')
-            .update({ stock: newStock })
+            .update(updateData)
             .eq('id', item.id);
           
+          if (updateError) {
+            console.error(`❌ Error restoring stock for ${item.name}:`, updateError);
+          } else {
+            console.log(`✅ Stock restored for ${item.name}: ${currentStock} → ${newStock}`);
+            updatedProducts.push({ id: item.id, name: item.name, newStock: newStock });
+          }
+          
+          // Update local product
           const localProduct = products.find(p => p.id == item.id);
           if (localProduct) {
             localProduct.stock = newStock;
+            localProduct[stockColumn] = newStock;
           }
+        } else {
+          console.warn(`⚠️ Could not find product ${item.id}`);
         }
       }
     }
 
+    // ✅ Force sync after refund
+    if (updatedProducts.length > 0) {
+      console.log('🔄 Syncing after refund...');
+      try {
+        await backgroundSync(true);
+        console.log('✅ Background sync completed after refund');
+      } catch (syncErr) {
+        console.warn('⚠️ Background sync failed after refund:', syncErr);
+      }
+    }
+
     await showAlertModal('Refund Successful', 
-      `Refund ID: ${refundId}\nStock restored for ${transaction.items.length} item(s).`
+      `Refund ID: ${refundId}\n` +
+      `Stock restored for ${updatedProducts.length} item(s).`
     );
 
     // Print refund receipt if printer is connected
@@ -6408,7 +6751,7 @@ if (transaction.payment_method === 'Card' || transaction.payment_method === 'Ali
 
     // Update local data
     updateReceipts();
-    localStorage.removeItem(`products_${currentStore}`);
+    localStorage.removeItem(`products_${store}`);
     await fetchProductsFromSheet();
     invalidateAllReportCaches();
 
@@ -6428,6 +6771,9 @@ if (transaction.payment_method === 'Card' || transaction.payment_method === 'Ali
     if (reportModal && reportModal.style.display === 'flex') {
       await updateAdminReport(true);
     }
+    
+    // ✅ Re-render product grid to show updated stock
+    renderProductGrid();
     
   } catch (err) {
     console.error('Refund error:', err);
@@ -7441,7 +7787,10 @@ async function loadAllUnsettledCash() {
 }
 
 function updateStoreCashSummary() {
-  const storeTotals = { queens: 0, sunshine: 0, gurney_paragon: 0 };
+   const storeTotals = {};
+  stores.forEach(store => {
+    storeTotals[store.store_id] = 0;
+  });
   
   for (const rec of allUnsettledCash) {
     if (rec.collected === true) continue;
@@ -8208,7 +8557,10 @@ function showOutOfStockAlert(productName) {
 // Replace the checkAndNotifyOutOfStock function with this:
 
 function checkAndNotifyOutOfStock(productId, productName, newStock) {
-  const storeName = currentStore.charAt(0).toUpperCase() + currentStore.slice(1);
+  // ✅ Get the store name dynamically from the stores array
+  const storeObj = stores.find(s => s.store_id === currentStore);
+  const storeName = storeObj ? storeObj.name : currentStore.charAt(0).toUpperCase() + currentStore.slice(1);
+  
   const timestamp = new Date().toLocaleString();
 
   // Create a unique key per product per store
@@ -8224,13 +8576,13 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
       alertedOutOfStockProducts.add(alertKey);
       localStorage.setItem(lastNotifiedStockKey, '0');
       
-      const message = `❌ OUT OF STOCK ❌\nStore: ${storeName}\nProduct: ${productName}\nQuantity: ${newStock}\nTime: ${timestamp}`;
+      const message = `❌ OUT OF STOCK ❌\n🏪 Store: ${storeName}\n📦 Product: ${productName}\n📊 Quantity: ${newStock}\n🕐 Time: ${timestamp}`;
       if (telegramAccounts) sendTelegramMessage(message);
       
       if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
-        new Notification(`❌ Out of Stock`, { body: `${productName} is out of stock.` });
+        new Notification(`❌ Out of Stock`, { body: `${productName} is out of stock at ${storeName}.` });
       } else if (notificationsEnabled) {
-        showOutOfStockAlert(`${productName} is out of stock.`);
+        showOutOfStockAlert(`${productName} is out of stock at ${storeName}.`);
       }
     }
   } else if (newStock > 0 && newStock <= LOW_STOCK_THRESHOLD && !alertedLowStockProducts.has(alertKey)) {
@@ -8239,13 +8591,13 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
       alertedLowStockProducts.add(alertKey);
       localStorage.setItem(lastNotifiedStockKey, String(newStock));
       
-      const message = `⚠️ LOW STOCK ⚠️\nStore: ${storeName}\nProduct: ${productName}\nQuantity left: ${newStock}\nTime: ${timestamp}`;
+      const message = `⚠️ LOW STOCK ⚠️\n🏪 Store: ${storeName}\n📦 Product: ${productName}\n📊 Quantity left: ${newStock}\n🕐 Time: ${timestamp}`;
       if (telegramAccounts) sendTelegramMessage(message);
       
       if (notificationsEnabled && notificationsSupported && Notification.permission === "granted") {
-        new Notification(`⚠️ Low Stock`, { body: `${productName} only ${newStock} left.` });
+        new Notification(`⚠️ Low Stock`, { body: `${productName} only ${newStock} left at ${storeName}.` });
       } else if (notificationsEnabled) {
-        showOutOfStockAlert(`${productName} only ${newStock} left.`);
+        showOutOfStockAlert(`${productName} only ${newStock} left at ${storeName}.`);
       }
     }
   }
@@ -8262,7 +8614,39 @@ function checkAndNotifyOutOfStock(productId, productName, newStock) {
     }
   }
 }
+async function sendTelegramMessage(message, storeName = null) {
+  if (!telegramAccounts) return false;
 
+  // ✅ If storeName is provided, add it to the message
+  let finalMessage = message;
+  if (storeName) {
+    finalMessage = `🏪 ${storeName}\n${message}`;
+  }
+
+  const lines = telegramAccounts.split('\n').filter(line => line.trim());
+  const results = await Promise.all(lines.map(async (line) => {
+    const [token, chatId] = line.split(',').map(s => s.trim());
+    if (!token || !chatId) return false;
+    try {
+      const url = `https://api.telegram.org/bot${token}/sendMessage`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: finalMessage,
+          parse_mode: 'HTML'
+        })
+      });
+      const result = await response.json();
+      return result.ok;
+    } catch (err) {
+      console.error(`Telegram send failed for ${token}:`, err);
+      return false;
+    }
+  }));
+  return results.some(success => success);
+}
 // ==================== STOCK TAKE ====================
 
 let stockTakeMode = false;
@@ -9038,7 +9422,6 @@ function getSelectedItemsForGroup(groupId) {
   
   return selectedItems;
 }
-
 async function approveStoreGroup(groupId, modal) {
   const selectedItems = getSelectedItemsForGroup(groupId);
   
@@ -9062,11 +9445,18 @@ async function approveStoreGroup(groupId, modal) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.style.display = 'flex';
-    overlay.style.zIndex = '9999';
-    overlay.style.background = 'rgba(0,0,0,0.7)';
+    overlay.style.zIndex = '99999';
+    overlay.style.background = 'rgba(0,0,0,0.8)';
     overlay.style.backdropFilter = 'blur(4px)';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
     overlay.innerHTML = `
-      <div class="modal-container" style="max-width: 600px; border-radius: 24px; padding: 0; overflow: hidden;">
+      <div class="modal-container" style="max-width: 600px; border-radius: 24px; padding: 0; overflow: hidden; z-index: 99999; position: relative; box-shadow: 0 24px 64px rgba(0,0,0,0.4);">
         <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 24px 28px; display: flex; align-items: center; gap: 16px;">
           <div style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0;">
             ✅
@@ -9131,20 +9521,82 @@ async function approveStoreGroup(groupId, modal) {
         let successCount = 0;
         let failCount = 0;
         let errors = [];
-        let store = currentStore;
+        
+        // ✅ Track which stores we're updating
+        const storeUpdates = {};
         
         for (const [requestId, items] of Object.entries(groupedByRequest)) {
           const category = items[0]?.category || 'Unknown';
           
           try {
+            // ✅ FIRST: Get the request details to find which store this is for
+            const { data: requestData, error: fetchError } = await supabase
+              .from('stock_take_requests')
+              .select('*')  // ✅ Get ALL fields including store
+              .eq('id', requestId)
+              .single();
+            
+            if (fetchError) {
+              console.error('Error fetching request store:', fetchError);
+              throw fetchError;
+            }
+            
+            const storeForThisRequest = requestData.store;
+            console.log(`📦 Processing request ${requestId} for store: ${storeForThisRequest}`);
+            
+            // ✅ CRITICAL: If store is null/undefined, skip this request
+            if (!storeForThisRequest) {
+              console.error(`❌ Request ${requestId} has no store associated!`);
+              throw new Error(`Request ${requestId} has no store associated. Please submit again.`);
+            }
+            
+            // ✅ Find the store's slot number - REFRESH from Supabase to ensure we have latest data
+            const { data: storeData, error: storeError } = await supabase
+              .from('stores')
+              .select('*')
+              .eq('store_id', storeForThisRequest)
+              .maybeSingle();
+            
+            if (storeError) {
+              console.error('Error fetching store data:', storeError);
+              throw storeError;
+            }
+            
+            if (!storeData) {
+              console.error(`❌ Store ${storeForThisRequest} not found!`);
+              throw new Error(`Store ${storeForThisRequest} not found. Please refresh and try again.`);
+            }
+            
+            // ✅ Use the fresh store data
+            const storeObj = storeData;
+            let stockColumn = `stock_${storeForThisRequest}`; // Default for old stores
+            
+            if (storeObj && storeObj.slot_number) {
+              const slotNumStr = String(storeObj.slot_number).padStart(2, '0');
+              stockColumn = `stock_store_${slotNumStr}`;
+              console.log(`📦 Using slot-based stock column: ${stockColumn}`);
+            } else {
+              console.log(`📦 Using fallback stock column: ${stockColumn}`);
+            }
+            
+            // Track this store for refresh
+            if (!storeUpdates[storeForThisRequest]) {
+              storeUpdates[storeForThisRequest] = {
+                storeName: storeObj.name || storeForThisRequest,
+                items: []
+              };
+            }
+            
             // ✅ Update each product's stock for the specific store
             for (const item of items) {
-              const stockColumn = `stock_${store}`;
+              console.log(`📦 Updating stock for product ${item.product_id}: ${item.current_stock} → ${item.counted_stock} at store ${storeForThisRequest}`);
               
-              // Update the product in Supabase
+              const updateData = {};
+              updateData[stockColumn] = item.counted_stock;
+              
               const { error } = await supabase
                 .from('products')
-                .update({ [stockColumn]: item.counted_stock })
+                .update(updateData)
                 .eq('id', item.product_id);
               
               if (error) {
@@ -9152,17 +9604,23 @@ async function approveStoreGroup(groupId, modal) {
                 throw new Error(`Failed to update product: ${error.message}`);
               }
               
-              // Update local product cache
+              // ✅ Update local product cache
               const localProduct = products.find(p => p.id == item.product_id);
               if (localProduct) {
-                localProduct.stock = item.counted_stock;
+                // Always update the store-specific stock column
                 localProduct[stockColumn] = item.counted_stock;
+                // If the store being updated is the current store, update the main stock
+                if (storeForThisRequest === currentStore) {
+                  localProduct.stock = item.counted_stock;
+                }
+                console.log(`✅ Local product updated: ${localProduct.name} → ${stockColumn}: ${localProduct[stockColumn]}`);
+                storeUpdates[storeForThisRequest].items.push(localProduct.name);
               }
               
               successCount++;
             }
             
-            // ✅ Update the request status
+            // Update the request status to approved
             const { error } = await supabase
               .from('stock_take_requests')
               .update({
@@ -9177,6 +9635,8 @@ async function approveStoreGroup(groupId, modal) {
               console.error(`❌ Error updating request ${requestId}:`, error);
             }
             
+            console.log(`✅ Request ${requestId} approved successfully for store ${storeForThisRequest}`);
+            
           } catch (err) {
             failCount += items.length;
             errors.push(`Category "${category}": ${err.message}`);
@@ -9184,17 +9644,38 @@ async function approveStoreGroup(groupId, modal) {
           }
         }
         
-        // Show result
-        await showAlertModal('✅ Approval Complete', 
-          `<div style="text-align:left;">
+        hideLoading();
+        
+        // ✅ Build store info for display
+        const storeNamesList = Object.keys(storeUpdates).map(s => storeUpdates[s].storeName).join(', ');
+        const storeDetails = Object.entries(storeUpdates).map(([storeId, data]) => {
+          return `🏪 ${data.storeName}: ${data.items.length} item(s)`;
+        }).join('\n');
+        
+        // ✅ SHOW APPROVAL RESULT MODAL
+        const resultOverlay = document.createElement('div');
+        resultOverlay.className = 'modal-overlay';
+        resultOverlay.style.display = 'flex';
+        resultOverlay.style.zIndex = '999999';
+        resultOverlay.style.background = 'rgba(0,0,0,0.8)';
+        resultOverlay.style.backdropFilter = 'blur(4px)';
+        resultOverlay.style.position = 'fixed';
+        resultOverlay.style.top = '0';
+        resultOverlay.style.left = '0';
+        resultOverlay.style.width = '100%';
+        resultOverlay.style.height = '100%';
+        resultOverlay.style.alignItems = 'center';
+        resultOverlay.style.justifyContent = 'center';
+        resultOverlay.innerHTML = `
+          <div class="modal-container" style="max-width: 550px; border-radius: 24px; padding: 28px; z-index: 999999; position: relative; box-shadow: 0 24px 64px rgba(0,0,0,0.4); background: white;">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
               <span style="font-size:2.5rem;">📋</span>
               <div>
-                <div style="font-weight:600; color:#0f172a; font-size:1.2rem;">${failCount === 0 ? 'Stock Take Approved' : 'Partially Approved'}</div>
-                <div style="font-size:0.9rem; color:#64748b;">Store: ${store}</div>
+                <div style="font-weight:600; color:#0f172a; font-size:1.3rem;">${failCount === 0 ? '✅ Stock Take Approved' : '⚠️ Partially Approved'}</div>
+                <div style="font-size:0.9rem; color:#64748b;">${Object.keys(storeUpdates).length} store(s) updated</div>
               </div>
             </div>
-            <div style="background:#f0fdf4; border-radius:12px; padding:16px 20px; border-left:4px solid #059669;">
+            <div style="background:#f0fdf4; border-radius:12px; padding:16px 20px; border-left:4px solid #059669; margin-bottom:12px;">
               <div style="display:flex; justify-content:space-between; padding:4px 0;">
                 <span style="color:#64748b;">✅ Approved Items</span>
                 <span style="font-weight:700; color:#059669;">${successCount}</span>
@@ -9206,59 +9687,104 @@ async function approveStoreGroup(groupId, modal) {
                 </div>
               ` : ''}
             </div>
+            <div style="background:#f8fafc; border-radius:8px; padding:12px 16px; margin-top:12px; border:1px solid #e2e8f0;">
+              <div style="font-weight:500; color:#1e293b; font-size:0.85rem;">📂 Stores Updated:</div>
+              <div style="color:#475569; font-size:0.9rem; margin-top:4px; white-space:pre-line;">${storeDetails || 'N/A'}</div>
+            </div>
             ${errors.length > 0 ? `
               <div style="background:#fef2f2; border-radius:8px; padding:12px 16px; margin-top:12px; border:1px solid #fecaca;">
                 <div style="font-weight:500; color:#dc2626; font-size:0.85rem;">⚠️ Errors:</div>
                 ${errors.map(err => `<div style="color:#475569; font-size:0.85rem; padding:2px 0;">• ${escapeHtml(err)}</div>`).join('')}
               </div>
             ` : ''}
-          </div>`
-        );
+            <div style="margin-top:16px; padding:12px 16px; background:#eff6ff; border-radius:8px; color:#1e40af; font-size:0.9rem; text-align:center;">
+              🔄 Click OK to refresh and see updated stock levels
+            </div>
+            <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:20px; padding-top:16px; border-top:1px solid #e2e8f0;">
+              <button id="resultOkBtn" class="modal-btn modal-btn-primary" style="padding: 12px 40px; font-size: 1.1rem; background: #059669; color: white; border: none; border-radius: 40px; cursor: pointer; font-weight: 600;">
+                ✅ OK
+              </button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(resultOverlay);
         
-        hideLoading();
+        // Wait for user to click OK
+        await new Promise((resultResolve) => {
+          const okBtn = resultOverlay.querySelector('#resultOkBtn');
+          const closeResult = () => {
+            resultOverlay.remove();
+            resultResolve();
+          };
+          okBtn.addEventListener('click', closeResult);
+          resultOverlay.addEventListener('click', (e) => {
+            if (e.target === resultOverlay) closeResult();
+          });
+        });
         
-        // ✅ FORCE REFRESH: Reload the stock take approval list
-        console.log('🔄 Refreshing stock take approval list after approval...');
-        showLoading('Refreshing stock take list...');
+        // ✅ PERFORM REFRESH
+        console.log('🔄 User clicked OK - performing refresh...');
+        showLoading('Refreshing data...');
         
-        // Clear caches
+        // ✅ CRITICAL: Clear ALL caches for ALL stores
         if (window._stockTakeCache) {
           delete window._stockTakeCache;
         }
         storeReportCache = {};
         
-        // Refresh products from Supabase
+        // Clear cache for ALL stores (not just affected ones)
+        // This ensures we get fresh data for all stores
+        const allStoreIds = stores.map(s => s.store_id);
+        allStoreIds.forEach(storeId => {
+          localStorage.removeItem(`products_${storeId}`);
+        });
+        localStorage.removeItem(`products_${currentStore}`);
+        
+        // ✅ Force refresh the stores array from Supabase
+        await fetchStores(true);
+        
+        // Fetch fresh products from Supabase
         await fetchProductsFromSheet(true);
+        
+        // Render the product grid
         renderProductGrid();
         
-        // ✅ Find the approval modal and refresh it
-        const approvalModals = document.querySelectorAll('.modal-overlay');
-        let targetModal = null;
-        for (const m of approvalModals) {
-          if (m.style.display !== 'none' && m.querySelector('#stockTakeRequestsList')) {
-            targetModal = m;
-            break;
-          }
+        // If stock take mode is active, render stock take grid
+        if (stockTakeMode) {
+          renderStockTakeProductGrid();
         }
+        
+        // Find and refresh the approval modal
+        const targetModal = findStockTakeApprovalModal();
         
         if (targetModal) {
-          // Refresh the list in the existing modal
-          await loadPendingStockTakeRequests(targetModal);
-          console.log('✅ Stock take approval list refreshed in existing modal');
-        } else {
-          // If no modal is open, but stock take mode is active, refresh the grid
-          if (stockTakeMode) {
-            renderStockTakeProductGrid();
+          console.log('🔄 Refreshing approval list in existing modal...');
+          const list = targetModal.querySelector('#stockTakeRequestsList');
+          if (list) {
+            list.innerHTML = '<div style="text-align:center; padding:20px;">🔄 Refreshing...</div>';
           }
-          console.log('ℹ️ No approval modal found, but stock take view refreshed if active');
+          await loadPendingStockTakeRequests(targetModal);
+          console.log('✅ Stock take approval list refreshed');
+          attachStockTakeApprovalEvents(targetModal);
         }
         
+        // Update sync status
+        updateSyncStatus(true, Date.now());
+        
         hideLoading();
+        
+        // ✅ FINAL CONFIRMATION with store details
+        await showAlertModal('✅ Stock Updated', 
+          `${successCount} product(s) stock has been updated successfully!\n\n` +
+          `Updated ${Object.keys(storeUpdates).length} store(s):\n` +
+          `${storeDetails}\n\n` +
+          `The approval list has been refreshed.`
+        );
         
       } catch (err) {
         console.error('Approval error:', err);
-        await showAlertModal('Error', 'Failed to approve selected items: ' + err.message);
         hideLoading();
+        await showAlertModal('Error', 'Failed to approve selected items: ' + err.message);
       }
     };
     
@@ -9271,7 +9797,6 @@ async function approveStoreGroup(groupId, modal) {
     });
   });
 }
-
 async function rejectStoreGroup(groupId, modal) {
   const selectedItems = getSelectedItemsForGroup(groupId);
   
@@ -9295,11 +9820,18 @@ async function rejectStoreGroup(groupId, modal) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.style.display = 'flex';
-    overlay.style.zIndex = '9999';
-    overlay.style.background = 'rgba(0,0,0,0.7)';
+    overlay.style.zIndex = '99999';
+    overlay.style.background = 'rgba(0,0,0,0.8)';
     overlay.style.backdropFilter = 'blur(4px)';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
     overlay.innerHTML = `
-      <div class="modal-container" style="max-width: 600px; border-radius: 24px; padding: 0; overflow: hidden;">
+      <div class="modal-container" style="max-width: 600px; border-radius: 24px; padding: 0; overflow: hidden; z-index: 99999; position: relative; box-shadow: 0 24px 64px rgba(0,0,0,0.4);">
         <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 24px 28px; display: flex; align-items: center; gap: 16px;">
           <div style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0;">
             ❌
@@ -9390,17 +9922,51 @@ async function rejectStoreGroup(groupId, modal) {
         let errors = [];
         let updatedRequests = new Set();
         
+        // ✅ Track which stores are affected
+        const storeAffected = {};
+        
         for (const [requestId, items] of Object.entries(groupedByRequest)) {
           try {
+            // ✅ Get the request details to find which store this is for
             const { data: requestData, error: fetchError } = await supabase
               .from('stock_take_requests')
-              .select('*')
+              .select('*')  // ✅ Get ALL fields including store
               .eq('id', requestId)
               .single();
             
             if (fetchError) {
-              console.error('Error fetching request:', fetchError);
+              console.error('Error fetching request store:', fetchError);
               throw fetchError;
+            }
+            
+            const storeForThisRequest = requestData.store;
+            console.log(`📦 Processing rejection request ${requestId} for store: ${storeForThisRequest}`);
+            
+            // ✅ CRITICAL: If store is null/undefined, skip this request
+            if (!storeForThisRequest) {
+              console.error(`❌ Request ${requestId} has no store associated!`);
+              throw new Error(`Request ${requestId} has no store associated. Please submit again.`);
+            }
+            
+            // ✅ Get the store name for display
+            const { data: storeData, error: storeError } = await supabase
+              .from('stores')
+              .select('name')
+              .eq('store_id', storeForThisRequest)
+              .maybeSingle();
+            
+            if (storeError) {
+              console.error('Error fetching store name:', storeError);
+            }
+            
+            const storeName = storeData ? storeData.name : storeForThisRequest;
+            
+            // Track this store
+            if (!storeAffected[storeForThisRequest]) {
+              storeAffected[storeForThisRequest] = {
+                storeName: storeName,
+                items: []
+              };
             }
             
             let requestItems = requestData.items;
@@ -9416,6 +9982,10 @@ async function rejectStoreGroup(groupId, modal) {
             const remainingItems = requestItems.filter(item => !productIdsToReject.has(item.product_id));
             
             console.log(`📋 Request ${requestId}: ${requestItems.length} items total, ${items.length} to reject, ${remainingItems.length} remaining`);
+            
+            // Track rejected items for this store
+            const rejectedItems = items.map(item => item.product_name || 'Unknown');
+            storeAffected[storeForThisRequest].items.push(...rejectedItems);
             
             if (remainingItems.length === 0) {
               const { error: updateError } = await supabase
@@ -9446,6 +10016,8 @@ async function rejectStoreGroup(groupId, modal) {
               successCount += items.length;
             }
             
+            console.log(`✅ Request ${requestId} rejected successfully for store ${storeForThisRequest}`);
+            
           } catch (err) {
             console.error(`Error processing request ${requestId}:`, err);
             failCount += items.length;
@@ -9453,17 +10025,37 @@ async function rejectStoreGroup(groupId, modal) {
           }
         }
         
-        // Show result
-        await showAlertModal('✅ Rejection Complete', 
-          `<div style="text-align:left;">
+        hideLoading();
+        
+        // ✅ Build store info for display
+        const storeDetails = Object.entries(storeAffected).map(([storeId, data]) => {
+          return `🏪 ${data.storeName}: ${data.items.length} item(s) rejected`;
+        }).join('\n');
+        
+        // ✅ SHOW REJECTION RESULT MODAL
+        const resultOverlay = document.createElement('div');
+        resultOverlay.className = 'modal-overlay';
+        resultOverlay.style.display = 'flex';
+        resultOverlay.style.zIndex = '999999';
+        resultOverlay.style.background = 'rgba(0,0,0,0.8)';
+        resultOverlay.style.backdropFilter = 'blur(4px)';
+        resultOverlay.style.position = 'fixed';
+        resultOverlay.style.top = '0';
+        resultOverlay.style.left = '0';
+        resultOverlay.style.width = '100%';
+        resultOverlay.style.height = '100%';
+        resultOverlay.style.alignItems = 'center';
+        resultOverlay.style.justifyContent = 'center';
+        resultOverlay.innerHTML = `
+          <div class="modal-container" style="max-width: 550px; border-radius: 24px; padding: 28px; z-index: 999999; position: relative; box-shadow: 0 24px 64px rgba(0,0,0,0.4); background: white;">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
               <span style="font-size:2.5rem;">📋</span>
               <div>
-                <div style="font-weight:600; color:#0f172a; font-size:1.2rem;">${failCount === 0 ? 'All Items Rejected Successfully' : 'Partial Rejection'}</div>
-                <div style="font-size:0.9rem; color:#64748b;">${totalItems} item(s) processed</div>
+                <div style="font-weight:600; color:#0f172a; font-size:1.3rem;">${failCount === 0 ? '✅ All Items Rejected' : '⚠️ Partially Rejected'}</div>
+                <div style="font-size:0.9rem; color:#64748b;">${Object.keys(storeAffected).length} store(s) affected</div>
               </div>
             </div>
-            <div style="background:#fef2f2; border-radius:12px; padding:16px 20px; border-left:4px solid #ef4444;">
+            <div style="background:#fef2f2; border-radius:12px; padding:16px 20px; border-left:4px solid #ef4444; margin-bottom:12px;">
               <div style="display:flex; justify-content:space-between; padding:4px 0;">
                 <span style="color:#64748b;">❌ Rejected Items</span>
                 <span style="font-weight:700; color:#dc2626;">${successCount}</span>
@@ -9476,6 +10068,10 @@ async function rejectStoreGroup(groupId, modal) {
               ` : ''}
             </div>
             <div style="background:#f8fafc; border-radius:8px; padding:12px 16px; margin-top:12px; border:1px solid #e2e8f0;">
+              <div style="font-weight:500; color:#1e293b; font-size:0.85rem;">📂 Stores Affected:</div>
+              <div style="color:#475569; font-size:0.9rem; margin-top:4px; white-space:pre-line;">${storeDetails || 'N/A'}</div>
+            </div>
+            <div style="background:#f8fafc; border-radius:8px; padding:12px 16px; margin-top:12px; border:1px solid #e2e8f0;">
               <div style="font-weight:500; color:#1e293b; font-size:0.85rem;">📝 Rejection Reason:</div>
               <div style="color:#475569; font-size:0.9rem; margin-top:4px;">${escapeHtml(reason)}</div>
             </div>
@@ -9485,53 +10081,94 @@ async function rejectStoreGroup(groupId, modal) {
                 ${errors.map(err => `<div style="color:#475569; font-size:0.85rem; padding:2px 0;">• ${escapeHtml(err)}</div>`).join('')}
               </div>
             ` : ''}
-          </div>`
-        );
+            <div style="margin-top:16px; padding:12px 16px; background:#eff6ff; border-radius:8px; color:#1e40af; font-size:0.9rem; text-align:center;">
+              🔄 Click OK to refresh and see updated list
+            </div>
+            <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:20px; padding-top:16px; border-top:1px solid #e2e8f0;">
+              <button id="resultOkBtnReject" class="modal-btn modal-btn-primary" style="padding: 12px 40px; font-size: 1.1rem; background: #dc2626; color: white; border: none; border-radius: 40px; cursor: pointer; font-weight: 600;">
+                ✅ OK
+              </button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(resultOverlay);
         
-        hideLoading();
+        // ✅ Wait for user to click OK
+        await new Promise((resultResolve) => {
+          const okBtn = resultOverlay.querySelector('#resultOkBtnReject');
+          const closeResult = () => {
+            resultOverlay.remove();
+            resultResolve();
+          };
+          okBtn.addEventListener('click', closeResult);
+          resultOverlay.addEventListener('click', (e) => {
+            if (e.target === resultOverlay) closeResult();
+          });
+        });
         
-        // ✅ FORCE REFRESH: Reload the stock take approval list
-        console.log('🔄 Refreshing stock take approval list after rejection...');
-        showLoading('Refreshing stock take list...');
+        // ✅ PERFORM REFRESH
+        console.log('🔄 User clicked OK - performing refresh...');
+        showLoading('Refreshing data...');
         
-        // Clear caches
+        // ✅ CRITICAL: Clear ALL caches for ALL stores
         if (window._stockTakeCache) {
           delete window._stockTakeCache;
         }
         storeReportCache = {};
         
-        // Refresh products from Supabase
+        // Clear cache for ALL stores
+        const allStoreIds = stores.map(s => s.store_id);
+        allStoreIds.forEach(storeId => {
+          localStorage.removeItem(`products_${storeId}`);
+        });
+        localStorage.removeItem(`products_${currentStore}`);
+        
+        // ✅ Force refresh the stores array from Supabase
+        await fetchStores(true);
+        
+        // Fetch fresh products from Supabase
         await fetchProductsFromSheet(true);
+        
+        // Render the product grid
         renderProductGrid();
         
-        // ✅ Find the approval modal and refresh it
-        const approvalModals = document.querySelectorAll('.modal-overlay');
-        let targetModal = null;
-        for (const m of approvalModals) {
-          if (m.style.display !== 'none' && m.querySelector('#stockTakeRequestsList')) {
-            targetModal = m;
-            break;
-          }
+        // If stock take mode is active, render stock take grid
+        if (stockTakeMode) {
+          renderStockTakeProductGrid();
         }
+        
+        // Find and refresh the approval modal
+        const targetModal = findStockTakeApprovalModal();
         
         if (targetModal) {
-          // Refresh the list in the existing modal
-          await loadPendingStockTakeRequests(targetModal);
-          console.log('✅ Stock take approval list refreshed in existing modal');
-        } else {
-          // If no modal is open, but stock take mode is active, refresh the grid
-          if (stockTakeMode) {
-            renderStockTakeProductGrid();
+          console.log('🔄 Refreshing approval list in existing modal...');
+          const list = targetModal.querySelector('#stockTakeRequestsList');
+          if (list) {
+            list.innerHTML = '<div style="text-align:center; padding:20px;">🔄 Refreshing...</div>';
           }
-          console.log('ℹ️ No approval modal found, but stock take view refreshed if active');
+          await loadPendingStockTakeRequests(targetModal);
+          console.log('✅ Stock take approval list refreshed');
+          attachStockTakeApprovalEvents(targetModal);
         }
         
+        // Update sync status
+        updateSyncStatus(true, Date.now());
+        
         hideLoading();
+        
+        // ✅ FINAL CONFIRMATION with store details
+        await showAlertModal('✅ Rejection Complete', 
+          `${successCount} item(s) have been rejected.\n\n` +
+          `Affected ${Object.keys(storeAffected).length} store(s):\n` +
+          `${storeDetails}\n\n` +
+          `Reason: ${reason}\n\n` +
+          `The approval list has been refreshed.`
+        );
         
       } catch (err) {
         console.error('Rejection error:', err);
-        await showAlertModal('Error', 'Failed to reject selected items: ' + err.message);
         hideLoading();
+        await showAlertModal('Error', 'Failed to reject selected items: ' + err.message);
       }
     };
     
@@ -9551,7 +10188,22 @@ async function rejectStoreGroup(groupId, modal) {
     });
   });
 }
-
+function findStockTakeApprovalModal() {
+  // Check all open modals
+  const modals = document.querySelectorAll('.modal-overlay');
+  for (const m of modals) {
+    // Check if it has the stock take requests list
+    if (m.querySelector('#stockTakeRequestsList') && m.style.display !== 'none') {
+      return m;
+    }
+    // Also check by content (as a fallback)
+    const container = m.querySelector('.modal-container');
+    if (container && container.textContent.includes('Stock Take Approvals') && m.style.display !== 'none') {
+      return m;
+    }
+  }
+  return null;
+}
 // ==================== REPORT FUNCTIONS ====================
 
 // Cache for reports
@@ -10116,9 +10768,17 @@ function renderProductDetails(productsData) {
   tbody.innerHTML = html;
 }
 
-function updateStoreCard(storeName, salesReport, empData) {
-  const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
+function updateStoreCard(storeId, salesReport, empData) {
+  // ✅ Find the card by store ID
+  const card = document.querySelector(`.store-summary-card[data-store="${storeId}"]`);
   if (!card || !salesReport) return;
+  
+  // ✅ Get the store name dynamically
+  const store = stores.find(s => s.store_id === storeId);
+  const storeName = store ? store.name : storeId;
+  const emoji = getStoreEmoji(storeId);
+  
+  card.querySelector('.store-name').innerHTML = `${emoji} ${escapeHtml(storeName)}`;
   card.querySelector('.store-total').innerHTML = `Total Sales: RM ${salesReport.totalSales.toFixed(2)}`;
   card.querySelector('.store-cash').innerHTML = `💵 Cash: RM ${salesReport.cashTotal.toFixed(2)}`;
   card.querySelector('.store-card').innerHTML = `💳 Card: RM ${salesReport.cardTotal.toFixed(2)}`;
@@ -10191,7 +10851,17 @@ function getStoreCardData(storeName) {
   };
 }
 
-const storeOrder = ['queens', 'sunshine', 'gurney_paragon'];
+// Dynamic store order from Supabase
+let storeOrder = [];
+
+// ============================================================
+// UPDATE STORE ORDER (For Swipeable Cards)
+// ============================================================
+
+function updateStoreOrder() {
+  storeOrder = stores.map(s => s.store_id);
+  console.log('📋 Updated store order:', storeOrder);
+}
 let currentCardIndex = 0;
 let touchStartX = 0;
 let touchEndX = 0;
@@ -10366,17 +11036,20 @@ async function updateAdminReport(forceRefresh = false) {
   const storeBreakdownDiv = document.getElementById('storeBreakdownContainer');
   if (currentEmployee.isAdmin) {
     storeBreakdownDiv.style.display = 'block';
-    const stores = ['queens', 'sunshine', 'gurney_paragon'];
+    
+    // ✅ DYNAMIC: Get all active stores
+    const activeStores = stores.filter(s => s.is_active !== false);
+    const storeIds = activeStores.map(s => s.store_id);
 
     let needFetch = forceRefresh;
-    for (const storeName of stores) {
-      const cached = await getCachedStoreReport(storeName, from, to);
+    for (const storeId of storeIds) {
+      const cached = await getCachedStoreReport(storeId, from, to);
       if (!cached) needFetch = true;
     }
 
     if (needFetch) {
-      stores.forEach(storeName => {
-        const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
+      storeIds.forEach(storeId => {
+        const card = document.querySelector(`.store-summary-card[data-store="${storeId}"]`);
         if (card) {
           card.querySelector('.store-total').innerHTML = '<span class="report-loading-spinner" style="width:16px;height:16px;"></span> Loading...';
           card.querySelector('.store-cash').innerHTML = '💵 Loading...';
@@ -10391,26 +11064,27 @@ async function updateAdminReport(forceRefresh = false) {
         }
       });
     } else {
-      for (const storeName of stores) {
-        const cached = await getCachedStoreReport(storeName, from, to);
+      for (const storeId of storeIds) {
+        const cached = await getCachedStoreReport(storeId, from, to);
         if (cached) {
-          updateStoreCard(storeName, cached.salesReport, cached.employeeData);
+          updateStoreCard(storeId, cached.salesReport, cached.employeeData);
         }
       }
     }
 
-    const fetchStoreData = async (storeName) => {
+    // Fetch data for all stores in parallel
+    const fetchStoreData = async (storeId) => {
       const [salesReport, empData] = await Promise.all([
-        fetchSalesReport(storeName, 'all', from, to, false, true),
-        fetchEmployeeSalesData(storeName, from, to)
+        fetchSalesReport(storeId, 'all', from, to, false, true),
+        fetchEmployeeSalesData(storeId, from, to)
       ]);
-      return { storeName, salesReport, empData };
+      return { storeId, salesReport, empData };
     };
 
-    const results = await Promise.all(stores.map(fetchStoreData));
-    for (const { storeName, salesReport, empData } of results) {
-      updateStoreCard(storeName, salesReport, empData);
-      setCachedStoreReport(storeName, from, to, { salesReport, employeeData: empData });
+    const results = await Promise.all(storeIds.map(fetchStoreData));
+    for (const { storeId, salesReport, empData } of results) {
+      updateStoreCard(storeId, salesReport, empData);
+      setCachedStoreReport(storeId, from, to, { salesReport, employeeData: empData });
     }
     attachStoreCardClickListeners();
   } else {
@@ -10449,24 +11123,42 @@ async function openReportsModal() {
 
     const allStatItems = document.querySelectorAll('#adminReportModal .stat-item');
     allStatItems.forEach(item => item.style.display = 'flex');
- } else {
-  if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
-  if (reportFiltersDiv) reportFiltersDiv.style.display = 'none';
-  const nonAdminCardsDiv = document.getElementById('nonAdminStatsCards');
-  if (nonAdminCardsDiv) nonAdminCardsDiv.style.display = 'block';
-  if (productToggle) productToggle.style.display = 'block';
-  if (nonAdminDateRangeDiv) nonAdminDateRangeDiv.style.display = 'block';
-
-  hidePaymentRowsForNonAdmin();
-
-  // ✅ Change the label for non-admin
-  const totalSalesStatItem = document.querySelector('#adminReportModal .stat-item:first-child');
-  if (totalSalesStatItem) {
-    const labelSpan = totalSalesStatItem.querySelector('span:first-child');
-    if (labelSpan) {
-      labelSpan.innerText = '👤 My Sales (All Stores):';
+    
+    // ✅ DYNAMIC: Populate store dropdown with all active stores
+    const adminReportStoreSelect = document.getElementById('adminReportStoreSelect');
+    if (adminReportStoreSelect) {
+      const currentValue = adminReportStoreSelect.value;
+      adminReportStoreSelect.innerHTML = '<option value="all">All Stores</option>';
+      const activeStores = stores.filter(s => s.is_active !== false);
+      activeStores.forEach(store => {
+        const option = document.createElement('option');
+        option.value = store.store_id;
+        option.textContent = store.name;
+        adminReportStoreSelect.appendChild(option);
+      });
+      // Restore selection if possible
+      if (currentValue && Array.from(adminReportStoreSelect.options).some(opt => opt.value === currentValue)) {
+        adminReportStoreSelect.value = currentValue;
+      }
     }
-  }
+  } else {
+    if (storeBreakdownDiv) storeBreakdownDiv.style.display = 'none';
+    if (reportFiltersDiv) reportFiltersDiv.style.display = 'none';
+    const nonAdminCardsDiv = document.getElementById('nonAdminStatsCards');
+    if (nonAdminCardsDiv) nonAdminCardsDiv.style.display = 'block';
+    if (productToggle) productToggle.style.display = 'block';
+    if (nonAdminDateRangeDiv) nonAdminDateRangeDiv.style.display = 'block';
+
+    hidePaymentRowsForNonAdmin();
+
+    // ✅ Change the label for non-admin
+    const totalSalesStatItem = document.querySelector('#adminReportModal .stat-item:first-child');
+    if (totalSalesStatItem) {
+      const labelSpan = totalSalesStatItem.querySelector('span:first-child');
+      if (labelSpan) {
+        labelSpan.innerText = '👤 My Sales (All Stores):';
+      }
+    }
 
     const rangeSelect = document.getElementById('nonAdminDateRangeSelect');
     const customDiv = document.getElementById('nonAdminCustomDateRange');
@@ -10526,35 +11218,60 @@ async function openReportsModal() {
     hidePaymentRowsForNonAdmin();
   }
 
+  // ✅ DYNAMIC: Render store summary cards for all active stores
   if (currentEmployee.isAdmin) {
-    if (preloadedReportCache && preloadedReportCache.from === todayStr) {
-      const totals = preloadedReportCache.totals;
-      document.getElementById('adminReportTotalSales').innerText = `RM ${totals.totalSales.toFixed(2)}`;
-      document.getElementById('adminReportCashTotal').innerText = `RM ${totals.cashTotal.toFixed(2)}`;
-      document.getElementById('adminReportCardTotal').innerText = `RM ${totals.cardTotal.toFixed(2)}`;
-      document.getElementById('adminReportQRTotal').innerText = `RM ${totals.otherTotal.toFixed(2)}`;
-      document.getElementById('adminReportAlipayTotal').innerText = `RM ${totals.alipayTotal.toFixed(2)}`;
-      document.getElementById('adminReportRefundTotal').innerText = `RM ${Math.abs(totals.refundTotal).toFixed(2)}`;
-      document.getElementById('adminReportRefundedBills').innerText = totals.refundedTransactionCount || 0;
-      document.getElementById('adminReportTransactionCount').innerText = totals.transactionCount || 0;
-      document.getElementById('adminReportTotalItems').innerText = totals.totalItems || 0;
+    const storeBreakdownContainer = document.getElementById('storeBreakdownContainer');
+    if (storeBreakdownContainer) {
+      // Get the div that contains the store cards
+      const cardsContainer = storeBreakdownContainer.querySelector('div[style*="display: flex; flex-wrap: wrap;"]');
+      if (cardsContainer) {
+        // Clear existing cards and render new ones
+        cardsContainer.innerHTML = '';
+        const activeStores = stores.filter(s => s.is_active !== false);
+        activeStores.forEach(store => {
+          const emoji = getStoreEmoji(store.store_id);
+          const card = document.createElement('div');
+          card.className = 'store-summary-card';
+          card.dataset.store = store.store_id;
+          card.innerHTML = `
+            <div class="store-name">${emoji} ${escapeHtml(store.name)}</div>
+            <div class="store-total">Total Sales: RM 0.00</div>
+            <div class="store-cash">💵 Cash: RM 0.00</div>
+            <div class="store-card">💳 Card: RM 0.00</div>
+            <div class="store-qr">📱 QR Pay: RM 0.00</div>
+            <div class="store-alipay">💸 Alipay: RM 0.00</div>
+            <div class="store-refund">❌ Refunds: RM 0.00</div>
+            <div class="store-refunded-bills">📄 Refunded Bills: 0</div>
+            <div class="store-transactions">Transactions: 0</div>
+            <div class="store-items-sold">Items Sold: 0</div>
+            <div class="store-employee-sales">
+              <h4>👥 Employee Sales</h4>
+              <div class="employee-list"></div>
+            </div>
+          `;
+          cardsContainer.appendChild(card);
+        });
+      }
     }
   }
 
+  // Preload report data for all stores
   if (currentEmployee.isAdmin) {
     const todayUTC = new Date();
     todayUTC.setUTCHours(0, 0, 0, 0);
     const from = getUTCDateString(todayUTC);
     const to = from;
-    const stores = ['queens', 'sunshine', 'gurney_paragon'];
+    
+    const activeStores = stores.filter(s => s.is_active !== false);
     let anyMissing = false;
-    for (const storeName of stores) {
-      const cached = await getCachedStoreReport(storeName, from, to);
+    
+    for (const store of activeStores) {
+      const cached = await getCachedStoreReport(store.store_id, from, to);
       if (cached) {
-        updateStoreCard(storeName, cached.salesReport, cached.employeeData);
+        updateStoreCard(store.store_id, cached.salesReport, cached.employeeData);
       } else {
         anyMissing = true;
-        const card = document.querySelector(`.store-summary-card[data-store="${storeName}"]`);
+        const card = document.querySelector(`.store-summary-card[data-store="${store.store_id}"]`);
         if (card) {
           card.querySelector('.store-total').innerHTML = '<span class="report-loading-spinner"></span> Loading...';
           card.querySelector('.store-cash').innerHTML = '💵 Loading...';
@@ -10569,6 +11286,7 @@ async function openReportsModal() {
         }
       }
     }
+    
     if (!anyMissing) {
       const loadingMsgElem = document.getElementById('adminReportLoadingMsg');
       if (loadingMsgElem) loadingMsgElem.style.display = 'none';
@@ -10599,6 +11317,7 @@ async function openReportsModal() {
     }, 500);
   }
 
+  // ✅ Populate employee dropdowns
   if (currentEmployee.isAdmin) {
     const employees = await fetchEmployees();
     const adminReportEmpSelect = document.getElementById('adminReportEmployeeSelect');
@@ -10758,7 +11477,48 @@ async function updateNonAdminReport(from, to) {
     renderProductDetails(productData);
   }
 }
+// ============================================================
+// HELPER - GET STORE NAME DYNAMICALLY
+// ============================================================
 
+function getStoreName(storeId) {
+  const store = stores.find(s => s.store_id === storeId);
+  return store ? store.name : storeId;
+}
+
+function getStoreEmoji(storeId) {
+  const emojiMap = {
+    'queens': '🏬',
+    'sunshine': '☀️',
+    'gurney_paragon': '🏙️'
+  };
+  return emojiMap[storeId] || '🏪';
+}
+
+function getStoreNamesObject() {
+  const names = {};
+  stores.forEach(s => {
+    names[s.store_id] = s.name;
+  });
+  return names;
+}
+
+function getStoreCoordsObject() {
+  const coords = {};
+  stores.forEach(s => {
+    if (s.latitude && s.longitude) {
+      coords[s.store_id] = {
+        lat: parseFloat(s.latitude),
+        lng: parseFloat(s.longitude)
+      };
+    }
+  });
+  return coords;
+}
+
+function getStoreIds() {
+  return stores.map(s => s.store_id);
+}
 async function updateNonAdminStatsCards(from, to) {
   if (!currentEmployee || currentEmployee.isAdmin) return;
   
@@ -10776,14 +11536,11 @@ async function updateNonAdminStatsCards(from, to) {
     storeTotalElem.innerText = 'RM ' + storeTotals.totalSales.toFixed(2);
     console.log('Store total for ' + store + ': RM ' + storeTotals.totalSales.toFixed(2));
   }
-  if (storeNameElem) {
-    const storeNames = {
-      queens: 'Queens',
-      sunshine: 'Sunshine',
-      gurney_paragon: 'Gurney Paragon'
-    };
-    storeNameElem.innerText = storeNames[store] || store;
-  }
+if (storeNameElem) {
+  const store = stores.find(s => s.store_id === currentStore);
+  const storeName = store ? store.name : currentStore;
+  storeNameElem.innerText = storeName;
+}
   
   // ✅ My Sales = Employee sales across ALL stores, EXCLUDING refunds
   try {
@@ -10926,18 +11683,15 @@ function populateStoreSelects() {
   if (receiptsStore) {
     // ✅ For non-admin, only show their store
     if (currentEmployee && !currentEmployee.isAdmin) {
-      const storeNames = {
-        queens: '🏬 Queens',
-        sunshine: '☀️ Sunshine',
-        gurney_paragon: '🏙️ Gurney Paragon'
-      };
+  const store = stores.find(s => s.store_id === currentStore);
+  const storeName = store ? store.name : currentStore;
       receiptsStore.innerHTML = '';
       const opt = document.createElement('option');
       opt.value = currentStore;
-      opt.textContent = storeNames[currentStore] || currentStore;
+      opt.textContent = storeName;
       receiptsStore.appendChild(opt);
       receiptsStore.disabled = true;
-    } else {
+} else {
       // Admin: show all stores
       receiptsStore.innerHTML = '<option value="all">All Stores</option>';
       stores.forEach(s => {
@@ -10987,11 +11741,14 @@ function toggleInventoryMode() {
     if (lowStockBtn) lowStockBtn.style.display = 'inline-flex';
     if (storeFilterBtn) {
       storeFilterBtn.style.display = 'inline-flex';
-      // In inventory mode, default to showing ALL products
       showAllProductsInInventory = true;
       storeFilterBtn.textContent = '📋 Show All Products';
       storeFilterBtn.classList.add('active');
     }
+    
+    // ✅ Refresh the grid and then force checkbox refresh
+    renderProductGrid();
+    setTimeout(refreshInventoryCheckboxes, 200);
   } else {
     cartNormalContent.style.display = 'block';
     stockHistoryContainerDiv.style.display = 'none';
@@ -10999,7 +11756,7 @@ function toggleInventoryMode() {
     if (editProductBtn) editProductBtn.style.display = 'none';
     if (lowStockBtn) lowStockBtn.style.display = 'none';
     if (storeFilterBtn) {
-      storeFilterBtn.style.display = 'none';  // ✅ HIDDEN in sales mode
+      storeFilterBtn.style.display = 'none';
       showAllProductsInInventory = false;
       storeFilterBtn.textContent = storeFilterActive ? '🏪 Store Filter: ON' : '🏪 Store Filter: OFF';
     }
@@ -11009,7 +11766,6 @@ function toggleInventoryMode() {
       renderProductGrid();
     }
     
-    // ✅ SYNC when exiting inventory mode
     if (stockHistory.length > 0) {
       console.log('🔄 Syncing after exiting inventory mode...');
       setTimeout(() => {
@@ -11029,7 +11785,17 @@ async function bulkUpdateStock(productUpdates) {
   console.log(`📦 Bulk updating ${productUpdates.length} products...`);
   
   const store = currentStore;
-  const stockColumn = `stock_${store}`;
+  
+  // Find the current store's slot number
+  const currentStoreObj = stores.find(s => s.store_id === store);
+  let stockColumn = `stock_${store}`; // Fallback for old stores
+  
+  if (currentStoreObj && currentStoreObj.slot_number) {
+    const slotNumStr = String(currentStoreObj.slot_number).padStart(2, '0');
+    stockColumn = `stock_store_${slotNumStr}`;
+    console.log(`📦 Using slot-based stock column: ${stockColumn}`);
+  }
+  
   const updates = [];
   
   for (const update of productUpdates) {
@@ -11049,9 +11815,11 @@ async function bulkUpdateStock(productUpdates) {
     logStockChange(product.id, product.name, product.category, oldStock, newStock, update.delta);
     
     // Prepare for Supabase
+    const updateData = {};
+    updateData[stockColumn] = newStock;
     updates.push({
       id: product.id,
-      [stockColumn]: newStock
+      ...updateData
     });
   }
   
@@ -11281,7 +12049,6 @@ document.getElementById('editProductSelect')?.addEventListener('change', functio
   }
 });
 
-// Add this to your DOMContentLoaded event listener
 document.getElementById('storeFilterToggleBtn').addEventListener('click', function() {
   if (inventoryMode) {
     // In inventory mode: toggle between "Show All" and "Show Store Only"
@@ -11294,6 +12061,17 @@ document.getElementById('storeFilterToggleBtn').addEventListener('click', functi
     toggleStoreFilter();
   }
 });
+
+// ✅ Update toggleStoreFilter() function:
+function toggleStoreFilter() {
+  storeFilterActive = !storeFilterActive;
+  const btn = document.getElementById('storeFilterToggleBtn');
+  if (btn) {
+    btn.textContent = storeFilterActive ? '🏪 Store Filter: ON' : '🏪 Store Filter: OFF';
+    btn.classList.toggle('active', storeFilterActive);
+  }
+  renderProductGrid();
+}
 // Mode toggle buttons
 document.getElementById('addProductModeBtn')?.addEventListener('click', function() {
   showAddProductModal();
@@ -11850,12 +12628,71 @@ async function scheduleStockUpdate(productId, newStock) {
     updateStockOnServer(productId, newStock);
   }, 500);
 }
+// ============================================================
+// GET STORE PREFIX FOR TRANSACTION NUMBERS
+// ============================================================
 
+async function getStorePrefix(storeId) {
+  try {
+    // Find the store in the stores array
+    const store = stores.find(s => s.store_id === storeId);
+    
+    if (store && store.prefix) {
+      console.log(`📋 Using store prefix: ${store.prefix} for ${storeId}`);
+      return store.prefix;
+    }
+    
+    // If store not found or no prefix, generate one based on store ID
+    console.log(`⚠️ No prefix found for ${storeId}, generating one...`);
+    
+    // Generate a prefix from store ID (first 3 letters + 2 digits)
+    const base = storeId.substring(0, 3).toUpperCase();
+    const hash = storeId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const num = String(hash % 90 + 10).padStart(2, '0');
+    const prefix = `${base}${num}`;
+    
+    // If the store exists but has no prefix, update it in the database
+    if (store) {
+      const { error } = await supabase
+        .from('stores')
+        .update({ prefix: prefix })
+        .eq('store_id', storeId);
+      
+      if (error) {
+        console.warn('Failed to update store prefix:', error);
+      } else {
+        console.log(`✅ Generated and saved prefix: ${prefix} for ${storeId}`);
+        // Update the local store object
+        store.prefix = prefix;
+      }
+    }
+    
+    return prefix;
+  } catch (err) {
+    console.error('Error getting store prefix:', err);
+    // Fallback: use store ID first 3 letters + random number
+    const fallbackPrefix = storeId.substring(0, 3).toUpperCase() + String(Math.floor(Math.random() * 90 + 10));
+    console.log(`⚠️ Using fallback prefix: ${fallbackPrefix}`);
+    return fallbackPrefix;
+  }
+}
 async function updateStockOnServer(productId, newStock) {
   try {
+    // Find the current store's slot number
+    const currentStoreObj = stores.find(s => s.store_id === currentStore);
+    let stockColumn = `stock_${currentStore}`; // Fallback for old stores
+    
+    if (currentStoreObj && currentStoreObj.slot_number) {
+      const slotNumStr = String(currentStoreObj.slot_number).padStart(2, '0');
+      stockColumn = `stock_store_${slotNumStr}`;
+    }
+    
+    const updateData = {};
+    updateData[stockColumn] = newStock;
+    
     const { error } = await supabase
       .from('products')
-      .update({ stock: newStock })
+      .update(updateData)
       .eq('id', productId);
     
     if (error) throw error;
@@ -11952,9 +12789,10 @@ function disableBarcodeScanner() {
 // ==================== PRELOAD ====================
 
 async function preloadAllStoresData() {
-  const stores = ["queens", "sunshine", "gurney_paragon"];
-  stores.forEach(store => {
-    preloadProductsForStore(store).catch(err => console.warn(`Preload failed for ${store}:`, err));
+  // ✅ Use dynamic stores from Supabase
+  const storesList = await fetchStores();
+  storesList.forEach(store => {
+    preloadProductsForStore(store.store_id).catch(err => console.warn(`Preload failed for ${store.store_id}:`, err));
   });
 }
 
@@ -12227,6 +13065,10 @@ async function recordSettlement(store, date, pettyCashFloat, cashSystem, cardSys
   try {
     console.log('📝 Recording settlement for:', { store, date });
     
+    // ✅ Get the store name dynamically
+    const storeObj = stores.find(s => s.store_id === store);
+    const storeName = storeObj ? storeObj.name : store.charAt(0).toUpperCase() + store.slice(1).replace('_', ' ');
+    
     // ✅ FIRST: Check if settlement already exists and is collected
     const status = await checkSettlementStatus(store, date);
     
@@ -12340,7 +13182,6 @@ async function recordSettlement(store, date, pettyCashFloat, cashSystem, cardSys
     }
     
     // ✅ Mark ALL transactions for this store and date as settled
-    // ✅ FIX: Use timestamp range instead of date column
     const startDate = new Date(date + 'T00:00:00+08:00');
     const endDate = new Date(date + 'T23:59:59+08:00');
     
@@ -12358,6 +13199,25 @@ async function recordSettlement(store, date, pettyCashFloat, cashSystem, cardSys
       console.warn('⚠️ Error updating unsettled transactions:', updateError);
     } else {
       console.log(`✅ Marked ${unsettledCount} transactions as settled for ${store} on ${date}`);
+    }
+    
+    // ✅ Send Telegram notification with store name
+    if (telegramAccounts) {
+      const totalActual = (parseFloat(cashActual) || 0) + (parseFloat(cardActual) || 0) + 
+                         (parseFloat(qrActual) || 0) + (parseFloat(alipayActual) || 0);
+      
+      const message = `💰 SETTLEMENT RECORDED\n` +
+                     `🏪 Store: ${storeName}\n` +
+                     `📅 Date: ${date}\n` +
+                     `👤 By: ${currentEmployee?.name || 'Unknown'}\n` +
+                     `💵 Cash: RM ${(parseFloat(cashActual) || 0).toFixed(2)}\n` +
+                     `💳 Card: RM ${(parseFloat(cardActual) || 0).toFixed(2)}\n` +
+                     `📱 QR Pay: RM ${(parseFloat(qrActual) || 0).toFixed(2)}\n` +
+                     `💸 Alipay: RM ${(parseFloat(alipayActual) || 0).toFixed(2)}\n` +
+                     `━━━━━━━━━━━━━━━━━━\n` +
+                     `💰 TOTAL: RM ${totalActual.toFixed(2)}`;
+      
+      sendTelegramMessage(message);
     }
     
     return result;
@@ -12989,7 +13849,8 @@ document.getElementById('recordSettlementBtn').addEventListener('click', async (
     document.querySelectorAll('.collection-checkbox').forEach(cb => cb.checked = e.target.checked);
     updateCollectionButtonState();
   });
-  document.getElementById('collectSelectedBtn').addEventListener('click', async () => {
+ // Inside the collectSelectedBtn click handler
+document.getElementById('collectSelectedBtn').addEventListener('click', async () => {
   const selectedIds = Array.from(document.querySelectorAll('.collection-checkbox:checked')).map(cb => cb.value);
   if (selectedIds.length === 0) return;
   
@@ -12998,7 +13859,7 @@ document.getElementById('recordSettlementBtn').addEventListener('click', async (
     // ✅ First, check if any selected are already collected
     const { data: checkData, error: checkError } = await supabase
       .from('settlements')
-      .select('id, collected')
+      .select('id, collected, store, cash_actual, card_actual, qr_actual, alipay_actual, date')
       .in('id', selectedIds);
     
     if (checkError) throw checkError;
@@ -13023,9 +13884,40 @@ document.getElementById('recordSettlementBtn').addEventListener('click', async (
         collected_at: new Date().toISOString()
       })
       .in('id', selectedIds)
-      .eq('collected', false);  // ✅ Only update if not already collected
+      .eq('collected', false);
     
     if (error) throw error;
+    
+    // ✅ Send Telegram notification with store names
+    if (telegramAccounts && checkData.length > 0) {
+      // Group by store
+      const storeGroups = {};
+      checkData.forEach(item => {
+        const storeName = getStoreName(item.store);
+        if (!storeGroups[storeName]) {
+          storeGroups[storeName] = { total: 0, count: 0, items: [] };
+        }
+        const total = (parseFloat(item.cash_actual) || 0) + (parseFloat(item.card_actual) || 0) + 
+                     (parseFloat(item.qr_actual) || 0) + (parseFloat(item.alipay_actual) || 0);
+        storeGroups[storeName].total += total;
+        storeGroups[storeName].count++;
+        storeGroups[storeName].items.push(item);
+      });
+      
+      let message = `✅ CASH COLLECTED\n`;
+      message += `👤 By: ${currentEmployee?.name || 'Unknown'}\n`;
+      message += `🕐 Time: ${new Date().toLocaleString()}\n━━━━━━━━━━━━━━━━━━\n`;
+      
+      let grandTotal = 0;
+      for (const [storeName, data] of Object.entries(storeGroups)) {
+        message += `🏪 ${storeName}: RM ${data.total.toFixed(2)} (${data.count} settlements)\n`;
+        grandTotal += data.total;
+      }
+      message += `━━━━━━━━━━━━━━━━━━\n`;
+      message += `💰 GRAND TOTAL: RM ${grandTotal.toFixed(2)}`;
+      
+      sendTelegramMessage(message);
+    }
     
     await showAlertModal('Success', `${selectedIds.length} settlement(s) marked as collected.`);
     await loadAllUnsettledCash();
@@ -13273,107 +14165,7 @@ document.getElementById('recordSettlementBtn').addEventListener('click', async (
 
   
 
-  // Auto-select store on load
-  (async function autoSelectOnLoad() {
-    loadAndCacheEmployees().catch(console.warn);
-    preloadAllStoresData();
-    const storeDisplaySpan = document.getElementById('selectedStoreDisplay');
-    const storeValueHidden = document.getElementById('initialStoreValue');
-    const retryBtn = document.getElementById('retryLocationBtn');
-    
-    if (!storeDisplaySpan || !storeValueHidden) return;
-
-    const storeNames = {
-      queens: 'Queens',
-      sunshine: 'Sunshine',
-      gurney_paragon: 'Gurney Paragon'
-    };
-
-    async function proceedToLogin(storeId) {
-      if (loginInProgress) return;
-      loginInProgress = true;
-
-      if (window.autoLoginTimeout) clearTimeout(window.autoLoginTimeout);
-
-      initialStore = storeId;
-      currentStore = storeId;
-      storeSelect.value = storeId;
-      document.getElementById('storeSelectModal').style.display = 'none';
-
-      document.getElementById('loginModal').style.display = 'flex';
-      document.getElementById('pinInput').focus();
-
-      loadAndCacheEmployees().catch(console.warn);
-
-      const preloaded = preloadedDataMap[storeId];
-      if (preloaded && preloaded.products && preloaded.products.length > 0) {
-        products = [...preloaded.products].sort((a, b) => a.name.localeCompare(b.name));
-
-        const categories = [...new Set(products.map(p => p.category))].sort();
-        categorySelect.innerHTML = '<option value="all">📂 All Categories</option>';
-        categories.forEach(cat => {
-          const option = document.createElement('option');
-          option.value = cat;
-          option.textContent = cat;
-          categorySelect.appendChild(option);
-        });
-        renderProductGrid();
-
-        if (preloaded.employees && preloaded.employees.length > 0) {
-          employeeNameMap = {};
-          soldBySelectCart.innerHTML = '';
-          preloaded.employees.forEach(emp => {
-            employeeNameMap[emp.id] = emp.name;
-            const option = document.createElement('option');
-            option.value = emp.id;
-            option.textContent = `${emp.name} (ID: ${emp.id})`;
-            soldBySelectCart.appendChild(option);
-          });
-        } else {
-          fetchEmployees().then(employees => {
-            employeeNameMap = {};
-            soldBySelectCart.innerHTML = '';
-            employees.forEach(emp => {
-              employeeNameMap[emp.id] = emp.name;
-              const option = document.createElement('option');
-              option.value = emp.id;
-              option.textContent = `${emp.name} (ID: ${emp.id})`;
-              soldBySelectCart.appendChild(option);
-            });
-          });
-        }
-        initialDataPromise = Promise.resolve(true);
-      } else {
-        await loadInitialData();
-      }
-    }
-
-    const closest = await autoSelectStoreByLocation();
-    if (closest && storeNames[closest]) {
-      storeDisplaySpan.innerText = storeNames[closest];
-      storeValueHidden.value = closest;
-      setTimeout(() => proceedToLogin(closest), 2000);
-    } else {
-      storeDisplaySpan.innerText = '❌ Could not detect location. Please allow GPS and retry.';
-      if (retryBtn) retryBtn.style.display = 'inline-block';
-    }
-
-    if (retryBtn) {
-      retryBtn.onclick = async () => {
-        storeDisplaySpan.innerText = '📍 Loading location...';
-        retryBtn.style.display = 'none';
-        const newClosest = await autoSelectStoreByLocation();
-        if (newClosest && storeNames[newClosest]) {
-          storeDisplaySpan.innerText = storeNames[newClosest];
-          storeValueHidden.value = newClosest;
-          setTimeout(() => proceedToLogin(newClosest), 2000);
-        } else {
-          storeDisplaySpan.innerText = '❌ Still failed. Please check GPS.';
-          retryBtn.style.display = 'inline-block';
-        }
-      };
-    }
-  })();
+ 
 
   // Barcode scanner
   document.addEventListener('keydown', (e) => {
@@ -13784,7 +14576,1524 @@ document.getElementById('sideChangePinBtn').addEventListener('click', wrapMenuAc
 // Customer points functions are already included above
 
 // ==================== STOCK HISTORY SAVE TO SHEET ====================
+// ============================================================
+// DYNAMIC STORE MANAGEMENT
+// ============================================================
 
+
+
+async function fetchStores(forceRefresh = false) {
+  try {
+    const cached = localStorage.getItem('cachedStores');
+    if (cached && !forceRefresh) {
+      const { timestamp, data } = JSON.parse(cached);
+      if (Date.now() - timestamp < 60000) { // 1 minute cache
+        stores = data;
+        updateStoreMaps();
+        return stores;
+      }
+    }
+    
+    const { data, error } = await supabase
+      .from('stores')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+    
+    if (error) throw error;
+    
+    // ✅ Ensure stores is an array
+    stores = data || [];
+    
+    // ✅ Generate prefixes for stores that don't have them
+    let needsUpdate = false;
+    for (const store of stores) {
+      if (!store.prefix) {
+        const base = store.store_id.substring(0, 3).toUpperCase();
+        const hash = store.store_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const num = String(hash % 90 + 10).padStart(2, '0');
+        store.prefix = `${base}${num}`;
+        needsUpdate = true;
+      }
+    }
+    
+    // If we generated prefixes, update them in the database
+    if (needsUpdate) {
+      for (const store of stores) {
+        if (store.prefix) {
+          await supabase
+            .from('stores')
+            .update({ prefix: store.prefix })
+            .eq('store_id', store.store_id);
+        }
+      }
+    }
+    
+    localStorage.setItem('cachedStores', JSON.stringify({
+      timestamp: Date.now(),
+      data: stores
+    }));
+    
+    updateStoreMaps();
+    return stores;
+  } catch (err) {
+    console.error('Error fetching stores:', err);
+    return [];
+  }
+}
+
+function updateStoreMaps() {
+  storeIdToName = {};
+  storeNameToId = {};
+  // ✅ Ensure stores is defined and is an array
+  if (stores && Array.isArray(stores)) {
+    stores.forEach(s => {
+      storeIdToName[s.store_id] = s.name;
+      storeNameToId[s.name] = s.store_id;
+    });
+  }
+}
+
+function getStoreCoords(storeId) {
+  // ✅ Ensure stores is defined and is an array
+  if (!stores || !Array.isArray(stores)) return null;
+  const store = stores.find(s => s.store_id === storeId);
+  if (store) {
+    return { lat: store.latitude, lng: store.longitude };
+  }
+  return null;
+}
+
+function populateStoreDropdowns() {
+  const selects = [
+    document.getElementById('storeSelect'),
+    document.getElementById('settlementStoreSelect'),
+    document.getElementById('adminReportStoreSelect'),
+    document.getElementById('receiptsStoreSelect'),
+    document.getElementById('collectionStoreSelect')
+  ];
+  
+  // For each select, preserve 'all' option if it exists
+  selects.forEach(select => {
+    if (!select) return;
+    
+    // Save current value
+    const currentValue = select.value;
+    
+    // Clear existing options except 'all'
+    const hasAllOption = Array.from(select.options).some(opt => opt.value === 'all');
+    select.innerHTML = '';
+    
+    if (hasAllOption) {
+      const allOpt = document.createElement('option');
+      allOpt.value = 'all';
+      allOpt.textContent = 'All Stores';
+      select.appendChild(allOpt);
+    }
+    
+    // ✅ Add dynamic stores (only active ones)
+    stores.forEach(store => {
+      const option = document.createElement('option');
+      option.value = store.store_id;
+      option.textContent = store.name;
+      select.appendChild(option);
+    });
+    
+    // Restore selection if possible
+    if (currentValue && Array.from(select.options).some(opt => opt.value === currentValue)) {
+      select.value = currentValue;
+    }
+  });
+}
+// ============================================================
+// RENDER STORE LIST (for management modal)
+// ============================================================
+
+function renderStoreList() {
+  const container = document.getElementById('storeListContainer');
+  if (!container) return;
+  
+  if (!stores || stores.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">No stores found. Add your first store!</div>';
+    return;
+  }
+  
+  let html = '';
+  // Sort by slot number
+  const sortedStores = [...stores].sort((a, b) => (a.slot_number || 999) - (b.slot_number || 999));
+  
+  sortedStores.forEach(store => {
+    const isCurrent = currentStore === store.store_id;
+    const productCount = products.filter(p => {
+      if (store.slot_number) {
+        const slotNumStr = String(store.slot_number).padStart(2, '0');
+        return p[`available_store_${slotNumStr}`] !== false;
+      }
+      return false;
+    }).length;
+    
+    const slotDisplay = store.slot_number ? `#${String(store.slot_number).padStart(2, '0')}` : 'No slot';
+    
+    html += `
+      <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid ${isCurrent ? '#3b82f6' : '#e2e8f0'}; ${isCurrent ? 'border-left: 4px solid #3b82f6;' : ''}">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <strong style="font-size: 1.1rem;">${escapeHtml(store.name)}</strong>
+              <span style="background: #f1f5f9; color: #475569; padding: 2px 10px; border-radius: 12px; font-size: 0.7rem;">Slot ${slotDisplay}</span>
+              ${isCurrent ? '<span style="background: #3b82f6; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.7rem;">CURRENT</span>' : ''}
+            </div>
+            <div style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">${escapeHtml(store.address || 'No address')}</div>
+            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px;">
+              📍 ${store.latitude || 'N/A'}, ${store.longitude || 'N/A'}
+              <span style="margin-left: 12px;">📦 ${productCount} products</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            ${!isCurrent ? `<button class="set-store-btn" data-store="${store.store_id}" style="background: #3b82f6; color: white; border: none; border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer;">Switch</button>` : ''}
+            <button class="edit-store-btn" data-store="${store.store_id}" style="background: #f1f5f9; border: none; border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer;">✏️ Edit</button>
+            <button class="delete-store-btn" data-store="${store.store_id}" style="background: #fee2e2; color: #dc2626; border: none; border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer;">🗑️ Delete</button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+  
+  // Event listeners
+  document.querySelectorAll('.set-store-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const storeId = btn.dataset.store;
+      await switchStore(storeId);
+      renderStoreList();
+      closeStoreManagementModal();
+    });
+  });
+  
+  document.querySelectorAll('.edit-store-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const storeId = btn.dataset.store;
+      editStore(storeId);
+    });
+  });
+  
+  document.querySelectorAll('.delete-store-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const storeId = btn.dataset.store;
+      deleteStore(storeId);
+    });
+  });
+}
+// ============================================================
+// RENDER STORE SUMMARY CARDS (For Admin Report Modal)
+// ============================================================
+
+// ============================================================
+// DYNAMIC STORE RENDER FUNCTIONS - ADD AFTER renderStoreList()
+// ============================================================
+function renderStoreSummaryCards(container) {
+  if (!container) {
+    console.warn('⚠️ Container for store summary cards not found');
+    return;
+  }
+  
+  // ✅ DYNAMIC: Get all active stores
+  const activeStores = stores.filter(s => s.is_active !== false);
+  
+  if (activeStores.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">No active stores available</div>';
+    return;
+  }
+  
+  let html = '';
+  activeStores.forEach(store => {
+    const emoji = getStoreEmoji(store.store_id);
+    html += `
+      <div class="store-summary-card" data-store="${store.store_id}">
+        <div class="store-name">${emoji} ${escapeHtml(store.name)}</div>
+        <div class="store-total">Total Sales: RM 0.00</div>
+        <div class="store-cash">💵 Cash: RM 0.00</div>
+        <div class="store-card">💳 Card: RM 0.00</div>
+        <div class="store-qr">📱 QR Pay: RM 0.00</div>
+        <div class="store-alipay">💸 Alipay: RM 0.00</div>
+        <div class="store-refund">❌ Refunds: RM 0.00</div>
+        <div class="store-refunded-bills">📄 Refunded Bills: 0</div>
+        <div class="store-transactions">Transactions: 0</div>
+        <div class="store-items-sold">Items Sold: 0</div>
+        <div class="store-employee-sales">
+          <h4>👥 Employee Sales</h4>
+          <div class="employee-list"></div>
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+function renderStoreCashCards(container) {
+  if (!container) {
+    console.warn('⚠️ Container for store cash cards not found');
+    return;
+  }
+  
+  if (!stores || stores.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">No stores available</div>';
+    return;
+  }
+  
+  let html = '';
+  stores.forEach(store => {
+    const emoji = getStoreEmoji(store.store_id);
+    html += `
+      <div class="store-cash-card" data-store="${store.store_id}">
+        <div class="store-name">${emoji} ${escapeHtml(store.name)}</div>
+        <div class="store-cash-amount">RM 0.00</div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+function getStoreEmoji(storeId) {
+  const emojiMap = {
+    'queens': '🏬',
+    'sunshine': '☀️',
+    'gurney_paragon': '🏙️'
+  };
+  return emojiMap[storeId] || '🏪';
+}
+
+function renderAllDynamicStoreContent() {
+  // Update store summary cards
+  const storeBreakdown = document.getElementById('storeBreakdownContainer');
+  if (storeBreakdown) {
+    const container = storeBreakdown.querySelector('div[style*="display: flex; flex-wrap: wrap;"]');
+    if (container) renderStoreSummaryCards(container);
+  }
+  
+  // Update store cash cards
+  const cashSummary = document.getElementById('storeCashSummary');
+  if (cashSummary) renderStoreCashCards(cashSummary);
+  
+  // Update store order for swipeable cards
+  updateStoreOrder();
+  
+  // Update all dropdowns
+  populateStoreDropdowns();
+}
+
+// ============================================================
+// RENDER STORE CASH CARDS (For Collection Modal)
+// ============================================================
+
+function renderStoreCashCards(container) {
+  if (!container) {
+    console.warn('⚠️ Container for store cash cards not found');
+    return;
+  }
+  
+  if (!stores || stores.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">No stores available</div>';
+    return;
+  }
+  
+  let html = '';
+  stores.forEach(store => {
+    const emoji = getStoreEmoji(store.store_id);
+    html += `
+      <div class="store-cash-card" data-store="${store.store_id}">
+        <div class="store-name">${emoji} ${escapeHtml(store.name)}</div>
+        <div class="store-cash-amount">RM 0.00</div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+// ============================================================
+// HELPER - GET STORE EMOJI
+// ============================================================
+
+function getStoreEmoji(storeId) {
+  const emojiMap = {
+    'queens': '🏬',
+    'sunshine': '☀️',
+    'gurney_paragon': '🏙️'
+  };
+  return emojiMap[storeId] || '🏪';
+}
+
+// ============================================================
+// RENDER ALL DYNAMIC STORE CONTENT
+// ============================================================
+
+function renderAllDynamicStoreContent() {
+  // Update store summary cards
+  const storeBreakdown = document.getElementById('storeBreakdownContainer');
+  if (storeBreakdown) {
+    const container = storeBreakdown.querySelector('div[style*="display: flex; flex-wrap: wrap;"]');
+    if (container) renderStoreSummaryCards(container);
+  }
+  
+  // Update store cash cards
+  const cashSummary = document.getElementById('storeCashSummary');
+  if (cashSummary) renderStoreCashCards(cashSummary);
+  
+  // Update store order for swipeable cards
+  updateStoreOrder();
+  
+  // Update all dropdowns
+  populateStoreDropdowns();
+}
+
+// ============================================================
+// STORE SLOT MANAGEMENT
+// ============================================================
+
+async function getNextAvailableSlot() {
+  const { data, error } = await supabase
+    .from('stores')
+    .select('slot_number')
+    .not('slot_number', 'is', null);
+  
+  if (error) {
+    console.error('Error getting used slots:', error);
+    return 1;
+  }
+  
+  const usedSlots = data.map(s => s.slot_number).filter(n => n !== null);
+  
+  for (let i = 1; i <= 20; i++) {
+    if (!usedSlots.includes(i)) {
+      return i;
+    }
+  }
+  
+  return null; // All slots used
+}
+// ============================================================
+// STORE CRUD OPERATIONS
+// ============================================================
+
+async function addStore() {
+  // ✅ Create a nice add store modal
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '99999';
+    overlay.style.background = 'rgba(0,0,0,0.7)';
+    overlay.style.backdropFilter = 'blur(4px)';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    
+    overlay.innerHTML = `
+      <div class="modal-container" style="max-width: 600px; border-radius: 24px; padding: 0; overflow: hidden; z-index: 99999; position: relative; box-shadow: 0 24px 64px rgba(0,0,0,0.4); background: white;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 24px 28px; display: flex; align-items: center; gap: 16px;">
+          <div style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0;">
+            ➕
+          </div>
+          <div style="flex: 1;">
+            <div style="color: white; font-size: 1.5rem; font-weight: 700;">Add New Store</div>
+            <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-top: 2px;">Create a new store location</div>
+          </div>
+          <button id="closeAddStoreModal" style="background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+        </div>
+        
+        <!-- Body -->
+        <div style="padding: 28px 28px 20px 28px; background: #f8fafc;">
+          <!-- Store ID -->
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-bottom: 6px;">
+              Store ID <span style="color: #ef4444;">*</span>
+              <span style="color: #94a3b8; font-weight: 400; font-size: 0.8rem;">(unique identifier, e.g., klcc)</span>
+            </label>
+            <input type="text" id="newStoreId" 
+                   style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; background: white; transition: all 0.2s; text-transform: lowercase;"
+                   onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)';"
+                   onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"
+                   placeholder="e.g., klcc, pavilion, midvalley">
+          </div>
+          
+          <!-- Store Name -->
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-bottom: 6px;">
+              Store Name <span style="color: #ef4444;">*</span>
+            </label>
+            <input type="text" id="newStoreName" 
+                   style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; background: white; transition: all 0.2s;"
+                   onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)';"
+                   onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"
+                   placeholder="e.g., KLCC, Pavilion, Mid Valley">
+          </div>
+          
+          <!-- Address -->
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-bottom: 6px;">
+              Address
+            </label>
+            <input type="text" id="newStoreAddress" 
+                   style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; background: white; transition: all 0.2s;"
+                   onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)';"
+                   onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"
+                   placeholder="Full address of the store">
+          </div>
+          
+          <!-- Coordinates Row with Detect Location Button -->
+          <div style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label style="font-weight: 600; color: #1e293b; font-size: 0.9rem;">
+                📌 Coordinates
+              </label>
+              <button id="detectLocationBtn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 20px; padding: 6px 16px; font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; box-shadow: 0 2px 8px rgba(16,185,129,0.3);">
+                <span style="font-size: 1rem;">📍</span> Detect Location
+              </button>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <input type="number" id="newStoreLat" step="any"
+                       style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; background: white; transition: all 0.2s;"
+                       onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)';"
+                       onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"
+                       placeholder="Latitude">
+              </div>
+              <div>
+                <input type="number" id="newStoreLng" step="any"
+                       style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; background: white; transition: all 0.2s;"
+                       onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)';"
+                       onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"
+                       placeholder="Longitude">
+              </div>
+            </div>
+            <div id="locationStatus" style="margin-top: 8px; font-size: 0.85rem; color: #94a3b8; display: none; align-items: center; gap: 8px;">
+              <span id="locationStatusIcon">🔄</span>
+              <span id="locationStatusText">Detecting location...</span>
+            </div>
+          </div>
+          
+          <!-- Slot Preview -->
+          <div style="margin-bottom: 8px; background: #f1f5f9; border-radius: 12px; padding: 12px 16px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 500; color: #64748b; font-size: 0.85rem;">🔢 Slot Assignment</span>
+              <span style="background: #3b82f6; color: white; padding: 2px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                Auto-assigned on save
+              </span>
+            </div>
+            <div style="margin-top: 4px; font-size: 0.8rem; color: #94a3b8;">
+              The next available slot will be automatically assigned (1-20)
+            </div>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="padding: 16px 28px 24px 28px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
+          <button id="cancelAddStoreBtn" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500; transition: all 0.2s;">
+            Cancel
+          </button>
+          <button id="saveAddStoreBtn" class="modal-btn" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(5,150,105,0.3); transition: all 0.2s;">
+            ➕ Add Store
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    
+    const closeBtn = overlay.querySelector('#closeAddStoreModal');
+    const cancelBtn = overlay.querySelector('#cancelAddStoreBtn');
+    const saveBtn = overlay.querySelector('#saveAddStoreBtn');
+    const storeIdInput = overlay.querySelector('#newStoreId');
+    const nameInput = overlay.querySelector('#newStoreName');
+    const addressInput = overlay.querySelector('#newStoreAddress');
+    const latInput = overlay.querySelector('#newStoreLat');
+    const lngInput = overlay.querySelector('#newStoreLng');
+    const detectBtn = overlay.querySelector('#detectLocationBtn');
+    const locationStatus = overlay.querySelector('#locationStatus');
+    const locationStatusIcon = overlay.querySelector('#locationStatusIcon');
+    const locationStatusText = overlay.querySelector('#locationStatusText');
+    
+    const cleanup = () => {
+      overlay.remove();
+      resolve();
+    };
+    
+    // ✅ Detect Location Function
+    const detectLocation = () => {
+      if (!navigator.geolocation) {
+        locationStatus.style.display = 'flex';
+        locationStatusIcon.textContent = '❌';
+        locationStatusText.textContent = 'Geolocation is not supported by your browser.';
+        locationStatus.style.color = '#ef4444';
+        return;
+      }
+      
+      locationStatus.style.display = 'flex';
+      locationStatusIcon.textContent = '🔄';
+      locationStatusText.textContent = 'Detecting location...';
+      locationStatus.style.color = '#3b82f6';
+      detectBtn.disabled = true;
+      detectBtn.style.opacity = '0.6';
+      detectBtn.innerHTML = '⏳ Detecting...';
+      
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          latInput.value = latitude.toFixed(6);
+          lngInput.value = longitude.toFixed(6);
+          
+          latInput.style.borderColor = '#10b981';
+          latInput.style.boxShadow = '0 0 0 4px rgba(16,185,129,0.2)';
+          lngInput.style.borderColor = '#10b981';
+          lngInput.style.boxShadow = '0 0 0 4px rgba(16,185,129,0.2)';
+          
+          setTimeout(() => {
+            latInput.style.borderColor = '#e2e8f0';
+            latInput.style.boxShadow = 'none';
+            lngInput.style.borderColor = '#e2e8f0';
+            lngInput.style.boxShadow = 'none';
+          }, 2000);
+          
+          locationStatusIcon.textContent = '✅';
+          locationStatusText.textContent = `Location detected! ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+          locationStatus.style.color = '#10b981';
+          detectBtn.disabled = false;
+          detectBtn.style.opacity = '1';
+          detectBtn.innerHTML = '<span style="font-size:1rem;">📍</span> Detect Location';
+          
+          setTimeout(() => {
+            locationStatus.style.display = 'none';
+          }, 5000);
+        },
+        (error) => {
+          console.error('Location error:', error);
+          let errorMessage = 'Could not detect location. ';
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage += 'Please allow location access in your browser settings.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage += 'Location information is unavailable.';
+              break;
+            case error.TIMEOUT:
+              errorMessage += 'Location request timed out. Please try again.';
+              break;
+            default:
+              errorMessage += 'Unknown error occurred.';
+          }
+          
+          locationStatus.style.display = 'flex';
+          locationStatusIcon.textContent = '❌';
+          locationStatusText.textContent = errorMessage;
+          locationStatus.style.color = '#ef4444';
+          detectBtn.disabled = false;
+          detectBtn.style.opacity = '1';
+          detectBtn.innerHTML = '<span style="font-size:1rem;">📍</span> Detect Location';
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    };
+    
+    // ✅ Detect Location Button Click
+    detectBtn.addEventListener('click', detectLocation);
+    
+    // Close handlers
+    closeBtn.addEventListener('click', cleanup);
+    cancelBtn.addEventListener('click', cleanup);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) cleanup();
+    });
+    
+    // Keyboard shortcuts
+    storeIdInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') nameInput.focus();
+      if (e.key === 'Escape') cleanup();
+    });
+    nameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addressInput.focus();
+      if (e.key === 'Escape') cleanup();
+    });
+    addressInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') latInput.focus();
+      if (e.key === 'Escape') cleanup();
+    });
+    latInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') lngInput.focus();
+      if (e.key === 'Escape') cleanup();
+    });
+    lngInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') saveBtn.click();
+      if (e.key === 'Escape') cleanup();
+    });
+    
+    // Save handler
+    saveBtn.addEventListener('click', async () => {
+      const storeId = storeIdInput.value.trim().toLowerCase().replace(/\s+/g, '_');
+      const name = nameInput.value.trim();
+      const address = addressInput.value.trim();
+      const lat = parseFloat(latInput.value);
+      const lng = parseFloat(lngInput.value);
+      
+      // Validate
+      if (!storeId) {
+        storeIdInput.style.borderColor = '#ef4444';
+        storeIdInput.style.boxShadow = '0 0 0 4px rgba(239,68,68,0.15)';
+        await showAlertModal('Error', 'Store ID is required (e.g., klcc)');
+        storeIdInput.focus();
+        return;
+      }
+      
+      if (!name) {
+        nameInput.style.borderColor = '#ef4444';
+        nameInput.style.boxShadow = '0 0 0 4px rgba(239,68,68,0.15)';
+        await showAlertModal('Error', 'Store name is required');
+        nameInput.focus();
+        return;
+      }
+      
+      // Check if store ID already exists
+      if (stores.find(s => s.store_id === storeId)) {
+        storeIdInput.style.borderColor = '#ef4444';
+        storeIdInput.style.boxShadow = '0 0 0 4px rgba(239,68,68,0.15)';
+        await showAlertModal('Error', `Store ID "${storeId}" already exists!`);
+        storeIdInput.focus();
+        return;
+      }
+      
+      showLoading('Adding store...');
+      
+      try {
+        // Get next available slot
+        const slotNumber = await getNextAvailableSlot();
+        
+        if (!slotNumber) {
+          await showAlertModal('⚠️ All Slots Used', 
+            'All 20 store slots are used. Please contact the admin to add more slots.'
+          );
+          hideLoading();
+          return;
+        }
+        
+        const slotNumStr = String(slotNumber).padStart(2, '0');
+        const availabilityField = `available_store_${slotNumStr}`;
+        const stockField = `stock_store_${slotNumStr}`;
+        
+        // Generate a prefix for the store
+        const base = storeId.substring(0, 3).toUpperCase();
+        const hash = storeId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const num = String(hash % 90 + 10).padStart(2, '0');
+        const prefix = `${base}${num}`;
+        
+        console.log(`📌 Assigned slot ${slotNumber} (${availabilityField}) to store "${name}"`);
+        console.log(`📌 Generated prefix: ${prefix}`);
+        
+        // Add the store
+        const { data, error } = await supabase
+          .from('stores')
+          .insert([{
+            store_id: storeId,
+            name: name,
+            address: address || '',
+            latitude: isNaN(lat) ? null : lat,
+            longitude: isNaN(lng) ? null : lng,
+            is_active: true,
+            prefix: prefix,
+            slot_number: slotNumber
+          }])
+          .select();
+        
+        if (error) throw error;
+        
+        console.log('✅ Store added:', data);
+        
+        // Update all products with the new store columns
+        console.log('🔄 Setting default availability for all products...');
+        
+        const { data: products, error: productsError } = await supabase
+          .from('products')
+          .select('id');
+        
+        if (productsError) {
+          console.warn('Could not fetch products:', productsError);
+        } else if (products && products.length > 0) {
+          const chunkSize = 30;
+          for (let i = 0; i < products.length; i += chunkSize) {
+            const chunk = products.slice(i, i + chunkSize);
+            const ids = chunk.map(p => p.id);
+            
+            const { error: updateError } = await supabase
+              .from('products')
+              .update({
+                [availabilityField]: true,
+                [stockField]: 0
+              })
+              .in('id', ids);
+            
+            if (updateError) {
+              console.warn(`Error updating chunk ${i / chunkSize + 1}:`, updateError);
+            } else {
+              console.log(`✅ Updated chunk ${i / chunkSize + 1}`);
+            }
+          }
+        }
+        
+        cleanup();
+        
+        // Show success modal
+        await showAlertModal('✅ Store Added', 
+          `<div style="text-align:left;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+              <span style="font-size:2rem;">🏪</span>
+              <div>
+                <div style="font-weight:600; color:#0f172a; font-size:1.1rem;">Store Added Successfully</div>
+                <div style="font-size:0.9rem; color:#64748b;">${escapeHtml(name)}</div>
+              </div>
+            </div>
+            <div style="background:#f0fdf4; border-radius:12px; padding:12px 16px; border-left:4px solid #059669;">
+              <div style="display:flex; justify-content:space-between; padding:2px 0;">
+                <span style="color:#64748b;">🆔 Store ID</span>
+                <span style="font-weight:500;">${escapeHtml(storeId)}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:2px 0;">
+                <span style="color:#64748b;">📌 Slot</span>
+                <span style="font-weight:500; background:#3b82f6; color:white; padding:0 10px; border-radius:12px;">#${String(slotNumber).padStart(2, '0')}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:2px 0;">
+                <span style="color:#64748b;">🔤 Prefix</span>
+                <span style="font-weight:500; background:#8b5cf6; color:white; padding:0 10px; border-radius:12px;">${prefix}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:2px 0;">
+                <span style="color:#64748b;">📍 Address</span>
+                <span style="font-weight:500;">${escapeHtml(address || 'Not set')}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:2px 0;">
+                <span style="color:#64748b;">📌 Coordinates</span>
+                <span style="font-weight:500;">${!isNaN(lat) && !isNaN(lng) ? `${lat.toFixed(6)}, ${lng.toFixed(6)}` : 'Not set'}</span>
+              </div>
+            </div>
+            <div style="margin-top:12px; padding:10px 16px; background:#eff6ff; border-radius:8px; color:#1e40af; font-size:0.85rem;">
+              📦 All products are now available at this store with 0 stock.
+              You can adjust stock and availability in Inventory Mode.
+            </div>
+          </div>`
+        );
+        
+        // Refresh stores and UI
+        await fetchStores(true);
+        renderStoreList();
+        populateStoreDropdowns();
+        renderAllDynamicStoreContent();
+        
+        // Refresh products
+        await fetchProductsFromSheet(true);
+        renderProductGrid();
+        
+      } catch (err) {
+        console.error('Error adding store:', err);
+        await showAlertModal('Error', 'Failed to add store: ' + err.message);
+      } finally {
+        hideLoading();
+      }
+    });
+    
+    // Focus the store ID input
+    setTimeout(() => storeIdInput.focus(), 300);
+  });
+}
+
+async function editStore(storeId) {
+  const store = stores.find(s => s.store_id === storeId);
+  if (!store) {
+    await showAlertModal('Error', 'Store not found.');
+    return;
+  }
+  
+  // ✅ Create a nice edit modal
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '99999';
+    overlay.style.background = 'rgba(0,0,0,0.7)';
+    overlay.style.backdropFilter = 'blur(4px)';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    
+    overlay.innerHTML = `
+      <div class="modal-container" style="max-width: 600px; border-radius: 24px; padding: 0; overflow: hidden; z-index: 99999; position: relative; box-shadow: 0 24px 64px rgba(0,0,0,0.4); background: white;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); padding: 24px 28px; display: flex; align-items: center; gap: 16px;">
+          <div style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0;">
+            🏪
+          </div>
+          <div style="flex: 1;">
+            <div style="color: white; font-size: 1.5rem; font-weight: 700;">Edit Store</div>
+            <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-top: 2px;">Update store details</div>
+          </div>
+          <button id="closeEditStoreModal" style="background: rgba(255,255,255,0.15); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+        </div>
+        
+        <!-- Body -->
+        <div style="padding: 28px 28px 20px 28px; background: #f8fafc;">
+          <!-- Store ID (read-only) -->
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-bottom: 6px;">
+              Store ID <span style="color: #94a3b8; font-weight: 400;">(read-only)</span>
+            </label>
+            <div style="background: #f1f5f9; border-radius: 12px; padding: 12px 16px; border: 1px solid #e2e8f0; color: #64748b; font-weight: 500;">
+              ${escapeHtml(store.store_id)}
+            </div>
+          </div>
+          
+          <!-- Store Name -->
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-bottom: 6px;">
+              Store Name <span style="color: #ef4444;">*</span>
+            </label>
+            <input type="text" id="editStoreName" value="${escapeHtml(store.name)}" 
+                   style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; background: white; transition: all 0.2s;"
+                   onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)';"
+                   onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"
+                   placeholder="Enter store name">
+          </div>
+          
+          <!-- Address -->
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-bottom: 6px;">
+              Address
+            </label>
+            <input type="text" id="editStoreAddress" value="${escapeHtml(store.address || '')}" 
+                   style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; background: white; transition: all 0.2s;"
+                   onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)';"
+                   onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"
+                   placeholder="Full address of the store">
+          </div>
+          
+          <!-- Coordinates Row with Detect Location Button -->
+          <div style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label style="font-weight: 600; color: #1e293b; font-size: 0.9rem;">
+                📌 Coordinates
+              </label>
+              <button id="detectLocationBtn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 20px; padding: 6px 16px; font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; box-shadow: 0 2px 8px rgba(16,185,129,0.3);">
+                <span style="font-size: 1rem;">📍</span> Detect Location
+              </button>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <input type="number" id="editStoreLat" value="${store.latitude || ''}" step="any"
+                       style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; background: white; transition: all 0.2s;"
+                       onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)';"
+                       onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"
+                       placeholder="Latitude">
+              </div>
+              <div>
+                <input type="number" id="editStoreLng" value="${store.longitude || ''}" step="any"
+                       style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; background: white; transition: all 0.2s;"
+                       onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.15)';"
+                       onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';"
+                       placeholder="Longitude">
+              </div>
+            </div>
+            <div id="locationStatus" style="margin-top: 8px; font-size: 0.85rem; color: #94a3b8; display: none; align-items: center; gap: 8px;">
+              <span id="locationStatusIcon">🔄</span>
+              <span id="locationStatusText">Detecting location...</span>
+            </div>
+          </div>
+          
+          <!-- Slot Number (read-only) -->
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-bottom: 6px;">
+              Slot Number <span style="color: #94a3b8; font-weight: 400;">(read-only)</span>
+            </label>
+            <div style="background: #f1f5f9; border-radius: 12px; padding: 12px 16px; border: 1px solid #e2e8f0; color: #64748b; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+              <span style="background: #3b82f6; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600;">SLOT</span>
+              ${store.slot_number ? `#${String(store.slot_number).padStart(2, '0')}` : 'Not assigned'}
+            </div>
+          </div>
+          
+          <!-- Prefix (read-only) -->
+          <div style="margin-bottom: 8px;">
+            <label style="display: block; font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-bottom: 6px;">
+              Transaction Prefix <span style="color: #94a3b8; font-weight: 400;">(read-only)</span>
+            </label>
+            <div style="background: #f1f5f9; border-radius: 12px; padding: 12px 16px; border: 1px solid #e2e8f0; color: #64748b; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+              <span style="background: #8b5cf6; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600;">PREFIX</span>
+              ${store.prefix || 'Not assigned'}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="padding: 16px 28px 24px 28px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
+          <button id="cancelEditStoreBtn" class="modal-btn modal-btn-secondary" style="padding: 12px 28px; font-size: 1rem; border-radius: 40px; background: #f1f5f9; color: #475569; border: none; cursor: pointer; font-weight: 500; transition: all 0.2s;">
+            Cancel
+          </button>
+          <button id="saveEditStoreBtn" class="modal-btn" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 12px 32px; font-size: 1rem; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(59,130,246,0.3); transition: all 0.2s;">
+            💾 Save Changes
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    
+    const closeBtn = overlay.querySelector('#closeEditStoreModal');
+    const cancelBtn = overlay.querySelector('#cancelEditStoreBtn');
+    const saveBtn = overlay.querySelector('#saveEditStoreBtn');
+    const nameInput = overlay.querySelector('#editStoreName');
+    const addressInput = overlay.querySelector('#editStoreAddress');
+    const latInput = overlay.querySelector('#editStoreLat');
+    const lngInput = overlay.querySelector('#editStoreLng');
+    const detectBtn = overlay.querySelector('#detectLocationBtn');
+    const locationStatus = overlay.querySelector('#locationStatus');
+    const locationStatusIcon = overlay.querySelector('#locationStatusIcon');
+    const locationStatusText = overlay.querySelector('#locationStatusText');
+    
+    const cleanup = () => {
+      overlay.remove();
+      resolve();
+    };
+    
+    // ✅ Detect Location Function
+    const detectLocation = () => {
+      // Check if geolocation is supported
+      if (!navigator.geolocation) {
+        locationStatus.style.display = 'flex';
+        locationStatusIcon.textContent = '❌';
+        locationStatusText.textContent = 'Geolocation is not supported by your browser.';
+        locationStatus.style.color = '#ef4444';
+        return;
+      }
+      
+      // Show status
+      locationStatus.style.display = 'flex';
+      locationStatusIcon.textContent = '🔄';
+      locationStatusText.textContent = 'Detecting location...';
+      locationStatus.style.color = '#3b82f6';
+      detectBtn.disabled = true;
+      detectBtn.style.opacity = '0.6';
+      detectBtn.textContent = '⏳ Detecting...';
+      
+      // Get current position
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          // Fill in the coordinates
+          latInput.value = latitude.toFixed(6);
+          lngInput.value = longitude.toFixed(6);
+          
+          // Highlight the fields briefly
+          latInput.style.borderColor = '#10b981';
+          latInput.style.boxShadow = '0 0 0 4px rgba(16,185,129,0.2)';
+          lngInput.style.borderColor = '#10b981';
+          lngInput.style.boxShadow = '0 0 0 4px rgba(16,185,129,0.2)';
+          
+          setTimeout(() => {
+            latInput.style.borderColor = '#e2e8f0';
+            latInput.style.boxShadow = 'none';
+            lngInput.style.borderColor = '#e2e8f0';
+            lngInput.style.boxShadow = 'none';
+          }, 2000);
+          
+          // Update status
+          locationStatusIcon.textContent = '✅';
+          locationStatusText.textContent = `Location detected! ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+          locationStatus.style.color = '#10b981';
+          detectBtn.disabled = false;
+          detectBtn.style.opacity = '1';
+          detectBtn.innerHTML = '<span style="font-size:1rem;">📍</span> Detect Location';
+          
+          // Auto-hide status after 5 seconds
+          setTimeout(() => {
+            locationStatus.style.display = 'none';
+          }, 5000);
+        },
+        (error) => {
+          console.error('Location error:', error);
+          let errorMessage = 'Could not detect location. ';
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage += 'Please allow location access in your browser settings.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage += 'Location information is unavailable.';
+              break;
+            case error.TIMEOUT:
+              errorMessage += 'Location request timed out. Please try again.';
+              break;
+            default:
+              errorMessage += 'Unknown error occurred.';
+          }
+          
+          locationStatus.style.display = 'flex';
+          locationStatusIcon.textContent = '❌';
+          locationStatusText.textContent = errorMessage;
+          locationStatus.style.color = '#ef4444';
+          detectBtn.disabled = false;
+          detectBtn.style.opacity = '1';
+          detectBtn.innerHTML = '<span style="font-size:1rem;">📍</span> Detect Location';
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    };
+    
+    // ✅ Detect Location Button Click
+    detectBtn.addEventListener('click', detectLocation);
+    
+    // Close handlers
+    closeBtn.addEventListener('click', cleanup);
+    cancelBtn.addEventListener('click', cleanup);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) cleanup();
+    });
+    
+    // Keyboard shortcuts
+    nameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') saveBtn.click();
+      if (e.key === 'Escape') cleanup();
+    });
+    addressInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') saveBtn.click();
+      if (e.key === 'Escape') cleanup();
+    });
+    latInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') saveBtn.click();
+      if (e.key === 'Escape') cleanup();
+    });
+    lngInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') saveBtn.click();
+      if (e.key === 'Escape') cleanup();
+    });
+    
+    // Save handler
+    saveBtn.addEventListener('click', async () => {
+      const name = nameInput.value.trim();
+      const address = addressInput.value.trim();
+      const lat = parseFloat(latInput.value);
+      const lng = parseFloat(lngInput.value);
+      
+      // Validate
+      if (!name) {
+        nameInput.style.borderColor = '#ef4444';
+        nameInput.style.boxShadow = '0 0 0 4px rgba(239,68,68,0.15)';
+        await showAlertModal('Error', 'Store name is required.');
+        nameInput.focus();
+        return;
+      }
+      
+      // Check if anything changed
+      if (name === store.name && address === (store.address || '') && 
+          (isNaN(lat) ? null : lat) === (store.latitude || null) && 
+          (isNaN(lng) ? null : lng) === (store.longitude || null)) {
+        await showAlertModal('No Changes', 'No changes were made to the store.');
+        cleanup();
+        return;
+      }
+      
+      showLoading('Updating store...');
+      
+      try {
+        const updateData = {
+          name: name,
+          address: address || '',
+          latitude: isNaN(lat) ? null : lat,
+          longitude: isNaN(lng) ? null : lng
+        };
+        
+        const { error } = await supabase
+          .from('stores')
+          .update(updateData)
+          .eq('store_id', storeId);
+        
+        if (error) throw error;
+        
+        cleanup();
+        await showAlertModal('✅ Store Updated', 
+          `<div style="text-align:left;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+              <span style="font-size:2rem;">🏪</span>
+              <div>
+                <div style="font-weight:600; color:#0f172a; font-size:1.1rem;">Store Updated Successfully</div>
+                <div style="font-size:0.9rem; color:#64748b;">${escapeHtml(name)}</div>
+              </div>
+            </div>
+            <div style="background:#f0fdf4; border-radius:12px; padding:12px 16px; border-left:4px solid #059669;">
+              <div style="display:flex; justify-content:space-between; padding:2px 0;">
+                <span style="color:#64748b;">📝 Name</span>
+                <span style="font-weight:500;">${escapeHtml(name)}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:2px 0;">
+                <span style="color:#64748b;">📍 Address</span>
+                <span style="font-weight:500;">${escapeHtml(address || 'Not set')}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:2px 0;">
+                <span style="color:#64748b;">📌 Coordinates</span>
+                <span style="font-weight:500;">${!isNaN(lat) && !isNaN(lng) ? `${lat.toFixed(6)}, ${lng.toFixed(6)}` : 'Not set'}</span>
+              </div>
+            </div>
+          </div>`
+        );
+        
+        // Refresh stores and UI
+        await fetchStores(true);
+        renderStoreList();
+        populateStoreDropdowns();
+        renderAllDynamicStoreContent();
+        
+        // If this was the current store, update the header
+        if (currentStore === storeId) {
+          document.getElementById('storeSelect').value = storeId;
+        }
+        
+      } catch (err) {
+        console.error('Error updating store:', err);
+        await showAlertModal('Error', 'Failed to update store: ' + err.message);
+      } finally {
+        hideLoading();
+      }
+    });
+    
+    // Focus the name input
+    setTimeout(() => nameInput.focus(), 300);
+  });
+}
+// Helper function - add this to your code
+async function addStoreColumnsViaPG(storeId) {
+  const availabilityField = `available_${storeId}`;
+  const stockField = `stock_${storeId}`;
+  
+  const sql = `
+    ALTER TABLE products ADD COLUMN IF NOT EXISTS "${availabilityField}" BOOLEAN DEFAULT true;
+    ALTER TABLE products ADD COLUMN IF NOT EXISTS "${stockField}" INTEGER DEFAULT 0;
+  `;
+  
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/pg`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({ 
+        query: sql
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      console.warn('PG endpoint failed:', error);
+      return false;
+    }
+    
+    console.log('✅ Columns added via /rest/v1/pg');
+    return true;
+  } catch (err) {
+    console.error('PG endpoint error:', err);
+    return false;
+  }
+}
+async function deleteStore(storeId) {
+  // Prevent deleting current store
+  if (currentStore === storeId) {
+    await showAlertModal('Cannot Delete', 'You cannot delete the currently active store. Please switch to another store first.');
+    return;
+  }
+  
+  const store = stores.find(s => s.store_id === storeId);
+  if (!store) {
+    await showAlertModal('Error', 'Store not found.');
+    return;
+  }
+  
+  // Check if store has products
+  let productCount = 0;
+  if (store.slot_number) {
+    const slotNumStr = String(store.slot_number).padStart(2, '0');
+    const availabilityKey = `available_store_${slotNumStr}`;
+    productCount = products.filter(p => p[availabilityKey] !== false).length;
+  }
+  
+  let warningMsg = `Are you sure you want to permanently delete store "${store.name}"?`;
+  warningMsg += `\n\n📌 Slot ${store.slot_number || 'N/A'} will be released.`;
+  
+  if (productCount > 0) {
+    warningMsg += `\n\n⚠️ This store has ${productCount} products assigned to it. They will still exist but won't be visible for this store.`;
+  }
+  
+  const confirmed = await showConfirmModal('Delete Store', warningMsg);
+  if (!confirmed) return;
+  
+  showLoading('Deleting store...');
+  
+  try {
+    // ✅ STEP 1: Release the slot number first
+    if (store.slot_number) {
+      const { error: releaseError } = await supabase
+        .from('stores')
+        .update({ slot_number: null })
+        .eq('store_id', storeId);
+      
+      if (releaseError) {
+        console.warn('Failed to release slot:', releaseError);
+        // Continue anyway
+      } else {
+        console.log(`✅ Slot ${store.slot_number} released from store "${store.name}"`);
+      }
+    }
+    
+    // ✅ STEP 2: Actually DELETE the store from the table
+    const { error: deleteError } = await supabase
+      .from('stores')
+      .delete()
+      .eq('store_id', storeId);
+    
+    if (deleteError) {
+      console.error('Delete error:', deleteError);
+      
+      // If delete fails, try soft delete as fallback
+      console.log('⚠️ Hard delete failed, trying soft delete...');
+      const { error: softError } = await supabase
+        .from('stores')
+        .update({ 
+          is_active: false,
+          slot_number: null
+        })
+        .eq('store_id', storeId);
+      
+      if (softError) throw softError;
+      
+      await showAlertModal('⚠️ Store Deactivated', 
+        `Store "${store.name}" has been deactivated (soft delete).\n\n` +
+        `The store will no longer appear in the list.\n` +
+        `Slot ${store.slot_number} has been released.`
+      );
+    } else {
+      await showAlertModal('✅ Store Deleted', 
+        `Store "${store.name}" has been permanently deleted.\n\n` +
+        `📌 Slot ${store.slot_number || 'N/A'} has been released and is now available for reuse.`
+      );
+    }
+    
+    // ✅ STEP 3: Refresh everything
+    await fetchStores(true);
+    renderStoreList();
+    populateStoreDropdowns();
+    renderAllDynamicStoreContent();
+    
+    // ✅ STEP 4: If the deleted store was the current store, switch to first available
+    if (currentStore === storeId && stores.length > 0) {
+      await switchStore(stores[0].store_id);
+    }
+    
+    // ✅ STEP 5: Refresh products
+    await fetchProductsFromSheet(true);
+    renderProductGrid();
+    
+  } catch (err) {
+    console.error('Error deleting store:', err);
+    await showAlertModal('Error', 'Failed to delete store: ' + err.message);
+  } finally {
+    hideLoading();
+  }
+}
+
+// ============================================================
+// SWITCH STORE
+// ============================================================
+
+async function switchStore(storeId) {
+  if (storeId === currentStore) return;
+  
+  const store = stores.find(s => s.store_id === storeId);
+  if (!store) return;
+  
+  const confirmed = await showConfirmModal('Switch Store', `Switch to "${store.name}"? This will reload products for this store.`);
+  if (!confirmed) return;
+  
+  currentStore = storeId;
+  document.getElementById('storeSelect').value = storeId;
+  
+  // Clear cart
+  clearCart();
+  discountAmount = 0;
+  buy2Free1Discount = 0;
+  buy3Free1Discount = 0;
+  customDiscount = 0;
+  staffDiscountActive = false;
+  staffDiscount = 0;
+  selectedCustomer = null;
+  updateCustomerDisplay();
+  
+  // Reload products
+  await fetchProductsFromSheet(true);
+  renderProductGrid();
+  
+  await showAlertModal('✅ Store Switched', `Now using "${store.name}"`);
+}
+
+// ============================================================
+// AUTO-SELECT STORE BY LOCATION (with dynamic stores)
+// ============================================================
+
+async function autoSelectStoreByLocationDynamic() {
+  if (!navigator.geolocation) {
+    console.warn("Geolocation not supported");
+    return null;
+  }
+  
+  // Fetch stores from Supabase
+  const storesList = await fetchStores();
+  
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        let closestStore = null;
+        let minDistance = Infinity;
+        
+        for (const store of storesList) {
+          if (!store.latitude || !store.longitude) continue;
+          const dist = getDistanceFromLatLon(
+            latitude, longitude,
+            store.latitude, store.longitude
+          );
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestStore = store.store_id;
+          }
+        }
+        resolve(closestStore);
+      },
+      (error) => {
+        console.warn("Location error:", error.message);
+        resolve(null);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
+}
+
+// ============================================================
+// STORE MANAGEMENT MODAL
+// ============================================================
+
+let storeManagementModalOpen = false;
+
+function openStoreManagementModal() {
+  storeManagementModalOpen = true;
+  document.getElementById('storeManagementModal').style.display = 'flex';
+  renderStoreList();
+}
+
+function closeStoreManagementModal() {
+  storeManagementModalOpen = false;
+  document.getElementById('storeManagementModal').style.display = 'none';
+}
+
+// ============================================================
+// INITIALIZE DYNAMIC STORES
+// ============================================================
+
+async function initializeStores() {
+  // Fetch stores from Supabase
+  await fetchStores(true);
+  
+  // Populate all dropdowns
+  populateStoreDropdowns();
+  
+  // ✅ RENDER DYNAMIC STORE CARDS
+  renderAllDynamicStoreContent();
+  
+  // Auto-select store by location
+  const closest = await autoSelectStoreByLocationDynamic();
+  if (closest) {
+    const store = stores.find(s => s.store_id === closest);
+    if (store) {
+      currentStore = closest;
+      document.getElementById('storeSelect').value = closest;
+      document.getElementById('selectedStoreDisplay').innerText = store.name;
+    }
+  } else if (stores.length > 0) {
+    // Default to first store
+    currentStore = stores[0].store_id;
+    document.getElementById('storeSelect').value = stores[0].store_id;
+    document.getElementById('selectedStoreDisplay').innerText = stores[0].name;
+  }
+  
+  // Load products
+  await fetchProductsFromSheet(true);
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+
+// Store Management Button (in Inventory Mode)
+document.getElementById('manageStoresBtn').addEventListener('click', openStoreManagementModal);
+document.getElementById('closeStoreManagementModal').addEventListener('click', closeStoreManagementModal);
+document.getElementById('closeStoreManagementBtn').addEventListener('click', closeStoreManagementModal);
+
+// Add Store
+// Add Store - The button inside the modal is "saveAddStoreBtn"
+// The "Add New Store" button that opens the modal is "openAddStoreBtn"
+document.getElementById('openAddStoreBtn')?.addEventListener('click', function() {
+    // Close the store management modal first
+    closeStoreManagementModal();
+    // Open the add store modal
+    addStore();
+});
+
+// Store modal overlay click to close
+document.getElementById('storeManagementModal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('storeManagementModal')) {
+    closeStoreManagementModal();
+  }
+});
+
+// ============================================================
+// UPDATE INVENTORY MODE TO SHOW STORE MANAGEMENT BUTTON
+// ============================================================
+
+// Modify toggleInventoryMode to show/hide Manage Stores button
+const originalToggleInventoryMode = toggleInventoryMode;
+toggleInventoryMode = function() {
+  originalToggleInventoryMode();
+  
+  const manageStoresBtn = document.getElementById('manageStoresBtn');
+  if (manageStoresBtn) {
+    manageStoresBtn.style.display = inventoryMode ? 'inline-flex' : 'none';
+  }
+};
+
+// Call this after DOM load
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize stores
+  initializeStores();
+});
 async function saveStockHistoryToSheet() {
   if (stockHistory.length === 0) {
     await showAlertModal('No History', 'There is no stock adjustment history to save.');

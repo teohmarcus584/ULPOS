@@ -4976,16 +4976,13 @@ function updateCartUI() {
   let html = '';
   let subtotal = 0;
   cart.forEach((item, idx) => {
-    // ✅ Calculate price based on special offer
+    // ✅ Calculate effective price (handle special offer)
     let effectivePrice = item.product.price;
-    let priceDisplay = item.product.price;
-    
     if (item.isSpecialOffer && item.specialPriceActive) {
       effectivePrice = 1; // RM 1 special price
-      priceDisplay = 1;
     }
     
-    const paidUnits = item.quantity - item.freeQuantity;
+    const paidUnits = item.quantity - (item.freeQuantity || 0);
     const itemTotal = paidUnits * effectivePrice;
     subtotal += itemTotal;
     
@@ -5046,15 +5043,18 @@ function updateCartUI() {
 
   subtotalSpan.innerText = `RM ${subtotal.toFixed(2)}`;
 
+  // Calculate staff discount
   if (staffDiscountActive) {
     staffDiscount = subtotal * 0.10;
   } else {
     staffDiscount = 0;
   }
 
+  // Calculate total with all discounts
   const totalPromoDiscount = buy2Free1Discount + buy3Free1Discount + customDiscount + staffDiscount;
   const total = subtotal - discountAmount - totalPromoDiscount;
 
+  // Update discount rows
   if (discountAmount > 0) {
     discountRow.style.display = 'flex';
     discountAmountSpan.innerText = `RM ${discountAmount.toFixed(2)}`;
@@ -5094,7 +5094,7 @@ function updateCartUI() {
 
   totalSpan.innerText = `RM ${total.toFixed(2)}`;
 
-  // ✅ Event listeners for quantity buttons
+  // Event listeners
   document.querySelectorAll('.qty-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const idx = parseInt(btn.dataset.index);
@@ -5104,7 +5104,6 @@ function updateCartUI() {
     });
   });
   
-  // ✅ Event listeners for remove buttons
   document.querySelectorAll('.remove-item').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const idx = parseInt(btn.dataset.index);
@@ -5113,7 +5112,6 @@ function updateCartUI() {
     });
   });
   
-  // ✅ Event listeners for free toggle buttons (regular items)
   document.querySelectorAll('.free-toggle-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const idx = parseInt(btn.dataset.index);
@@ -5122,7 +5120,6 @@ function updateCartUI() {
     });
   });
   
-  // ✅ Event listeners for special price buttons (100ML PERFUME EDP)
   document.querySelectorAll('.special-price-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const idx = parseInt(btn.dataset.index);
@@ -5142,6 +5139,13 @@ function toggleSpecialPrice(index) {
   if (!item.specialPriceActive && item.freeQuantity > 0) {
     item.freeQuantity = 0;
   }
+  
+  // ✅ Log the change for debugging
+  console.log(`🔄 Special price toggled for ${item.product.name}:`, {
+    isSpecialOffer: item.isSpecialOffer,
+    specialPriceActive: item.specialPriceActive,
+    price: item.specialPriceActive ? 1 : item.product.price
+  });
   
   updateCartUI();
 }
@@ -5188,12 +5192,19 @@ async function startCheckout() {
     return;
   }
 
-  // Calculate subtotal
+  // ✅ Calculate subtotal with special pricing
   let subtotal = 0;
   for (let item of cart) {
-    const paidQty = item.quantity - item.freeQuantity;
-    subtotal += paidQty * item.product.price;
+    // ✅ Calculate effective price (handle special offer for 100ML PERFUME EDP)
+    let effectivePrice = item.product.price;
+    if (item.isSpecialOffer && item.specialPriceActive) {
+      effectivePrice = 1; // RM 1 special price
+    }
+    const paidQty = item.quantity - (item.freeQuantity || 0);
+    subtotal += paidQty * effectivePrice;
   }
+
+  console.log('💰 Cart Subtotal (with special pricing):', subtotal);
 
   // Calculate discounts
   let effectiveStaffDiscount = 0;

@@ -3960,15 +3960,14 @@ if (inventoryMode) {
 // ============================================================
 // ==================== AUTO-SAVE PRICE UPDATE FUNCTIONS ====================
 
+// ==================== AUTO-SAVE PRICE UPDATE FUNCTIONS ====================
+
 // Debounce map for price saves
 const priceDebounceMap = {};
 
 function attachAutoPriceUpdateEvents() {
-  console.log('🔧 Attaching auto-price update events...');
-  
   document.querySelectorAll('.price-input-auto').forEach(input => {
     const productId = input.dataset.id;
-    console.log(`📋 Found price input for product: ${productId}`);
     
     // Remove old listeners to prevent duplicates
     if (input._priceInputHandler) {
@@ -3984,10 +3983,7 @@ function attachAutoPriceUpdateEvents() {
     // Create new handlers
     input._priceInputHandler = function(e) {
       const product = products.find(p => p.id == productId);
-      if (!product) {
-        console.warn('⚠️ Product not found for ID:', productId);
-        return;
-      }
+      if (!product) return;
       
       const newPrice = parseFloat(this.value);
       
@@ -4005,10 +4001,7 @@ function attachAutoPriceUpdateEvents() {
       
       // Only trigger save if price changed
       if (newPrice !== product.price) {
-        console.log(`✏️ Price changed for ${product.name}: RM ${product.price.toFixed(2)} → RM ${newPrice.toFixed(2)}`);
         updatePriceStatus(productId, false, '⏳ Saving...');
-        
-        // Debounce the actual save
         debouncePriceSave(productId, this);
       }
     };
@@ -4021,7 +4014,6 @@ function attachAutoPriceUpdateEvents() {
       
       // Only update if price actually changed and is valid
       if (!isNaN(newPrice) && newPrice !== product.price && newPrice >= 0) {
-        console.log(`📤 Blur - saving price for ${product.name}: RM ${newPrice.toFixed(2)}`);
         // Clear any pending debounce and save immediately
         if (priceDebounceMap[productId]) {
           clearTimeout(priceDebounceMap[productId]);
@@ -4043,7 +4035,6 @@ function attachAutoPriceUpdateEvents() {
         
         const newPrice = parseFloat(this.value);
         if (!isNaN(newPrice) && newPrice >= 0 && newPrice !== product.price) {
-          console.log(`⌨️ Enter - saving price for ${product.name}: RM ${newPrice.toFixed(2)}`);
           // Clear any pending debounce
           if (priceDebounceMap[productId]) {
             clearTimeout(priceDebounceMap[productId]);
@@ -4061,8 +4052,6 @@ function attachAutoPriceUpdateEvents() {
     input.addEventListener('blur', input._priceBlurHandler);
     input.addEventListener('keydown', input._priceKeydownHandler);
   });
-  
-  console.log('✅ Auto-price update events attached');
 }
 
 function debouncePriceSave(productId, input) {
@@ -4072,9 +4061,8 @@ function debouncePriceSave(productId, input) {
     delete priceDebounceMap[productId];
   }
   
-  // Set new debounce (500ms delay for faster response)
+  // Set new debounce (500ms delay)
   priceDebounceMap[productId] = setTimeout(async () => {
-    console.log(`⏰ Debounce triggered for product ${productId}`);
     await updateProductPriceAuto(productId, input);
     delete priceDebounceMap[productId];
   }, 500);
@@ -4082,12 +4070,6 @@ function debouncePriceSave(productId, input) {
 
 async function updateProductPriceAuto(productId, input) {
   const newPrice = parseFloat(input.value);
-  
-  console.log(`🔍 updateProductPriceAuto called:`, {
-    productId: productId,
-    newPrice: newPrice,
-    inputValue: input.value
-  });
   
   // Validate
   if (isNaN(newPrice) || newPrice < 0) {
@@ -4104,22 +4086,18 @@ async function updateProductPriceAuto(productId, input) {
   // Find the product
   const product = products.find(p => p.id == productId);
   if (!product) {
-    console.error('❌ Product not found:', productId);
     return false;
   }
   
   // Check if price actually changed
   const oldPrice = product.price;
   if (Math.abs(newPrice - oldPrice) < 0.001) {
-    console.log(`ℹ️ Price unchanged for ${product.name}: RM ${oldPrice.toFixed(2)}`);
     updatePriceStatus(productId, true);
     return true;
   }
   
-  console.log(`📝 Updating price for ${product.name}: RM ${oldPrice.toFixed(2)} → RM ${newPrice.toFixed(2)}`);
-  
   try {
-    // ✅ UPDATE IN SUPABASE
+    // Update in Supabase
     const { data, error } = await supabase
       .from('products')
       .update({ 
@@ -4128,20 +4106,15 @@ async function updateProductPriceAuto(productId, input) {
       .eq('id', productId)
       .select();
     
-    console.log('📤 Supabase response:', { data, error });
-    
     if (error) {
-      console.error('❌ Supabase update error:', error);
       throw error;
     }
     
-    console.log('✅ Supabase update successful:', data);
-    
-    // ✅ Update local product object
+    // Update local product object
     product.price = newPrice;
     input.value = newPrice.toFixed(2);
     
-    // ✅ Store the old price for reverting if needed
+    // Store the old price for reverting if needed
     input.dataset.oldPrice = oldPrice;
     
     // Show success state
@@ -4157,17 +4130,15 @@ async function updateProductPriceAuto(productId, input) {
       }
     }, 1500);
     
-    // ✅ Force sync after price update
+    // Sync after price update
     if (window._priceSyncTimeout) {
       clearTimeout(window._priceSyncTimeout);
     }
     window._priceSyncTimeout = setTimeout(async () => {
       try {
-        console.log('🔄 Syncing after price update...');
         await backgroundSync(true);
-        console.log('✅ Background sync completed after price update');
       } catch (syncErr) {
-        console.warn('⚠️ Background sync after price update failed:', syncErr);
+        // Silent fail - don't show errors to user
       }
       window._priceSyncTimeout = null;
     }, 1000);
@@ -4175,9 +4146,7 @@ async function updateProductPriceAuto(productId, input) {
     return true;
     
   } catch (err) {
-    console.error('❌ Error updating price:', err);
-    
-    // ✅ Revert the local product price
+    // Revert the local product price
     product.price = oldPrice;
     input.value = oldPrice.toFixed(2);
     
@@ -4185,13 +4154,6 @@ async function updateProductPriceAuto(productId, input) {
     input.style.borderColor = '#ef4444';
     input.style.boxShadow = '0 0 0 4px rgba(239, 68, 68, 0.15)';
     updatePriceStatus(productId, false, '❌ Failed');
-    
-    // Show alert with error details
-    await showAlertModal('Price Update Failed', 
-      `Failed to update price for ${product.name}.\n\n` +
-      `Error: ${err.message || 'Unknown error'}\n\n` +
-      `Please try again or check your connection.`
-    );
     
     setTimeout(() => {
       if (input) {

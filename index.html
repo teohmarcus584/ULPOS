@@ -3961,8 +3961,12 @@ if (inventoryMode) {
 // ==================== AUTO-SAVE PRICE UPDATE FUNCTIONS ====================
 
 function attachAutoPriceUpdateEvents() {
-  // Auto-save on input change (with debounce)
+  console.log('🔧 Attaching auto-price update events...');
+  
   document.querySelectorAll('.price-input-auto').forEach(input => {
+    const productId = input.dataset.id;
+    console.log(`📋 Found price input for product: ${productId}`);
+    
     // Remove old listeners to prevent duplicates
     if (input._priceInputHandler) {
       input.removeEventListener('input', input._priceInputHandler);
@@ -3976,42 +3980,72 @@ function attachAutoPriceUpdateEvents() {
     
     // Create new handlers
     input._priceInputHandler = function(e) {
-      handlePriceAutoUpdate(e, this);
-    };
-    
-    input._priceBlurHandler = function(e) {
-      // Auto-save on blur (when user clicks away)
-      const productId = this.dataset.id;
       const product = products.find(p => p.id == productId);
       if (!product) return;
       
       const newPrice = parseFloat(this.value);
-      const oldPrice = product.price;
+      
+      // Validate
+      if (isNaN(newPrice) || newPrice < 0) {
+        this.style.borderColor = '#ef4444';
+        this.style.boxShadow = '0 0 0 4px rgba(239, 68, 68, 0.15)';
+        updatePriceStatus(productId, false, '⚠️ Invalid');
+        return;
+      }
+      
+      // Remove error state
+      this.style.borderColor = '#cbd5e1';
+      this.style.boxShadow = 'none';
+      
+      // Only trigger save if price changed
+      if (newPrice !== product.price) {
+        console.log(`✏️ Price changed for ${product.name}: ${product.price} → ${newPrice}`);
+        updatePriceStatus(productId, false, '⏳ Saving...');
+        
+        // Debounce the actual save
+        debouncePriceSave(productId, this);
+      }
+    };
+    
+    input._priceBlurHandler = function(e) {
+      const product = products.find(p => p.id == productId);
+      if (!product) return;
+      
+      const newPrice = parseFloat(this.value);
       
       // Only update if price actually changed and is valid
-      if (!isNaN(newPrice) && newPrice !== oldPrice && newPrice >= 0) {
-        // Use the debounced save function
-        debouncePriceSave(productId, this);
+      if (!isNaN(newPrice) && newPrice !== product.price && newPrice >= 0) {
+        console.log(`📤 Blur - saving price for ${product.name}: ${newPrice}`);
+        // Clear any pending debounce and save immediately
+        if (priceDebounceMap[productId]) {
+          clearTimeout(priceDebounceMap[productId]);
+          delete priceDebounceMap[productId];
+        }
+        updateProductPriceAuto(productId, this);
       } else if (!isNaN(newPrice) && newPrice >= 0) {
-        // Reset to old price if invalid or same
+        // Reset display if same or invalid
         this.value = product.price.toFixed(2);
+        updatePriceStatus(productId, true);
       }
     };
     
     input._priceKeydownHandler = function(e) {
       if (e.key === 'Enter') {
         e.preventDefault();
-        // Force save on Enter
-        const productId = this.dataset.id;
         const product = products.find(p => p.id == productId);
         if (!product) return;
         
         const newPrice = parseFloat(this.value);
         if (!isNaN(newPrice) && newPrice >= 0 && newPrice !== product.price) {
+          console.log(`⌨️ Enter - saving price for ${product.name}: ${newPrice}`);
+          // Clear any pending debounce
+          if (priceDebounceMap[productId]) {
+            clearTimeout(priceDebounceMap[productId]);
+            delete priceDebounceMap[productId];
+          }
           updateProductPriceAuto(productId, this);
         } else {
           this.value = product.price.toFixed(2);
-          // Show that it's saved
           updatePriceStatus(productId, true);
         }
       }
@@ -4021,6 +4055,8 @@ function attachAutoPriceUpdateEvents() {
     input.addEventListener('blur', input._priceBlurHandler);
     input.addEventListener('keydown', input._priceKeydownHandler);
   });
+  
+  console.log('✅ Auto-price update events attached');
 }
 
 // Debounce map for price saves
@@ -4030,15 +4066,42 @@ function debouncePriceSave(productId, input) {
   // Clear existing debounce
   if (priceDebounceMap[productId]) {
     clearTimeout(priceDebounceMap[productId]);
+    delete priceDebounceMap[productId];
   }
   
-  // Set new debounce (800ms delay)
-  priceDebounceMap[productId] = setTimeout(() => {
-    updateProductPriceAuto(productId, input);
+  // Set new debounce (500ms delay for faster response)
+  priceDebounceMap[productId] = setTimeout(async () => {
+    console.log(`⏰ Debounce triggered for product ${productId}`);
+    await updateProductPriceAuto(productId, input);
     delete priceDebounceMap[productId];
-  }, 800);
+  }, 500);
+}
+// Test function - call this from browser console to test
+async function testPriceUpdate(productId, newPrice) {
+  console.log(`🧪 Testing price update for product ${productId} to RM ${newPrice}`);
+  
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .update({ price: newPrice })
+      .eq('id', productId)
+      .select();
+    
+    if (error) {
+      console.error('❌ Test failed:', error);
+      return false;
+    }
+    
+    console.log('✅ Test successful:', data);
+    return true;
+  } catch (err) {
+    console.error('❌ Test error:', err);
+    return false;
+  }
 }
 
+// To test, open browser console and run:
+// testPriceUpdate('PRODUCT_ID_HERE', 99.99)
 function handlePriceAutoUpdate(e, input) {
   const productId = input.dataset.id;
   const product = products.find(p => p.id == productId);
@@ -4094,6 +4157,7 @@ async function updateProductPriceAuto(productId, input) {
   // Find the product
   const product = products.find(p => p.id == productId);
   if (!product) {
+    console.error('❌ Product not found:', productId);
     return false;
   }
   
@@ -4104,19 +4168,31 @@ async function updateProductPriceAuto(productId, input) {
     return true;
   }
   
+  console.log(`📝 Updating price for ${product.name}: RM ${oldPrice.toFixed(2)} → RM ${newPrice.toFixed(2)}`);
+  
   try {
-    // Update in Supabase
-    const { error } = await supabase
+    // ✅ UPDATE IN SUPABASE - USING THE CORRECT COLUMN NAME
+    const { data, error } = await supabase
       .from('products')
-      .update({ price: newPrice })
-      .eq('id', productId);
+      .update({ 
+        price: newPrice 
+      })
+      .eq('id', productId)
+      .select(); // ✅ Add .select() to get the updated data back
     
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Supabase update error:', error);
+      throw error;
+    }
     
-    // Update local product object (already updated optimistically)
-    // But ensure it's set correctly
+    console.log('✅ Supabase update successful:', data);
+    
+    // ✅ Update local product object
     product.price = newPrice;
     input.value = newPrice.toFixed(2);
+    
+    // ✅ Store the old price for reverting if needed
+    input.dataset.oldPrice = oldPrice;
     
     // Show success state
     input.style.borderColor = '#10b981';
@@ -4131,33 +4207,40 @@ async function updateProductPriceAuto(productId, input) {
       }
     }, 1500);
     
-    console.log(`✅ Auto-saved price for ${product.name}: RM ${oldPrice.toFixed(2)} → RM ${newPrice.toFixed(2)}`);
-    
-    // Sync after price update
+    // ✅ Force sync after price update
     if (window._priceSyncTimeout) {
       clearTimeout(window._priceSyncTimeout);
     }
-    window._priceSyncTimeout = setTimeout(() => {
-      backgroundSync(true).catch(err => {
-        console.warn('⚠️ Background sync after price update failed:', err);
-      });
+    window._priceSyncTimeout = setTimeout(async () => {
+      try {
+        console.log('🔄 Syncing after price update...');
+        await backgroundSync(true);
+        console.log('✅ Background sync completed after price update');
+      } catch (syncErr) {
+        console.warn('⚠️ Background sync after price update failed:', syncErr);
+      }
       window._priceSyncTimeout = null;
     }, 1000);
     
     return true;
     
   } catch (err) {
-    console.error('Error updating price:', err);
+    console.error('❌ Error updating price:', err);
     
-    // Revert the local product price
-    const revertPrice = parseFloat(input.dataset.oldPrice || oldPrice);
-    product.price = revertPrice;
-    input.value = revertPrice.toFixed(2);
+    // ✅ Revert the local product price
+    product.price = oldPrice;
+    input.value = oldPrice.toFixed(2);
     
     // Show error state
     input.style.borderColor = '#ef4444';
     input.style.boxShadow = '0 0 0 4px rgba(239, 68, 68, 0.15)';
     updatePriceStatus(productId, false, '❌ Failed');
+    
+    await showAlertModal('Price Update Failed', 
+      `Failed to update price for ${product.name}.\n\n` +
+      `Error: ${err.message || 'Unknown error'}\n\n` +
+      `Please try again or check your connection.`
+    );
     
     setTimeout(() => {
       if (input) {
@@ -4165,7 +4248,7 @@ async function updateProductPriceAuto(productId, input) {
         input.style.boxShadow = 'none';
         updatePriceStatus(productId, true);
       }
-    }, 2000);
+    }, 3000);
     
     return false;
   }

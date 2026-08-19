@@ -3960,6 +3960,9 @@ if (inventoryMode) {
 // ============================================================
 // ==================== AUTO-SAVE PRICE UPDATE FUNCTIONS ====================
 
+// Debounce map for price saves
+const priceDebounceMap = {};
+
 function attachAutoPriceUpdateEvents() {
   console.log('🔧 Attaching auto-price update events...');
   
@@ -3981,7 +3984,10 @@ function attachAutoPriceUpdateEvents() {
     // Create new handlers
     input._priceInputHandler = function(e) {
       const product = products.find(p => p.id == productId);
-      if (!product) return;
+      if (!product) {
+        console.warn('⚠️ Product not found for ID:', productId);
+        return;
+      }
       
       const newPrice = parseFloat(this.value);
       
@@ -3999,7 +4005,7 @@ function attachAutoPriceUpdateEvents() {
       
       // Only trigger save if price changed
       if (newPrice !== product.price) {
-        console.log(`✏️ Price changed for ${product.name}: ${product.price} → ${newPrice}`);
+        console.log(`✏️ Price changed for ${product.name}: RM ${product.price.toFixed(2)} → RM ${newPrice.toFixed(2)}`);
         updatePriceStatus(productId, false, '⏳ Saving...');
         
         // Debounce the actual save
@@ -4015,7 +4021,7 @@ function attachAutoPriceUpdateEvents() {
       
       // Only update if price actually changed and is valid
       if (!isNaN(newPrice) && newPrice !== product.price && newPrice >= 0) {
-        console.log(`📤 Blur - saving price for ${product.name}: ${newPrice}`);
+        console.log(`📤 Blur - saving price for ${product.name}: RM ${newPrice.toFixed(2)}`);
         // Clear any pending debounce and save immediately
         if (priceDebounceMap[productId]) {
           clearTimeout(priceDebounceMap[productId]);
@@ -4037,7 +4043,7 @@ function attachAutoPriceUpdateEvents() {
         
         const newPrice = parseFloat(this.value);
         if (!isNaN(newPrice) && newPrice >= 0 && newPrice !== product.price) {
-          console.log(`⌨️ Enter - saving price for ${product.name}: ${newPrice}`);
+          console.log(`⌨️ Enter - saving price for ${product.name}: RM ${newPrice.toFixed(2)}`);
           // Clear any pending debounce
           if (priceDebounceMap[productId]) {
             clearTimeout(priceDebounceMap[productId]);
@@ -4059,9 +4065,6 @@ function attachAutoPriceUpdateEvents() {
   console.log('✅ Auto-price update events attached');
 }
 
-// Debounce map for price saves
-const priceDebounceMap = {};
-
 function debouncePriceSave(productId, input) {
   // Clear existing debounce
   if (priceDebounceMap[productId]) {
@@ -4076,71 +4079,15 @@ function debouncePriceSave(productId, input) {
     delete priceDebounceMap[productId];
   }, 500);
 }
-// Test function - call this from browser console to test
-async function testPriceUpdate(productId, newPrice) {
-  console.log(`🧪 Testing price update for product ${productId} to RM ${newPrice}`);
-  
-  try {
-    const { data, error } = await supabase
-      .from('products')
-      .update({ price: newPrice })
-      .eq('id', productId)
-      .select();
-    
-    if (error) {
-      console.error('❌ Test failed:', error);
-      return false;
-    }
-    
-    console.log('✅ Test successful:', data);
-    return true;
-  } catch (err) {
-    console.error('❌ Test error:', err);
-    return false;
-  }
-}
-
-// To test, open browser console and run:
-// testPriceUpdate('PRODUCT_ID_HERE', 99.99)
-function handlePriceAutoUpdate(e, input) {
-  const productId = input.dataset.id;
-  const product = products.find(p => p.id == productId);
-  if (!product) return;
-  
-  const newPrice = parseFloat(input.value);
-  const oldPrice = product.price;
-  
-  // Validate
-  if (isNaN(newPrice) || newPrice < 0) {
-    // Show error state
-    input.style.borderColor = '#ef4444';
-    input.style.boxShadow = '0 0 0 4px rgba(239, 68, 68, 0.15)';
-    updatePriceStatus(productId, false, '⚠️ Invalid');
-    return;
-  }
-  
-  // Remove error state
-  input.style.borderColor = '#cbd5e1';
-  input.style.boxShadow = 'none';
-  
-  // Only trigger save if price changed and is valid
-  if (newPrice !== oldPrice) {
-    // Show "saving..." status
-    updatePriceStatus(productId, false, '⏳ Saving...');
-    
-    // Update the local product price immediately (optimistic update)
-    product.price = newPrice;
-    
-    // Debounce the actual save to avoid too many requests
-    debouncePriceSave(productId, input);
-  } else {
-    // Price didn't change, show saved status
-    updatePriceStatus(productId, true);
-  }
-}
 
 async function updateProductPriceAuto(productId, input) {
   const newPrice = parseFloat(input.value);
+  
+  console.log(`🔍 updateProductPriceAuto called:`, {
+    productId: productId,
+    newPrice: newPrice,
+    inputValue: input.value
+  });
   
   // Validate
   if (isNaN(newPrice) || newPrice < 0) {
@@ -4164,6 +4111,7 @@ async function updateProductPriceAuto(productId, input) {
   // Check if price actually changed
   const oldPrice = product.price;
   if (Math.abs(newPrice - oldPrice) < 0.001) {
+    console.log(`ℹ️ Price unchanged for ${product.name}: RM ${oldPrice.toFixed(2)}`);
     updatePriceStatus(productId, true);
     return true;
   }
@@ -4171,14 +4119,16 @@ async function updateProductPriceAuto(productId, input) {
   console.log(`📝 Updating price for ${product.name}: RM ${oldPrice.toFixed(2)} → RM ${newPrice.toFixed(2)}`);
   
   try {
-    // ✅ UPDATE IN SUPABASE - USING THE CORRECT COLUMN NAME
+    // ✅ UPDATE IN SUPABASE
     const { data, error } = await supabase
       .from('products')
       .update({ 
         price: newPrice 
       })
       .eq('id', productId)
-      .select(); // ✅ Add .select() to get the updated data back
+      .select();
+    
+    console.log('📤 Supabase response:', { data, error });
     
     if (error) {
       console.error('❌ Supabase update error:', error);
@@ -4236,6 +4186,7 @@ async function updateProductPriceAuto(productId, input) {
     input.style.boxShadow = '0 0 0 4px rgba(239, 68, 68, 0.15)';
     updatePriceStatus(productId, false, '❌ Failed');
     
+    // Show alert with error details
     await showAlertModal('Price Update Failed', 
       `Failed to update price for ${product.name}.\n\n` +
       `Error: ${err.message || 'Unknown error'}\n\n` +
@@ -4260,7 +4211,7 @@ function updatePriceStatus(productId, isSaved, customMessage = null) {
   statusElements.forEach(status => {
     if (customMessage) {
       status.textContent = customMessage;
-      if (customMessage.includes('✅') || customMessage === '✓ Saved') {
+      if (customMessage.includes('✅') || customMessage === '✓ Saved' || customMessage === '✅ Saved') {
         status.style.color = '#10b981';
       } else if (customMessage.includes('⚠️') || customMessage.includes('❌')) {
         status.style.color = '#ef4444';

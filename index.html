@@ -7520,7 +7520,10 @@ async function processRefund(transactionId, store) {
       custom_discount: -(transaction.custom_discount || 0),
       staff_discount: -(transaction.staff_discount || 0),
       settled: false,
-      refunded: false
+      refunded: false,
+      // Preserve customer information
+      customer_id: transaction.customer_id || null,
+      customer_phone: transaction.customer_phone || null
     };
 
     // Save refund to transactions
@@ -7540,6 +7543,96 @@ async function processRefund(transactionId, store) {
       .from('transactions')
       .update({ refunded: true })
       .eq('transaction_id', transactionId);
+
+    // ✅ ============================================================
+    // ✅ DEDUCT CUSTOMER POINTS DURING REFUND
+    // ✅ ============================================================
+    
+    // Get customer info from the original transaction
+    const customerPhone = transaction.customer_phone;
+    const customerId = transaction.customer_id;
+    
+    console.log('🔍 Checking for customer points deduction:', { customerPhone, customerId });
+    
+    if (customerPhone || customerId) {
+      try {
+        // Find the customer by phone or ID
+        let query = supabase.from('customers').select('id, points, name, phone');
+        
+        if (customerPhone) {
+          query = query.eq('phone', customerPhone);
+        } else if (customerId) {
+          query = query.eq('id', customerId);
+        }
+        
+        const { data: customerData, error: customerError } = await query.maybeSingle();
+        
+        if (customerError) {
+          console.error('❌ Error finding customer:', customerError);
+        } else if (customerData) {
+          // Calculate points to deduct (1 point per RM 1 spent)
+          const originalAmount = Math.abs(transaction.total);
+          const pointsToDeduct = Math.floor(originalAmount);
+          const currentPoints = customerData.points || 0;
+          const newPoints = Math.max(0, currentPoints - pointsToDeduct);
+          
+          console.log('========================================');
+          console.log('⭐ CUSTOMER POINTS DEDUCTION START');
+          console.log('👤 Customer:', customerData.name);
+          console.log('📱 Phone:', customerData.phone);
+          console.log('💰 Refund Amount:', originalAmount.toFixed(2));
+          console.log('⭐ Points to Deduct:', pointsToDeduct);
+          console.log('📊 Current points:', currentPoints);
+          console.log('📊 New points:', newPoints);
+          
+          // Update points in Supabase
+          const { error: updateError } = await supabase
+            .from('customers')
+            .update({ points: newPoints })
+            .eq('id', customerData.id);
+          
+          if (updateError) {
+            console.error('❌ Error deducting points:', updateError);
+            await showAlertModal('⚠️ Points Deduction Failed',
+              `Refund processed but points could not be deducted.\n\n` +
+              `Error: ${updateError.message}\n` +
+              `Please manually adjust customer points.`
+            );
+          } else {
+            console.log('✅ Points deducted successfully!');
+            console.log(`⭐ New total points: ${newPoints}`);
+            console.log('========================================');
+            
+            // ✅ Update selectedCustomer if it matches
+            if (selectedCustomer && selectedCustomer.id === customerData.id) {
+              selectedCustomer.points = newPoints;
+              try {
+                sessionStorage.setItem('selectedCustomer', JSON.stringify(selectedCustomer));
+              } catch(e) {}
+              updateCustomerDisplay();
+            }
+            
+            // Show a notification about points deduction
+            await showAlertModal('⭐ Points Deducted', 
+              `${pointsToDeduct} points have been deducted from ${customerData.name}'s account.\n` +
+              `Remaining points: ${newPoints}`
+            );
+          }
+        } else {
+          console.log('ℹ️ No customer found for this transaction, skipping points deduction');
+        }
+      } catch (err) {
+        console.error('❌ Points deduction error:', err);
+        // Don't block the refund, just show a warning
+        await showAlertModal('⚠️ Points Deduction Warning',
+          `Refund processed but points deduction failed.\n\n` +
+          `Error: ${err.message}\n` +
+          `Please manually adjust customer points if needed.`
+        );
+      }
+    } else {
+      console.log('ℹ️ No customer associated with this transaction, skipping points deduction');
+    }
 
     // ✅ IRS Reporting for refunds (Card and Alipay)
     if (transaction.payment_method === 'Card' || transaction.payment_method === 'Alipay') {

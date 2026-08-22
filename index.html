@@ -5648,6 +5648,7 @@ function showPaymentModal(totalAmount) {
 async function saveTransactionToSheet(transaction) {
   try {
     console.log('💾 Saving transaction:', transaction.transaction_id);
+    console.log('📋 Customer ID:', transaction.customer_id);
     
     // 1. Save to transactions table
     const { data, error } = await supabase
@@ -5666,7 +5667,7 @@ async function saveTransactionToSheet(transaction) {
         refunded: transaction.refunded || false,
         refund_of: transaction.refund_of || '',
         original_payment_method: transaction.original_payment_method || '',
-        customer_id: transaction.customer_id || '',
+        customer_id: transaction.customer_id || '',  // ✅ Make sure this is saved
         points_awarded: transaction.points_awarded || 0,
         discount: transaction.discount || 0,
         buy2_free1_discount: transaction.buy2_free1_discount || 0,
@@ -5720,30 +5721,6 @@ async function saveTransactionToSheet(transaction) {
         console.log(`✅ IRS report saved: ${invoiceNo}`, irsData);
       }
     }
-    
-    // ✅ REMOVE THIS SECTION - It's causing the error!
-    // The stock is already updated in completeCheckout()
-    /*
-    console.log('📦 Updating stock in Supabase...');
-    for (const item of transaction.items || []) {
-      const product = products.find(p => p.id == item.id);
-      if (product) {
-        const stockColumn = `stock_${currentStore}`;
-        const newStock = product.stock;
-        
-        const { error: stockError } = await supabase
-          .from('products')
-          .update({ [stockColumn]: newStock })
-          .eq('id', item.id);
-        
-        if (stockError) {
-          console.error(`❌ Error updating stock for ${item.name}:`, stockError);
-        } else {
-          console.log(`✅ Stock updated for ${item.name}: ${newStock}`);
-        }
-      }
-    }
-    */
     
     return true;
     
@@ -6025,21 +6002,58 @@ async function completeCheckout(paymentMethod, cashReceived) {
         claimedReceiptInfo = null;
       }
 
-      // ✅ UPDATE CUSTOMER POINTS
-      if (selectedCustomer) {
+      // ✅ UPDATE CUSTOMER POINTS - FIXED
+      if (selectedCustomer && selectedCustomer.id) {
         try {
           const pointsEarned = Math.floor(totalAmount / 10);
-          const newPoints = (selectedCustomer.points || 0) + pointsEarned;
-          await supabase
+          console.log(`💰 Customer ${selectedCustomer.name} (${selectedCustomer.id}) earned ${pointsEarned} points`);
+          console.log(`📊 Current points: ${selectedCustomer.points || 0}`);
+          
+          // Get current points from database to ensure we have latest
+          const { data: currentCustomer, error: fetchError } = await supabase
+            .from('customers')
+            .select('points')
+            .eq('id', selectedCustomer.id)
+            .maybeSingle();
+          
+          if (fetchError) {
+            console.error('Error fetching current points:', fetchError);
+            throw fetchError;
+          }
+          
+          const currentPoints = currentCustomer ? currentCustomer.points || 0 : selectedCustomer.points || 0;
+          const newPoints = currentPoints + pointsEarned;
+          
+          console.log(`🔄 Updating points: ${currentPoints} → ${newPoints}`);
+          
+          const { error: updateError } = await supabase
             .from('customers')
             .update({ points: newPoints })
-            .eq('phone', selectedCustomer.phone);
+            .eq('id', selectedCustomer.id);
+          
+          if (updateError) {
+            console.error('❌ Error updating customer points:', updateError);
+            throw updateError;
+          }
+          
+          // Update local customer object
           selectedCustomer.points = newPoints;
           updateCustomerDisplay();
-          console.log(`✅ Added ${pointsEarned} points to customer`);
+          
+          console.log(`✅ Added ${pointsEarned} points to customer ${selectedCustomer.name}. New total: ${newPoints}`);
+          
+          // Show a brief notification
+          await showAlertModal('⭐ Points Earned!', 
+            `${selectedCustomer.name || 'Customer'} earned ${pointsEarned} points!\n` +
+            `Total points: ${newPoints}`
+          );
+          
         } catch (err) {
-          console.warn('Failed to update customer points:', err);
+          console.error('❌ Failed to update customer points:', err);
+          // Don't block the transaction, but log the error
         }
+      } else {
+        console.log('ℹ️ No customer selected, skipping points update');
       }
       
       // ✅ Re-render product grid to show updated stock
@@ -8818,21 +8832,28 @@ async function saveCustomer(customerData) {
 }
 
 function updateCustomerDisplay() {
+  const display = document.getElementById('customerInfoDisplay');
+  if (!display) return;
+  
   if (selectedCustomer) {
-    customerInfoDisplay.innerHTML = `
+    display.innerHTML = `
       <div class="customer-info">
         <div class="customer-name">👤 ${escapeHtml(selectedCustomer.name || 'Customer')} (${escapeHtml(selectedCustomer.phone)})</div>
         <div class="customer-points">⭐ Points: ${selectedCustomer.points || 0}</div>
-        <button id="removeCustomerBtn">Remove</button>
+        <button id="removeCustomerBtn" class="cart-header-btn" style="font-size:0.7rem; padding:2px 10px;">Remove</button>
       </div>
     `;
-    customerInfoDisplay.style.display = 'block';
-    document.getElementById('removeCustomerBtn').addEventListener('click', () => {
-      selectedCustomer = null;
-      updateCustomerDisplay();
-    });
+    display.style.display = 'block';
+    
+    const removeBtn = document.getElementById('removeCustomerBtn');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => {
+        selectedCustomer = null;
+        updateCustomerDisplay();
+      });
+    }
   } else {
-    customerInfoDisplay.style.display = 'none';
+    display.style.display = 'none';
   }
 }
 

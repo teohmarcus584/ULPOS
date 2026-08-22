@@ -5766,6 +5766,24 @@ async function completeCheckout(paymentMethod, cashReceived) {
     const salesPersonName = selectedOption ? selectedOption.text.split(' (ID:')[0] : '';
     const salesPersonId = salesPersonSelect.value;
 
+    // ✅ Get customer data
+    const customerToUse = selectedCustomer || window.selectedCustomer;
+    let sessionCustomer = null;
+    if (!customerToUse) {
+      try {
+        const saved = sessionStorage.getItem('selectedCustomer');
+        if (saved) {
+          sessionCustomer = JSON.parse(saved);
+          console.log('🔄 Found customer in sessionStorage:', sessionCustomer);
+        }
+      } catch(e) {}
+    }
+    const finalCustomer = customerToUse || sessionCustomer;
+    
+    // ✅ Get customer phone number and ID
+    const customerPhone = finalCustomer ? finalCustomer.phone : null;
+    const customerId = finalCustomer ? finalCustomer.id : null;
+
     // ✅ Calculate sale items with all special offers
     const saleItems = cart.map(item => {
       let specialPrice = null;
@@ -5847,6 +5865,7 @@ async function completeCheckout(paymentMethod, cashReceived) {
       };
     });
 
+    // ✅ Build transaction with BOTH customer_id AND customer_phone
     const transaction = {
       transaction_id: transactionId,
       items: saleItems,
@@ -5860,13 +5879,21 @@ async function completeCheckout(paymentMethod, cashReceived) {
       custom_discount: customDiscount || 0,
       staff_discount: staffDiscount || 0,
       prize_claimed: claimedReceiptInfo || null,
-      customer_id: selectedCustomer ? selectedCustomer.id : null,
+      customer_id: customerId,           // ✅ Keep for backward compatibility
+      customer_phone: customerPhone,     // ✅ NEW: Store phone number
       store: currentStore,
       employee_id: currentEmployee.id,
       employee_name: currentEmployee.name,
       sales_person_name: salesPersonName || '',
       sales_person_id: salesPersonId || ''
     };
+
+    console.log('💾 Transaction with customer:', {
+      transaction_id: transactionId,
+      customer_id: customerId,
+      customer_phone: customerPhone,
+      total: totalAmount
+    });
 
     // Print receipt
     let receiptPrinted = false;
@@ -5974,7 +6001,9 @@ async function completeCheckout(paymentMethod, cashReceived) {
         console.warn('⚠️ Background sync failed after sale:', syncErr);
       }
 
-      await saveToLuckyDraw(transaction);
+      // ✅ SAVE TO LUCKY DRAW WITH PHONE NUMBER
+      console.log('🎲 Saving to Lucky Draw with customer phone:', customerPhone);
+      await saveToLuckyDraw(transaction, customerPhone);
 
       if (pendingPrize) {
         console.log('🎯 Claiming prize after sale...');
@@ -6001,44 +6030,65 @@ async function completeCheckout(paymentMethod, cashReceived) {
       }
 
       // ✅ ============================================================
-      // ✅ UPDATE CUSTOMER POINTS - COMPLETE FIX WITH RETRY
+      // ✅ UPDATE CUSTOMER POINTS - Using phone number
       // ✅ ============================================================
       console.log('🔍 DEBUG: About to update customer points');
-      console.log('🔍 selectedCustomer:', selectedCustomer);
-      console.log('🔍 selectedCustomer?.id:', selectedCustomer?.id);
+      console.log('🔍 customerId:', customerId);
+      console.log('🔍 customerPhone:', customerPhone);
       console.log('🔍 totalAmount:', totalAmount);
       
-      if (selectedCustomer && selectedCustomer.id) {
+      // ✅ Use phone number to identify customer
+      if (customerPhone) {
         try {
+          // ✅ First, find the customer by phone number
+          console.log('🔄 Finding customer by phone:', customerPhone);
+          const { data: customerData, error: customerError } = await supabase
+            .from('customers')
+            .select('id, points, name, phone')
+            .eq('phone', customerPhone)
+            .maybeSingle();
+          
+          if (customerError) {
+            console.error('❌ Error finding customer:', customerError);
+            throw customerError;
+          }
+          
+          if (!customerData) {
+            console.warn('⚠️ Customer not found with phone:', customerPhone);
+            // Try by ID as fallback
+            if (customerId) {
+              console.log('🔄 Trying to find by ID:', customerId);
+              const { data: idData, error: idError } = await supabase
+                .from('customers')
+                .select('id, points, name, phone')
+                .eq('id', customerId)
+                .maybeSingle();
+              
+              if (idError || !idData) {
+                throw new Error('Customer not found by phone or ID');
+              }
+              customerData = idData;
+            } else {
+              throw new Error('Customer not found');
+            }
+          }
+          
+          console.log('✅ Customer found:', customerData);
+          
           // ✅ 1 point for every RM 1 spent
           const pointsEarned = Math.floor(totalAmount);
           console.log('========================================');
           console.log('⭐ CUSTOMER POINTS UPDATE START');
-          console.log('👤 Customer:', selectedCustomer.name);
-          console.log('📱 Phone:', selectedCustomer.phone);
-          console.log('🆔 ID:', selectedCustomer.id, 'Type:', typeof selectedCustomer.id);
+          console.log('👤 Customer:', customerData.name);
+          console.log('📱 Phone:', customerData.phone);
+          console.log('🆔 ID:', customerData.id);
           console.log('💰 Total Amount:', totalAmount);
           console.log('⭐ Points to Earn:', pointsEarned);
           
-          // First, get current points from database
-          console.log('🔄 Fetching current points from database...');
-          const { data: currentCustomer, error: fetchError } = await supabase
-            .from('customers')
-            .select('id, points, name')
-            .eq('id', selectedCustomer.id)
-            .maybeSingle();
-          
-          if (fetchError) {
-            console.error('❌ Error fetching current points:', fetchError);
-            throw fetchError;
-          }
-          
-          console.log('📊 Current customer from DB:', currentCustomer);
-          
-          const currentPoints = currentCustomer ? currentCustomer.points || 0 : 0;
+          const currentPoints = customerData.points || 0;
           const newPoints = currentPoints + pointsEarned;
           
-          console.log('📊 Current points (DB):', currentPoints);
+          console.log('📊 Current points:', currentPoints);
           console.log('📊 New points:', newPoints);
           
           // ✅ Update points in Supabase
@@ -6046,7 +6096,7 @@ async function completeCheckout(paymentMethod, cashReceived) {
           const { data: updateData, error: updateError } = await supabase
             .from('customers')
             .update({ points: newPoints })
-            .eq('id', selectedCustomer.id)
+            .eq('id', customerData.id)
             .select();
           
           if (updateError) {
@@ -6061,7 +6111,7 @@ async function completeCheckout(paymentMethod, cashReceived) {
           const { data: verifyData, error: verifyError } = await supabase
             .from('customers')
             .select('id, points')
-            .eq('id', selectedCustomer.id)
+            .eq('id', customerData.id)
             .maybeSingle();
           
           if (verifyError) {
@@ -6070,8 +6120,24 @@ async function completeCheckout(paymentMethod, cashReceived) {
             console.log('✅ Verified points:', verifyData);
           }
           
-          // Update local customer object
-          selectedCustomer.points = newPoints;
+          // ✅ Update ALL customer references
+          const updatedCustomer = {
+            ...customerData,
+            points: newPoints
+          };
+          
+          if (selectedCustomer) {
+            selectedCustomer.points = newPoints;
+            selectedCustomer.id = customerData.id;
+            try {
+              sessionStorage.setItem('selectedCustomer', JSON.stringify(selectedCustomer));
+            } catch(e) {}
+          }
+          if (window.selectedCustomer) {
+            window.selectedCustomer.points = newPoints;
+            window.selectedCustomer.id = customerData.id;
+          }
+          
           updateCustomerDisplay();
           
           console.log('✅ Points updated successfully!');
@@ -6080,7 +6146,7 @@ async function completeCheckout(paymentMethod, cashReceived) {
           
           // Show a brief notification
           await showAlertModal('⭐ Points Earned!', 
-            `${selectedCustomer.name || 'Customer'} earned ${pointsEarned} points!\n` +
+            `${customerData.name || 'Customer'} earned ${pointsEarned} points!\n` +
             `Total points: ${newPoints}`
           );
           
@@ -6095,7 +6161,6 @@ async function completeCheckout(paymentMethod, cashReceived) {
         }
       } else {
         console.log('ℹ️ No customer selected, skipping points update');
-        console.log('selectedCustomer:', selectedCustomer);
       }
       
       // ✅ Re-render product grid to show updated stock

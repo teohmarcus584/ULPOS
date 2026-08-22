@@ -6002,61 +6002,71 @@ async function completeCheckout(paymentMethod, cashReceived) {
         claimedReceiptInfo = null;
       }
 
-      // ✅ UPDATE CUSTOMER POINTS - FIXED
       // ✅ UPDATE CUSTOMER POINTS - FIXED (1 point per RM 1 spent)
-if (selectedCustomer && selectedCustomer.id) {
-  try {
-    // ✅ 1 point for every RM 1 spent (not divided by 10)
-    const pointsEarned = Math.floor(totalAmount);
-    console.log(`💰 Customer ${selectedCustomer.name} (${selectedCustomer.id}) earned ${pointsEarned} points`);
-    console.log(`📊 Current points: ${selectedCustomer.points || 0}`);
-    
-    // Get current points from database to ensure we have latest
-    const { data: currentCustomer, error: fetchError } = await supabase
-      .from('customers')
-      .select('points')
-      .eq('id', selectedCustomer.id)
-      .maybeSingle();
-    
-    if (fetchError) {
-      console.error('Error fetching current points:', fetchError);
-      throw fetchError;
-    }
-    
-    const currentPoints = currentCustomer ? currentCustomer.points || 0 : selectedCustomer.points || 0;
-    const newPoints = currentPoints + pointsEarned;
-    
-    console.log(`🔄 Updating points: ${currentPoints} → ${newPoints}`);
-    
-    const { error: updateError } = await supabase
-      .from('customers')
-      .update({ points: newPoints })
-      .eq('id', selectedCustomer.id);
-    
-    if (updateError) {
-      console.error('❌ Error updating customer points:', updateError);
-      throw updateError;
-    }
-    
-    // Update local customer object
-    selectedCustomer.points = newPoints;
-    updateCustomerDisplay();
-    
-    console.log(`✅ Added ${pointsEarned} points to customer ${selectedCustomer.name}. New total: ${newPoints}`);
-    
-    // Show a brief notification
-    await showAlertModal('⭐ Points Earned!', 
-      `${selectedCustomer.name || 'Customer'} earned ${pointsEarned} points!\n` +
-      `Total points: ${newPoints}`
-    );
-    
-  } catch (err) {
-    console.error('❌ Failed to update customer points:', err);
-    // Don't block the transaction, but log the error
-  }
-} else {
-  console.log('ℹ️ No customer selected, skipping points update');
-}
+      if (selectedCustomer && selectedCustomer.id) {
+        try {
+          // ✅ 1 point for every RM 1 spent (not divided by 10)
+          const pointsEarned = Math.floor(totalAmount);
+          console.log('========================================');
+          console.log('⭐ CUSTOMER POINTS UPDATE');
+          console.log('👤 Customer:', selectedCustomer.name);
+          console.log('📱 Phone:', selectedCustomer.phone);
+          console.log('🆔 ID:', selectedCustomer.id);
+          console.log('💰 Total Amount:', totalAmount);
+          console.log('⭐ Points to Earn:', pointsEarned);
+          console.log('📊 Current Points (local):', selectedCustomer.points || 0);
+          
+          // Get current points from database to ensure we have latest
+          const { data: currentCustomer, error: fetchError } = await supabase
+            .from('customers')
+            .select('points')
+            .eq('id', selectedCustomer.id)
+            .maybeSingle();
+          
+          if (fetchError) {
+            console.error('❌ Error fetching current points:', fetchError);
+            throw fetchError;
+          }
+          
+          const currentPoints = currentCustomer ? currentCustomer.points || 0 : selectedCustomer.points || 0;
+          const newPoints = currentPoints + pointsEarned;
+          
+          console.log('📊 Database current points:', currentPoints);
+          console.log('📊 New points:', newPoints);
+          
+          const { error: updateError } = await supabase
+            .from('customers')
+            .update({ points: newPoints })
+            .eq('id', selectedCustomer.id);
+          
+          if (updateError) {
+            console.error('❌ Error updating customer points:', updateError);
+            throw updateError;
+          }
+          
+          // Update local customer object
+          selectedCustomer.points = newPoints;
+          updateCustomerDisplay();
+          
+          console.log('✅ Points updated successfully!');
+          console.log('⭐ New total points:', newPoints);
+          console.log('========================================');
+          
+          // Show a brief notification
+          await showAlertModal('⭐ Points Earned!', 
+            `${selectedCustomer.name || 'Customer'} earned ${pointsEarned} points!\n` +
+            `Total points: ${newPoints}`
+          );
+          
+        } catch (err) {
+          console.error('❌ Failed to update customer points:', err);
+          // Don't block the transaction, but log the error
+        }
+      } else {
+        console.log('ℹ️ No customer selected, skipping points update');
+        console.log('selectedCustomer:', selectedCustomer);
+      }
+      
       // ✅ Re-render product grid to show updated stock
       renderProductGrid();
 
@@ -8815,6 +8825,12 @@ async function saveCustomer(customerData) {
     // ✅ Ensure points is a number
     const points = parseInt(customerData.points) || 0;
     
+    console.log('💾 Saving customer:', {
+      phone: customerData.phone,
+      name: customerData.name,
+      points: points
+    });
+    
     const { data, error } = await supabase
       .from('customers')
       .upsert([{
@@ -8827,7 +8843,12 @@ async function saveCustomer(customerData) {
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error saving customer:', error);
+      throw error;
+    }
+    
+    console.log('✅ Customer saved:', data);
     return data;
   } catch (err) {
     console.error('Error saving customer:', err);
@@ -8899,6 +8920,13 @@ async function findCustomer() {
   if (customer) {
     // ✅ Ensure points is a number
     customer.points = parseInt(customer.points) || 0;
+    
+    console.log('✅ Customer found:', {
+      id: customer.id,
+      name: customer.name,
+      phone: customer.phone,
+      points: customer.points
+    });
     
     document.getElementById('customerStep1').style.display = 'none';
     document.getElementById('customerStep2').style.display = 'block';

@@ -5880,7 +5880,7 @@ async function completeCheckout(paymentMethod, cashReceived) {
       staff_discount: staffDiscount || 0,
       prize_claimed: claimedReceiptInfo || null,
       customer_id: customerId,           // ✅ Keep for backward compatibility
-      customer_phone: customerPhone,     // ✅ NEW: Store phone number
+      customer_phone: customerPhone,     // ✅ Store phone number
       store: currentStore,
       employee_id: currentEmployee.id,
       employee_name: currentEmployee.name,
@@ -6001,7 +6001,7 @@ async function completeCheckout(paymentMethod, cashReceived) {
         console.warn('⚠️ Background sync failed after sale:', syncErr);
       }
 
-      // ✅ SAVE TO LUCKY DRAW WITH PHONE NUMBER
+      // ✅ SAVE TO LUCKY DRAW WITH PHONE NUMBER - FIXED URL
       console.log('🎲 Saving to Lucky Draw with customer phone:', customerPhone);
       await saveToLuckyDraw(transaction, customerPhone);
 
@@ -6207,16 +6207,17 @@ function processClaimBarcode() {
 
 // ==================== LUCKY DRAW FUNCTIONS ====================
 
-async function saveToLuckyDraw(transaction) {
+async function saveToLuckyDraw(transaction, customerPhone = null) {
   try {
     console.log('🎲 SAVE TO LUCKY DRAW CALLED!');
     console.log('Transaction total:', transaction.total);
+    console.log('Customer phone:', customerPhone);
     
     // Check if transaction qualifies for lucky draw
     const qualifies = transaction.total >= 5;
     
     if (!qualifies) {
-      console.log('❌ Transaction does not qualify for lucky draw (below RM 100)');
+      console.log('❌ Transaction does not qualify for lucky draw (below RM 5)');
       return false;
     }
     
@@ -6241,18 +6242,31 @@ async function saveToLuckyDraw(transaction) {
       console.log('Lucky draw entry already exists for this transaction');
       console.log('Prize:', existing.prize_label, 'Value:', existing.discount_value);
       
-      // Show the print modal with prize info
       document.getElementById('luckyDrawReceiptNumber').innerText = transaction.transaction_id;
       document.getElementById('luckyDrawPrizeLabel').innerText = existing.prize_label || 'RM 38 FREE GIFT';
       document.getElementById('luckyDrawPrintModal').style.display = 'flex';
       return true;
     }
     
-    // Show the lucky draw modal (with Go to Lucky Draw button)
+    // ✅ BUILD THE URL WITH PHONE NUMBER - THIS IS THE FIX!
+    let luckyUrl = `https://teohmarcus584.github.io/salesanalysis/?receipt=${transaction.transaction_id}`;
+    if (customerPhone) {
+      luckyUrl += `&phone=${encodeURIComponent(customerPhone)}`;
+    }
+    
+    console.log('🔗 Opening Lucky Draw URL:', luckyUrl);
+    
+    // Show the lucky draw modal
     console.log('✅ Showing Lucky Draw modal - customer needs to spin');
     const txIdSpan = document.getElementById('luckyTxId');
     if (txIdSpan) {
       txIdSpan.innerText = transaction.transaction_id;
+    }
+    
+    // ✅ Store the URL for the button
+    const openBtn = document.getElementById('openLuckyDrawBtn');
+    if (openBtn) {
+      openBtn.dataset.url = luckyUrl;
     }
     
     const luckyModal = document.getElementById('luckyDrawModal');
@@ -6272,8 +6286,10 @@ async function saveToLuckyDraw(transaction) {
 
 
 // Open Lucky Draw link AND show print modal with auto-print
+// Open Lucky Draw link with phone number
 document.getElementById('openLuckyDrawBtn').addEventListener('click', function() {
   const txId = document.getElementById('luckyTxId').innerText;
+  const url = this.dataset.url || `https://teohmarcus584.github.io/salesanalysis/?receipt=${txId}`;
   
   if (!txId || txId === '') {
     showAlertModal('Error', 'No transaction ID found.');
@@ -6283,18 +6299,18 @@ document.getElementById('openLuckyDrawBtn').addEventListener('click', function()
   // Store the transaction ID globally
   window._luckyDrawTransactionId = txId;
   
-  // Open the Lucky Draw page in a new tab
-  window.open(`https://teohmarcus584.github.io/salesanalysis/?receipt=${txId}`, '_blank');
+  // ✅ Open the Lucky Draw page with the URL (includes phone if available)
+  window.open(url, '_blank');
   
   // Close the lucky draw modal
   document.getElementById('luckyDrawModal').style.display = 'none';
   
-  // ✅ Show the print modal with a message
+  // Show the print modal with a message
   document.getElementById('luckyDrawReceiptNumber').innerText = txId;
   document.getElementById('luckyDrawPrizeLabel').innerText = '🎰 Waiting for spin result...';
   document.getElementById('luckyDrawPrintModal').style.display = 'flex';
   
-  // ✅ Auto-print will happen when prize is found
+  // Auto-print will happen when prize is found
   checkForLuckyDrawResult(txId);
 });
 

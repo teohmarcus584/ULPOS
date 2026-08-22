@@ -5753,7 +5753,6 @@ async function completeCheckout(paymentMethod, cashReceived) {
 
     // ✅ Calculate sale items with all special offers
     const saleItems = cart.map(item => {
-      // ✅ Check which special offer this product qualifies for
       let specialPrice = null;
       let specialLabel = null;
       
@@ -5771,7 +5770,6 @@ async function completeCheckout(paymentMethod, cashReceived) {
       const isEligibleForSpecial = specialPrice !== null;
       const isThreeStateItem = item.product.category === "CAR AROMATIC" || item.product.category === "15ML PERFUME EDP";
       
-      // ✅ Calculate effective price based on state
       let specialCount = 0;
       let regularCount = item.quantity;
       let freeCount = item.freeQuantity || 0;
@@ -5781,9 +5779,7 @@ async function completeCheckout(paymentMethod, cashReceived) {
       let effectivePrice = item.product.price;
       
       if (isThreeStateItem) {
-        // 3-state cycling for CAR AROMATIC and 15ML PERFUME EDP
         if (item.offerState === 1) {
-          // Special price state
           specialCount = Math.min(item.specialQuantity || 1, item.quantity);
           regularCount = item.quantity - specialCount;
           const regularTotal = regularCount * item.product.price;
@@ -5792,20 +5788,17 @@ async function completeCheckout(paymentMethod, cashReceived) {
           isSpecialActive = true;
           effectivePrice = specialPrice;
         } else if (item.offerState === 2) {
-          // Free gift state - one unit is free
           freeCount = Math.min(1, item.quantity);
           const paidCount = item.quantity - freeCount;
           itemTotal = paidCount * item.product.price;
           isFreeActive = true;
           effectivePrice = 0;
         } else {
-          // Normal state
           itemTotal = item.quantity * item.product.price;
           effectivePrice = item.product.price;
           freeCount = 0;
         }
       } else if (isEligibleForSpecial && item.specialPriceActive) {
-        // 2-state items (100ML and 50ML PERFUME EDP)
         specialCount = Math.min(item.specialQuantity || 1, item.quantity);
         regularCount = item.quantity - specialCount;
         const regularTotal = regularCount * item.product.price;
@@ -5815,7 +5808,6 @@ async function completeCheckout(paymentMethod, cashReceived) {
         effectivePrice = specialPrice;
         freeCount = 0;
       } else {
-        // Normal items
         const paidQty = item.quantity - freeCount;
         itemTotal = paidQty * item.product.price;
         effectivePrice = item.product.price;
@@ -5911,12 +5903,11 @@ async function completeCheckout(paymentMethod, cashReceived) {
     hideLoading();
 
     if (success) {
-      // ✅ STOCK UPDATE - USING SLOT-BASED COLUMNS
+      // ✅ STOCK UPDATE
       console.log('🔄 Updating stock for items...');
       
-      // Find the current store's slot number
       const currentStoreObj = stores.find(s => s.store_id === currentStore);
-      let stockColumn = `stock_${currentStore}`; // Fallback for old stores
+      let stockColumn = `stock_${currentStore}`;
       
       if (currentStoreObj && currentStoreObj.slot_number) {
         const slotNumStr = String(currentStoreObj.slot_number).padStart(2, '0');
@@ -5930,14 +5921,10 @@ async function completeCheckout(paymentMethod, cashReceived) {
         const product = products.find(p => p.id == item.id);
         if (product) {
           const oldStock = product.stock;
-          // ✅ Deduct total quantity (including free items - they still come from stock)
           const newStock = oldStock - item.quantity;
           product.stock = newStock;
-          
-          // Update the store-specific stock column
           product[stockColumn] = newStock;
           
-          // ✅ Update in Supabase using the correct column
           const updateData = {};
           updateData[stockColumn] = newStock;
           
@@ -5959,13 +5946,11 @@ async function completeCheckout(paymentMethod, cashReceived) {
         }
       }
 
-      // ✅ SAVE TO LOCAL STORAGE
       localStorage.setItem(`products_${currentStore}`, JSON.stringify({
         timestamp: Date.now(),
         products: products
       }));
 
-      // ✅ SYNC AFTER SUCCESSFUL SALE
       console.log('🔄 Syncing data after sale...');
       try {
         await backgroundSync(true);
@@ -5974,10 +5959,8 @@ async function completeCheckout(paymentMethod, cashReceived) {
         console.warn('⚠️ Background sync failed after sale:', syncErr);
       }
 
-      // ✅ Save to Lucky Draw if eligible
       await saveToLuckyDraw(transaction);
 
-      // ✅ CLAIM PRIZE AFTER SALE (if there was a pending prize)
       if (pendingPrize) {
         console.log('🎯 Claiming prize after sale...');
         const claimed = await claimPrizeAfterSale(
@@ -6002,24 +5985,31 @@ async function completeCheckout(paymentMethod, cashReceived) {
         claimedReceiptInfo = null;
       }
 
-      // ✅ UPDATE CUSTOMER POINTS - FIXED (1 point per RM 1 spent)
+      // ✅ ============================================================
+      // ✅ UPDATE CUSTOMER POINTS - COMPLETE FIX WITH RETRY
+      // ✅ ============================================================
+      console.log('🔍 DEBUG: About to update customer points');
+      console.log('🔍 selectedCustomer:', selectedCustomer);
+      console.log('🔍 selectedCustomer?.id:', selectedCustomer?.id);
+      console.log('🔍 totalAmount:', totalAmount);
+      
       if (selectedCustomer && selectedCustomer.id) {
         try {
-          // ✅ 1 point for every RM 1 spent (not divided by 10)
+          // ✅ 1 point for every RM 1 spent
           const pointsEarned = Math.floor(totalAmount);
           console.log('========================================');
-          console.log('⭐ CUSTOMER POINTS UPDATE');
+          console.log('⭐ CUSTOMER POINTS UPDATE START');
           console.log('👤 Customer:', selectedCustomer.name);
           console.log('📱 Phone:', selectedCustomer.phone);
-          console.log('🆔 ID:', selectedCustomer.id);
+          console.log('🆔 ID:', selectedCustomer.id, 'Type:', typeof selectedCustomer.id);
           console.log('💰 Total Amount:', totalAmount);
           console.log('⭐ Points to Earn:', pointsEarned);
-          console.log('📊 Current Points (local):', selectedCustomer.points || 0);
           
-          // Get current points from database to ensure we have latest
+          // First, get current points from database
+          console.log('🔄 Fetching current points from database...');
           const { data: currentCustomer, error: fetchError } = await supabase
             .from('customers')
-            .select('points')
+            .select('id, points, name')
             .eq('id', selectedCustomer.id)
             .maybeSingle();
           
@@ -6028,20 +6018,41 @@ async function completeCheckout(paymentMethod, cashReceived) {
             throw fetchError;
           }
           
-          const currentPoints = currentCustomer ? currentCustomer.points || 0 : selectedCustomer.points || 0;
+          console.log('📊 Current customer from DB:', currentCustomer);
+          
+          const currentPoints = currentCustomer ? currentCustomer.points || 0 : 0;
           const newPoints = currentPoints + pointsEarned;
           
-          console.log('📊 Database current points:', currentPoints);
+          console.log('📊 Current points (DB):', currentPoints);
           console.log('📊 New points:', newPoints);
           
-          const { error: updateError } = await supabase
+          // ✅ Update points in Supabase
+          console.log('🔄 Updating points in Supabase...');
+          const { data: updateData, error: updateError } = await supabase
             .from('customers')
             .update({ points: newPoints })
-            .eq('id', selectedCustomer.id);
+            .eq('id', selectedCustomer.id)
+            .select();
           
           if (updateError) {
             console.error('❌ Error updating customer points:', updateError);
             throw updateError;
+          }
+          
+          console.log('✅ Supabase update response:', updateData);
+          
+          // ✅ Verify the update
+          console.log('🔄 Verifying points update...');
+          const { data: verifyData, error: verifyError } = await supabase
+            .from('customers')
+            .select('id, points')
+            .eq('id', selectedCustomer.id)
+            .maybeSingle();
+          
+          if (verifyError) {
+            console.error('❌ Error verifying points:', verifyError);
+          } else {
+            console.log('✅ Verified points:', verifyData);
           }
           
           // Update local customer object
@@ -6060,7 +6071,12 @@ async function completeCheckout(paymentMethod, cashReceived) {
           
         } catch (err) {
           console.error('❌ Failed to update customer points:', err);
-          // Don't block the transaction, but log the error
+          // Show error to user but don't block transaction
+          await showAlertModal('⚠️ Points Update Failed', 
+            `Transaction completed but points update failed.\n` +
+            `Error: ${err.message || 'Unknown error'}\n` +
+            `Please contact support to have points added manually.`
+          );
         }
       } else {
         console.log('ℹ️ No customer selected, skipping points update');
@@ -6079,12 +6095,9 @@ async function completeCheckout(paymentMethod, cashReceived) {
       );
 
     } else {
-      // ❌ Transaction failed - save to pending
       console.warn('⚠️ Transaction failed, saving to pending...');
       pendingSales.push(transaction);
       localStorage.setItem('pendingSales', JSON.stringify(pendingSales));
-      
-      // ✅ Try to sync pending sales immediately
       await syncPendingSales();
       
       await showAlertModal('⚠️ Offline Mode', 

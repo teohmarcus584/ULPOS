@@ -7521,7 +7521,6 @@ async function processRefund(transactionId, store) {
       staff_discount: -(transaction.staff_discount || 0),
       settled: false,
       refunded: false,
-      // Preserve customer information
       customer_id: transaction.customer_id || null,
       customer_phone: transaction.customer_phone || null
     };
@@ -7545,10 +7544,84 @@ async function processRefund(transactionId, store) {
       .eq('transaction_id', transactionId);
 
     // ✅ ============================================================
+    // ✅ VOID/DELETE LUCKY DRAW PRIZE
+    // ✅ ============================================================
+    
+    console.log('🎲 Checking for lucky draw prize to void...');
+    
+    try {
+      // Check if there's a lucky draw entry for this transaction
+      const { data: luckyDrawData, error: luckyDrawError } = await supabase
+        .from('lucky_draw_prizes')
+        .select('*')
+        .eq('receipt', transactionId)
+        .maybeSingle();
+      
+      if (luckyDrawError) {
+        console.error('❌ Error checking lucky draw:', luckyDrawError);
+      } else if (luckyDrawData) {
+        console.log('🎲 Lucky draw entry found for transaction:', transactionId);
+        console.log('🎲 Prize:', luckyDrawData.prize_label);
+        console.log('🎲 Status:', luckyDrawData.claimed ? 'Claimed' : 'Not Claimed');
+        
+        // ✅ Option 1: Delete the lucky draw entry permanently
+        const { error: deleteError } = await supabase
+          .from('lucky_draw_prizes')
+          .delete()
+          .eq('receipt', transactionId);
+        
+        if (deleteError) {
+          console.error('❌ Error deleting lucky draw:', deleteError);
+          
+          // ✅ Option 2: If delete fails, try marking as voided (if column exists)
+          // If you have a 'voided' or 'refunded' column in lucky_draw_prizes:
+          /*
+          const { error: updateError } = await supabase
+            .from('lucky_draw_prizes')
+            .update({ 
+              voided: true, 
+              voided_at: new Date().toISOString(),
+              voided_by: currentEmployee.name,
+              voided_reason: 'Transaction refunded'
+            })
+            .eq('receipt', transactionId);
+          
+          if (updateError) {
+            console.error('❌ Error voiding lucky draw:', updateError);
+          } else {
+            console.log('✅ Lucky draw prize voided successfully');
+          }
+          */
+        } else {
+          console.log('✅ Lucky draw prize deleted successfully for transaction:', transactionId);
+          
+          // Send notification
+          if (telegramAccounts) {
+            const message = `🎲 LUCKY DRAW VOIDED\n` +
+                           `Transaction: ${transactionId}\n` +
+                           `Prize: ${luckyDrawData.prize_label || 'Unknown'}\n` +
+                           `Reason: Refunded\n` +
+                           `By: ${currentEmployee?.name || 'Unknown'}\n` +
+                           `Time: ${new Date().toLocaleString()}`;
+            sendTelegramMessage(message);
+          }
+        }
+      } else {
+        console.log('ℹ️ No lucky draw entry found for transaction:', transactionId);
+      }
+    } catch (err) {
+      console.error('❌ Lucky draw void error:', err);
+      await showAlertModal('⚠️ Lucky Draw Void Warning',
+        `Refund processed but lucky draw could not be voided.\n\n` +
+        `Error: ${err.message}\n` +
+        `Please manually void the lucky draw entry for receipt: ${transactionId}`
+      );
+    }
+
+    // ✅ ============================================================
     // ✅ DEDUCT CUSTOMER POINTS DURING REFUND
     // ✅ ============================================================
     
-    // Get customer info from the original transaction
     const customerPhone = transaction.customer_phone;
     const customerId = transaction.customer_id;
     
@@ -7556,7 +7629,6 @@ async function processRefund(transactionId, store) {
     
     if (customerPhone || customerId) {
       try {
-        // Find the customer by phone or ID
         let query = supabase.from('customers').select('id, points, name, phone');
         
         if (customerPhone) {
@@ -7570,7 +7642,6 @@ async function processRefund(transactionId, store) {
         if (customerError) {
           console.error('❌ Error finding customer:', customerError);
         } else if (customerData) {
-          // Calculate points to deduct (1 point per RM 1 spent)
           const originalAmount = Math.abs(transaction.total);
           const pointsToDeduct = Math.floor(originalAmount);
           const currentPoints = customerData.points || 0;
@@ -7585,7 +7656,6 @@ async function processRefund(transactionId, store) {
           console.log('📊 Current points:', currentPoints);
           console.log('📊 New points:', newPoints);
           
-          // Update points in Supabase
           const { error: updateError } = await supabase
             .from('customers')
             .update({ points: newPoints })
@@ -7603,7 +7673,6 @@ async function processRefund(transactionId, store) {
             console.log(`⭐ New total points: ${newPoints}`);
             console.log('========================================');
             
-            // ✅ Update selectedCustomer if it matches
             if (selectedCustomer && selectedCustomer.id === customerData.id) {
               selectedCustomer.points = newPoints;
               try {
@@ -7611,19 +7680,12 @@ async function processRefund(transactionId, store) {
               } catch(e) {}
               updateCustomerDisplay();
             }
-            
-            // Show a notification about points deduction
-            await showAlertModal('⭐ Points Deducted', 
-              `${pointsToDeduct} points have been deducted from ${customerData.name}'s account.\n` +
-              `Remaining points: ${newPoints}`
-            );
           }
         } else {
           console.log('ℹ️ No customer found for this transaction, skipping points deduction');
         }
       } catch (err) {
         console.error('❌ Points deduction error:', err);
-        // Don't block the refund, just show a warning
         await showAlertModal('⚠️ Points Deduction Warning',
           `Refund processed but points deduction failed.\n\n` +
           `Error: ${err.message}\n` +
@@ -7685,9 +7747,8 @@ async function processRefund(transactionId, store) {
     // ✅ RESTORE STOCK - USING SLOT-BASED COLUMNS
     console.log('🔄 Restoring stock for refund...');
     
-    // Find the store's slot number
     const storeObj = stores.find(s => s.store_id === store);
-    let stockColumn = `stock_${store}`; // Fallback for old stores
+    let stockColumn = `stock_${store}`;
     
     if (storeObj && storeObj.slot_number) {
       const slotNumStr = String(storeObj.slot_number).padStart(2, '0');
@@ -7697,15 +7758,13 @@ async function processRefund(transactionId, store) {
       console.log(`📦 Using fallback stock column for refund: ${stockColumn}`);
     }
     
-    // Track which products were updated
     const updatedProducts = [];
     
     for (const item of transaction.items) {
       if (item.quantity > 0) {
-        // Get current stock from Supabase
         const { data: product, error: pError } = await supabase
           .from('products')
-          .select('*')  // Get all columns
+          .select('*')
           .eq('id', item.id)
           .single();
         
@@ -7713,7 +7772,6 @@ async function processRefund(transactionId, store) {
           const currentStock = parseInt(product[stockColumn]) || 0;
           const newStock = currentStock + item.quantity;
           
-          // Update stock in Supabase
           const updateData = {};
           updateData[stockColumn] = newStock;
           
@@ -7729,7 +7787,6 @@ async function processRefund(transactionId, store) {
             updatedProducts.push({ id: item.id, name: item.name, newStock: newStock });
           }
           
-          // Update local product
           const localProduct = products.find(p => p.id == item.id);
           if (localProduct) {
             localProduct.stock = newStock;
@@ -7794,7 +7851,6 @@ async function processRefund(transactionId, store) {
       await updateAdminReport(true);
     }
     
-    // ✅ Re-render product grid to show updated stock
     renderProductGrid();
     
   } catch (err) {

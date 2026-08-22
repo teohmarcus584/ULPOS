@@ -6003,59 +6003,60 @@ async function completeCheckout(paymentMethod, cashReceived) {
       }
 
       // ✅ UPDATE CUSTOMER POINTS - FIXED
-      if (selectedCustomer && selectedCustomer.id) {
-        try {
-          const pointsEarned = Math.floor(totalAmount / 10);
-          console.log(`💰 Customer ${selectedCustomer.name} (${selectedCustomer.id}) earned ${pointsEarned} points`);
-          console.log(`📊 Current points: ${selectedCustomer.points || 0}`);
-          
-          // Get current points from database to ensure we have latest
-          const { data: currentCustomer, error: fetchError } = await supabase
-            .from('customers')
-            .select('points')
-            .eq('id', selectedCustomer.id)
-            .maybeSingle();
-          
-          if (fetchError) {
-            console.error('Error fetching current points:', fetchError);
-            throw fetchError;
-          }
-          
-          const currentPoints = currentCustomer ? currentCustomer.points || 0 : selectedCustomer.points || 0;
-          const newPoints = currentPoints + pointsEarned;
-          
-          console.log(`🔄 Updating points: ${currentPoints} → ${newPoints}`);
-          
-          const { error: updateError } = await supabase
-            .from('customers')
-            .update({ points: newPoints })
-            .eq('id', selectedCustomer.id);
-          
-          if (updateError) {
-            console.error('❌ Error updating customer points:', updateError);
-            throw updateError;
-          }
-          
-          // Update local customer object
-          selectedCustomer.points = newPoints;
-          updateCustomerDisplay();
-          
-          console.log(`✅ Added ${pointsEarned} points to customer ${selectedCustomer.name}. New total: ${newPoints}`);
-          
-          // Show a brief notification
-          await showAlertModal('⭐ Points Earned!', 
-            `${selectedCustomer.name || 'Customer'} earned ${pointsEarned} points!\n` +
-            `Total points: ${newPoints}`
-          );
-          
-        } catch (err) {
-          console.error('❌ Failed to update customer points:', err);
-          // Don't block the transaction, but log the error
-        }
-      } else {
-        console.log('ℹ️ No customer selected, skipping points update');
-      }
-      
+      // ✅ UPDATE CUSTOMER POINTS - FIXED (1 point per RM 1 spent)
+if (selectedCustomer && selectedCustomer.id) {
+  try {
+    // ✅ 1 point for every RM 1 spent (not divided by 10)
+    const pointsEarned = Math.floor(totalAmount);
+    console.log(`💰 Customer ${selectedCustomer.name} (${selectedCustomer.id}) earned ${pointsEarned} points`);
+    console.log(`📊 Current points: ${selectedCustomer.points || 0}`);
+    
+    // Get current points from database to ensure we have latest
+    const { data: currentCustomer, error: fetchError } = await supabase
+      .from('customers')
+      .select('points')
+      .eq('id', selectedCustomer.id)
+      .maybeSingle();
+    
+    if (fetchError) {
+      console.error('Error fetching current points:', fetchError);
+      throw fetchError;
+    }
+    
+    const currentPoints = currentCustomer ? currentCustomer.points || 0 : selectedCustomer.points || 0;
+    const newPoints = currentPoints + pointsEarned;
+    
+    console.log(`🔄 Updating points: ${currentPoints} → ${newPoints}`);
+    
+    const { error: updateError } = await supabase
+      .from('customers')
+      .update({ points: newPoints })
+      .eq('id', selectedCustomer.id);
+    
+    if (updateError) {
+      console.error('❌ Error updating customer points:', updateError);
+      throw updateError;
+    }
+    
+    // Update local customer object
+    selectedCustomer.points = newPoints;
+    updateCustomerDisplay();
+    
+    console.log(`✅ Added ${pointsEarned} points to customer ${selectedCustomer.name}. New total: ${newPoints}`);
+    
+    // Show a brief notification
+    await showAlertModal('⭐ Points Earned!', 
+      `${selectedCustomer.name || 'Customer'} earned ${pointsEarned} points!\n` +
+      `Total points: ${newPoints}`
+    );
+    
+  } catch (err) {
+    console.error('❌ Failed to update customer points:', err);
+    // Don't block the transaction, but log the error
+  }
+} else {
+  console.log('ℹ️ No customer selected, skipping points update');
+}
       // ✅ Re-render product grid to show updated stock
       renderProductGrid();
 
@@ -8811,6 +8812,9 @@ async function fetchCustomerByPhone(phone) {
 
 async function saveCustomer(customerData) {
   try {
+    // ✅ Ensure points is a number
+    const points = parseInt(customerData.points) || 0;
+    
     const { data, error } = await supabase
       .from('customers')
       .upsert([{
@@ -8818,7 +8822,7 @@ async function saveCustomer(customerData) {
         name: customerData.name || '',
         email: customerData.email || '',
         birthday: customerData.birthday || null,
-        points: customerData.points || 0
+        points: points
       }], { onConflict: 'phone' })
       .select()
       .single();
@@ -8893,6 +8897,9 @@ async function findCustomer() {
   const customer = await fetchCustomerByPhone(phone);
   hideLoading();
   if (customer) {
+    // ✅ Ensure points is a number
+    customer.points = parseInt(customer.points) || 0;
+    
     document.getElementById('customerStep1').style.display = 'none';
     document.getElementById('customerStep2').style.display = 'block';
     document.getElementById('customerPhone2').value = customer.phone;

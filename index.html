@@ -3473,7 +3473,21 @@ function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
 // ============================================================
 // AUTO-SELECT ON LOAD (Dynamic Stores)
 // ============================================================
-
+// Monitor changes to selectedCustomer
+const originalSetSelectedCustomer = Object.getOwnPropertyDescriptor(window, 'selectedCustomer');
+Object.defineProperty(window, 'selectedCustomer', {
+  get: function() { return this._selectedCustomer; },
+  set: function(value) {
+    console.log('🔄 selectedCustomer changed:', {
+      from: this._selectedCustomer,
+      to: value,
+      stack: new Error().stack
+    });
+    this._selectedCustomer = value;
+  },
+  configurable: true
+});
+window._selectedCustomer = null;
 // Auto-select store on load
 (async function autoSelectOnLoad() {
   loadAndCacheEmployees().catch(console.warn);
@@ -5068,7 +5082,8 @@ function clearCart() {
   staffDiscount = 0;
   claimedReceiptInfo = null;
   pendingPrize = null;
-  selectedCustomer = null;
+  // ✅ DON'T reset selectedCustomer here
+  // selectedCustomer = null;  // ← REMOVE THIS LINE
   updateCustomerDisplay();
   updateCartUI();
 }
@@ -8887,7 +8902,12 @@ function updateCustomerDisplay() {
     if (removeBtn) {
       removeBtn.addEventListener('click', () => {
         selectedCustomer = null;
+        window.selectedCustomer = null;
+        try {
+          sessionStorage.removeItem('selectedCustomer');
+        } catch(e) {}
         updateCustomerDisplay();
+        console.log('👤 Customer removed');
       });
     }
   } else {
@@ -8941,6 +8961,17 @@ async function findCustomer() {
       points: customer.points
     });
     
+    // ✅ Set BOTH the global and local variables
+    window.selectedCustomer = customer;
+    selectedCustomer = customer;
+    
+    // ✅ Also store in sessionStorage for persistence
+    try {
+      sessionStorage.setItem('selectedCustomer', JSON.stringify(customer));
+    } catch(e) {
+      console.warn('Could not save to sessionStorage:', e);
+    }
+    
     document.getElementById('customerStep1').style.display = 'none';
     document.getElementById('customerStep2').style.display = 'block';
     document.getElementById('customerPhone2').value = customer.phone;
@@ -8953,8 +8984,11 @@ async function findCustomer() {
     }
     document.getElementById('customerBirthday').value = birthdayValue;
     document.getElementById('customerPoints').value = customer.points || 0;
-    selectedCustomer = customer;
     updateCustomerDisplay();
+    
+    console.log('✅ selectedCustomer set to:', selectedCustomer);
+    console.log('✅ window.selectedCustomer set to:', window.selectedCustomer);
+    
     await showAlertModal('Customer Found', `Customer ${customer.name || 'found'} with ${customer.points || 0} points.`);
   } else {
     document.getElementById('customerStep1').style.display = 'none';
@@ -8962,6 +8996,10 @@ async function findCustomer() {
     document.getElementById('customerPhone2').value = phone;
     document.getElementById('customerPoints').value = '0';
     selectedCustomer = null;
+    window.selectedCustomer = null;
+    try {
+      sessionStorage.removeItem('selectedCustomer');
+    } catch(e) {}
     showCustomerError('Customer not found. Fill in details and click Save to create new customer.');
   }
 }
@@ -8980,15 +9018,46 @@ async function saveCustomerFromModal() {
   const customer = await saveCustomer({ phone, name, email, birthday, points });
   hideLoading();
   if (customer) {
+    // ✅ Set BOTH the global and local variables
+    window.selectedCustomer = customer;
     selectedCustomer = customer;
+    
+    // ✅ Store in sessionStorage for persistence
+    try {
+      sessionStorage.setItem('selectedCustomer', JSON.stringify(customer));
+    } catch(e) {
+      console.warn('Could not save to sessionStorage:', e);
+    }
+    
     updateCustomerDisplay();
     document.getElementById('customerModal').style.display = 'none';
+    console.log('✅ Customer saved and selected:', selectedCustomer);
     await showAlertModal('Success', `Customer ${customer.name || 'saved'} successfully.`);
   } else {
     showCustomerError('Failed to save customer. Check connection.');
   }
 }
+// ==================== RESTORE CUSTOMER FROM SESSION ====================
 
+function restoreCustomerFromSession() {
+  try {
+    const saved = sessionStorage.getItem('selectedCustomer');
+    if (saved) {
+      const customer = JSON.parse(saved);
+      console.log('🔄 Restored customer from session:', customer);
+      window.selectedCustomer = customer;
+      selectedCustomer = customer;
+      updateCustomerDisplay();
+      return true;
+    }
+  } catch(e) {
+    console.warn('Could not restore customer from session:', e);
+  }
+  return false;
+}
+
+// ✅ Call it immediately after defining the function
+restoreCustomerFromSession();
 function showCustomerError(msg) {
   const errorDiv = document.getElementById('customerError');
   errorDiv.innerText = msg;
@@ -14216,6 +14285,7 @@ async function processBarcode() {
 // ==================== EVENT LISTENERS ====================
 
 document.addEventListener('DOMContentLoaded', function() {
+ restoreCustomerFromSession();
   // Store select
   if (storeSelect) {
     storeSelect.addEventListener('change', async () => {

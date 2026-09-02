@@ -2265,6 +2265,131 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
   0%, 100% { box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
   50% { box-shadow: 0 4px 20px rgba(245, 158, 11, 0.6); }
 }
+/* Employee Management - Professional UI */
+#employeeManagementModal .modal-container {
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+
+#employeeManagementModal .modal-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0f172a;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 20px;
+}
+
+#employeeFormModal .modal-container {
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+
+#employeeFormModal .modal-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0f172a;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 20px;
+}
+
+.employee-card {
+  transition: all 0.2s ease;
+}
+
+.employee-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.employee-card .employee-actions button {
+  transition: all 0.2s ease;
+}
+
+.employee-card .employee-actions button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Form inputs focus states */
+#employeeFormModal .modal-input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15) !important;
+  outline: none;
+}
+
+#employeeFormModal .modal-input.error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15) !important;
+}
+
+/* Admin toggle switch style */
+.admin-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-toggle-label:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.admin-toggle-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #8b5cf6;
+}
+/* PIN Toggle Button */
+#togglePinVisibilityBtn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 8px;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  line-height: 1;
+}
+
+#togglePinVisibilityBtn:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+#togglePinVisibilityBtn:active {
+  transform: scale(0.9);
+}
+
+/* PIN Input with toggle */
+#employeePinInput {
+  padding-right: 50px !important;
+}
+
+/* PIN visible state */
+#employeePinInput.pin-visible {
+  letter-spacing: 2px;
+  font-size: 1.2rem;
+}
+
+/* Toggle button when PIN is visible */
+#togglePinVisibilityBtn.pin-visible-btn {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -2413,6 +2538,7 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
     <button id="sideStockTakeApprovalBtn" class="menu-btn" style="display: none;">✅ Approve Stock Take</button>
     <button id="sideReceiptsBtn" class="menu-btn">📜 Receipts</button>
     <button id="sideDrawerBtn" class="menu-btn">💰 Open Drawer</button>
+	<button id="sideEmployeeBtn" class="menu-btn" style="display: none;">👥 Employees</button>
     <button id="sideChangePinBtn" class="menu-btn">🔑 Change PIN</button>
     <button id="sideStockAlertBtn" class="menu-btn">🔔 Stock Alerts: OFF</button>
     <button id="sideTelegramBtn" class="menu-btn">📱 Telegram Alerts</button>
@@ -2709,6 +2835,85 @@ body:not(.admin-mode) #adminReportModal .stat-item.breakdown {
     <div class="filter-group"><label>Alipay Settlement (Actual)</label><input type="number" id="actualAlipay" class="modal-input" placeholder="Enter actual Alipay settlement" step="0.01"></div>
     <div id="settlementError" style="color:#ef4444; margin: 12px 0; display: none;"></div>
     <div class="modal-buttons"><button id="checkSettlementBtn" class="modal-btn modal-btn-primary">Check</button><button id="recordSettlementBtn" class="modal-btn modal-btn-primary" style="display: none;">Record Settlement</button> <button id="reprintSettlementBtn" class="modal-btn modal-btn-secondary">Settlement History</button><button id="closeSettlementModalBtn" class="modal-btn modal-btn-secondary">Cancel</button></div>
+  </div>
+</div>
+<!-- Employee Management Modal -->
+<div id="employeeManagementModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 800px;">
+    <span class="close-modal" id="closeEmployeeManagementModal">×</span>
+    <div class="modal-title">👥 Employee Management</div>
+    
+    <!-- Add Employee Button -->
+    <div style="margin-bottom: 20px;">
+      <button id="openAddEmployeeBtn" class="modal-btn modal-btn-primary" style="width: 100%; padding: 14px; font-size: 1.1rem; background: linear-gradient(135deg, #059669 0%, #047857 100%); display: flex; align-items: center; justify-content: center; gap: 10px;">
+        <span style="font-size: 1.5rem;">➕</span> Add New Employee
+      </button>
+    </div>
+    
+    <!-- Employee List -->
+    <div style="max-height: 500px; overflow-y: auto;">
+      <h4 style="margin-bottom: 12px;">📋 Current Employees</h4>
+      <div id="employeeListContainer">
+        <div style="text-align:center; padding:20px; color:#94a3b8;">Loading employees...</div>
+      </div>
+    </div>
+    
+    <div class="modal-buttons">
+      <button id="closeEmployeeManagementBtn" class="modal-btn modal-btn-secondary">Close</button>
+    </div>
+  </div>
+</div>
+<!-- Add/Edit Employee Modal -->
+<div id="employeeFormModal" class="modal-overlay">
+  <div class="modal-container" style="max-width: 550px;">
+    <span class="close-modal" id="closeEmployeeFormModal">×</span>
+    <div class="modal-title" id="employeeFormTitle">➕ Add New Employee</div>
+    
+    <div id="employeeFormFields">
+      <!-- Name -->
+      <div class="filter-group" style="margin-bottom: 16px;">
+        <label style="font-weight: 600; color: #1e293b; font-size: 0.95rem;">Full Name <span style="color: #ef4444;">*</span></label>
+        <input type="text" id="employeeNameInput" class="modal-input" placeholder="e.g., John Doe" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem;">
+      </div>
+      
+      <!-- PIN -->
+      <!-- PIN -->
+<div class="filter-group" style="margin-bottom: 16px;">
+  <label style="font-weight: 600; color: #1e293b; font-size: 0.95rem;">PIN Code <span style="color: #ef4444;">*</span></label>
+  <div style="position: relative; display: flex; align-items: center;">
+    <input type="password" id="employeePinInput" class="modal-input" placeholder="4-digit PIN" maxlength="4" inputmode="numeric" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; letter-spacing: 6px; font-family: monospace; padding-right: 50px;">
+    <button id="togglePinVisibilityBtn" type="button" style="position: absolute; right: 12px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #94a3b8; padding: 8px; transition: all 0.2s ease; border-radius: 8px;">
+      👁️
+    </button>
+  </div>
+  <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">Enter a 4-digit numeric PIN</div>
+</div>
+      
+      <!-- Store Assignment -->
+      <div class="filter-group" style="margin-bottom: 16px;">
+        <label style="font-weight: 600; color: #1e293b; font-size: 0.95rem;">Assign to Store</label>
+        <select id="employeeStoreSelect" class="modal-input" style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; background: white;">
+          <option value="">-- Select Store (optional) --</option>
+        </select>
+        <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">Leave empty for admin users</div>
+      </div>
+      
+      <!-- Admin Toggle -->
+      <div class="filter-group" style="margin-bottom: 16px;">
+        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 12px 16px; background: #f8fafc; border-radius: 12px; border: 2px solid #e2e8f0;">
+          <input type="checkbox" id="employeeAdminCheck" style="width: 20px; height: 20px; cursor: pointer; accent-color: #3b82f6;">
+          <span style="font-weight: 500;">👑 Admin Access</span>
+          <span style="font-size: 0.8rem; color: #94a3b8; margin-left: auto;">Grants full system access</span>
+        </label>
+      </div>
+    </div>
+    
+    <div id="employeeFormError" style="color:#ef4444; margin-top: 12px; display: none;"></div>
+    
+    <div class="modal-buttons">
+      <button id="cancelEmployeeFormBtn" class="modal-btn modal-btn-secondary">Cancel</button>
+      <button id="saveEmployeeBtn" class="modal-btn modal-btn-primary" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">💾 Save Employee</button>
+    </div>
   </div>
 </div>
 <!-- Store Management Modal -->
@@ -3196,29 +3401,34 @@ async function switchToEmployee(newEmployee) {
 function applyRoleBasedUI() {
   if (!currentEmployee) return;
 
+  // Admin mode class on body
   if (currentEmployee.isAdmin) {
     document.body.classList.add('admin-mode');
   } else {
     document.body.classList.remove('admin-mode');
   }
 
+  // Side menu buttons - Inventory and Collection (Admin only)
   const sideInventory = document.getElementById('sideInventoryBtn');
   const sideCollection = document.getElementById('sideCollectionBtn');
+  const sideEmployee = document.getElementById('sideEmployeeBtn');
+  const sideStockTakeApproval = document.getElementById('sideStockTakeApprovalBtn');
+  
   if (currentEmployee.isAdmin) {
     if (sideInventory) sideInventory.style.display = 'flex';
     if (sideCollection) sideCollection.style.display = 'flex';
+    if (sideEmployee) sideEmployee.style.display = 'flex';
+    if (sideStockTakeApproval) sideStockTakeApproval.style.display = 'flex';
     storeSelect.disabled = false;
   } else {
     if (sideInventory) sideInventory.style.display = 'none';
     if (sideCollection) sideCollection.style.display = 'none';
+    if (sideEmployee) sideEmployee.style.display = 'none';
+    if (sideStockTakeApproval) sideStockTakeApproval.style.display = 'none';
     storeSelect.disabled = true;
   }
 
-  const approvalBtn = document.getElementById('sideStockTakeApprovalBtn');
-  if (approvalBtn) {
-    approvalBtn.style.display = currentEmployee?.isAdmin ? 'flex' : 'none';
-  }
-
+  // Report Modal - Store and Employee filters (Admin only)
   const reportStoreFilter = document.getElementById('reportStoreFilterGroup');
   const employeeFilterGroup = document.getElementById('employeeFilterGroup');
   if (currentEmployee.isAdmin) {
@@ -3229,6 +3439,7 @@ function applyRoleBasedUI() {
     if (employeeFilterGroup) employeeFilterGroup.style.display = 'none';
   }
 
+  // Report Modal - Payment breakdown rows (Admin only)
   const paymentRows = document.querySelectorAll('#adminReportModal .stat-item.breakdown');
   if (currentEmployee.isAdmin) {
     paymentRows.forEach(row => row.style.display = 'flex');
@@ -3236,6 +3447,7 @@ function applyRoleBasedUI() {
     paymentRows.forEach(row => row.style.display = 'none');
   }
 
+  // Settlement Modal - Store select (Admin only)
   const settlementStoreSelect = document.getElementById('settlementStoreSelect');
   if (settlementStoreSelect) {
     if (!currentEmployee.isAdmin) {
@@ -3246,6 +3458,7 @@ function applyRoleBasedUI() {
     }
   }
 
+  // Settlement Modal - System totals display
   const systemTotalsDiv = document.getElementById('systemTotalsDisplay');
   if (systemTotalsDiv) {
     if (!currentEmployee.isAdmin) {
@@ -3267,6 +3480,87 @@ function applyRoleBasedUI() {
     }
   }
 
+  // Receipts Modal - Employee filter (Admin only)
+  const receiptsEmpFilter = document.getElementById('receiptsEmployeeFilter');
+  const receiptsStoreFilter = document.getElementById('receiptsStoreFilterGroup');
+  if (receiptsEmpFilter && receiptsStoreFilter) {
+    if (currentEmployee.isAdmin) {
+      receiptsEmpFilter.style.display = 'flex';
+      receiptsStoreFilter.style.display = 'flex';
+    } else {
+      receiptsEmpFilter.style.display = 'none';
+      receiptsStoreFilter.style.display = 'flex';
+    }
+  }
+
+  // Receipts Store Select - Disable for non-admin
+  const receiptsStore = document.getElementById('receiptsStoreSelect');
+  if (receiptsStore) {
+    if (!currentEmployee.isAdmin) {
+      receiptsStore.value = currentStore;
+      receiptsStore.disabled = true;
+    } else {
+      receiptsStore.disabled = false;
+    }
+  }
+
+  // Store Management Button (Inventory mode)
+  const manageStoresBtn = document.getElementById('manageStoresBtn');
+  if (manageStoresBtn) {
+    manageStoresBtn.style.display = (currentEmployee.isAdmin && inventoryMode) ? 'inline-flex' : 'none';
+  }
+
+  // Store Filter Toggle Button (Inventory mode)
+  const storeFilterBtn = document.getElementById('storeFilterToggleBtn');
+  if (storeFilterBtn) {
+    if (inventoryMode) {
+      storeFilterBtn.style.display = 'inline-flex';
+    } else {
+      storeFilterBtn.style.display = 'none';
+    }
+  }
+
+  // Low Stock Toggle Button (Inventory mode)
+  const lowStockBtn = document.getElementById('lowStockToggleBtn');
+  if (lowStockBtn) {
+    if (inventoryMode) {
+      lowStockBtn.style.display = 'inline-flex';
+    } else {
+      lowStockBtn.style.display = 'none';
+    }
+  }
+
+  // Edit Product Header Button (Inventory mode)
+  const editProductBtn = document.getElementById('editProductHeaderBtn');
+  if (editProductBtn) {
+    editProductBtn.style.display = inventoryMode ? 'inline-flex' : 'none';
+  }
+
+  // Non-Admin Stats Cards in Report
+  const nonAdminStatsCards = document.getElementById('nonAdminStatsCards');
+  const nonAdminDateRange = document.getElementById('nonAdminDateRange');
+  if (nonAdminStatsCards && nonAdminDateRange) {
+    if (!currentEmployee.isAdmin) {
+      nonAdminStatsCards.style.display = 'block';
+      nonAdminDateRange.style.display = 'block';
+      // Hide payment breakdown for non-admin
+      const allBreakdownRows = document.querySelectorAll('#adminReportModal .stat-item.breakdown');
+      allBreakdownRows.forEach(row => {
+        const labelSpan = row.querySelector('span:first-child');
+        if (labelSpan) {
+          const text = labelSpan.innerText.trim();
+          if (text.includes('Cash') || text.includes('Card') || text.includes('QR Pay') || text.includes('Alipay')) {
+            row.style.display = 'none';
+          }
+        }
+      });
+    } else {
+      nonAdminStatsCards.style.display = 'none';
+      nonAdminDateRange.style.display = 'none';
+    }
+  }
+
+  // Report Modal - Refresh if open
   const reportModal = document.getElementById('adminReportModal');
   if (reportModal && reportModal.style.display === 'flex') {
     if (window.preloadedReportCache) window.preloadedReportCache = null;
@@ -3275,6 +3569,67 @@ function applyRoleBasedUI() {
     setTimeout(() => {
       openReportsModal();
     }, 50);
+  }
+
+  // Receipts Modal - Update if open
+  const receiptsModal = document.getElementById('receiptsModal');
+  if (receiptsModal && receiptsModal.style.display === 'flex') {
+    // Re-populate employee dropdown for admin
+    if (currentEmployee.isAdmin) {
+      populateReceiptsEmployeeDropdown();
+    }
+    // Refresh receipts
+    updateReceipts();
+  }
+
+  // Employee Name Header
+  document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
+
+  // Update sold by select if needed
+  if (soldBySelectCart && currentEmployee) {
+    // Make sure the current employee is selected in the dropdown
+    const options = soldBySelectCart.querySelectorAll('option');
+    let found = false;
+    for (const opt of options) {
+      if (opt.value == currentEmployee.id) {
+        opt.selected = true;
+        found = true;
+        break;
+      }
+    }
+    if (!found && options.length > 0) {
+      // If not found, try to add it
+      const option = document.createElement('option');
+      option.value = currentEmployee.id;
+      option.textContent = `${currentEmployee.name} (ID: ${currentEmployee.id})`;
+      soldBySelectCart.appendChild(option);
+      soldBySelectCart.value = currentEmployee.id;
+    }
+  }
+}
+
+// Helper function to populate receipts employee dropdown
+async function populateReceiptsEmployeeDropdown() {
+  const select = document.getElementById('receiptsEmployeeSelect');
+  if (!select) return;
+  
+  const currentValue = select.value;
+  select.innerHTML = '<option value="all">All Employees</option>';
+  
+  try {
+    const employees = await loadAndCacheEmployees();
+    employees.forEach(emp => {
+      const option = document.createElement('option');
+      option.value = emp.id;
+      option.textContent = `${emp.name} (ID: ${emp.id})`;
+      select.appendChild(option);
+    });
+    
+    if (currentValue && Array.from(select.options).some(opt => opt.value === currentValue)) {
+      select.value = currentValue;
+    }
+  } catch (err) {
+    console.error('Error populating employee dropdown:', err);
   }
 }
 
@@ -8445,7 +8800,333 @@ function setSettlementFieldsEnabled(enabled) {
   const checkBtn = document.getElementById('checkSettlementBtn');
   if (checkBtn) checkBtn.disabled = !enabled;
 }
+// ==================== EMPLOYEE MANAGEMENT ====================
 
+// Open Employee Management Modal
+function openEmployeeManagementModal() {
+  document.getElementById('employeeManagementModal').style.display = 'flex';
+  renderEmployeeList();
+}
+
+// Close Employee Management Modal
+function closeEmployeeManagementModal() {
+  document.getElementById('employeeManagementModal').style.display = 'none';
+}
+
+// Render Employee List
+async function renderEmployeeList() {
+  const container = document.getElementById('employeeListContainer');
+  if (!container) return;
+  
+  container.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">🔄 Loading employees...</div>';
+  
+  try {
+    const employees = await loadAndCacheEmployees(true);
+    
+    if (!employees || employees.length === 0) {
+      container.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">No employees found.</div>';
+      return;
+    }
+    
+    // Sort by name
+    const sorted = [...employees].sort((a, b) => a.name.localeCompare(b.name));
+    
+    let html = '';
+    for (const emp of sorted) {
+      const isAdmin = emp.isAdmin || emp.is_admin || false;
+      const storeName = emp.store ? getStoreName(emp.store) : 'All Stores';
+      const storeEmoji = emp.store ? getStoreEmoji(emp.store) : '🌍';
+      const isCurrent = currentEmployee && currentEmployee.id === emp.id;
+      
+      html += `
+        <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid ${isCurrent ? '#3b82f6' : '#e2e8f0'}; ${isCurrent ? 'border-left: 4px solid #3b82f6;' : ''}">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+            <div style="flex: 1; min-width: 150px;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <strong style="font-size: 1.1rem;">${escapeHtml(emp.name)}</strong>
+                ${isAdmin ? '<span style="background: #8b5cf6; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600;">👑 ADMIN</span>' : ''}
+                ${isCurrent ? '<span style="background: #3b82f6; color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600;">CURRENT</span>' : ''}
+              </div>
+              <div style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">
+                🆔 ID: ${emp.id} | 🔑 PIN: ${emp.pin}
+              </div>
+              <div style="font-size: 0.85rem; color: #64748b; margin-top: 2px;">
+                ${storeEmoji} ${storeName}
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              ${!isCurrent ? `<button class="switch-employee-btn" data-id="${emp.id}" style="background: #3b82f6; color: white; border: none; border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">🔄 Switch</button>` : ''}
+              <button class="edit-employee-btn" data-id="${emp.id}" style="background: #f1f5f9; border: none; border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">✏️ Edit</button>
+              ${!isCurrent && !isAdmin ? `<button class="delete-employee-btn" data-id="${emp.id}" style="background: #fee2e2; color: #dc2626; border: none; border-radius: 20px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">🗑️ Delete</button>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    container.innerHTML = html;
+    
+    // Event listeners for buttons
+    document.querySelectorAll('.switch-employee-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const empId = parseInt(btn.dataset.id);
+        const employee = cachedEmployees.find(e => e.id === empId);
+        if (employee) {
+          await switchToEmployee(employee);
+          renderEmployeeList();
+          closeEmployeeManagementModal();
+        }
+      });
+    });
+    
+    document.querySelectorAll('.edit-employee-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const empId = parseInt(btn.dataset.id);
+        const employee = cachedEmployees.find(e => e.id === empId);
+        if (employee) {
+          openEmployeeFormModal(employee);
+        }
+      });
+    });
+    
+    document.querySelectorAll('.delete-employee-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const empId = parseInt(btn.dataset.id);
+        const employee = cachedEmployees.find(e => e.id === empId);
+        if (employee) {
+          const confirmed = await showConfirmModal('Delete Employee', `Are you sure you want to delete employee "${employee.name}"? This action cannot be undone.`);
+          if (confirmed) {
+            await deleteEmployee(empId);
+          }
+        }
+      });
+    });
+    
+  } catch (err) {
+    console.error('Error rendering employees:', err);
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:#ef4444;">❌ Failed to load employees.</div>';
+  }
+}
+
+// Open Employee Form Modal (Add or Edit)
+function openEmployeeFormModal(employee = null) {
+  const modal = document.getElementById('employeeFormModal');
+  const title = document.getElementById('employeeFormTitle');
+  const nameInput = document.getElementById('employeeNameInput');
+  const pinInput = document.getElementById('employeePinInput');
+  const storeSelect = document.getElementById('employeeStoreSelect');
+  const adminCheck = document.getElementById('employeeAdminCheck');
+  const saveBtn = document.getElementById('saveEmployeeBtn');
+  const errorDiv = document.getElementById('employeeFormError');
+  
+  // Clear error
+  errorDiv.style.display = 'none';
+  errorDiv.innerText = '';
+  
+  // Populate store dropdown
+  populateEmployeeStoreSelect();
+  
+  if (employee) {
+    // Edit mode
+    title.innerText = '✏️ Edit Employee';
+    saveBtn.innerText = '💾 Update Employee';
+    nameInput.value = employee.name || '';
+    pinInput.value = employee.pin || '';
+    storeSelect.value = employee.store || '';
+    adminCheck.checked = employee.isAdmin || employee.is_admin || false;
+    
+    // Store employee ID for update
+    saveBtn.dataset.employeeId = employee.id;
+  } else {
+    // Add mode
+    title.innerText = '➕ Add New Employee';
+    saveBtn.innerText = '💾 Save Employee';
+    nameInput.value = '';
+    pinInput.value = '';
+    storeSelect.value = '';
+    adminCheck.checked = false;
+    delete saveBtn.dataset.employeeId;
+  }
+  
+  modal.style.display = 'flex';
+  setTimeout(() => nameInput.focus(), 300);
+}
+
+// Close Employee Form Modal
+function closeEmployeeFormModal() {
+  document.getElementById('employeeFormModal').style.display = 'none';
+}
+
+// Populate Store Dropdown in Employee Form
+function populateEmployeeStoreSelect() {
+  const select = document.getElementById('employeeStoreSelect');
+  if (!select) return;
+  
+  const currentValue = select.value;
+  select.innerHTML = '<option value="">-- Select Store (optional) --</option>';
+  
+  const activeStores = stores.filter(s => s.is_active !== false);
+  activeStores.forEach(store => {
+    const option = document.createElement('option');
+    option.value = store.store_id;
+    option.textContent = store.name;
+    select.appendChild(option);
+  });
+  
+  // Add "All Stores" option
+  const allOption = document.createElement('option');
+  allOption.value = '';
+  allOption.textContent = '🌍 All Stores (Admin)';
+  select.prepend(allOption);
+  
+  // Restore previous selection
+  if (currentValue) {
+    select.value = currentValue;
+  }
+}
+
+// Save Employee (Add or Update)
+async function saveEmployee() {
+  const nameInput = document.getElementById('employeeNameInput');
+  const pinInput = document.getElementById('employeePinInput');
+  const storeSelect = document.getElementById('employeeStoreSelect');
+  const adminCheck = document.getElementById('employeeAdminCheck');
+  const saveBtn = document.getElementById('saveEmployeeBtn');
+  const errorDiv = document.getElementById('employeeFormError');
+  
+  const name = nameInput.value.trim();
+  const pin = pinInput.value.trim();
+  const store = storeSelect.value || null;
+  const isAdmin = adminCheck.checked;
+  const employeeId = saveBtn.dataset.employeeId ? parseInt(saveBtn.dataset.employeeId) : null;
+  
+  // Validate
+  if (!name) {
+    errorDiv.innerText = '❌ Employee name is required.';
+    errorDiv.style.display = 'block';
+    nameInput.focus();
+    nameInput.style.borderColor = '#ef4444';
+    return;
+  }
+  
+  if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+    errorDiv.innerText = '❌ Please enter a valid 4-digit numeric PIN.';
+    errorDiv.style.display = 'block';
+    pinInput.focus();
+    pinInput.style.borderColor = '#ef4444';
+    return;
+  }
+  
+  // Check for duplicate PIN (if adding or changing PIN)
+  const existingEmployee = cachedEmployees.find(e => e.pin === pin && e.id !== employeeId);
+  if (existingEmployee) {
+    errorDiv.innerText = `❌ PIN "${pin}" is already assigned to ${existingEmployee.name}.`;
+    errorDiv.style.display = 'block';
+    pinInput.focus();
+    pinInput.style.borderColor = '#ef4444';
+    return;
+  }
+  
+  // Check for duplicate name
+  const existingName = cachedEmployees.find(e => e.name.toLowerCase() === name.toLowerCase() && e.id !== employeeId);
+  if (existingName) {
+    errorDiv.innerText = `❌ Employee "${name}" already exists.`;
+    errorDiv.style.display = 'block';
+    nameInput.focus();
+    nameInput.style.borderColor = '#ef4444';
+    return;
+  }
+  
+  // Reset error styles
+  nameInput.style.borderColor = '#e2e8f0';
+  pinInput.style.borderColor = '#e2e8f0';
+  errorDiv.style.display = 'none';
+  
+  showLoading(employeeId ? 'Updating employee...' : 'Adding employee...');
+  
+  try {
+    const employeeData = {
+      name: name,
+      pin: pin,
+      store: isAdmin ? null : store,
+      is_admin: isAdmin
+    };
+    
+    let result;
+    
+    if (employeeId) {
+      // Update existing employee
+      const { data, error } = await supabase
+        .from('employees')
+        .update(employeeData)
+        .eq('id', employeeId)
+        .select();
+      
+      if (error) throw error;
+      result = data;
+      
+      // Update current employee if it's the logged-in user
+      if (currentEmployee && currentEmployee.id === employeeId) {
+        currentEmployee.name = name;
+        currentEmployee.pin = pin;
+        currentEmployee.isAdmin = isAdmin;
+        document.getElementById('employeeNameHeader').innerText = `👤 ${currentEmployee.name}`;
+      }
+      
+      await showAlertModal('✅ Employee Updated', `Employee "${name}" has been updated successfully.`);
+    } else {
+      // Add new employee
+      const { data, error } = await supabase
+        .from('employees')
+        .insert([employeeData])
+        .select();
+      
+      if (error) throw error;
+      result = data;
+      
+      await showAlertModal('✅ Employee Added', `Employee "${name}" has been added successfully.`);
+    }
+    
+    // Refresh employee cache
+    await loadAndCacheEmployees(true);
+    renderEmployeeList();
+    closeEmployeeFormModal();
+    closeEmployeeManagementModal();
+    
+  } catch (err) {
+    console.error('Error saving employee:', err);
+    errorDiv.innerText = `❌ Failed to ${employeeId ? 'update' : 'add'} employee: ${err.message}`;
+    errorDiv.style.display = 'block';
+  } finally {
+    hideLoading();
+  }
+}
+
+// Delete Employee
+async function deleteEmployee(employeeId) {
+  showLoading('Deleting employee...');
+  
+  try {
+    const { error } = await supabase
+      .from('employees')
+      .delete()
+      .eq('id', employeeId);
+    
+    if (error) throw error;
+    
+    // Refresh employee cache
+    await loadAndCacheEmployees(true);
+    renderEmployeeList();
+    
+    await showAlertModal('✅ Employee Deleted', 'Employee has been deleted successfully.');
+    
+  } catch (err) {
+    console.error('Error deleting employee:', err);
+    await showAlertModal('❌ Error', `Failed to delete employee: ${err.message}`);
+  } finally {
+    hideLoading();
+  }
+}
 async function openSettlementModal() {
   const modal = document.getElementById('settlementModal');
   modal.style.display = 'flex';
@@ -9127,7 +9808,49 @@ async function loadCollectionHistory(fromDate = null, toDate = null) {
     historyContainer.innerHTML = '<div style="text-align: center; color: #ef4444;">Failed to load history.</div>';
   }
 }
+// ==================== PIN VISIBILITY TOGGLE ====================
 
+let pinVisible = false;
+
+function togglePinVisibility() {
+  const pinInput = document.getElementById('employeePinInput');
+  const toggleBtn = document.getElementById('togglePinVisibilityBtn');
+  
+  if (!pinInput || !toggleBtn) return;
+  
+  pinVisible = !pinVisible;
+  
+  if (pinVisible) {
+    pinInput.type = 'text';
+    toggleBtn.innerHTML = '🙈';
+    toggleBtn.style.color = '#3b82f6';
+    toggleBtn.style.background = 'rgba(59, 130, 246, 0.1)';
+  } else {
+    pinInput.type = 'password';
+    toggleBtn.innerHTML = '👁️';
+    toggleBtn.style.color = '#94a3b8';
+    toggleBtn.style.background = 'transparent';
+  }
+  
+  // Keep focus on the input
+  pinInput.focus();
+}
+
+// Auto-hide PIN after 5 seconds of inactivity
+let pinHideTimeout = null;
+
+function resetPinHideTimer() {
+  if (pinHideTimeout) {
+    clearTimeout(pinHideTimeout);
+  }
+  if (pinVisible) {
+    pinHideTimeout = setTimeout(() => {
+      if (pinVisible) {
+        togglePinVisibility();
+      }
+    }, 5000); // Hide after 5 seconds
+  }
+}
 // ==================== CUSTOMER FUNCTIONS ====================
 
 async function fetchCustomerByPhone(phone) {
@@ -13009,6 +13732,56 @@ function toggleInventoryMode() {
   refreshCategoryHighlighting();
   renderProductGrid();
 }
+function openEmployeeFormModal(employee = null) {
+  const modal = document.getElementById('employeeFormModal');
+  const title = document.getElementById('employeeFormTitle');
+  const nameInput = document.getElementById('employeeNameInput');
+  const pinInput = document.getElementById('employeePinInput');
+  const storeSelect = document.getElementById('employeeStoreSelect');
+  const adminCheck = document.getElementById('employeeAdminCheck');
+  const saveBtn = document.getElementById('saveEmployeeBtn');
+  const errorDiv = document.getElementById('employeeFormError');
+  
+  // Clear error
+  errorDiv.style.display = 'none';
+  errorDiv.innerText = '';
+  
+  // Reset PIN visibility
+  if (pinVisible) {
+    togglePinVisibility();
+  }
+  if (pinHideTimeout) {
+    clearTimeout(pinHideTimeout);
+  }
+  
+  // Populate store dropdown
+  populateEmployeeStoreSelect();
+  
+  if (employee) {
+    // Edit mode
+    title.innerText = '✏️ Edit Employee';
+    saveBtn.innerText = '💾 Update Employee';
+    nameInput.value = employee.name || '';
+    pinInput.value = employee.pin || '';
+    storeSelect.value = employee.store || '';
+    adminCheck.checked = employee.isAdmin || employee.is_admin || false;
+    
+    // Store employee ID for update
+    saveBtn.dataset.employeeId = employee.id;
+  } else {
+    // Add mode
+    title.innerText = '➕ Add New Employee';
+    saveBtn.innerText = '💾 Save Employee';
+    nameInput.value = '';
+    pinInput.value = '';
+    storeSelect.value = '';
+    adminCheck.checked = false;
+    delete saveBtn.dataset.employeeId;
+  }
+  
+  modal.style.display = 'flex';
+  setTimeout(() => nameInput.focus(), 300);
+}
 async function bulkUpdateStock(productUpdates) {
   // productUpdates: [{ productId, newStock, delta }]
   if (!productUpdates || productUpdates.length === 0) return;
@@ -13220,6 +13993,88 @@ function populateEditProductSelect() {
 }
 
 // This should be in your DOMContentLoaded event listener
+// PIN visibility toggle
+document.getElementById('togglePinVisibilityBtn')?.addEventListener('click', function(e) {
+  e.preventDefault();
+  togglePinVisibility();
+  resetPinHideTimer();
+});
+
+// Auto-hide PIN when user clicks away or types
+document.getElementById('employeePinInput')?.addEventListener('input', function() {
+  resetPinHideTimer();
+});
+
+document.getElementById('employeePinInput')?.addEventListener('blur', function() {
+  // Hide PIN when input loses focus
+  if (pinVisible) {
+    togglePinVisibility();
+  }
+  if (pinHideTimeout) {
+    clearTimeout(pinHideTimeout);
+  }
+});
+
+// Also reset when modal closes
+document.getElementById('closeEmployeeFormModal')?.addEventListener('click', function() {
+  if (pinVisible) {
+    togglePinVisibility();
+  }
+  if (pinHideTimeout) {
+    clearTimeout(pinHideTimeout);
+  }
+});
+
+document.getElementById('cancelEmployeeFormBtn')?.addEventListener('click', function() {
+  if (pinVisible) {
+    togglePinVisibility();
+  }
+  if (pinHideTimeout) {
+    clearTimeout(pinHideTimeout);
+  }
+});
+// Employee Management
+document.getElementById('sideEmployeeBtn')?.addEventListener('click', wrapMenuAction(() => {
+  if (!currentEmployee?.isAdmin) {
+    showAlertModal('Access Denied', 'Only administrators can manage employees.');
+    return;
+  }
+  openEmployeeManagementModal();
+}));
+
+// Close Employee Management Modal
+document.getElementById('closeEmployeeManagementModal')?.addEventListener('click', closeEmployeeManagementModal);
+document.getElementById('closeEmployeeManagementBtn')?.addEventListener('click', closeEmployeeManagementModal);
+
+// Open Add Employee Modal
+document.getElementById('openAddEmployeeBtn')?.addEventListener('click', () => {
+  openEmployeeFormModal();
+});
+
+// Close Employee Form Modal
+document.getElementById('closeEmployeeFormModal')?.addEventListener('click', closeEmployeeFormModal);
+document.getElementById('cancelEmployeeFormBtn')?.addEventListener('click', closeEmployeeFormModal);
+
+// Save Employee
+document.getElementById('saveEmployeeBtn')?.addEventListener('click', saveEmployee);
+
+// Close modals on overlay click
+document.getElementById('employeeManagementModal')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('employeeManagementModal')) {
+    closeEmployeeManagementModal();
+  }
+});
+
+document.getElementById('employeeFormModal')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('employeeFormModal')) {
+    closeEmployeeFormModal();
+  }
+});
+
+// PIN input - only allow numbers and max 4 digits
+document.getElementById('employeePinInput')?.addEventListener('input', function() {
+  this.value = this.value.replace(/\D/g, '').slice(0, 4);
+});
 document.getElementById('editProductSelect')?.addEventListener('change', function() {
   const productId = this.value;
   const errorDiv = document.getElementById('addProductError');

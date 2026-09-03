@@ -6302,8 +6302,8 @@ async function completeCheckout(paymentMethod, cashReceived) {
       custom_discount: customDiscount || 0,
       staff_discount: staffDiscount || 0,
       prize_claimed: claimedReceiptInfo || null,
-      customer_id: customerId,           // ✅ Keep for backward compatibility
-      customer_phone: customerPhone,     // ✅ Store phone number
+      customer_id: customerId,
+      customer_phone: customerPhone,
       store: currentStore,
       employee_id: currentEmployee.id,
       employee_name: currentEmployee.name,
@@ -6424,17 +6424,22 @@ async function completeCheckout(paymentMethod, cashReceived) {
         console.warn('⚠️ Background sync failed after sale:', syncErr);
       }
 
-      // ✅ SAVE TO LUCKY DRAW WITH PHONE NUMBER - FIXED URL
+      // ✅ SAVE TO LUCKY DRAW WITH PHONE NUMBER
       console.log('🎲 Saving to Lucky Draw with customer phone:', customerPhone);
       await saveToLuckyDraw(transaction, customerPhone);
 
+      // ==================== CLAIM PRIZE AFTER SALE ====================
       if (pendingPrize) {
         console.log('🎯 Claiming prize after sale...');
+        console.log('📋 Receipt:', pendingPrize.receipt);
+        console.log('📋 Value:', pendingPrize.value);
+        
         const claimed = await claimPrizeAfterSale(
-          pendingPrize.receipt, 
-          pendingPrize.value, 
+          pendingPrize.receipt,
+          pendingPrize.value,
           totalAmount
         );
+        
         if (claimed) {
           console.log('✅ Prize claimed successfully!');
           await showAlertModal('🎉 Prize Claimed!', 
@@ -6450,21 +6455,38 @@ async function completeCheckout(paymentMethod, cashReceived) {
         }
         pendingPrize = null;
         claimedReceiptInfo = null;
+      } else {
+        console.log('ℹ️ No pendingPrize found - checking if prize needs to be claimed...');
+        // ✅ Check if there's a lucky draw entry that needs to be claimed
+        const { data: luckyData } = await supabase
+          .from('lucky_draw_prizes')
+          .select('*')
+          .eq('receipt', transactionId)
+          .maybeSingle();
+        
+        if (luckyData && luckyData.claimed === false) {
+          console.log('🎯 Found unclaimed prize for this transaction, claiming now...');
+          const claimed = await claimPrizeAfterSale(
+            transactionId,
+            luckyData.discount_value || 38,
+            totalAmount
+          );
+          if (claimed) {
+            console.log('✅ Prize claimed successfully!');
+          } else {
+            console.warn('⚠️ Prize claim failed for:', transactionId);
+          }
+        }
       }
 
-      // ✅ ============================================================
-      // ✅ UPDATE CUSTOMER POINTS - Using phone number
-      // ✅ ============================================================
+      // ✅ UPDATE CUSTOMER POINTS
       console.log('🔍 DEBUG: About to update customer points');
       console.log('🔍 customerId:', customerId);
       console.log('🔍 customerPhone:', customerPhone);
       console.log('🔍 totalAmount:', totalAmount);
       
-      // ✅ Use phone number to identify customer
       if (customerPhone) {
         try {
-          // ✅ First, find the customer by phone number
-          console.log('🔄 Finding customer by phone:', customerPhone);
           const { data: customerData, error: customerError } = await supabase
             .from('customers')
             .select('id, points, name, phone')
@@ -6478,7 +6500,6 @@ async function completeCheckout(paymentMethod, cashReceived) {
           
           if (!customerData) {
             console.warn('⚠️ Customer not found with phone:', customerPhone);
-            // Try by ID as fallback
             if (customerId) {
               console.log('🔄 Trying to find by ID:', customerId);
               const { data: idData, error: idError } = await supabase
@@ -6498,7 +6519,6 @@ async function completeCheckout(paymentMethod, cashReceived) {
           
           console.log('✅ Customer found:', customerData);
           
-          // ✅ 1 point for every RM 1 spent
           const pointsEarned = Math.floor(totalAmount);
           console.log('========================================');
           console.log('⭐ CUSTOMER POINTS UPDATE START');
@@ -6514,8 +6534,6 @@ async function completeCheckout(paymentMethod, cashReceived) {
           console.log('📊 Current points:', currentPoints);
           console.log('📊 New points:', newPoints);
           
-          // ✅ Update points in Supabase
-          console.log('🔄 Updating points in Supabase...');
           const { data: updateData, error: updateError } = await supabase
             .from('customers')
             .update({ points: newPoints })
@@ -6529,8 +6547,6 @@ async function completeCheckout(paymentMethod, cashReceived) {
           
           console.log('✅ Supabase update response:', updateData);
           
-          // ✅ Verify the update
-          console.log('🔄 Verifying points update...');
           const { data: verifyData, error: verifyError } = await supabase
             .from('customers')
             .select('id, points')
@@ -6543,7 +6559,6 @@ async function completeCheckout(paymentMethod, cashReceived) {
             console.log('✅ Verified points:', verifyData);
           }
           
-          // ✅ Update ALL customer references
           const updatedCustomer = {
             ...customerData,
             points: newPoints
@@ -6567,7 +6582,6 @@ async function completeCheckout(paymentMethod, cashReceived) {
           console.log('⭐ New total points:', newPoints);
           console.log('========================================');
           
-          // Show a brief notification
           await showAlertModal('⭐ Points Earned!', 
             `${customerData.name || 'Customer'} earned ${pointsEarned} points!\n` +
             `Total points: ${newPoints}`
@@ -6575,7 +6589,6 @@ async function completeCheckout(paymentMethod, cashReceived) {
           
         } catch (err) {
           console.error('❌ Failed to update customer points:', err);
-          // Show error to user but don't block transaction
           await showAlertModal('⚠️ Points Update Failed', 
             `Transaction completed but points update failed.\n` +
             `Error: ${err.message || 'Unknown error'}\n` +
@@ -6586,10 +6599,8 @@ async function completeCheckout(paymentMethod, cashReceived) {
         console.log('ℹ️ No customer selected, skipping points update');
       }
       
-      // ✅ Re-render product grid to show updated stock
       renderProductGrid();
-
-      // ✅ Show success message
+      
       await showAlertModal('✅ Transaction Complete!', 
         `Transaction ID: ${transaction.transaction_id}\n` +
         `Total: RM ${totalAmount.toFixed(2)}\n` +
@@ -10376,94 +10387,68 @@ function applyPrizeToCart() {
 }
 
 async function claimPrizeAfterSale(receipt, prizeValue, finalTotal) {
-  try {
-    console.log('========================================');
-    console.log('🎯 CLAIM PRIZE FUNCTION CALLED!');
-    console.log('📋 Receipt to claim:', receipt);
-    console.log('📋 Prize Value:', prizeValue);
-    console.log('📋 Final Total:', finalTotal);
-    console.log('========================================');
-    
-    // ✅ FIRST: Check if the receipt exists in lucky_draw_prizes
-    const { data: existing, error: checkError } = await supabase
-      .from('lucky_draw_prizes')
-      .select('*')
-      .eq('receipt', receipt)
-      .maybeSingle();
-    
-    if (checkError) {
-      console.error('❌ Error checking prize:', checkError);
-      return false;
-    }
-    
-    if (!existing) {
-      console.error('❌ No prize found for receipt:', receipt);
-      console.log('🔍 DEBUG: Check if receipt format matches');
-      console.log('🔍 Receipt from pendingPrize:', receipt);
-      return false;
-    }
-    
-    console.log('📋 Found existing prize:', existing);
-    console.log('📋 ID:', existing.id);
-    console.log('📋 Current claimed status:', existing.claimed);
-    console.log('📋 Prize label:', existing.prize_label);
-    console.log('📋 Store:', existing.store);
-    
-    // ✅ If already claimed, return true
-    if (existing.claimed === true) {
-      console.log('⚠️ Prize already claimed!');
-      return true;
-    }
-    
-    // ✅ UPDATE the prize
-    console.log('🔄 Updating prize to claimed=true...');
-    
-    const updateData = {
-      claimed: true,
-      claimed_at: new Date().toISOString()
-    };
-    
-    console.log('📤 Update data:', updateData);
-    
-    const { data, error } = await supabase
-      .from('lucky_draw_prizes')
-      .update(updateData)
-      .eq('receipt', receipt)
-      .select();
-    
-    if (error) {
-      console.error('❌ Update error:', error);
-      console.error('❌ Error details:', error.message);
-      return false;
-    }
-    
-    console.log('✅ Update successful!');
-    console.log('📋 Updated data:', data);
-    
-    // ✅ VERIFY the update
-    console.log('🔄 Verifying update...');
-    const { data: verify, error: verifyError } = await supabase
-      .from('lucky_draw_prizes')
-      .select('claimed, claimed_at')
-      .eq('receipt', receipt)
-      .maybeSingle();
-    
-    if (verifyError) {
-      console.error('❌ Verify error:', verifyError);
-    } else {
-      console.log('✅ VERIFICATION RESULT:');
-      console.log('  - claimed:', verify?.claimed);
-      console.log('  - claimed_at:', verify?.claimed_at);
-    }
-    
-    console.log('========================================');
-    return true;
-    
-  } catch (err) {
-    console.error('❌ Error claiming prize:', err);
-    console.log('========================================');
+  console.log('========================================');
+  console.log('🎯 CLAIM PRIZE FUNCTION CALLED!');
+  console.log('📋 Receipt to claim:', receipt);
+  console.log('📋 Prize Value:', prizeValue);
+  console.log('📋 Final Total:', finalTotal);
+  console.log('========================================');
+  
+  // ✅ Check if the receipt exists
+  const { data: existing, error: checkError } = await supabase
+    .from('lucky_draw_prizes')
+    .select('*')
+    .eq('receipt', receipt)
+    .maybeSingle();
+  
+  if (checkError) {
+    console.error('❌ Error checking prize:', checkError);
     return false;
   }
+  
+  if (!existing) {
+    console.error('❌ NO PRIZE FOUND for receipt:', receipt);
+    console.log('🔍 Receipt from pendingPrize:', receipt);
+    console.log('🔍 Tip: Check if the receipt number matches exactly');
+    return false;
+  }
+  
+  console.log('📋 Found prize:', {
+    id: existing.id,
+    receipt: existing.receipt,
+    prize: existing.prize_label,
+    store: existing.store,
+    claimed: existing.claimed
+  });
+  
+  // ✅ If already claimed, return true
+  if (existing.claimed === true) {
+    console.log('⚠️ Prize already claimed!');
+    return true;
+  }
+  
+  // ✅ UPDATE the prize
+  console.log('🔄 UPDATING prize to claimed=true...');
+  
+  const { data, error } = await supabase
+    .from('lucky_draw_prizes')
+    .update({ 
+      claimed: true, 
+      claimed_at: new Date().toISOString()
+    })
+    .eq('receipt', receipt)
+    .select();
+  
+  if (error) {
+    console.error('❌ UPDATE ERROR:', error);
+    console.error('❌ Error details:', error.message);
+    return false;
+  }
+  
+  console.log('✅ UPDATE SUCCESSFUL!');
+  console.log('📋 Updated data:', data);
+  console.log('========================================');
+  return true;
 }
 
 // ==================== TELEGRAM FUNCTIONS ====================

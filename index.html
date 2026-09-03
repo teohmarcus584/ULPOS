@@ -6635,6 +6635,7 @@ async function saveToLuckyDraw(transaction, customerPhone = null) {
     console.log('🎲 SAVE TO LUCKY DRAW CALLED!');
     console.log('Transaction total:', transaction.total);
     console.log('Customer phone:', customerPhone);
+    console.log('Store:', transaction.store || currentStore);
     
     // Check if transaction qualifies for lucky draw
     const qualifies = transaction.total >= 5;
@@ -6646,10 +6647,14 @@ async function saveToLuckyDraw(transaction, customerPhone = null) {
     
     console.log('✅ Transaction qualifies for Lucky Draw!');
     
+    // ✅ Get the correct store name for the URL
+    const storeForLuckyDraw = transaction.store || currentStore || 'queens';
+    console.log('🏪 Store for Lucky Draw:', storeForLuckyDraw);
+    
     // Check if this transaction already has a lucky draw entry
     const { data: existing, error: checkError } = await supabase
       .from('lucky_draw_prizes')
-      .select('id, prize_label, discount_value')
+      .select('id, prize_label, discount_value, store, claimed')
       .eq('receipt', transaction.transaction_id)
       .maybeSingle();
     
@@ -6664,6 +6669,7 @@ async function saveToLuckyDraw(transaction, customerPhone = null) {
     if (existing) {
       console.log('Lucky draw entry already exists for this transaction');
       console.log('Prize:', existing.prize_label, 'Value:', existing.discount_value);
+      console.log('Store in existing entry:', existing.store);
       
       document.getElementById('luckyDrawReceiptNumber').innerText = transaction.transaction_id;
       document.getElementById('luckyDrawPrizeLabel').innerText = existing.prize_label || 'RM 38 FREE GIFT';
@@ -6671,11 +6677,13 @@ async function saveToLuckyDraw(transaction, customerPhone = null) {
       return true;
     }
     
-    // ✅ BUILD THE URL WITH PHONE NUMBER - THIS IS THE FIX!
+    // ✅ BUILD THE URL WITH STORE AND PHONE NUMBER
     let luckyUrl = `https://teohmarcus584.github.io/salesanalysis/?receipt=${transaction.transaction_id}`;
     if (customerPhone) {
       luckyUrl += `&phone=${encodeURIComponent(customerPhone)}`;
     }
+    // ✅ ADD STORE PARAMETER - THIS IS THE FIX!
+    luckyUrl += `&store=${encodeURIComponent(storeForLuckyDraw)}`;
     
     console.log('🔗 Opening Lucky Draw URL:', luckyUrl);
     
@@ -6712,6 +6720,8 @@ async function saveToLuckyDraw(transaction, customerPhone = null) {
 // Open Lucky Draw link with phone number
 document.getElementById('openLuckyDrawBtn').addEventListener('click', function() {
   const txId = document.getElementById('luckyTxId').innerText;
+  
+  // ✅ Get the URL from data attribute (which now includes store)
   const url = this.dataset.url || `https://teohmarcus584.github.io/salesanalysis/?receipt=${txId}`;
   
   if (!txId || txId === '') {
@@ -6722,7 +6732,7 @@ document.getElementById('openLuckyDrawBtn').addEventListener('click', function()
   // Store the transaction ID globally
   window._luckyDrawTransactionId = txId;
   
-  // ✅ Open the Lucky Draw page with the URL (includes phone if available)
+  // ✅ Open the Lucky Draw page with the URL (includes store and phone if available)
   window.open(url, '_blank');
   
   // Close the lucky draw modal
@@ -6733,7 +6743,7 @@ document.getElementById('openLuckyDrawBtn').addEventListener('click', function()
   document.getElementById('luckyDrawPrizeLabel').innerText = '🎰 Waiting for spin result...';
   document.getElementById('luckyDrawPrintModal').style.display = 'flex';
   
-  // Auto-print will happen when prize is found
+  // Start checking for the lucky draw result
   checkForLuckyDrawResult(txId);
 });
 
@@ -6822,7 +6832,6 @@ document.getElementById('printPrizeVoucherBtn').addEventListener('click', async 
 // Check for Lucky Draw Result (polling)
 // ==================== LUCKY DRAW CHECK FUNCTION ====================
 
-// Check for Lucky Draw Result (polling with auto-print)
 function checkForLuckyDrawResult(txId) {
   // Clear any existing interval
   if (window._luckyDrawCheckInterval) {
@@ -6838,7 +6847,7 @@ function checkForLuckyDrawResult(txId) {
     try {
       const { data, error } = await supabase
         .from('lucky_draw_prizes')
-        .select('prize_label, discount_value')
+        .select('prize_label, discount_value, store, claimed')  // ✅ Include store
         .eq('receipt', txId)
         .maybeSingle();
       
@@ -6850,10 +6859,12 @@ function checkForLuckyDrawResult(txId) {
       if (data) {
         // Found the prize - update the print modal
         console.log('✅ Lucky draw prize found!', data);
+        console.log('🏪 Store in lucky draw:', data.store);
+        
         document.getElementById('luckyDrawReceiptNumber').innerText = txId;
         document.getElementById('luckyDrawPrizeLabel').innerText = data.prize_label || 'RM 38 FREE GIFT';
         
-        // ✅ Auto-print the voucher without waiting for button click
+        // ✅ Auto-print the voucher
         console.log('🖨️ Auto-printing voucher...');
         
         // Close the print modal
@@ -10312,7 +10323,7 @@ async function claimPrizeAfterSale(receipt, prizeValue, finalTotal) {
     // ✅ Check if already claimed
     const { data: checkData, error: checkError } = await supabase
       .from('lucky_draw_prizes')
-      .select('claimed, id, prize_label')
+      .select('claimed, id, prize_label, store')
       .eq('receipt', receipt)
       .maybeSingle();
     
@@ -10333,15 +10344,16 @@ async function claimPrizeAfterSale(receipt, prizeValue, finalTotal) {
       return true;
     }
     
-    // ✅ Update the lucky_draw_prizes table - mark as claimed
+    // ✅ FORCE UPDATE - Use the receipt as the filter
     console.log('🔄 Updating prize to claimed=true...');
+    
     const { data, error } = await supabase
       .from('lucky_draw_prizes')
-      .update({
-        claimed: true,
+      .update({ 
+        claimed: true, 
         claimed_at: new Date().toISOString()
       })
-      .eq('receipt', receipt)
+      .eq('receipt', receipt)  // ← Use receipt, NOT id
       .select();
     
     if (error) {
@@ -10352,6 +10364,21 @@ async function claimPrizeAfterSale(receipt, prizeValue, finalTotal) {
     console.log('✅ Prize marked as claimed successfully!');
     console.log('📋 Updated data:', data);
     console.log('========================================');
+    
+    // ✅ Verify the update
+    const { data: verifyData, error: verifyError } = await supabase
+      .from('lucky_draw_prizes')
+      .select('claimed, claimed_at')
+      .eq('receipt', receipt)
+      .maybeSingle();
+    
+    if (verifyError) {
+      console.error('❌ Error verifying claim:', verifyError);
+    } else {
+      console.log('✅ Verification - claimed:', verifyData?.claimed);
+      console.log('✅ Verification - claimed_at:', verifyData?.claimed_at);
+    }
+    
     return true;
     
   } catch (err) {

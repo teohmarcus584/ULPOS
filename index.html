@@ -6635,7 +6635,8 @@ async function saveToLuckyDraw(transaction, customerPhone = null) {
     console.log('🎲 SAVE TO LUCKY DRAW CALLED!');
     console.log('Transaction total:', transaction.total);
     console.log('Customer phone:', customerPhone);
-    console.log('Store:', transaction.store || currentStore);
+    console.log('🏪 Store from transaction:', transaction.store);
+    console.log('🏪 Current store:', currentStore);
     
     // Check if transaction qualifies for lucky draw
     const qualifies = transaction.total >= 5;
@@ -6647,14 +6648,14 @@ async function saveToLuckyDraw(transaction, customerPhone = null) {
     
     console.log('✅ Transaction qualifies for Lucky Draw!');
     
-    // ✅ Get the correct store name for the URL
+    // ✅ Get the correct store - use transaction.store first, then currentStore
     const storeForLuckyDraw = transaction.store || currentStore || 'queens';
-    console.log('🏪 Store for Lucky Draw:', storeForLuckyDraw);
+    console.log('🏪 Using store for Lucky Draw:', storeForLuckyDraw);
     
     // Check if this transaction already has a lucky draw entry
     const { data: existing, error: checkError } = await supabase
       .from('lucky_draw_prizes')
-      .select('id, prize_label, discount_value, store, claimed')
+      .select('id, prize_label, discount_value, store')
       .eq('receipt', transaction.transaction_id)
       .maybeSingle();
     
@@ -6668,7 +6669,6 @@ async function saveToLuckyDraw(transaction, customerPhone = null) {
     // If already exists, show the print modal directly
     if (existing) {
       console.log('Lucky draw entry already exists for this transaction');
-      console.log('Prize:', existing.prize_label, 'Value:', existing.discount_value);
       console.log('Store in existing entry:', existing.store);
       
       document.getElementById('luckyDrawReceiptNumber').innerText = transaction.transaction_id;
@@ -6712,7 +6712,56 @@ async function saveToLuckyDraw(transaction, customerPhone = null) {
     return false;
   }
 }
+async function debugLuckyDraw(receiptNumber) {
+  console.log('🔍 DEBUGGING LUCKY DRAW FOR:', receiptNumber);
+  
+  // 1. Check lucky_draw_prizes table
+  const { data: luckyData, error: luckyError } = await supabase
+    .from('lucky_draw_prizes')
+    .select('*')
+    .eq('receipt', receiptNumber)
+    .maybeSingle();
+  
+  if (luckyError) {
+    console.error('❌ Error checking lucky_draw_prizes:', luckyError);
+  }
+  
+  if (!luckyData) {
+    console.log('❌ No entry found in lucky_draw_prizes for receipt:', receiptNumber);
+  } else {
+    console.log('📋 lucky_draw_prizes entry:');
+    console.log('  - ID:', luckyData.id);
+    console.log('  - Receipt:', luckyData.receipt);
+    console.log('  - Prize:', luckyData.prize_label);
+    console.log('  - Store:', luckyData.store);
+    console.log('  - Claimed:', luckyData.claimed);
+    console.log('  - Claimed At:', luckyData.claimed_at);
+  }
+  
+  // 2. Check transactions table
+  const { data: txData, error: txError } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('transaction_id', receiptNumber)
+    .maybeSingle();
+  
+  if (txError) {
+    console.error('❌ Error checking transactions:', txError);
+  }
+  
+  if (!txData) {
+    console.log('❌ No transaction found for receipt:', receiptNumber);
+  } else {
+    console.log('📋 Transaction found:');
+    console.log('  - Store:', txData.store);
+    console.log('  - Total:', txData.total);
+    console.log('  - Customer:', txData.customer_phone);
+  }
+  
+  return { luckyDraw: luckyData, transaction: txData };
+}
 
+// Call from console: debugLuckyDraw('QUE00123456')
 // ==================== LUCKY DRAW EVENT LISTENERS ====================
 
 
@@ -10313,79 +10362,75 @@ function applyPrizeToCart() {
 }
 
 async function claimPrizeAfterSale(receipt, prizeValue, finalTotal) {
-  try {
-    console.log('========================================');
-    console.log('🎯 CLAIM PRIZE FUNCTION CALLED!');
-    console.log('📋 Receipt:', receipt);
-    console.log('📋 Prize Value:', prizeValue);
-    console.log('========================================');
-    
-    // ✅ Check if already claimed
-    const { data: checkData, error: checkError } = await supabase
-      .from('lucky_draw_prizes')
-      .select('claimed, id, prize_label, store')
-      .eq('receipt', receipt)
-      .maybeSingle();
-    
-    if (checkError) {
-      console.error('❌ Error checking prize status:', checkError);
-      return false;
-    }
-    
-    console.log('📋 Found prize data:', checkData);
-    
-    if (!checkData) {
-      console.error('❌ No prize found for receipt:', receipt);
-      return false;
-    }
-    
-    if (checkData.claimed === true) {
-      console.log('⚠️ Prize already claimed! ID:', checkData.id);
-      return true;
-    }
-    
-    // ✅ FORCE UPDATE - Use the receipt as the filter
-    console.log('🔄 Updating prize to claimed=true...');
-    
-    const { data, error } = await supabase
-      .from('lucky_draw_prizes')
-      .update({ 
-        claimed: true, 
-        claimed_at: new Date().toISOString()
-      })
-      .eq('receipt', receipt)  // ← Use receipt, NOT id
-      .select();
-    
-    if (error) {
-      console.error('❌ Error marking prize as claimed:', error);
-      return false;
-    }
-    
-    console.log('✅ Prize marked as claimed successfully!');
-    console.log('📋 Updated data:', data);
-    console.log('========================================');
-    
-    // ✅ Verify the update
-    const { data: verifyData, error: verifyError } = await supabase
-      .from('lucky_draw_prizes')
-      .select('claimed, claimed_at')
-      .eq('receipt', receipt)
-      .maybeSingle();
-    
-    if (verifyError) {
-      console.error('❌ Error verifying claim:', verifyError);
-    } else {
-      console.log('✅ Verification - claimed:', verifyData?.claimed);
-      console.log('✅ Verification - claimed_at:', verifyData?.claimed_at);
-    }
-    
-    return true;
-    
-  } catch (err) {
-    console.error('❌ Error claiming prize:', err);
-    console.log('========================================');
+  console.log('========================================');
+  console.log('🎯 CLAIM PRIZE FUNCTION CALLED!');
+  console.log('📋 Receipt to claim:', receipt);
+  console.log('📋 Prize Value:', prizeValue);
+  console.log('========================================');
+  
+  // ✅ FIRST: Check if the receipt exists in lucky_draw_prizes
+  const { data: existing, error: checkError } = await supabase
+    .from('lucky_draw_prizes')
+    .select('*')
+    .eq('receipt', receipt)
+    .maybeSingle();
+  
+  if (checkError) {
+    console.error('❌ Error checking:', checkError);
     return false;
   }
+  
+  if (!existing) {
+    console.error('❌ No prize found for receipt:', receipt);
+    console.log('🔍 DEBUG: Check if receipt format matches');
+    console.log('🔍 Receipt from pendingPrize:', receipt);
+    return false;
+  }
+  
+  console.log('📋 Found existing prize:', existing);
+  console.log('📋 Current claimed status:', existing.claimed);
+  
+  if (existing.claimed === true) {
+    console.log('⚠️ Prize already claimed!');
+    return true;
+  }
+  
+  // ✅ UPDATE the prize
+  console.log('🔄 Updating prize to claimed=true...');
+  
+  const { data, error } = await supabase
+    .from('lucky_draw_prizes')
+    .update({ 
+      claimed: true, 
+      claimed_at: new Date().toISOString()
+    })
+    .eq('receipt', receipt)  // ← Use receipt (string), not ID
+    .select();
+  
+  if (error) {
+    console.error('❌ Update error:', error);
+    return false;
+  }
+  
+  console.log('✅ Update successful!');
+  console.log('📋 Updated data:', data);
+  console.log('========================================');
+  
+  // ✅ VERIFY the update
+  const { data: verify, error: verifyError } = await supabase
+    .from('lucky_draw_prizes')
+    .select('claimed, claimed_at')
+    .eq('receipt', receipt)
+    .maybeSingle();
+  
+  if (verifyError) {
+    console.error('❌ Verify error:', verifyError);
+  } else {
+    console.log('✅ Verification - claimed:', verify?.claimed);
+    console.log('✅ Verification - claimed_at:', verify?.claimed_at);
+  }
+  
+  return true;
 }
 
 // ==================== TELEGRAM FUNCTIONS ====================

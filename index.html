@@ -6361,8 +6361,7 @@ async function completeCheckout(paymentMethod, cashReceived) {
       }
     }
 
-    clearCart();
-
+    // ✅ SAVE TRANSACTION FIRST
     showLoading('Processing transaction...');
     const success = await saveTransactionToSheet(transaction);
     hideLoading();
@@ -6428,11 +6427,14 @@ async function completeCheckout(paymentMethod, cashReceived) {
       console.log('🎲 Saving to Lucky Draw with customer phone:', customerPhone);
       await saveToLuckyDraw(transaction, customerPhone);
 
-      // ==================== CLAIM PRIZE AFTER SALE ====================
+      // ============================================================
+      // ✅ CLAIM PRIZE AFTER SALE - BEFORE CLEARING CART
+      // ============================================================
       if (pendingPrize) {
         console.log('🎯 Claiming prize after sale...');
         console.log('📋 Receipt:', pendingPrize.receipt);
         console.log('📋 Value:', pendingPrize.value);
+        console.log('📋 Name:', pendingPrize.name);
         
         const claimed = await claimPrizeAfterSale(
           pendingPrize.receipt,
@@ -6457,27 +6459,51 @@ async function completeCheckout(paymentMethod, cashReceived) {
         claimedReceiptInfo = null;
       } else {
         console.log('ℹ️ No pendingPrize found - checking if prize needs to be claimed...');
+        
         // ✅ Check if there's a lucky draw entry that needs to be claimed
-        const { data: luckyData } = await supabase
+        const { data: luckyData, error: luckyError } = await supabase
           .from('lucky_draw_prizes')
           .select('*')
           .eq('receipt', transactionId)
           .maybeSingle();
         
-        if (luckyData && luckyData.claimed === false) {
+        if (luckyError) {
+          console.error('❌ Error checking lucky draw:', luckyError);
+        } else if (luckyData && luckyData.claimed === false) {
           console.log('🎯 Found unclaimed prize for this transaction, claiming now...');
+          console.log('📋 Prize:', luckyData.prize_label);
+          console.log('📋 Store:', luckyData.store);
+          
           const claimed = await claimPrizeAfterSale(
             transactionId,
             luckyData.discount_value || 38,
             totalAmount
           );
+          
           if (claimed) {
             console.log('✅ Prize claimed successfully!');
+            await showAlertModal('🎉 Prize Claimed!', 
+              `The prize "${luckyData.prize_label}" has been successfully claimed.\n` +
+              `Receipt: ${transactionId}`
+            );
           } else {
             console.warn('⚠️ Prize claim failed for:', transactionId);
+            await showAlertModal('⚠️ Prize Not Claimed', 
+              `Transaction saved, but the prize could not be claimed.\n` +
+              `Please manually claim the prize using the receipt: ${transactionId}`
+            );
           }
+        } else if (luckyData && luckyData.claimed === true) {
+          console.log('✅ Prize already claimed for this transaction');
+        } else {
+          console.log('ℹ️ No lucky draw entry found for this transaction');
         }
       }
+
+      // ============================================================
+      // ✅ CLEAR CART AFTER PRIZE IS CLAIMED
+      // ============================================================
+      clearCart();
 
       // ✅ UPDATE CUSTOMER POINTS
       console.log('🔍 DEBUG: About to update customer points');

@@ -3194,6 +3194,9 @@ let notificationsEnabled = false;
 let alertedOutOfStockProducts = new Set();
 let alertedLowStockProducts = new Set();
 let preloadedReportCache = null;
+// ✅ ADD THESE LINES - For back-date settlement tracking
+let pendingSettlementDate = null;
+let pendingSettlementStore = null;
 // ✅ ADD THIS LINE HERE - Declare stores BEFORE fetchStores
 let stores = [];
 let storeIdToName = {};
@@ -10132,6 +10135,10 @@ async function openSettlementForDate(store, date) {
     // ============================================================
     // ✅ STEP 10: STORE DATA FOR RECORDING (system values only)
     // ============================================================
+       // ✅ CRITICAL: Store the pending date separately so it persists
+    pendingSettlementDate = date;
+    pendingSettlementStore = store;
+    
     window._settlementData = {
       store: store,
       date: date,
@@ -10141,13 +10148,13 @@ async function openSettlementForDate(store, date) {
       qrSystem: qrTotal,
       alipaySystem: alipayTotal,
       refundSystem: 0,
-      cashActual: 0,      // ← Will be filled when user enters
-      cardActual: 0,      // ← Will be filled when user enters
-      qrActual: 0,        // ← Will be filled when user enters
-      alipayActual: 0     // ← Will be filled when user enters
+      cashActual: 0,
+      cardActual: 0,
+      qrActual: 0,
+      alipayActual: 0
     };
     
-    console.log('✅ Settlement data prepared (actual values empty):', window._settlementData);
+    console.log('✅ Pending settlement date set to:', pendingSettlementDate);
     
     // ============================================================
     // ✅ STEP 11: HIDE LOADING + SHOW INFO MESSAGE
@@ -16374,8 +16381,23 @@ document.getElementById('sideReceiptsBtn').addEventListener('click', wrapMenuAct
   document.getElementById('receiptsSearch').addEventListener('input', updateReceipts);
 
   // Settlement modal
-  document.getElementById('closeSettlementModal').addEventListener('click', () => document.getElementById('settlementModal').style.display = 'none');
-  document.getElementById('closeSettlementModalBtn').addEventListener('click', () => document.getElementById('settlementModal').style.display = 'none');
+  document.getElementById('closeSettlementModal').addEventListener('click', () => {
+  document.getElementById('settlementModal').style.display = 'none';
+  // Clear pending settlement date when closing without recording
+  if (!window._settlementData || window._settlementData.cashActual === 0) {
+    pendingSettlementDate = null;
+    pendingSettlementStore = null;
+  }
+});
+
+document.getElementById('closeSettlementModalBtn').addEventListener('click', () => {
+  document.getElementById('settlementModal').style.display = 'none';
+  // Clear pending settlement date when closing without recording
+  if (!window._settlementData || window._settlementData.cashActual === 0) {
+    pendingSettlementDate = null;
+    pendingSettlementStore = null;
+  }
+});
   document.getElementById('settlementStoreSelect').addEventListener('change', async () => {
     if (currentEmployee?.isAdmin) {
       const newStore = document.getElementById('settlementStoreSelect').value;
@@ -16383,6 +16405,9 @@ document.getElementById('sideReceiptsBtn').addEventListener('click', wrapMenuAct
     }
   });
 
+// ============================================================
+// CHECK SETTLEMENT BUTTON HANDLER
+// ============================================================
 document.getElementById('checkSettlementBtn').addEventListener('click', async () => {
   const errorFields = ['actualCash', 'actualCard', 'actualQR', 'actualAlipay'];
   errorFields.forEach(id => {
@@ -16440,9 +16465,12 @@ document.getElementById('checkSettlementBtn').addEventListener('click', async ()
     return;
   }
 
-  // ✅ Get the date from window._settlementData if it exists (for past date settlement)
+  // ✅ Get the date - use pending date for back-date settlement
   const store = document.getElementById('settlementStoreSelect').value;
-  const date = window._settlementData?.date || getLocalDateString(new Date());
+  const date = pendingSettlementDate || window._settlementData?.date || getLocalDateString(new Date());
+  
+  console.log('🔍 Check Settlement - Using date:', date);
+  console.log('🔍 Pending date:', pendingSettlementDate);
   
   const status = await checkSettlementStatus(store, date);
   
@@ -16465,6 +16493,12 @@ document.getElementById('checkSettlementBtn').addEventListener('click', async ()
   document.getElementById('checkSettlementBtn').style.display = 'none';
   document.getElementById('recordSettlementBtn').style.display = 'block';
   
+  // ✅ Ensure pending date is set
+  if (!pendingSettlementDate) {
+    pendingSettlementDate = date;
+    pendingSettlementStore = store;
+  }
+  
   // Update the settlement data with the checked values
   window._settlementData = {
     ...(window._settlementData || {}),
@@ -16482,9 +16516,17 @@ document.getElementById('checkSettlementBtn').addEventListener('click', async ()
     alipayActual: actualAlipay
   };
   
-  console.log('✅ Settlement check passed. Ready to record:', window._settlementData);
-});
- document.getElementById('recordSettlementBtn').addEventListener('click', async () => {
+  console.log('✅ Settlement check passed. Ready to record:');
+  console.log('📅 Date being settled:', window._settlementData.date);
+  console.log('🏪 Store being settled:', window._settlementData.store);
+  console.log('💰 Full data:', window._settlementData);
+}); // ← ✅ CLOSE checkSettlementBtn handler HERE
+
+
+// ============================================================
+// RECORD SETTLEMENT BUTTON HANDLER (SEPARATE - NOT NESTED!)
+// ============================================================
+document.getElementById('recordSettlementBtn').addEventListener('click', async () => {
   if (!window._settlementData) {
     await showAlertModal('Error', 'No settlement data found. Please check again.');
     return;
@@ -16494,10 +16536,22 @@ document.getElementById('checkSettlementBtn').addEventListener('click', async ()
   
   try {
     const data = window._settlementData;
+    const settlementDate = pendingSettlementDate || data.date;
+    const settlementStore = pendingSettlementStore || data.store;
+    
+    console.log('========================================');
+    console.log('📝 RECORDING SETTLEMENT');
+    console.log('📅 Date:', settlementDate);
+    console.log('🏪 Store:', settlementStore);
+    console.log('💵 Cash:', data.cashActual);
+    console.log('💳 Card:', data.cardActual);
+    console.log('📱 QR:', data.qrActual);
+    console.log('💸 Alipay:', data.alipayActual);
+    console.log('========================================');
     
     const result = await recordSettlement(
-      data.store,
-      data.date,
+      settlementStore,
+      settlementDate,
       data.pettyCashFloat,
       data.cashSystem,
       data.cardSystem,
@@ -16512,15 +16566,14 @@ document.getElementById('checkSettlementBtn').addEventListener('click', async ()
     
     if (result.success) {
       const message = result.updated 
-        ? `Settlement for ${data.store} on ${data.date} has been updated successfully.`
-        : `Settlement for ${data.store} on ${data.date} has been recorded successfully.`;
+        ? `Settlement for ${settlementStore} on ${settlementDate} has been updated successfully.`
+        : `Settlement for ${settlementStore} on ${settlementDate} has been recorded successfully.`;
       
       await showAlertModal('✅ Settlement Complete', message);
       
       // ✅ AUTO-PRINT SETTLEMENT REPORT
       console.log('🖨️ Auto-printing settlement report...');
       
-      // Check if printer is connected
       if (!isPrinterConnected) {
         const connectNow = await showConfirmModal(
           '🖨️ Printer Not Connected',
@@ -16540,11 +16593,10 @@ document.getElementById('checkSettlementBtn').addEventListener('click', async ()
         }
       }
       
-           // Print the settlement report if printer is connected
       if (isPrinterConnected) {
         const printed = await printSettlementReportWithAnimation(
-          data.store,
-          data.date,
+          settlementStore,
+          settlementDate,
           {
             cashSystem: data.cashSystem,
             cardSystem: data.cardSystem,
@@ -16568,7 +16620,7 @@ document.getElementById('checkSettlementBtn').addEventListener('click', async ()
       
       // Close modal and refresh
       document.getElementById('settlementModal').style.display = 'none';
-      await refreshSettlementTotals(data.store);
+      await refreshSettlementTotals(settlementStore);
       
     } else {
       throw new Error(result.error || 'Unknown error');
@@ -16580,6 +16632,8 @@ document.getElementById('checkSettlementBtn').addEventListener('click', async ()
   } finally {
     hideLoading();
     window._settlementData = null;
+    pendingSettlementDate = null;
+    pendingSettlementStore = null;
   }
 });
 

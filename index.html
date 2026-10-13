@@ -9558,34 +9558,40 @@ async function showReprintSettlementModal() {
           day: 'numeric'
         });
         
-        const existingSettlement = settlementByDate[dateInfo.date];
-        const status = existingSettlement 
-          ? (existingSettlement.collected ? '✅ Collected' : '⏳ Recorded')
-          : '🔴 Not Settled';
+       const existingSettlement = settlementByDate[dateInfo.date];
+
+// ✅ A date is "pending" if it has unsettled transactions AND hasn't been collected
+// Even if a settlement record exists, if it's NOT collected, it's still pending
+const isTrulyPending = !existingSettlement || existingSettlement.collected !== true;
+
+const status = existingSettlement 
+  ? (existingSettlement.collected ? '✅ Collected' : '⏳ Recorded - Not Collected')
+  : '🔴 Not Settled';
         
         const totalAmount = (dateInfo.cashTotal || 0) + (dateInfo.cardTotal || 0) + 
                            (dateInfo.qrTotal || 0) + (dateInfo.alipayTotal || 0);
         
         const pendingData = existingSettlement || {
-          id: null,
-          date: dateInfo.date,
-          store: store,
-          _isPending: true,
-          _unsettledCount: dateInfo.transactionCount,
-          _cashTotal: dateInfo.cashTotal,
-          _cardTotal: dateInfo.cardTotal,
-          _qrTotal: dateInfo.qrTotal,
-          _alipayTotal: dateInfo.alipayTotal
-        };
-        
-        const settlementJson = JSON.stringify(pendingData).replace(/"/g, '&quot;');
-        
-        options += `<option value="${existingSettlement ? existingSettlement.id : 'pending_' + dateInfo.date}" 
-                    data-settlement='${settlementJson}'
-                    data-is-pending="${!existingSettlement}"
-                    style="color: #dc2626; font-weight: 600;">
-          🔴 ${displayDate} - ${dateInfo.transactionCount} txns (RM ${totalAmount.toFixed(2)}) - NOT SETTLED
-        </option>`;
+  id: null,
+  date: dateInfo.date,
+  store: store,
+  _isPending: true,
+  _unsettledCount: dateInfo.transactionCount,
+  _cashTotal: dateInfo.cashTotal,
+  _cardTotal: dateInfo.cardTotal,
+  _qrTotal: dateInfo.qrTotal,
+  _alipayTotal: dateInfo.alipayTotal
+};
+
+const settlementJson = JSON.stringify(pendingData).replace(/"/g, '&quot;');
+
+// ✅ Use isTrulyPending instead of just !existingSettlement
+options += `<option value="${existingSettlement ? existingSettlement.id : 'pending_' + dateInfo.date}" 
+            data-settlement='${settlementJson}'
+            data-is-pending="${isTrulyPending}"
+            style="color: #dc2626; font-weight: 600;">
+  🔴 ${displayDate} - ${dateInfo.transactionCount} txns (RM ${totalAmount.toFixed(2)}) - ${isTrulyPending ? 'NOT SETTLED' : 'PENDING'}
+</option>`;
       });
       
       options += `</optgroup>`;
@@ -9638,18 +9644,23 @@ async function showReprintSettlementModal() {
     console.log(`✅ Populated ${select.options.length} options for ${store}`);
     
     // Auto-select the first one
-    if (select.options.length > 0) {
-      select.selectedIndex = 0;
-    }
-    
-    // ✅ Remove old listener to prevent duplicates
-    select.removeEventListener('change', updateSettlementActionButton);
-    
-    // ✅ Add listener for future changes
-    select.addEventListener('change', updateSettlementActionButton);
-    
-    // ✅ Update button text immediately
-    updateSettlementActionButton();
+    // Auto-select the first one
+if (select.options.length > 0) {
+  select.selectedIndex = 0;
+}
+
+// ✅ Use onclick assignment instead of addEventListener to guarantee single listener
+// This prevents the "multiple listeners" bug and guarantees the update fires
+select.onchange = function() {
+  console.log('🔄 Settlement date selection changed');
+  updateSettlementActionButton();
+};
+
+// ✅ Update button text immediately
+updateSettlementActionButton();
+
+// ✅ Also update after a short delay (in case DOM isn't ready)
+setTimeout(updateSettlementActionButton, 100);
     
   } catch (err) {
     console.error('❌ Error loading settlements:', err);
@@ -9668,6 +9679,12 @@ function updateSettlementActionButton() {
   
   const selectedOption = select.options[select.selectedIndex];
   
+  // ✅ DEBUG LOG
+  console.log('🔍 updateSettlementActionButton called');
+  console.log('   Selected value:', selectedOption?.value);
+  console.log('   data-is-pending:', selectedOption?.dataset?.isPending);
+  console.log('   Full option HTML:', selectedOption?.outerHTML);
+  
   // No valid selection
   if (!selectedOption || !selectedOption.value || selectedOption.value === '') {
     actionBtn.innerHTML = '🖨️ Reprint';
@@ -9677,15 +9694,18 @@ function updateSettlementActionButton() {
     return;
   }
   
-  const isPending = selectedOption.dataset.isPending === 'true';
+  // ✅ FIXED: Better check for pending
+  const isPendingAttr = selectedOption.dataset.isPending;
+  const isPending = isPendingAttr === 'true' || isPendingAttr === true;
+  
+  console.log('   isPending resolved to:', isPending);
   
   if (isPending) {
     // ✅ Pending settlement → show "Settle Now" button
     actionBtn.innerHTML = '✅ Settle Now';
-    actionBtn.style.background = '#2c7a4b';  // Green
+    actionBtn.style.background = '#2c7a4b';
     actionBtn.style.color = 'white';
     
-    // Show hint message
     if (errorDiv) {
       errorDiv.innerHTML = '⚠️ This date has <strong>unsettled transactions</strong>. Click <strong>"Settle Now"</strong> to open the settlement form for this date.';
       errorDiv.style.display = 'block';
@@ -9699,10 +9719,9 @@ function updateSettlementActionButton() {
   } else {
     // ✅ Existing settlement → show "Reprint" button
     actionBtn.innerHTML = '🖨️ Reprint';
-    actionBtn.style.background = '#2c7a4b';  // Green
+    actionBtn.style.background = '#2c7a4b';
     actionBtn.style.color = 'white';
     
-    // Hide hint
     if (errorDiv) {
       errorDiv.style.display = 'none';
     }
@@ -9847,7 +9866,8 @@ async function reprintSelectedSettlement() {
     return;
   }
   
-  const isPending = selectedOption.dataset.isPending === 'true';
+  const isPendingAttr = selectedOption.dataset.isPending;
+const isPending = isPendingAttr === 'true' || isPendingAttr === true;
   const store = currentStore || initialStore || settlementData.store;
   
   console.log('📋 Selected:', { isPending, settlementData });

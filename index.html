@@ -4410,21 +4410,22 @@ function renderProductGrid() {
   // ============================================================
   // NORMAL SALES MODE - Clean display with special offer badges
   // ============================================================
+    // ============================================================
+  // NORMAL SALES MODE - Clean display with special offer badges
+  // ============================================================
   filtered.forEach(prod => {
     let additionalClass = '';
     if (prod.stock <= 0) {
       additionalClass = 'out-of-stock-card';
     }
     
-        // ✅ Add special badge based on category
+    // ✅ Add special badge based on category
+    // ✅ REMOVED: 100ML PERFUME EDP and 50ML PERFUME EDP badges
     let specialBadge = '';
     let badgeColor = '';
     let badgeText = '';
     
-    if (prod.category === "100ML PERFUME EDP" || prod.category === "50ML PERFUME EDP") {
-      badgeColor = '#dc2626';
-      badgeText = '✂️ HALF PRICE';
-    } else if (prod.category === "15ML PERFUME EDP") {
+    if (prod.category === "15ML PERFUME EDP") {
       badgeColor = '#059669';
       badgeText = 'RM 10 OFFER';
     } else if (prod.category === "CAR AROMATIC") {
